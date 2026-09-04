@@ -45,9 +45,6 @@ async fn run() -> anyhow::Result<()> {
         .try_init()
         .ok();
     let args = Args::parse();
-            args.provider
-        );
-    }
     let home = resolve_hermes_home(args.hermes_home.as_deref())?;
     // Validate an existing config even in fake mode, while keeping fake mode usable
     // with a disposable home that only contains state.db.
