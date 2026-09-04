@@ -76,7 +76,7 @@ pub mod registry;
 mod redact;
 pub mod sse;
 pub use fake::FakeProvider;
-pub use http::HttpProvider;
+pub use http::{HttpProvider, RetryPolicy};
 pub use redact::redact;
 pub use registry::{ProviderRegistry, RegistryError, FAKE_PROVIDER};
 

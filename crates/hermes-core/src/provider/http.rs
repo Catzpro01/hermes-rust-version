@@ -14,6 +14,41 @@ use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 use url::Url;
 
+/// Retry configuration for transient, pre-stream failures. Bounded and
+/// injectable so tests can force fast exhaustion/recovery without waiting on
+/// real backoff delays.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RetryPolicy {
+    /// Maximum number of send attempts (>= 1). One attempt, then up to
+    /// `max_attempts - 1` retries.
+    pub max_attempts: u32,
+    /// Base backoff delay, doubled after each failed attempt.
+    pub base_delay: Duration,
+    /// Upper bound on the backoff delay.
+    pub max_delay: Duration,
+}
+
+impl Default for RetryPolicy {
+    fn default() -> Self {
+        Self {
+            max_attempts: 3,
+            base_delay: Duration::from_millis(200),
+            max_delay: Duration::from_millis(2000),
+        }
+    }
+}
+
+/// Backoff delay to wait after `failed_attempt` (1-based) has failed, before
+/// attempting again. Formula: `min(base_delay * 2^(failed_attempt - 1),
+/// max_delay)`. Pure so it is unit-testable without sleeping.
+fn backoff_delay(policy: &RetryPolicy, failed_attempt: u32) -> Duration {
+    let exponent = (failed_attempt.saturating_sub(1)).min(20);
+    // Compute in u128 to avoid overflow from the shift, then cap and narrow.
+    let raw_millis = policy.base_delay.as_millis().saturating_mul(1u128 << exponent);
+    let capped = raw_millis.min(policy.max_delay.as_millis());
+    Duration::from_millis(u64::try_from(capped).unwrap_or(u64::MAX))
+}
+
 /// An OpenAI-compatible provider, speaking either the chat-completions or the
 /// (legacy) completions wire format depending on [`ApiMode`].
 ///
@@ -30,6 +65,7 @@ pub struct HttpProvider {
     api_key: SecretString,
     model: String,
     api_mode: ApiMode,
+    retry: RetryPolicy,
 }
 impl HttpProvider {
     pub fn new(base_url: Url, api_key: SecretString, model: impl Into<String>) -> Self {
@@ -39,6 +75,7 @@ impl HttpProvider {
             api_key,
             model: model.into(),
             api_mode: ApiMode::ChatCompletions,
+            retry: RetryPolicy::default(),
         }
     }
     pub fn with_client(
@@ -53,6 +90,7 @@ impl HttpProvider {
             api_key,
             model: model.into(),
             api_mode: ApiMode::ChatCompletions,
+            retry: RetryPolicy::default(),
         }
     }
 
@@ -60,6 +98,12 @@ impl HttpProvider {
     /// original behaviour; `completions` talks to `v1/completions`.
     pub fn with_api_mode(mut self, api_mode: ApiMode) -> Self {
         self.api_mode = api_mode;
+        self
+    }
+
+    /// Overrides the retry policy (used by tests to force fast retries).
+    pub fn with_retry(mut self, retry: RetryPolicy) -> Self {
+        self.retry = retry;
         self
     }
 
@@ -118,11 +162,15 @@ impl HttpProvider {
         Ok(request)
     }
 
-    pub async fn chat_with_cancel(
+    /// One pre-stream request attempt: build, send (honouring cancellation),
+    /// and return the 2xx response or a classified error. Non-2xx and send
+    /// failures become a [`ProviderError`] here, before any stream is consumed,
+    /// so a retry/fallback can react cleanly.
+    async fn attempt(
         &self,
         turns: &[Turn],
-        cancel: CancellationToken,
-    ) -> Result<EventStream, ProviderError> {
+        cancel: &CancellationToken,
+    ) -> Result<reqwest::Response, ProviderError> {
         let request = self.build_request(turns)?;
         let response = tokio::select! {
             _ = cancel.cancelled() => return Err(ProviderError::Cancelled),
@@ -144,6 +192,46 @@ impl HttpProvider {
                 message: redact(&body, &self.api_key),
             });
         }
+        Ok(response)
+    }
+
+    /// Sends the request with bounded exponential backoff retries for
+    /// pre-stream, retryable failures (Ticket 02). Non-retryable errors and
+    /// `Cancelled` return immediately on the first attempt. Between attempts we
+    /// `tokio::time::sleep` inside a `tokio::select!` against the cancel token,
+    /// so a SIGINT mid-backoff exits with `Cancelled` instead of waiting out
+    /// the timer.
+    async fn send_with_retry(
+        &self,
+        turns: &[Turn],
+        cancel: &CancellationToken,
+    ) -> Result<reqwest::Response, ProviderError> {
+        let mut attempt: u32 = 1;
+        loop {
+            match self.attempt(turns, cancel).await {
+                Ok(response) => return Ok(response),
+                Err(err) => {
+                    if err.is_retryable() && attempt < self.retry.max_attempts {
+                        let delay = backoff_delay(&self.retry, attempt);
+                        tokio::select! {
+                            _ = cancel.cancelled() => return Err(ProviderError::Cancelled),
+                            _ = tokio::time::sleep(delay) => {}
+                        }
+                        attempt += 1;
+                    } else {
+                        return Err(err);
+                    }
+                }
+            }
+        }
+    }
+
+    pub async fn chat_with_cancel(
+        &self,
+        turns: &[Turn],
+        cancel: CancellationToken,
+    ) -> Result<EventStream, ProviderError> {
+        let response = self.send_with_retry(turns, &cancel).await?;
         let mut bytes = response.bytes_stream();
         let api_key = self.api_key.clone();
         let stream = try_stream! { yield Event::Started; let mut remainder=Vec::new(); loop { let next=tokio::select! { _=cancel.cancelled()=>{ Err(ProviderError::Cancelled) }, item=bytes.next()=>Ok(item) }; let chunk=match next { Err(e)=>Err(e)?, Ok(None)=>break, Ok(Some(Err(e)))=>Err(ProviderError::Message(redact(&e.to_string(), &api_key)))?, Ok(Some(Ok(b)))=>b }; for event in parse_chunk(&chunk,&mut remainder)? { let done=matches!(event,Event::Done); yield event; if done { return; } } } if !remainder.is_empty() { for event in parse_chunk(b"\n",&mut remainder)? { yield event; } } };
@@ -270,5 +358,46 @@ mod tests {
         // Ticket 01: a real (not dead) 30s request timeout. Changing this is a
         // deliberate, test-visible act.
         assert_eq!(HTTP_CLIENT_TIMEOUT, Duration::from_secs(30));
+    }
+
+    #[test]
+    fn default_retry_policy_is_bounded_and_reasonable() {
+        // Ticket 02: 3 attempts max, 200ms base, 2000ms cap.
+        let p = RetryPolicy::default();
+        assert_eq!(p.max_attempts, 3);
+        assert_eq!(p.base_delay, Duration::from_millis(200));
+        assert_eq!(p.max_delay, Duration::from_millis(2000));
+    }
+
+    #[test]
+    fn backoff_delay_doubles_then_caps() {
+        // With base 100ms / cap 1000ms: attempt 1 -> 100, attempt 2 -> 200,
+        // attempt 3 -> 400, attempt 4 -> 800, attempt 5+ -> capped at 1000.
+        let p = RetryPolicy {
+            max_attempts: 6,
+            base_delay: Duration::from_millis(100),
+            max_delay: Duration::from_millis(1000),
+        };
+        let expect = [100u64, 200, 400, 800, 1000, 1000];
+        for (i, ms) in expect.iter().enumerate() {
+            let attempt = (i + 1) as u32;
+            assert_eq!(
+                backoff_delay(&p, attempt),
+                Duration::from_millis(*ms),
+                "attempt {attempt}"
+            );
+        }
+    }
+
+    #[test]
+    fn backoff_delay_never_exceeds_max_delay_even_at_large_exponent() {
+        let p = RetryPolicy {
+            max_attempts: 100,
+            base_delay: Duration::from_millis(100),
+            max_delay: Duration::from_millis(1500),
+        };
+        assert_eq!(backoff_delay(&p, 1), Duration::from_millis(100));
+        assert_eq!(backoff_delay(&p, 60), p.max_delay);
+        assert_eq!(backoff_delay(&p, 200), p.max_delay);
     }
 }
