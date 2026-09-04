@@ -329,3 +329,75 @@ async fn cooldown_skips_a_down_then_recovers_it_after_the_window() {
     // Sanity: DEFAULT_COOLDOWN is documented as 60s (bounded, in-memory only).
     assert_eq!(DEFAULT_COOLDOWN, std::time::Duration::from_secs(60));
 }
+
+/// Ticket 07 closure E2E — config-driven: a real `config.yaml` (parsed to
+/// `HermesConfig`) declaring `model.fallback_chain` is resolved by the
+/// registry into a FallbackProvider. With provider A persistently down the
+/// active request falls back to B over the wire, B's response is served, and
+/// neither provider ever sees the other's credential.
+#[tokio::test]
+async fn config_driven_fallback_chain_serves_via_b_and_isolates_keys() {
+    use hermes_core::config::HermesConfig;
+    use hermes_core::provider::ProviderRegistry;
+
+    let server_a = MockServer::start().await;
+    Mock::given(wiremock::matchers::method("POST"))
+        .and(path("/v1/chat/completions"))
+        .respond_with(ResponseTemplate::new(500).set_body_string("A down"))
+        .mount(&server_a)
+        .await;
+    let server_b = MockServer::start().await;
+    Mock::given(wiremock::matchers::method("POST"))
+        .and(path("/v1/chat/completions"))
+        .and(wiremock::matchers::header("authorization", "Bearer t07-b-key"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_string(chat_sse(&["config-b-answer"])),
+        )
+        .mount(&server_b)
+        .await;
+
+    let config: HermesConfig = serde_yaml::from_str(&format!(
+        "model:\n  provider: a\n  fallback_chain: [b]\nproviders:\n  a:\n    api: {}/v1\n    key_env: HERMES_T07_KEY_A\n    models:\n      m: {{}}\n  b:\n    api: {}/v1\n    key_env: HERMES_T07_KEY_B\n    models:\n      m: {{}}\n",
+        server_a.uri().trim_end_matches('/'),
+        server_b.uri().trim_end_matches('/'),
+    ))
+    .expect("test config must parse");
+
+    std::env::set_var("HERMES_T07_KEY_A", "t07-a-key");
+    std::env::set_var("HERMES_T07_KEY_B", "t07-b-key");
+
+    let registry = ProviderRegistry::from_config(&config);
+    let provider = registry
+        .select_with_fallback(None, Some("a"), None, Some(&config))
+        .expect("config-driven fallback chain must build");
+
+    let stream = provider
+        .chat(&[Turn::User {
+            content: "ping".into(),
+        }])
+        .await
+        .expect("fallback must recover via B");
+    let raw: Vec<Result<Event, ProviderError>> = stream.collect().await;
+    let events: Vec<Event> = raw.into_iter().map(Result::unwrap).collect();
+    assert!(
+        events.contains(&Event::Chunk("config-b-answer".into())),
+        "must serve B's content from the config chain: {events:?}"
+    );
+
+    // Credential isolation at the config level.
+    for req in server_a.received_requests().await.unwrap() {
+        let auth = req.headers.get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("");
+        assert_eq!(auth, "Bearer t07-a-key", "A only sees its own key");
+        assert_ne!(auth, "Bearer t07-b-key", "B's key never reaches A");
+    }
+    for req in server_b.received_requests().await.unwrap() {
+        let auth = req.headers.get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("");
+        assert_eq!(auth, "Bearer t07-b-key", "B only sees its own key");
+        assert_ne!(auth, "Bearer t07-a-key", "A's key never reaches B");
+    }
+
+    std::env::remove_var("HERMES_T07_KEY_A");
+    std::env::remove_var("HERMES_T07_KEY_B");
+}

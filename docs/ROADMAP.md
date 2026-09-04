@@ -11,7 +11,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 2 — Inspection & search | 003 | Session/message inspection CLI | Done |
 | 2 — Inspection & search | 004 | FTS5 full-text search | Done |
 | 3 — Multi-model & routing | 005 | Multi-provider runtime routing | Done |
-| 3 — Multi-model & routing | 006 | Model fallback and load balancing | Not started |
+| 3 — Multi-model & routing | 006 | Model fallback and load balancing | Done |
 | 4 — Advanced agent | 007 | Tool execution sandbox | Not started |
 | 4 — Advanced agent | 008 | Memory and context management | Not started |
 | 4 — Advanced agent | 009 | Multi-turn planning and reflection | Not started |
@@ -61,10 +61,44 @@ the same `state.db` session in order, that neither provider's credential
 appears on any output path, and that a failed switch keeps the active provider
 (and its credential) unchanged.
 
+## Spec 006 closure
+
+Spec 006 ("Model fallback and load balancing") is complete. Providers absorb
+transient upstream failures with a bounded exponential backoff, fall back to an
+ordered `model.fallback_chain` of providers when the active one fails, and
+track per-provider health in memory so a recently-failing endpoint is not
+hammered repeatedly in one session. An advisory-only context-length estimator
+(`char/4`) is available for later memory/context work. A `BEGIN IMMEDIATE`
+transaction in `SessionStore::save_turn` also removed a class of
+rollback-journal lock-ordering deadlocks that made the concurrent-write test
+flaky under load.
+
+The seven tickets and their landing commits:
+
+| Ticket | Scope | Commit |
+|---|---|---|
+| 01 | Error taxonomy & client timeout | `9ad81d8` |
+| 02 | Bounded exponential-backoff retry | `e4dfa6a` |
+| 03 | Ordered provider fallback chain | `e4c4d5f` |
+| 04 | Advisory context-length estimation | `d79518c` |
+| 05 | In-memory per-provider cooldown | `f2b8d9c` |
+| 06 | SQLite IO hardening (`BEGIN IMMEDIATE`) | `88c812e` |
+| 07 | Parity, docs, E2E closure proof | this commit |
+
+Closure proof (Spec 006): `crates/hermes-core/tests/provider_fallback_integration.rs`
+drives a config-declared `model.fallback_chain` through the registry into a live
+`FallbackProvider`. With provider A persistently down, the request falls back to
+provider B over the wire, B's response is the one served, and two-server
+assertions prove A's key never reaches B and vice-versa. Companion tests cover a
+down-provider being skipped during cooldown and recovered afterward, aggregate
+`ProviderError::Fallback` naming every hop tried, and B's answer being the only
+assistant text persisted to `state.db`.
+
 ## Verification
 
-Last full run: `cargo test --workspace` — 119 passed, 0 failed (2 consecutive
-full runs stable); `clippy --workspace --all-targets -D warnings` clean.
+Last full run: `cargo test --workspace` — 166 passed, 0 failed (multiple
+consecutive full runs stable; the concurrency test also ran 12× sequentially);
+`clippy --workspace --all-targets -D warnings` clean.
 
 ## Invariants
 

@@ -37,7 +37,39 @@ Python Hermes uses for user-defined `providers:` entries:
   completions endpoints; streaming is normalized to the same provider-neutral
   event sequence so a switch is transparent to callers.
 
-## Differences ⚠️
+## Spec 006 — retry, fallback & health parity
+
+Rust now absorbs transient upstream failures and automatically routes around a
+failing provider, layered on top of the Spec 005 provider model:
+
+- **Bounded retry.** `HttpProvider` retries transient pre-stream errors (429
+  and 5xx, per `ProviderError::is_retryable`) with a bounded exponential
+  backoff (`RetryPolicy` default: 3 attempts, 200 ms base, 2 s cap). Retry only
+  happens before a stream starts, so no partial turn is ever retried.
+- **Fallback chain.** `model.fallback_chain: [b, c]` declares the ordered
+  providers to try after the active one. `FallbackProvider` is a `Provider`
+  wrapper, so `ConversationRunner` and the REPL keep seeing a single provider.
+  A hop is retried per its own policy first; only after it exhausts (or errors
+  permanently) does the chain move on with the same `turns` from the start. An
+  unknown chain name is rejected at startup; a hop that fails to *build* is
+  skipped cleanly as long as its name was declared. Startup resolves via
+  `select_with_fallback`; the manual `/provider <name>` switch stays
+  single-provider, so an explicit user choice bypasses fallback.
+- **Per-hop credential isolation.** Each hop is built by the registry and uses
+  its own `key_env`/`model.api_key`, so provider A's key never reaches
+  provider B's endpoint. This is proven by two-server wiremock tests asserting
+  each endpoint only ever sees its own `Authorization` header.
+- **Health / cooldown.** An in-memory `HealthTracker` records a provider that
+  fails (after its retries) as cooling down for a bounded window (default
+  60 s). `FallbackProvider` skips a cooling-down hop, so a struggling endpoint
+  is not hammered repeatedly in one session. `Cancelled` is never recorded as a
+  failure, and manual `/provider` bypasses cooldown. State is process-lifetime
+  only — never written to `state.db`.
+
+Python Hermes has no equivalent automatic retry/fallback/health layer in the
+Rust parity slice; these are Rust-side resilience behaviors. If the active
+request ultimately fails on every hop, `ProviderError::Fallback` names the
+providers that were tried.
 
 ## Differences ⚠️
 
