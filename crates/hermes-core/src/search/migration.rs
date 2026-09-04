@@ -15,7 +15,6 @@ const MIGRATIONS: &[Migration] = &[
             content,
             role,
             session_id UNINDEXED,
-            message_id UNINDEXED,
             content='messages',
             content_rowid='id'
         );"#,

@@ -28,7 +28,7 @@ The index is not canonical data and may be deleted and rebuilt from `messages`.
 | `content` | yes | Message full-text content |
 | `role` | yes | Role filtering/search |
 | `session_id` | no | Result association and optional scope filter |
-| `message_id` | no | Canonical message row association |
+Message ID is derived from the external-content FTS `rowid` (`messages.id`); it is not an FTS column.
 
 The synchronization strategy (explicit rebuild versus triggers) is deferred to the migration ticket and must not alter canonical table semantics.
 
