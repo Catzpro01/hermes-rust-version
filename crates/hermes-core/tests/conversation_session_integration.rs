@@ -193,3 +193,105 @@ fn pinned_turn_survives_window_and_still_lands_in_state_db() {
     // /messages reads the same full set.
     assert_eq!(store2.list_messages(&id).unwrap().len(), 100);
 }
+
+/// Spec 008 closure E2E (Ticket 06): a long conversation that exceeds the
+/// configured window is auto-trimmed on the send side while every canonical
+/// turn stays in state.db; a pinned turn is never lost; and no fabricated turn
+/// (a summary is never injected as a fake User) ever reaches the provider.
+#[test]
+fn spec008_long_conversation_compresses_send_but_keeps_canonical_and_protects_pin() {
+    use hermes_core::conversation::context::{estimate_turns_tokens, summarize_dropped};
+    use std::fs;
+
+    let dir = tempdir().unwrap();
+    let db = dir.path().join("state.db");
+    let mut store = SessionStore::open(&db).unwrap();
+    let id = store.create_session("cli").unwrap();
+
+    // 120 distinct user turns, each ~40 chars => ~10 tokens each. Unique content
+    // so we can prove exactly which turns reach the model.
+    let mut history: Vec<Turn> = (0..120)
+        .map(|i| Turn::User {
+            content: format!(
+                "{i}-UNIQ-{}",
+                "x".repeat(36 - format!("{i}").len().min(36))
+            ),
+        })
+        .collect();
+    // An early, distinctive "fact" the user pins so it must survive.
+    history[3] = Turn::User {
+        content: "PINNED-EARLY-FACT".into(),
+    };
+    // context_limit approximates what config compression.target_max_tokens
+    // would set: fits ~15 turns.
+    let limit: u64 = 150;
+    let mut runner = ConversationRunner::from_turns(FakeProvider, history.clone());
+    runner.set_context_limit(Some(limit));
+    runner.pin(3).unwrap();
+
+    // (a) The window is active: the next request body fits the limit and the
+    // oldest turns are reported dropped (so /info would show a summary).
+    let sent = runner.turns_to_send();
+    let sent_est = estimate_turns_tokens(&sent) as u64;
+    assert!(sent_est <= limit, "send window must fit limit, got {sent_est}");
+    let dropped = runner.dropped_turns();
+    assert!(!dropped.is_empty(), "long conversation must drop from the send side");
+    // Summary of the dropped turns is available for /info visibility.
+    let summary = summarize_dropped(&dropped);
+    assert!(!summary.is_empty());
+
+    // (c1) The most recent turn is always sent.
+    assert_eq!(sent.last(), history.last(), "newest turn always sent");
+    // (c2) The pinned early fact is always sent and never dropped.
+    assert!(
+        sent.iter().any(|t| matches!(t, Turn::User { content } if content == "PINNED-EARLY-FACT")),
+        "pinned fact must be sent"
+    );
+    assert!(
+        !dropped
+            .iter()
+            .any(|t| matches!(t, Turn::User { content } if content == "PINNED-EARLY-FACT")),
+        "pinned fact must never be dropped"
+    );
+    // (c3) The summary is NEVER injected: every turn handed to the provider is a
+    // verbatim member of the original user history — no fabricated User (or any
+    // synthetic) turn was added.
+    for t in &sent {
+        assert!(
+            history.contains(t),
+            "provider context must be a subset of real history; no fake turn injected"
+        );
+    }
+    assert!(
+        !sent.iter().any(|t| matches!(t, Turn::Assistant { .. }) || matches!(t, Turn::Tool { .. })),
+        "no assistant/tool turns were fabricated for this send"
+    );
+
+    // (b) REPL persists the FULL history; state.db (and /messages) show every
+    // turn, including those dropped from the send side and the pinned one.
+    for t in runner.turns().to_vec() {
+        store.save_turn(&id, &t).unwrap();
+    }
+    drop(store);
+
+    let before = fs::read(&db).unwrap();
+    let store2 = SessionStore::open(&db).unwrap();
+    let resumed = store2.resume(&id).unwrap();
+    assert_eq!(resumed.turns.len(), 120, "state.db keeps the full history");
+    assert!(
+        resumed
+            .turns
+            .iter()
+            .any(|t| matches!(t, Turn::User { content } if content == "PINNED-EARLY-FACT"))
+    );
+    // A turn that the window DROPS from the send side is still canonical and
+    // appears first in the resumed full history.
+    assert_eq!(resumed.turns[0], history[0], "dropped-from-send turn stays canonical");
+    assert_eq!(store2.list_messages(&id).unwrap().len(), 120);
+    drop(store2);
+    assert_eq!(
+        before,
+        fs::read(&db).unwrap(),
+        "read/resume must not alter state.db"
+    );
+}

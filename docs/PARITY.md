@@ -71,6 +71,33 @@ Rust parity slice; these are Rust-side resilience behaviors. If the active
 request ultimately fails on every hop, `ProviderError::Fallback` names the
 providers that were tried.
 
+## Spec 008 — memory & context parity
+
+Rust adds an advisory context-management layer on the send side. Python Hermes
+at the time of this slice has no first-class, persisted "summary turn"; these
+are Rust-side behaviors, tracked in ADR 0003:
+
+- **Advisory context accounting.** A `char/4` token estimator feeds `/info`
+  (`estimated context ~N tokens`) and a non-blocking warning when the estimate
+  exceeds the configured limit. This is advisory — it never blocks a request.
+- **Sliding window (send-side only).** When the active window limit is set
+  (`provider.context_length` > `model.context_length` >
+  `compression.target_max_tokens`, per config precedence), `turns_to_send`
+  returns a trimmed *copy*. `self.turns` and `state.db` always keep the full
+  history, so `/messages` shows every turn even after many requests.
+- **Pinned turns.** `/pin <n>` keeps a turn inside the window regardless of its
+  age; pins are in-memory per-session (never written to `state.db`) and are
+  cleared by `/new` and `/resume`. A pinned set that alone exceeds the budget is
+  still sent (never dropped), surfacing a warning instead.
+- **Compression wiring.** `compression.enabled: true` + `compression.target_max_tokens`
+  turns the window on via the same context-limit channel; the default is off,
+  so configs written before this field behave unchanged. `/info` shows
+  `compression: on/off`.
+- **Summarization (display-only).** `/info` summarizes the turns the window
+  would drop. The summary is heuristic, redacted/sanitized, and **never
+  injected into the model context**; ADR 0003 fixes the future
+  `Turn::Summary` representation so no fake `User` turn is ever introduced.
+
 ## Differences ⚠️
 
 | Feature | Python | Rust | Impact |

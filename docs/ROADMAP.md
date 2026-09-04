@@ -13,7 +13,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 3 — Multi-model & routing | 005 | Multi-provider runtime routing | Done |
 | 3 — Multi-model & routing | 006 | Model fallback and load balancing | Done |
 | 4 — Advanced agent | 007 | Tool execution sandbox | Not started |
-| 4 — Advanced agent | 008 | Memory and context management | Not started |
+| 4 — Advanced agent | 008 | Memory and context management | Done |
 | 4 — Advanced agent | 009 | Multi-turn planning and reflection | Not started |
 | 5 — Ecosystem | 010 | Plugin/extension system (WASM) | Not started |
 | 5 — Ecosystem | 011 | MCP server | Not started |
@@ -94,9 +94,38 @@ down-provider being skipped during cooldown and recovered afterward, aggregate
 `ProviderError::Fallback` naming every hop tried, and B's answer being the only
 assistant text persisted to `state.db`.
 
+## Spec 008 closure
+
+Spec 008 ("Memory and context management") is complete. A `char/4` advisory
+estimator, a send-side sliding window, per-session pinned turns, config-driven
+compression wiring, and display-only summarization of dropped turns are all
+landed. The window trims only the copy handed to the provider — `self.turns`
+and `state.db` always keep the full history. ADR 0003 records the agreed
+`Turn::Summary` representation so the future summary-injection feature never
+introduces a fake `User` turn.
+
+The six tickets and their landing commits:
+
+| Ticket | Scope | Commit |
+|---|---|---|
+| 01 | Advisory context-length accounting + `/info` | `56f0122` |
+| 02 | Send-side sliding window | `7d96fd3` |
+| 03 | Heuristic summarization of dropped turns (display-only) | `a7fef42` |
+| 04 | Pinned messages (`/pin`, `/unpin`, `/pinned`) | `da05b73` |
+| 05 | Compression config wiring into the context window | `f21753d` |
+| 06 | Parity, docs, E2E closure proof | this commit |
+
+Closure proof (Spec 008): `spec008_long_conversation_compresses_send_but_keeps_canonical_and_protects_pin`
+in `crates/hermes-core/tests/conversation_session_integration.rs` drives a
+120-turn history over the configured limit and asserts the send window fits the
+budget, the newest and a pinned turn are always sent, the dropped-turn summary
+is never injected (the provider receives only verbatim history turns), and
+`state.db`/`/messages` still expose every canonical turn while read/resume
+leaves the file byte-identical.
+
 ## Verification
 
-Last full run: `cargo test --workspace` — 166 passed, 0 failed (multiple
+Last full run: `cargo test --workspace` — 198 passed, 0 failed (multiple
 consecutive full runs stable; the concurrency test also ran 12× sequentially);
 `clippy --workspace --all-targets -D warnings` clean.
 

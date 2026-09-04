@@ -6,21 +6,21 @@ pola closure Spec 005/006.
 
 **Blocked by:** 01–05.
 
-**Status:** todo
+**Status:** done — Spec 008 closure commit di VM, suite hijau, clippy clean.
 
 ## Kriteria
 
-- [ ] E2E: percakapan panjang (melebihi batas) → window aktif → request
+- [x] E2E: percakapan panjang (melebihi batas) → window aktif → request
       berikutnya `estimate_turns_tokens <= limit`; ringkasan/inti hadir.
-- [ ] E2E: state.db tetap menyimpan seluruh turn asli (window tak menghapus
+- [x] E2E: state.db tetap menyimpan seluruh turn asli (window tak menghapus
       canonical), termasuk turn yang di-drop dari kiriman.
-- [ ] E2E negative: turn yang di-pin tidak pernah hilang dari kiriman; ringkasan
+- [x] E2E negative: turn yang di-pin tidak pernah hilang dari kiriman; ringkasan
       tidak disuntik sebagai pesan User palsu.
-- [ ] Regresi: seluruh suite hijau; jumlah test dilaporkan, bukan diasumsikan.
-- [ ] `docs/PARITY.md` diperbarui dengan perilaku memory/context (sliding
+- [x] Regresi: seluruh suite hijau; jumlah test dilaporkan, bukan diasumsikan.
+- [x] `docs/PARITY.md` diperbarui dengan perilaku memory/context (sliding
       window, summarization, pin) vs Python.
-- [ ] `docs/ROADMAP.md`: Spec 008 → Done, hanya setelah suite hijau.
-- [ ] `smoke_python_hermes_untouched` tetap lulus.
+- [x] `docs/ROADMAP.md`: Spec 008 → Done, hanya setelah suite hijau.
+- [x] `smoke_python_hermes_untouched` tetap lulus.
 
 ## Pelajaran yang wajib diterapkan (Spec 004/005/006)
 
