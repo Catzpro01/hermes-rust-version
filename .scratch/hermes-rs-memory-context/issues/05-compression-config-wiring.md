@@ -8,7 +8,7 @@ seperti sekarang.
 
 **Blocked by:** 01 (accounting), 02 (window shape).
 
-**Status:** todo
+**Status:** done — commit di VM, 192+ test hijau, clippy clean.
 
 ## Kondisi sekarang (terverifikasi)
 
@@ -30,16 +30,16 @@ ketiadaan semua batas => matikan window (kirim penuh). REPL meneruskan
 
 ## Kriteria
 
-- [ ] REPL membaca `config.compression`/`context_length` dan meneruskan
+- [x] REPL membaca `config.compression`/`context_length` dan meneruskan
       batas + flag aktif ke `ConversationRunner` (via builder/setter, bukan
       global).
-- [ ] Precedence batas eksplisit & di-test (provider.context_length >
+- [x] Precedence batas eksplisit & di-test (provider.context_length >
       model.context_length > compression.target_max_tokens).
-- [ ] Default: tak ada `compression`/`context_length` => window off, perilaku
+- [x] Default: tak ada `compression`/`context_length` => window off, perilaku
       identik dgn sekarang (regresi nol).
-- [ ] `enabled:false` memaksa window off meski `target_max_tokens` ada.
-- [ ] Test parsing + perilaku aktif/off + precedence (angka di-pin).
-- [ ] Tidak menambah dependency; seluruh perilaku di jalankan lewat helper
+- [x] `enabled:false` memaksa window off meski `target_max_tokens` ada.
+- [x] Test parsing + perilaku aktif/off + precedence (angka di-pin).
+- [x] Tidak menambah dependency; seluruh perilaku di jalankan lewat helper
       Spec 006 #04.
 
 ## STRIDE

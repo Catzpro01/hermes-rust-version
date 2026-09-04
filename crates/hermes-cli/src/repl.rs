@@ -71,15 +71,17 @@ pub async fn run_repl(
     let mut runner = ConversationRunner::from_turns(provider, existing);
     // Advisory context limit resolved from config precedence for the active
     // provider (ProviderConfig.context_length -> ModelConfig.context_length ->
-    // None). Feeds the runner's token accounting + pre-send warning.
-    let mut context_limit = resolve_context_limit(config.as_ref(), &provider_name);
-    runner.set_context_limit(context_limit);
+    // compression.target_max_tokens -> None). Feeds the runner's token
+    // accounting + pre-send warning.
+    let mut ctx = resolve_context(config.as_ref(), &provider_name);
+    runner.set_context_limit(ctx.limit);
     println!("Hermes-RS session {session_id} (provider {provider_name})");
     println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
-    if let Some(limit) = context_limit {
+    if let Some(limit) = ctx.limit {
         println!(
-            "[context ~{} tokens / limit {limit}]",
-            runner.estimated_tokens()
+            "[context ~{} tokens / limit {limit} | compression {}]",
+            runner.estimated_tokens(),
+            compression_label(&ctx)
         );
     }
     let editor = Arc::new(Mutex::new(editor));
@@ -205,15 +207,17 @@ pub async fn run_repl(
             }
             // `/info` shows current context accounting for the active provider.
             "/info" => {
-                let limit = context_limit
+                let limit = ctx
+                    .limit
                     .map(|l| l.to_string())
                     .unwrap_or_else(|| "none".to_owned());
                 let sent = runner.turns().len().saturating_sub(runner.dropped_turns().len());
                 println!(
-                    "provider: {provider_name} | estimated context: ~{} tokens | limit: {limit} | window: {sent}/{} turns sent | pinned: {}",
+                    "provider: {provider_name} | estimated context: ~{} tokens | limit: {limit} | window: {sent}/{} turns sent | pinned: {} | compression: {}",
                     runner.estimated_tokens(),
                     runner.turns().len(),
-                    runner.pinned().len()
+                    runner.pinned().len(),
+                    compression_label(&ctx)
                 );
                 if let Some(w) = runner.context_warning() {
                     println!("{w}");
@@ -297,9 +301,10 @@ pub async fn run_repl(
                         Ok(new_provider) => {
                             runner.replace_provider(new_provider);
                             provider_name = target.to_owned();
-                            // Context limit follows the active provider.
-                            context_limit = resolve_context_limit(config.as_ref(), &provider_name);
-                            runner.set_context_limit(context_limit);
+                            // Context limit (and compression status) follow the
+                            // active provider.
+                            ctx = resolve_context(config.as_ref(), &provider_name);
+                            runner.set_context_limit(ctx.limit);
                             println!("Switched provider to {target}");
                         }
                         Err(err) => {
@@ -378,18 +383,53 @@ fn parse_index_arg(command: &str) -> Result<usize, anyhow::Error> {
         .map_err(|_| anyhow::anyhow!("'{raw}' is not a valid turn index"))
 }
 
-/// Resolves the advisory context limit for the active provider from config
+/// The resolved window configuration for the active provider. Carries both the
+/// effective limit (fed to the sliding window) and enough context to render a
+/// human-readable `/info` line about compression status.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ResolvedContext {
+    limit: Option<u64>,
+    compression_enabled: bool,
+    compression_target: Option<u64>,
+}
+
+/// Resolves the advisory context window for the active provider from config
 /// precedence: `providers[<active>].context_length` first, then
-/// `model.context_length`, then `None` (no known limit). The active name may be
-/// a declared provider or a model-level/`fake` entry; the latter falls back to
-/// the model-level value or `None`. Pure and unit-testable.
-fn resolve_context_limit(config: Option<&HermesConfig>, active: &str) -> Option<u64> {
-    let config = config?;
-    config
-        .providers
-        .get(active)
-        .and_then(|p| p.context_length)
-        .or(config.model.context_length)
+/// `model.context_length`, then `compression.target_max_tokens` (only when
+/// `compression.enabled` is explicitly true), then `None`. The active name may
+/// be a declared provider or a model-level/`fake` entry; the latter falls back
+/// to the model-level value or `None`. Pure and unit-testable.
+fn resolve_context(config: Option<&HermesConfig>, active: &str) -> ResolvedContext {
+    let compression = config.and_then(|c| c.compression.as_ref());
+    // Compression is OFF by default (backward compatible): it only contributes
+    // a limit when the user explicitly set `enabled: true`.
+    let compression_enabled = compression.map(|c| c.enabled == Some(true)).unwrap_or(false);
+    let compression_target = compression.and_then(|c| c.target_max_tokens);
+    let provider_limit = config
+        .and_then(|c| c.providers.get(active))
+        .and_then(|p| p.context_length);
+    let model_limit = config.and_then(|c| c.model.context_length);
+    // Compression contributes a target only while enabled; otherwise the
+    // window stays unset even if a target is present.
+    let compression_limit = if compression_enabled { compression_target } else { None };
+    let limit = provider_limit.or(model_limit).or(compression_limit);
+    ResolvedContext {
+        limit,
+        compression_enabled,
+        compression_target,
+    }
+}
+
+/// Human-readable compression status for `/info` and the startup banner:
+/// "off", "on (no target)", or "on (target ~N tokens)".
+fn compression_label(ctx: &ResolvedContext) -> String {
+    if !ctx.compression_enabled {
+        return "off".to_owned();
+    }
+    match ctx.compression_target {
+        Some(t) => format!("on (target ~{t} tokens)"),
+        None => "on (no target)".to_owned(),
+    }
 }
 
 /// Prints every registered provider (sorted) with the active one marked. If the
@@ -409,7 +449,20 @@ fn list_providers(registry: &ProviderRegistry, active: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hermes_core::config::CompressionConfig;
     use hermes_core::provider::{FAKE_PROVIDER, ProviderRegistry};
+
+    /// Convenience: limit-only view of the resolved window for assertions.
+    fn lim(config: Option<&HermesConfig>, active: &str) -> Option<u64> {
+        resolve_context(config, active).limit
+    }
+
+    fn compression(enabled: bool, target: Option<u64>) -> CompressionConfig {
+        CompressionConfig {
+            enabled: Some(enabled),
+            target_max_tokens: target,
+        }
+    }
 
     #[test]
     fn resolve_provider_resolves_the_builtin_fake_offline() {
@@ -451,8 +504,8 @@ mod tests {
 
     #[test]
     fn context_limit_none_without_config() {
-        assert_eq!(resolve_context_limit(None, "fake"), None);
-        assert_eq!(resolve_context_limit(Some(&HermesConfig::default()), "fake"), None);
+        assert_eq!(lim(None, "fake"), None);
+        assert_eq!(lim(Some(&HermesConfig::default()), "fake"), None);
     }
 
     #[test]
@@ -463,9 +516,9 @@ mod tests {
             .providers
             .insert("b".to_owned(), provider_config(Some(4000)));
         // Declared provider uses its own context_length.
-        assert_eq!(resolve_context_limit(Some(&config), "b"), Some(4000));
+        assert_eq!(lim(Some(&config), "b"), Some(4000));
         // An undeclared active (e.g. model-level/fake) falls back to model.
-        assert_eq!(resolve_context_limit(Some(&config), "fake"), Some(200));
+        assert_eq!(lim(Some(&config), "fake"), Some(200));
     }
 
     #[test]
@@ -476,13 +529,70 @@ mod tests {
             .providers
             .insert("b".to_owned(), provider_config(None));
         // Provider 'b' declared but no context_length -> model value.
-        assert_eq!(resolve_context_limit(Some(&config), "b"), Some(300));
+        assert_eq!(lim(Some(&config), "b"), Some(300));
     }
 
     #[test]
     fn context_limit_is_none_when_nothing_configured() {
         let config = HermesConfig::default();
-        assert_eq!(resolve_context_limit(Some(&config), "fake"), None);
-        assert_eq!(resolve_context_limit(Some(&config), "b"), None);
+        assert_eq!(lim(Some(&config), "fake"), None);
+        assert_eq!(lim(Some(&config), "b"), None);
+    }
+
+    #[test]
+    fn compression_off_by_default_even_with_a_target() {
+        let mut config = HermesConfig::default();
+        // enabled absent (None) -> OFF regardless of target. Defaults when
+        // `compression:` absent entirely.
+        assert!(!resolve_context(Some(&config), "fake").compression_enabled);
+        config.compression = Some(compression(false, Some(5000)));
+        assert!(!resolve_context(Some(&config), "fake").compression_enabled);
+        assert_eq!(lim(Some(&config), "fake"), None, "disabled compression must not trim");
+    }
+
+    #[test]
+    fn compression_enabled_target_becomes_the_limit_when_nothing_else_set() {
+        let config = HermesConfig {
+            compression: Some(compression(true, Some(3000))),
+            ..HermesConfig::default()
+        };
+        let ctx = resolve_context(Some(&config), "fake");
+        assert!(ctx.compression_enabled);
+        assert_eq!(ctx.limit, Some(3000));
+        // Label reflects the target.
+        assert_eq!(compression_label(&ctx), "on (target ~3000 tokens)");
+    }
+
+    #[test]
+    fn compression_precedence_sits_below_provider_and_model() {
+        // provider > model > compression: even if compression is enabled with a
+        // target, provider/model context_length win.
+        let mut config = HermesConfig::default();
+        config.model.context_length = Some(2000);
+        config.compression = Some(compression(true, Some(500)));
+        config
+            .providers
+            .insert("b".to_owned(), provider_config(Some(4000)));
+        assert_eq!(lim(Some(&config), "b"), Some(4000), "provider wins over compression");
+        assert_eq!(lim(Some(&config), "fake"), Some(2000), "model wins over compression");
+    }
+
+    #[test]
+    fn compression_enabled_without_target_leaves_window_unset() {
+        let config = HermesConfig {
+            compression: Some(compression(true, None)),
+            ..HermesConfig::default()
+        };
+        let ctx = resolve_context(Some(&config), "fake");
+        assert!(ctx.compression_enabled);
+        assert_eq!(ctx.limit, None);
+        assert_eq!(compression_label(&ctx), "on (no target)");
+    }
+
+    #[test]
+    fn compression_label_is_off_when_disabled() {
+        let ctx = resolve_context(Some(&HermesConfig::default()), "fake");
+        assert_eq!(compression_label(&ctx), "off");
+        assert_eq!(ctx.limit, None);
     }
 }
