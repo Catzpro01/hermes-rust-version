@@ -9,6 +9,9 @@ use std::collections::HashSet;
 use tokio_util::sync::CancellationToken;
 
 pub mod context;
+pub mod goal;
+
+use goal::{GoalStatus, GoalTracker};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Turn {
@@ -47,6 +50,10 @@ pub struct ConversationRunner<P> {
     /// to `self.turns` positions; they are cleared when turns are replaced
     /// (`/new`, `/resume`) so stale indices never dangle.
     pinned: HashSet<usize>,
+    /// Spec 009 (Ticket 01) — advisory, in-memory goal state. Inactive by
+    /// default so behavior is unchanged unless tracking is enabled. Never
+    /// persisted; never introduces a new role/Turn variant.
+    goal: GoalTracker,
 }
 impl<P: Provider> ConversationRunner<P> {
     pub fn new(provider: P) -> Self {
@@ -55,6 +62,7 @@ impl<P: Provider> ConversationRunner<P> {
             turns: Vec::new(),
             context_limit: None,
             pinned: HashSet::new(),
+            goal: GoalTracker::new(),
         }
     }
     pub fn turns(&self) -> &[Turn] {
@@ -66,6 +74,7 @@ impl<P: Provider> ConversationRunner<P> {
             turns,
             context_limit: None,
             pinned: HashSet::new(),
+            goal: GoalTracker::new(),
         }
     }
 
@@ -134,6 +143,40 @@ impl<P: Provider> ConversationRunner<P> {
     /// Whether the turn at `index` is currently pinned.
     pub fn is_pinned(&self, index: usize) -> bool {
         self.pinned.contains(&index)
+    }
+
+    // -- Spec 009 goal tracking (Ticket 01) --------------------------------
+
+    /// Enables/disables auto-recording a goal from the initiating user turn of
+    /// an agentic session.
+    pub fn set_goal_tracking(&mut self, on: bool) {
+        self.goal.set_tracking(on);
+    }
+    pub fn goal_tracking(&self) -> bool {
+        self.goal.tracking()
+    }
+    /// The currently tracked goal text, if any.
+    pub fn goal(&self) -> Option<&str> {
+        self.goal.goal()
+    }
+    pub fn goal_status(&self) -> GoalStatus {
+        self.goal.status()
+    }
+    /// Records `text` as the active goal (marks it in progress).
+    pub fn set_goal(&mut self, text: String) -> bool {
+        self.goal.record(text)
+    }
+    /// Explicitly sets the goal lifecycle status (used by later tickets on
+    /// completion/blocking). No-op when no goal is active.
+    pub fn set_goal_status(&mut self, status: GoalStatus) {
+        self.goal.set_status(status);
+    }
+    pub fn reset_goal(&mut self) {
+        self.goal.reset();
+    }
+    /// Clears goal/pin state when a session's turns are replaced.
+    fn clear_goal(&mut self) {
+        self.goal.reset();
     }
 
     /// Indices (ascending) that the sliding window would send next. Always
@@ -217,6 +260,8 @@ impl<P: Provider> ConversationRunner<P> {
         // Pins are indices into the previous history; a replaced history
         // (/new, /resume) invalidates them, so clear to avoid dangling pins.
         self.pinned.clear();
+        // Goal state belongs to the previous session too.
+        self.clear_goal();
     }
 
     /// Swaps the provider backing this runner. The conversation history in
@@ -268,9 +313,14 @@ impl<P: Provider> ConversationRunner<P> {
         max_iters: usize,
         cancel: CancellationToken,
     ) -> Result<AgenticResult, ProviderError> {
+        let content: String = content.into();
         self.turns.push(Turn::User {
-            content: content.into(),
+            content: content.clone(),
         });
+        // Spec 009 (Ticket 01): when goal tracking is on and no goal is set
+        // yet, treat this initiating user prompt as the goal. Off by default,
+        // so this never fires unless the user enables it (zero regression).
+        self.goal.record_if_tracking_empty(&content);
         // Advisory (never blocking): warn if the full context is estimated to
         // exceed the runner's context limit before we send it. Truncation is a
         // later ticket (sliding window); here we only surface a warning.
@@ -609,5 +659,48 @@ mod tests {
         );
         // self.turns not mutated.
         assert_eq!(r.turns().len(), 5);
+    }
+
+    #[tokio::test]
+    async fn goal_tracking_defaults_off_and_records_nothing() {
+        let mut r = runner_with(vec![]);
+        assert!(!r.goal_tracking(), "tracking must default off");
+        // A normal turn with tracking off leaves no goal (zero regression).
+        let reg = ToolRegistry::new();
+        let _ = r
+            .chat_agentic("do the task", &reg, None, 10, CancellationToken::new())
+            .await;
+        assert_eq!(r.goal(), None);
+        assert_eq!(r.goal_status(), GoalStatus::NotStarted);
+    }
+
+    #[tokio::test]
+    async fn goal_tracking_records_first_user_turn_when_enabled() {
+        let mut r = ConversationRunner::new(FakeProvider);
+        r.set_goal_tracking(true);
+        let reg = ToolRegistry::new();
+        let _ = r
+            .chat_agentic("fetch the monthly report", &reg, None, 10, CancellationToken::new())
+            .await;
+        assert_eq!(r.goal(), Some("fetch the monthly report"));
+        assert_eq!(r.goal_status(), GoalStatus::InProgress);
+        // A later turn does not overwrite the first goal.
+        let _ = r
+            .chat_agentic("also email it", &reg, None, 10, CancellationToken::new())
+            .await;
+        assert_eq!(r.goal(), Some("fetch the monthly report"));
+    }
+
+    #[test]
+    fn goal_api_exposes_set_status_and_reset() {
+        let mut r = runner_with(vec![]);
+        assert!(r.set_goal("build x".into()));
+        assert_eq!(r.goal_status(), GoalStatus::InProgress);
+        r.set_goal_status(GoalStatus::Achieved);
+        assert_eq!(r.goal_status(), GoalStatus::Achieved);
+        // replace_turns (e.g. /new, /resume) clears goal + pins together.
+        r.replace_turns(vec![Turn::User { content: "y".into() }]);
+        assert_eq!(r.goal(), None);
+        assert_eq!(r.goal_status(), GoalStatus::NotStarted);
     }
 }

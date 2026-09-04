@@ -6,7 +6,7 @@ dipakai tiket 02–04 (plan dibentuk utk goal, refleksi menilai hasil thd goal).
 
 **Blocked by:** —
 
-**Status:** breakdown (belum implementasi).
+**Status:** done — commit di VM, 209 test hijau, clippy clean.
 
 ## Kondisi sekarang (terverifikasi)
 
@@ -37,16 +37,16 @@ dipakai tiket 02–04 (plan dibentuk utk goal, refleksi menilai hasil thd goal).
 
 ## Kriteria
 
-- [ ] Ekstraksi goal heuristik dari `Turn::User` pertama: deterministik &
+- [x] Ekstraksi goal heuristik dari `Turn::User` pertama: deterministik &
       char-safe (uji dengan CJK).
-- [ ] `GoalTracker` mencatat status kemajuan per iterasi (progress `0.0..=1.0`
+- [x] `GoalTracker` mencatat status kemajuan per iterasi (progress `0.0..=1.0`
       atau enum `NotStarted|InProgress|Achieved|Blocked`) dan bisa
       di-set/di-kueri dari `chat_agentic`.
-- [ ] `/goal` di REPL menampilkan goal + status; kosong bila belum ada.
-- [ ] Default (tanpa aktivasi) tidak mengubah perilaku `chat_agentic`
+- [x] `/goal` di REPL menampilkan goal + status; kosong bila belum ada.
+- [x] Default (tanpa aktivasi) tidak mengubah perilaku `chat_agentic`
       (regresi nol).
-- [ ] Test unit + integration mem-pin angka/status; seluruh suite tetap hijau.
-- [ ] Clippy `-D warnings` bersih.
+- [x] Test unit + integration mem-pin angka/status; seluruh suite tetap hijau.
+- [x] Clippy `-D warnings` bersih.
 
 ## STRIDE
 

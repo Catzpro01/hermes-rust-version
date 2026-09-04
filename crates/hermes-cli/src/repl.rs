@@ -8,6 +8,7 @@ use async_trait::async_trait;
 use hermes_core::{
     config::HermesConfig,
     conversation::context::summarize_dropped,
+    conversation::goal::GoalStatus,
     conversation::{AgenticResult, ConversationRunner},
     provider::{Provider, ProviderError, ProviderRegistry, RegistryError},
     session::SessionStore,
@@ -76,7 +77,7 @@ pub async fn run_repl(
     let mut ctx = resolve_context(config.as_ref(), &provider_name);
     runner.set_context_limit(ctx.limit);
     println!("Hermes-RS session {session_id} (provider {provider_name})");
-    println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
+    println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
     if let Some(limit) = ctx.limit {
         println!(
             "[context ~{} tokens / limit {limit} | compression {}]",
@@ -279,6 +280,45 @@ pub async fn run_repl(
                         })
                         .collect();
                     println!("pinned: {}", labels.join(" | "));
+                }
+                continue;
+            }
+            // `/goal` shows the active tracked goal (Spec 009 Ticket 01). The
+            // goal is advisory in-memory state; display is sanitized/redacted.
+            "/goal" => match runner.goal() {
+                None => println!("no active goal (run `/goal on` to auto-track)"),
+                Some(text) => {
+                    let safe =
+                        hermes_core::search::redact::redact_credentials(&sanitize_untrusted_output(
+                            text,
+                        ));
+                    println!("goal [{}]: {safe}", runner.goal_status().as_str());
+                }
+            },
+            // `/goal on|off|reset` controls Spec 009 goal tracking.
+            command if command.starts_with("/goal ") => {
+                match command.trim_start_matches("/goal").trim() {
+                    "on" => {
+                        runner.set_goal_tracking(true);
+                        println!("Goal tracking on (records your next task)");
+                    }
+                    "off" => {
+                        runner.set_goal_tracking(false);
+                        println!("Goal tracking off");
+                    }
+                    "reset" => {
+                        runner.reset_goal();
+                        println!("Goal cleared");
+                    }
+                    "achieved" => {
+                        runner.set_goal_status(GoalStatus::Achieved);
+                        println!("Goal marked achieved");
+                    }
+                    "blocked" => {
+                        runner.set_goal_status(GoalStatus::Blocked);
+                        println!("Goal marked blocked");
+                    }
+                    other => eprintln!("error: unknown /goal arg '{other}' (use on|off|reset)"),
                 }
                 continue;
             }
