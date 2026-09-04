@@ -83,6 +83,37 @@ impl<P: Provider> ConversationRunner<P> {
     pub fn context_warning(&self) -> Option<String> {
         crate::conversation::context::check_context_limit(&self.turns, self.context_limit)
     }
+
+    /// Returns the slice of turns to send to the provider (Ticket 02).
+    ///
+    /// Sliding-window invariant: this returns a **copy** trimmed to fit the
+    /// runner's `context_limit` and never mutates `self.turns`. The full
+    /// history stays in `self.turns` (and thus in `state.db`, which the REPL
+    /// persists from here); only what is handed to the model is shortened.
+    ///
+    /// - `context_limit = None` → returns the full history unchanged
+    ///   (backward compatible: no window).
+    /// - Already within budget → full history.
+    /// - Otherwise oldest turns are dropped from the front until the estimate
+    ///   fits or only one turn remains. The most recent turn (the active
+    ///   question) is never dropped.
+    pub fn turns_to_send(&self) -> Vec<Turn> {
+        let limit = match self.context_limit {
+            None => return self.turns.clone(),
+            Some(limit) => limit,
+        };
+        let over = |turns: &[Turn]| -> bool {
+            crate::conversation::context::estimate_turns_tokens(turns) as u64 > limit
+        };
+        if !over(&self.turns) {
+            return self.turns.clone();
+        }
+        let mut trimmed = self.turns.clone();
+        while trimmed.len() > 1 && over(&trimmed) {
+            trimmed.remove(0);
+        }
+        trimmed
+    }
     pub fn replace_turns(&mut self, turns: Vec<Turn>) {
         self.turns = turns;
     }
@@ -99,7 +130,9 @@ impl<P: Provider> ConversationRunner<P> {
         self.turns.push(Turn::User {
             content: content.into(),
         });
-        self.provider.chat(&self.turns).await
+        // Send only what fits the window; self.turns keeps the full history.
+        let to_send = self.turns_to_send();
+        self.provider.chat(&to_send).await
     }
 
     pub async fn chat_with_cancel(
@@ -110,7 +143,8 @@ impl<P: Provider> ConversationRunner<P> {
         self.turns.push(Turn::User {
             content: content.into(),
         });
-        self.provider.chat_with_cancel(&self.turns, cancel).await
+        let to_send = self.turns_to_send();
+        self.provider.chat_with_cancel(&to_send, cancel).await
     }
 
     pub fn push_assistant(&mut self, content: String) {
@@ -147,9 +181,12 @@ impl<P: Provider> ConversationRunner<P> {
                 self.discard_pending_user();
                 return Ok(AgenticResult::Cancelled);
             }
+            // Recompute the window each iteration (tool results may have grown
+            // the context since the last send). self.turns stays untouched.
+            let to_send = self.turns_to_send();
             let mut stream = match self
                 .provider
-                .chat_with_cancel(&self.turns, cancel.clone())
+                .chat_with_cancel(&to_send, cancel.clone())
                 .await
             {
                 Ok(stream) => stream,
@@ -321,5 +358,64 @@ mod tests {
         stream.collect::<Vec<_>>().await;
         assert_eq!(r.turns().len(), 1);
         assert_eq!(r.estimated_tokens(), crate::conversation::context::estimate_tokens(&content));
+    }
+
+    fn many_turns(n: usize, len: usize) -> Vec<Turn> {
+        (0..n)
+            .map(|i| Turn::User {
+                content: format!("{i}-{}", "x".repeat(len)),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn turns_to_send_returns_full_when_no_limit() {
+        // 100-turn history, but no context_limit -> no trimming (backward compat).
+        let r = runner_with(many_turns(100, 40));
+        assert_eq!(r.context_limit(), None);
+        let sent = r.turns_to_send();
+        assert_eq!(sent.len(), 100, "no limit must not trim");
+    }
+
+    #[test]
+    fn turns_to_send_returns_full_when_within_limit() {
+        // 10 turns x 40 chars = 10 tokens each => 100 tokens, within 200 limit.
+        let r = runner_with(many_turns(10, 40));
+        let mut r = r;
+        r.set_context_limit(Some(200));
+        assert_eq!(r.turns_to_send().len(), 10);
+    }
+
+    #[test]
+    fn turns_to_send_trims_oldest_and_preserves_most_recent() {
+        // 100 turns x 40 chars = 10 tokens each => 1000 tokens, limit 120.
+        let original = many_turns(100, 40);
+        let last = original.last().unwrap().clone();
+        let mut r = runner_with(original.clone());
+        r.set_context_limit(Some(120));
+
+        let sent = r.turns_to_send();
+        // Must fit the budget.
+        let est = crate::conversation::context::estimate_turns_tokens(&sent);
+        assert!(
+            est <= 120,
+            "trimmed context must fit limit, got {est} tokens"
+        );
+        // Fewer than the full history, and the newest turn is kept.
+        assert!(sent.len() < 100, "must drop old turns: {}", sent.len());
+        assert_eq!(sent.last(), Some(&last), "must keep the newest turn");
+        // self.turns is untouched (full history preserved for state.db).
+        assert_eq!(r.turns().len(), 100, "self.turns must not be mutated");
+    }
+
+    #[test]
+    fn turns_to_send_keeps_at_least_one_turn_even_if_single_is_over() {
+        // One huge turn that alone exceeds the limit: still sent (never empty).
+        let mut r = runner_with(vec![Turn::User {
+            content: "y".repeat(10_000), // 2500 tokens
+        }]);
+        r.set_context_limit(Some(100));
+        let sent = r.turns_to_send();
+        assert_eq!(sent.len(), 1, "must never send an empty window");
     }
 }

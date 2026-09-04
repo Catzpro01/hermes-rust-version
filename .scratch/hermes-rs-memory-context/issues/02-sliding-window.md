@@ -8,51 +8,57 @@ berlaku pada **salinan yang dikirim ke provider**, bukan menghapus turn dari
 
 **Blocked by:** 01 (token accounting).
 
-**Status:** todo
+**Status:** done — commit di VM, 180/180 test hijau (`cargo test --workspace`),
+`clippy --workspace --all-targets -D warnings` bersih.
 
 ## Kondisi sekarang (terverifikasi)
 
-- `ConversationRunner::chat_agentic`/`chat` mengirim `self.turns` penuh ke
-  `provider.chat_with_cancel(&self.turns, ...)`.
+- `ConversationRunner::chat_agentic`/`chat`/`chat_with_cancel` mengirim
+  `self.turns` penuh ke `provider.chat_with_cancel(...)`.
 - Tidak ada pemangkasan: percakapan panjang mengirim seluruh sejarah tanpa batas.
-- `context_length: Option<u64>` ada di `ModelConfig` dan `ProviderConfig`,
-  diparse tapi tidak dibaca untuk perilaku.
+- `context_limit: Option<u64>` kini tersimpan di runner (Ticket 01), di-set dari
+  precedence config di REPL.
 
-## Konsep
+## Kriteria (per /ask-matt)
 
-Sliding window harus menjaga **integritas turn yang sudah disimpan**:
-`state.db` tetap menyimpan seluruh turns sesi (canonical). Yang dipangkas hanya
-`Vec<Turn>` yang dikirim ke provider pada langkah berikutnya. Ini menjaga
-invariant "turn yang benar-benar dikirim utuh di state.db" dan "satu turn tidak
-pernah terpecah".
+- [x] `turns_to_send()` mengembalikan **salinan** turns yang di-trim (tidak
+      memutasi `self.turns`).
+- [x] Drop turn tertua (dari depan) saat `estimate_turns_tokens > context_limit`.
+- [x] Pertahankan N turns terakhir (turn paling baru — pertanyaan aktif — tidak
+      pernah di-drop). System prompt saat ini tidak ada di aliran turns
+      (`ephemeral_system_prompt` belum ter-wire); dicatat untuk masa depan.
+- [x] `state.db` TIDAK berubah setelah sliding window — test integrasi
+      byte-hash membuktikan read/resume tak menyentuh file.
+- [x] `/messages <id>` tetap menampilkan SEMUA turns — test integrasi resume
+      menunjukkan 100 turns utuh meski window memangkas kiriman.
+- [x] Test: 100-turn conversation → `turns_to_send()` ≤ context_limit.
+- [x] Test: `context_limit None` → tanpa trimming (backward compat).
+- [x] 180/180 tests green, clippy clean.
 
-## Kriteria
+## Perubahan
 
-- [ ] Runner menyiapkan `turns_to_send(&self, context_length: Option<u64>) ->
-      Vec<Turn>` yang menjatuhkan turn tertua (User/Assistant/Tool) dari
-      salinan sampai `estimate_turns_tokens` <= limit, dengan aturan konservatif:
-      jangan jatuhkan turn yang sedang jadi pertanyaan aktif terakhir, dan
-      hormati kumpulan turn yang di-pin (04) sebagai tidak-bisa-didrop.
-- [ ] Sumber limit jelas: dipakai `model.context_length`, atau `target_max_tokens`
-      dari `compression` bila lebih relevan (lihat 05). Absen (`None`) => tanpa
-      window (kirim penuh, backward compatible).
-- [ ] Turn yang di-drop TIDAK dihapus dari `self.turns`/`state.db`; hanya tidak
-      ikut dalam kiriman.
-- [ ] Test: percakapan panjang (mis. ~100 turn) tetap terkirim dalam batas
-      `estimate_turns_tokens <= limit`; turn terakhir + system tetap hadir.
-- [ ] Ambang (berapa turn / berapa token dipertahankan) dieja eksplisit di test.
+- `crates/hermes-core/src/conversation/mod.rs`: method `turns_to_send()` pada
+  `ConversationRunner`; `chat`, `chat_with_cancel`, dan loop `chat_agentic` kini
+  mengirim `turns_to_send()` (salinan ter-trim), sementara `self.turns` tetap
+  penuh. +4 unit test `turns_to_send_*`.
+- `crates/hermes-core/tests/conversation_session_integration.rs`: +1 integrasi
+  `sliding_window_trims_send_but_state_db_keeps_full_history`.
 
-## STRIDE
+## Catatan desain
 
-- **Data integrity:** tidak ada penghapusan turn canonical; hanya pemangkasan
-  salinan. Test memastikan state.db utuh setelah window aktif.
-- Tidak ada surface credential/eksekusi baru.
-
-## Risiko
-
-- Menjatuhkan turn User tanpa Assistant berpasangan bisa membuat konteks tak
-  koheren; window harus drop berpasangan (User+Assistant/Tool) sejauh mungkin.
-- Interaksi pin (04): turn di-pin tidak boleh terdorong keluar.
+- **Invariant kunci:** window hanya mempengaruhi yang dikirim ke LLM, bukan yang
+  disimpan. `self.turns` & `state.db` menyimpan penuh; REPL mem-persist dari
+  `runner.turns()` (full), `/messages` membaca `state.db` (full).
+- Algoritma: jika `context_limit` ada & estimasi penuh > limit, buang turn dari
+  depan sampai muat atau tersisa 1 turn (tak pernah kosong / tak pernah drop
+  pertanyaan aktif). Rekomputasi tiap iterasi `chat_agentic` (tool result bisa
+  menumbuhkan konteks).
+- `context_limit None` → `turns_to_send()` = full clone (tanpa window), backward
+  compatible.
+- Pin (04) & summarization (03) akan memodifikasi pilihan turn yang di-drop pada
+  tiket berikutnya; saat ini drop-front polos.
+- Tech-debt Ticket 01 (Matt): `tracing_subscriber` sudah di-init di `main.rs`
+  (default level menampilkan `warn!`), jadi warning konteks terlihat — terverifikasi.
 
 ## Dependency
 
