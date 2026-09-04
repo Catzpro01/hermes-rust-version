@@ -29,7 +29,7 @@ impl SessionStore {
     pub fn open(path: &Path) -> Result<Self, SessionStoreError> {
         let conn = Connection::open(path)?;
         conn.busy_timeout(std::time::Duration::from_secs(5))?;
-        conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, source TEXT NOT NULL, started_at REAL NOT NULL); CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL REFERENCES sessions(id), role TEXT NOT NULL, content TEXT, timestamp REAL NOT NULL);")?;
+        conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, source TEXT NOT NULL, started_at REAL NOT NULL); CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL REFERENCES sessions(id), role TEXT NOT NULL, content TEXT, timestamp REAL NOT NULL); CREATE TABLE IF NOT EXISTS tool_calls (id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id), turn_index INTEGER NOT NULL, tool_name TEXT NOT NULL, arguments TEXT NOT NULL, result TEXT, status TEXT NOT NULL CHECK(status IN ('success','error','denied','timeout','cancelled')), created_at REAL NOT NULL);")?;
         Ok(Self { conn })
     }
     pub fn create_session(&self, source: &str) -> Result<SessionId, SessionStoreError> {
@@ -52,6 +52,20 @@ impl SessionStore {
             params![id.to_string(), role, content, now()],
         )?;
         tx.commit()?;
+        Ok(())
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub fn save_tool_call(
+        &self,
+        session_id: &SessionId,
+        call_id: &str,
+        turn_index: usize,
+        tool_name: &str,
+        arguments: &str,
+        result: Option<&str>,
+        status: &str,
+    ) -> Result<(), SessionStoreError> {
+        self.conn.execute("INSERT OR REPLACE INTO tool_calls (id, session_id, turn_index, tool_name, arguments, result, status, created_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)", params![call_id, session_id.to_string(), turn_index as i64, tool_name, arguments, result, status, now()])?;
         Ok(())
     }
     pub fn resume(&self, id: &SessionId) -> Result<Session, SessionStoreError> {

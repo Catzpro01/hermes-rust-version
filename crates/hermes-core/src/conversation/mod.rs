@@ -1,15 +1,22 @@
 //! In-memory conversation state and provider event flow.
 
 use crate::provider::{EventStream, Provider, ProviderError};
-use crate::tools::ToolCall;
+use crate::tools::{ToolCall, ToolError, ToolRegistry};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
+use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Turn {
     User { content: String },
     Assistant { content: String },
     Tool { name: String, content: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AgenticResult {
+    Done { text: String, iterations: usize },
+    MaxIterations(usize),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -69,6 +76,62 @@ impl<P: Provider> ConversationRunner<P> {
         if matches!(self.turns.last(), Some(Turn::User { .. })) {
             self.turns.pop();
         }
+    }
+
+    pub async fn chat_agentic(
+        &mut self,
+        content: impl Into<String>,
+        registry: &ToolRegistry,
+        max_iters: usize,
+        cancel: CancellationToken,
+    ) -> Result<AgenticResult, ProviderError> {
+        self.turns.push(Turn::User {
+            content: content.into(),
+        });
+        for iteration in 1..=max_iters {
+            let mut stream = self
+                .provider
+                .chat_with_cancel(&self.turns, cancel.clone())
+                .await?;
+            let mut text = String::new();
+            let mut calls = Vec::new();
+            while let Some(event) = stream.next().await {
+                match event? {
+                    Event::Chunk(chunk) => text.push_str(&chunk),
+                    Event::ToolCall(call) => calls.push(call),
+                    _ => {}
+                }
+            }
+            if calls.is_empty() {
+                self.push_assistant(text.clone());
+                return Ok(AgenticResult::Done {
+                    text,
+                    iterations: iteration,
+                });
+            }
+            for call in calls {
+                if cancel.is_cancelled() {
+                    return Err(ProviderError::Cancelled);
+                }
+                self.turns.push(Turn::Tool {
+                    name: format!("call:{}", call.name),
+                    content: call.arguments.clone(),
+                });
+                let response =
+                    registry
+                        .execute(&call, cancel.clone())
+                        .await
+                        .map_err(|e| match e {
+                            ToolError::Cancelled => ProviderError::Cancelled,
+                            other => ProviderError::Message(other.to_string()),
+                        })?;
+                self.turns.push(Turn::Tool {
+                    name: response.name.clone(),
+                    content: response.content.clone(),
+                });
+            }
+        }
+        Ok(AgenticResult::MaxIterations(max_iters))
     }
 
     /// Compatibility helper for callers that still need a fully collected response.
