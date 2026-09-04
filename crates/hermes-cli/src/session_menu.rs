@@ -131,7 +131,10 @@ pub fn search_sessions(store: &SessionStore, query: &str) -> Result<()> {
         println!("No search results.");
         return Ok(());
     }
-    println!("Search results for: {}", sanitize_untrusted_output(query));
+    println!(
+        "Search results for: {}",
+        hermes_core::search::redact::redact_credentials(&sanitize_untrusted_output(query))
+    );
     for (index, result) in results.iter().enumerate() {
         println!(
             "[{}] session={} message={} role={} rank={:.3}",
