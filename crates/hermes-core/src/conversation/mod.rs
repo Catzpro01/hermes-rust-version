@@ -36,17 +36,44 @@ impl<P: Provider> ConversationRunner<P> {
     pub fn from_turns(provider: P, turns: Vec<Turn>) -> Self {
         Self { provider, turns }
     }
+    pub async fn chat(&mut self, content: impl Into<String>) -> Result<EventStream, ProviderError> {
+        self.turns.push(Turn::User {
+            content: content.into(),
+        });
+        self.provider.chat(&self.turns).await
+    }
+
+    pub async fn chat_with_cancel(
+        &mut self,
+        content: impl Into<String>,
+        cancel: tokio_util::sync::CancellationToken,
+    ) -> Result<EventStream, ProviderError> {
+        self.turns.push(Turn::User {
+            content: content.into(),
+        });
+        self.provider.chat_with_cancel(&self.turns, cancel).await
+    }
+
+    pub fn push_assistant(&mut self, content: String) {
+        if !content.is_empty() {
+            self.turns.push(Turn::Assistant { content });
+        }
+    }
+
+    pub fn discard_pending_user(&mut self) {
+        if matches!(self.turns.last(), Some(Turn::User { .. })) {
+            self.turns.pop();
+        }
+    }
+
+    /// Compatibility helper for callers that still need a fully collected response.
     pub async fn prompt(
         &mut self,
         content: impl Into<String>,
     ) -> Result<Vec<Event>, ProviderError> {
-        self.turns.push(Turn::User {
-            content: content.into(),
-        });
-        let stream: EventStream = self.provider.chat(&self.turns).await?;
+        let mut stream = self.chat(content).await?;
         let mut events = Vec::new();
         let mut answer = String::new();
-        futures::pin_mut!(stream);
         while let Some(event) = stream.next().await {
             match event {
                 Ok(Event::Chunk(chunk)) => {
@@ -55,14 +82,12 @@ impl<P: Provider> ConversationRunner<P> {
                 }
                 Ok(event) => events.push(event),
                 Err(err) => {
-                    events.push(Event::Error(err.to_string()));
+                    self.discard_pending_user();
                     return Err(err);
                 }
             }
         }
-        if !answer.is_empty() {
-            self.turns.push(Turn::Assistant { content: answer });
-        }
+        self.push_assistant(answer);
         Ok(events)
     }
 }

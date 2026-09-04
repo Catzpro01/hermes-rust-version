@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use futures::Stream;
 use std::pin::Pin;
 use thiserror::Error;
+use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Error, Clone)]
 pub enum ProviderError {
@@ -20,12 +21,27 @@ pub type EventStream = Pin<Box<dyn Stream<Item = Result<Event, ProviderError>> +
 #[async_trait]
 pub trait Provider: Send + Sync {
     async fn chat(&self, turns: &[Turn]) -> Result<EventStream, ProviderError>;
+
+    async fn chat_with_cancel(
+        &self,
+        turns: &[Turn],
+        _cancel: CancellationToken,
+    ) -> Result<EventStream, ProviderError> {
+        self.chat(turns).await
+    }
 }
 
 #[async_trait]
 impl<T: Provider + ?Sized> Provider for Box<T> {
     async fn chat(&self, turns: &[Turn]) -> Result<EventStream, ProviderError> {
         (**self).chat(turns).await
+    }
+    async fn chat_with_cancel(
+        &self,
+        turns: &[Turn],
+        cancel: CancellationToken,
+    ) -> Result<EventStream, ProviderError> {
+        (**self).chat_with_cancel(turns, cancel).await
     }
 }
 

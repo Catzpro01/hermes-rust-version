@@ -1,5 +1,5 @@
 use crate::{
-    render::render_events,
+    render::render_stream,
     session_menu::{list_sessions, parse_resume, select_session},
 };
 use anyhow::{Context, Result};
@@ -9,6 +9,7 @@ use hermes_core::{
     session::SessionStore,
 };
 use rustyline::{error::ReadlineError, DefaultEditor};
+use tokio_util::sync::CancellationToken;
 
 pub async fn run_repl(home: &std::path::Path, provider: Box<dyn Provider>) -> Result<()> {
     let db = home.join("state.db");
@@ -60,13 +61,34 @@ pub async fn run_repl(home: &std::path::Path, provider: Box<dyn Provider>) -> Re
             }
             _ => {
                 let before = runner.turns().len();
-                let events = runner
-                    .prompt(input.to_owned())
-                    .await
-                    .map_err(|e| anyhow::anyhow!(e.to_string()))?;
-                render_events(&events)?;
-                for turn in &runner.turns()[before..] {
-                    store.save_turn(&session_id, turn)?;
+                let cancel = CancellationToken::new();
+                let signal_cancel = cancel.clone();
+                let signal_task = tokio::spawn(async move {
+                    if tokio::signal::ctrl_c().await.is_ok() {
+                        signal_cancel.cancel();
+                    }
+                });
+                let result = runner.chat_with_cancel(input.to_owned(), cancel).await;
+                let result = match result {
+                    Ok(stream) => render_stream(stream).await,
+                    Err(error) => Err(anyhow::anyhow!(error.to_string())),
+                };
+                signal_task.abort();
+                match result {
+                    Ok(response) => {
+                        runner.push_assistant(response);
+                        for turn in &runner.turns()[before..] {
+                            store.save_turn(&session_id, turn)?;
+                        }
+                    }
+                    Err(error) if error.to_string().contains("cancelled") => {
+                        runner.discard_pending_user();
+                        println!("\n⚡ cancelled");
+                    }
+                    Err(error) => {
+                        runner.discard_pending_user();
+                        return Err(error);
+                    }
                 }
             }
         }

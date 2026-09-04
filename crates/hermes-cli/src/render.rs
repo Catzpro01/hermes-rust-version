@@ -1,15 +1,21 @@
+use futures::StreamExt;
 use hermes_core::conversation::Event;
+use hermes_core::provider::EventStream;
 use std::io::{self, Write};
 
-pub fn render_events(events: &[Event]) -> anyhow::Result<()> {
-    for event in events {
-        match event {
+pub async fn render_stream(mut events: EventStream) -> anyhow::Result<String> {
+    let mut full = String::new();
+    while let Some(event) = events.next().await {
+        match event? {
             Event::Started => {}
-            Event::Chunk(text) => print!("{text}"),
+            Event::Chunk(text) => {
+                print!("{text}");
+                io::stdout().flush()?;
+                full.push_str(&text);
+            }
             Event::Done => println!(),
             Event::Error(message) => eprintln!("\n⚠ {message}"),
         }
-        io::stdout().flush()?;
     }
-    Ok(())
+    Ok(full)
 }
