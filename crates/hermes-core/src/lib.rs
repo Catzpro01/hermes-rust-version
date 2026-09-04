@@ -3,6 +3,7 @@
 pub mod config;
 pub mod conversation;
 pub mod provider;
+pub mod search;
 pub mod session;
 pub mod tools;
 use serde::{Deserialize, Serialize};

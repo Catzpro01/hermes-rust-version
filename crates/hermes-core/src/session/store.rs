@@ -50,11 +50,21 @@ pub struct Session {
 pub struct SessionStore {
     conn: Connection,
 }
+
+#[cfg(test)]
+impl SessionStore {
+    pub(crate) fn connection_for_tests(&self) -> &Connection {
+        &self.conn
+    }
+}
 impl SessionStore {
     pub fn open(path: &Path) -> Result<Self, SessionStoreError> {
-        let conn = Connection::open(path)?;
+        let mut conn = Connection::open(path)?;
         conn.busy_timeout(std::time::Duration::from_secs(5))?;
-        conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, source TEXT NOT NULL, started_at REAL NOT NULL); CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL REFERENCES sessions(id), role TEXT NOT NULL, content TEXT, timestamp REAL NOT NULL); CREATE TABLE IF NOT EXISTS tool_calls (id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id), turn_index INTEGER NOT NULL, tool_name TEXT NOT NULL, arguments TEXT NOT NULL, result TEXT, status TEXT NOT NULL CHECK(status IN ('success','error','denied','timeout','cancelled')), created_at REAL NOT NULL);")?;
+        conn.execute_batch("PRAGMA foreign_keys=ON; CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, source TEXT NOT NULL, started_at REAL NOT NULL); CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL REFERENCES sessions(id), role TEXT NOT NULL, content TEXT, timestamp REAL NOT NULL); CREATE TABLE IF NOT EXISTS tool_calls (id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id), turn_index INTEGER NOT NULL, tool_name TEXT NOT NULL, arguments TEXT NOT NULL, result TEXT, status TEXT NOT NULL CHECK(status IN ('success','error','denied','timeout','cancelled')), created_at REAL NOT NULL);")?;
+        if let Err(error) = crate::search::migration::run_migrations(&mut conn) {
+            tracing::warn!(error = %error, "FTS5 search unavailable; search remains disabled");
+        }
         Ok(Self { conn })
     }
     pub fn create_session(&self, source: &str) -> Result<SessionId, SessionStoreError> {
