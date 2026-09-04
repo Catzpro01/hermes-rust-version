@@ -11,6 +11,14 @@ use std::sync::{Arc, Mutex};
 use tokio::signal::unix::{signal, SignalKind};
 use tokio_util::sync::CancellationToken;
 
+struct DenyShellConfirmation;
+#[async_trait]
+impl Confirmation for DenyShellConfirmation {
+    async fn confirm(&self, _command: &str) -> bool {
+        false
+    }
+}
+
 pub async fn run_repl(
     home: &std::path::Path,
     provider: Box<dyn Provider>,
@@ -31,6 +39,11 @@ pub async fn run_repl(
     };
     let existing = store.resume(&session_id)?.turns;
     let mut runner = ConversationRunner::from_turns(provider, existing);
+    let mut tool_registry = ToolRegistry::new();
+    tool_registry.register(ShellTool::new(
+        DenyShellConfirmation,
+        Duration::from_secs(30),
+    ));
     println!("Hermes-RS session {session_id}");
     println!("Commands: /new, /sessions, /resume <id>, /exit");
     let editor = Arc::new(Mutex::new(editor));
@@ -100,38 +113,37 @@ pub async fn run_repl(
             _ => {
                 let before = runner.turns().len();
                 let turn_cancel = CancellationToken::new();
-                let stream = runner
-                    .chat_with_cancel(input.to_owned(), turn_cancel.clone())
-                    .await
-                    .map_err(|error| anyhow::anyhow!(error.to_string()))?;
-                #[cfg(unix)]
-                let result = tokio::select! {
-                    _ = sigint.recv() => {
-                        turn_cancel.cancel();
-                        runner.discard_pending_user();
-                        println!("\n⚡ interrupted");
-                        return Err(anyhow::anyhow!("interrupted"));
+                let signal_cancel = turn_cancel.clone();
+                let signal_task = tokio::spawn(async move {
+                    if tokio::signal::ctrl_c().await.is_ok() {
+                        signal_cancel.cancel();
                     }
-                    result = render_stream(stream) => result,
-                };
-                #[cfg(not(unix))]
-                let result = render_stream(stream).await;
-                match result {
-                    Ok(response) => {
-                        runner.push_assistant(response);
-                        for turn in &runner.turns()[before..] {
-                            store.save_turn(&session_id, turn)?;
-                        }
+                });
+                let result = runner
+                    .chat_agentic(
+                        input.to_owned(),
+                        &tool_registry,
+                        Some((&store, &session_id)),
+                        10,
+                        turn_cancel,
+                    )
+                    .await;
+                signal_task.abort();
+                match result.map_err(|e| anyhow::anyhow!(e.to_string()))? {
+                    AgenticResult::Done { text, iterations } => {
+                        println!("{text}");
+                        println!("[iter {iterations}/10]");
                     }
-                    Err(error) if error.to_string().contains("cancelled") => {
-                        runner.discard_pending_user();
+                    AgenticResult::MaxIterations(limit) => {
+                        eprintln!("\n⚠ Reached max iterations budget ({limit}).")
+                    }
+                    AgenticResult::Cancelled => {
                         println!("\n⚡ cancelled");
-                        return Err(anyhow::anyhow!("interrupted"));
+                        continue;
                     }
-                    Err(error) => {
-                        runner.discard_pending_user();
-                        return Err(error);
-                    }
+                }
+                for turn in &runner.turns()[before..] {
+                    store.save_turn(&session_id, turn)?;
                 }
             }
         }
