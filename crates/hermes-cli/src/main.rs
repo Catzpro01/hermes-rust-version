@@ -1,7 +1,7 @@
 use clap::Parser;
-use hermes_core::config::{load_config, resolve_hermes_home, SecretString};
-use hermes_core::provider::{FakeProvider, HttpProvider, Provider};
-use url::Url;
+use hermes_core::config::load_config;
+use hermes_core::config::resolve_hermes_home;
+use hermes_core::provider::{Provider, ProviderRegistry};
 
 mod output;
 mod render;
@@ -14,9 +14,10 @@ struct Args {
     /// Hermes home directory; defaults to HERMES_HOME or ~/.hermes.
     #[arg(long)]
     hermes_home: Option<std::path::PathBuf>,
-    /// Provider for the first offline CLI slice.
-    #[arg(long, default_value = "fake")]
-    provider: String,
+    /// Provider name from config.yaml; overrides model.provider.
+    /// Defaults to model.provider, then to "fake" when neither is set.
+    #[arg(long)]
+    provider: Option<String>,
     /// Resume the most recently updated session.
     #[arg(long)]
     resume: bool,
@@ -49,39 +50,30 @@ async fn run() -> anyhow::Result<()> {
         .ok();
     let args = Args::parse();
     let home = resolve_hermes_home(args.hermes_home.as_deref())?;
-    // Validate an existing config even in fake mode, while keeping fake mode usable
-    // with a disposable home that only contains state.db.
-    if home.join("config.yaml").exists() {
-        let _ = load_config(&home).map_err(|e| anyhow::anyhow!("Invalid config: {e}"))?;
-    }
-    let provider: Box<dyn Provider> = match args.provider.as_str() {
-        "fake" => Box::new(FakeProvider),
-        "openai" | "custom" => {
-            let config = load_config(&home)?;
-            let model = config
-                .model
-                .default
-                .clone()
-                .ok_or_else(|| anyhow::anyhow!("model.default is required"))?;
-            let base_url = args
-                .api_url
-                .clone()
-                .or_else(|| config.model.base_url.clone())
-                .unwrap_or_else(|| "https://api.openai.com/".into());
-            let key = std::env::var("OPENAI_API_KEY")
-                .or_else(|_| std::env::var("HERMES_API_KEY"))
-                .ok()
-                .or_else(|| config.model.api_key.as_ref().map(|k| k.expose().to_owned()))
-                .ok_or_else(|| {
-                    anyhow::anyhow!("OPENAI_API_KEY is required for provider {}", args.provider)
-                })?;
-            Box::new(HttpProvider::new(
-                Url::parse(&base_url)?,
-                SecretString::from(key),
-                model,
-            ))
-        }
-        other => anyhow::bail!("unsupported provider '{other}' (use fake, openai, or custom)"),
+    // Load once. A missing config.yaml is allowed so the offline `fake` slice
+    // stays usable with a disposable home containing only state.db.
+    let config = if home.join("config.yaml").exists() {
+        Some(load_config(&home).map_err(|e| anyhow::anyhow!("Invalid config: {e}"))?)
+    } else {
+        None
     };
+    let registry = match &config {
+        Some(config) => ProviderRegistry::from_config(config),
+        None => ProviderRegistry::offline(),
+    };
+    // `model.provider: auto` means "not chosen yet", so it must not be treated
+    // as a provider name.
+    let config_provider = config
+        .as_ref()
+        .and_then(|c| c.model.provider.clone())
+        .filter(|p| p != "auto");
+    let provider: Box<dyn Provider> = registry
+        .select(
+            args.provider.as_deref(),
+            config_provider.as_deref(),
+            args.api_url.as_deref(),
+            config.as_ref(),
+        )
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
     repl::run_repl(&home, provider, args.resume).await
 }

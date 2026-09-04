@@ -4,7 +4,29 @@
 
 **Blocked by:** tidak ada — Spec 001 sudah mem-parse `providers`.
 
-**Status:** todo
+**Status:** done — commit di VM, 98/98 test hijau, `clippy -D warnings` bersih.
+
+## Catatan implementasi
+
+- `ProviderRegistry` menyimpan **factory**, bukan provider jadi. `from_config`
+  tidak melakukan I/O dan tidak membaca environment, jadi satu provider yang
+  salah konfigurasi tidak bisa menggagalkan startup atau menjatuhkan provider
+  yang sedang aktif.
+- **Penyimpangan dari acceptance criteria #1.** Kriteria menyebut
+  `HashMap<String, Box<dyn Provider>>`. Itu dihindari dengan sengaja:
+  membangun semua provider di muka berarti `from_config` gagal kalau satu saja
+  `key_env` kosong, dan itu bertabrakan langsung dengan kriteria #4 di tiket 04
+  (provider aktif tidak boleh rusak saat init provider lain gagal).
+- `ApiMode` ditambahkan sebagai enum bertag dengan `ChatCompletions` sebagai
+  `#[default]`, sesuai catatan backward-compatibility. Routing endpoint-nya
+  tetap milik tiket 03.
+- **Utang yang sengaja ditinggal:** `--api-url` hanya berlaku pada jalur
+  fallback model-level, belum pada provider yang dideklarasikan di
+  `providers:`. Menimpa base URL provider terkonfigurasi disatukan dengan
+  routing endpoint di tiket 03.
+- `model.provider: auto` diperlakukan sebagai "belum dipilih", bukan nama
+  provider. Perilaku lama (`--provider openai` + `--api-url`) dipertahankan
+  lewat fallback model-level, sehingga `sigint_stream.rs` tidak berubah.
 
 ## Kondisi sekarang (terverifikasi)
 
@@ -37,12 +59,12 @@ tidak bisa dipakai.
 
 ## Kriteria
 
-- [ ] Provider dapat dipilih lewat nama kunci di `providers`, bukan daftar literal.
-- [ ] `fake` tetap tersedia tanpa `config.yaml` (dipakai test dan slice offline).
-- [ ] Nama provider yang tidak ada menghasilkan error yang menyebut nama-nama yang tersedia.
-- [ ] `--provider` CLI dan `model.provider` dari config punya precedence yang terdefinisi dan teruji.
-- [ ] Registry mengembalikan `Box<dyn Provider>` tanpa mengubah trait `Provider`.
-- [ ] Conversation runner tidak berubah sama sekali.
+- [x] Provider dapat dipilih lewat nama kunci di `providers`, bukan daftar literal.
+- [x] `fake` tetap tersedia tanpa `config.yaml` (dipakai test dan slice offline).
+- [x] Nama provider yang tidak ada menghasilkan error yang menyebut nama-nama yang tersedia.
+- [x] `--provider` CLI dan `model.provider` dari config punya precedence yang terdefinisi dan teruji.
+- [x] Registry mengembalikan `Box<dyn Provider>` tanpa mengubah trait `Provider`.
+- [x] Conversation runner tidak berubah sama sekali.
 
 ## Catatan
 

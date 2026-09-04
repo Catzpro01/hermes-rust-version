@@ -49,11 +49,13 @@ impl<T: Provider + ?Sized> Provider for Box<T> {
 
 pub mod fake;
 pub mod http;
+pub mod registry;
 mod redact;
 pub mod sse;
 pub use fake::FakeProvider;
 pub use http::HttpProvider;
 pub use redact::redact;
+pub use registry::{ProviderRegistry, RegistryError, FAKE_PROVIDER};
 
 /// Converts streamed text containing Hermes XML tool tags into typed events.
 pub fn tool_aware_stream(mut input: EventStream) -> EventStream {

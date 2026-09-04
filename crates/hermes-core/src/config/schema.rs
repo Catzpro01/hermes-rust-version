@@ -56,6 +56,30 @@ pub struct ProviderConfig {
     pub models: HashMap<String, serde_yaml::Value>,
     pub context_length: Option<u64>,
 }
+
+/// Wire shape a provider speaks. Absent `api_mode` means [`ApiMode::ChatCompletions`],
+/// which keeps configs written before this field existed working unchanged.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ApiMode {
+    #[default]
+    ChatCompletions,
+    Completions,
+}
+impl ApiMode {
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "chat_completions" => Some(Self::ChatCompletions),
+            "completions" => Some(Self::Completions),
+            _ => None,
+        }
+    }
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ChatCompletions => "chat_completions",
+            Self::Completions => "completions",
+        }
+    }
+}
 impl fmt::Debug for ProviderConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ProviderConfig")
