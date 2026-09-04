@@ -18,6 +18,35 @@ pub struct ToolResponse {
     pub content: String,
     pub success: bool,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ToolExecutionStatus {
+    Success,
+    Error,
+    Denied,
+    Timeout,
+    Cancelled,
+}
+impl ToolExecutionStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Success => "success",
+            Self::Error => "error",
+            Self::Denied => "denied",
+            Self::Timeout => "timeout",
+            Self::Cancelled => "cancelled",
+        }
+    }
+}
+#[derive(Debug, Clone)]
+pub struct ToolCallRecord {
+    pub id: String,
+    pub session_id: String,
+    pub turn_index: usize,
+    pub tool_name: String,
+    pub arguments: String,
+    pub result: String,
+    pub status: ToolExecutionStatus,
+}
 #[derive(Debug, Error)]
 pub enum ToolError {
     #[error("unknown tool: {0}")]

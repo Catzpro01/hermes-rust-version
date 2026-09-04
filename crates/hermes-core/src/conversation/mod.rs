@@ -1,7 +1,8 @@
 //! In-memory conversation state and provider event flow.
 
 use crate::provider::{EventStream, Provider, ProviderError};
-use crate::tools::{ToolCall, ToolError, ToolRegistry};
+use crate::session::{SessionId, SessionStore};
+use crate::tools::{ToolCall, ToolCallRecord, ToolError, ToolExecutionStatus, ToolRegistry};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -17,6 +18,7 @@ pub enum Turn {
 pub enum AgenticResult {
     Done { text: String, iterations: usize },
     MaxIterations(usize),
+    Cancelled,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -82,6 +84,7 @@ impl<P: Provider> ConversationRunner<P> {
         &mut self,
         content: impl Into<String>,
         registry: &ToolRegistry,
+        store_ctx: Option<(&SessionStore, &SessionId)>,
         max_iters: usize,
         cancel: CancellationToken,
     ) -> Result<AgenticResult, ProviderError> {
@@ -89,6 +92,10 @@ impl<P: Provider> ConversationRunner<P> {
             content: content.into(),
         });
         for iteration in 1..=max_iters {
+            if cancel.is_cancelled() {
+                self.discard_pending_user();
+                return Ok(AgenticResult::Cancelled);
+            }
             let mut stream = self
                 .provider
                 .chat_with_cancel(&self.turns, cancel.clone())
@@ -97,8 +104,8 @@ impl<P: Provider> ConversationRunner<P> {
             let mut calls = Vec::new();
             while let Some(event) = stream.next().await {
                 match event? {
-                    Event::Chunk(chunk) => text.push_str(&chunk),
-                    Event::ToolCall(call) => calls.push(call),
+                    Event::Chunk(c) => text.push_str(&c),
+                    Event::ToolCall(c) => calls.push(c),
                     _ => {}
                 }
             }
@@ -111,24 +118,42 @@ impl<P: Provider> ConversationRunner<P> {
             }
             for call in calls {
                 if cancel.is_cancelled() {
-                    return Err(ProviderError::Cancelled);
+                    self.discard_pending_user();
+                    return Ok(AgenticResult::Cancelled);
                 }
+                let result = registry.execute(&call, cancel.clone()).await;
+                let (content, status) = match result {
+                    Ok(r) => (r.content, ToolExecutionStatus::Success),
+                    Err(ToolError::Denied(e)) => (e, ToolExecutionStatus::Denied),
+                    Err(ToolError::Timeout(d)) => {
+                        (format!("timeout: {d:?}"), ToolExecutionStatus::Timeout)
+                    }
+                    Err(ToolError::Cancelled) => {
+                        ("cancelled".into(), ToolExecutionStatus::Cancelled)
+                    }
+                    Err(e) => (e.to_string(), ToolExecutionStatus::Error),
+                };
                 self.turns.push(Turn::Tool {
-                    name: format!("call:{}", call.name),
-                    content: call.arguments.clone(),
+                    name: call.name.clone(),
+                    content: content.clone(),
                 });
-                let response =
-                    registry
-                        .execute(&call, cancel.clone())
-                        .await
-                        .map_err(|e| match e {
-                            ToolError::Cancelled => ProviderError::Cancelled,
-                            other => ProviderError::Message(other.to_string()),
-                        })?;
-                self.turns.push(Turn::Tool {
-                    name: response.name.clone(),
-                    content: response.content.clone(),
-                });
+                if let Some((store, id)) = store_ctx {
+                    let record = ToolCallRecord {
+                        id: call
+                            .id
+                            .clone()
+                            .unwrap_or_else(|| format!("{}-{}", iteration, self.turns.len())),
+                        session_id: id.to_string(),
+                        turn_index: self.turns.len(),
+                        tool_name: call.name.clone(),
+                        arguments: call.arguments.clone(),
+                        result: content,
+                        status,
+                    };
+                    store
+                        .save_tool_call(&record)
+                        .map_err(|e| ProviderError::Message(e.to_string()))?;
+                }
             }
         }
         Ok(AgenticResult::MaxIterations(max_iters))

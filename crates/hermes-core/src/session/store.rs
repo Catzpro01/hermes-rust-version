@@ -1,5 +1,6 @@
 use super::SessionId;
 use crate::conversation::Turn;
+use crate::tools::{ToolCallRecord, ToolExecutionStatus};
 use rusqlite::{params, Connection};
 use std::{
     path::Path,
@@ -54,19 +55,30 @@ impl SessionStore {
         tx.commit()?;
         Ok(())
     }
-    #[allow(clippy::too_many_arguments)]
-    pub fn save_tool_call(
-        &self,
-        session_id: &SessionId,
-        call_id: &str,
-        turn_index: usize,
-        tool_name: &str,
-        arguments: &str,
-        result: Option<&str>,
-        status: &str,
-    ) -> Result<(), SessionStoreError> {
-        self.conn.execute("INSERT OR REPLACE INTO tool_calls (id, session_id, turn_index, tool_name, arguments, result, status, created_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)", params![call_id, session_id.to_string(), turn_index as i64, tool_name, arguments, result, status, now()])?;
+    pub fn save_tool_call(&self, record: &ToolCallRecord) -> Result<(), SessionStoreError> {
+        self.conn.execute("INSERT OR REPLACE INTO tool_calls (id,session_id,turn_index,tool_name,arguments,result,status,created_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)", params![record.id, record.session_id, record.turn_index as i64, record.tool_name, record.arguments, record.result, record.status.as_str(), now()])?;
         Ok(())
+    }
+    pub fn list_tool_calls(
+        &self,
+        id: &SessionId,
+    ) -> Result<Vec<(String, ToolExecutionStatus)>, SessionStoreError> {
+        let mut q = self
+            .conn
+            .prepare("SELECT id,status FROM tool_calls WHERE session_id=?1 ORDER BY turn_index")?;
+        let rows = q.query_map(params![id.to_string()], |r| {
+            let status: String = r.get(1)?;
+            let s = match status.as_str() {
+                "success" => ToolExecutionStatus::Success,
+                "error" => ToolExecutionStatus::Error,
+                "denied" => ToolExecutionStatus::Denied,
+                "timeout" => ToolExecutionStatus::Timeout,
+                "cancelled" => ToolExecutionStatus::Cancelled,
+                _ => return Err(rusqlite::Error::InvalidQuery),
+            };
+            Ok((r.get(0)?, s))
+        })?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
     }
     pub fn resume(&self, id: &SessionId) -> Result<Session, SessionStoreError> {
         let mut s = self
