@@ -12,7 +12,7 @@ use futures::StreamExt;
 use hermes_core::{
     config::SecretString,
     conversation::{ConversationRunner, Event, Turn},
-    provider::{FallbackProvider, HttpProvider, Provider, ProviderError, RetryPolicy},
+    provider::{EventStream, FallbackProvider, HttpProvider, Provider, ProviderError, RetryPolicy},
     session::SessionStore,
 };
 use std::time::Duration as StdDuration;
@@ -225,4 +225,107 @@ async fn all_hops_down_yields_aggregate_error_naming_each_provider() {
         ),
         "aggregate must name the tried providers: {err}"
     );
+}
+
+/// Wiremock cooldown E2E: provider A is down -> the chain records A cooling
+/// and falls back to B. Within the cooldown A is not re-tried even after it
+/// "recovers"; once the cooldown elapses A is tried again and serves.
+#[tokio::test]
+async fn cooldown_skips_a_down_then_recovers_it_after_the_window() {
+    use hermes_core::provider::{HealthTracker, DEFAULT_COOLDOWN};
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use std::sync::Arc;
+
+    // A toggles between 500 and 200 on a shared flag.
+    let a_healthy = Arc::new(AtomicBool::new(false));
+    let a_calls = Arc::new(AtomicUsize::new(0));
+    struct Toggle {
+        healthy: Arc<AtomicBool>,
+        calls: Arc<AtomicUsize>,
+        body: String,
+    }
+    impl wiremock::Respond for Toggle {
+        fn respond(&self, _request: &wiremock::Request) -> ResponseTemplate {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            if self.healthy.load(Ordering::SeqCst) {
+                ResponseTemplate::new(200)
+                    .insert_header("content-type", "text/event-stream")
+                    .set_body_string(self.body.clone())
+            } else {
+                ResponseTemplate::new(500).set_body_string("A down")
+            }
+        }
+    }
+
+    let server_a = MockServer::start().await;
+    Mock::given(wiremock::matchers::method("POST"))
+        .and(path("/v1/chat/completions"))
+        .respond_with(Toggle {
+            healthy: Arc::clone(&a_healthy),
+            calls: Arc::clone(&a_calls),
+            body: chat_sse(&["hello-from-a"]),
+        })
+        .mount(&server_a)
+        .await;
+    let server_b = MockServer::start().await;
+    Mock::given(wiremock::matchers::method("POST"))
+        .and(path("/v1/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_string(chat_sse(&["from-b"])),
+        )
+        .mount(&server_b)
+        .await;
+
+    // Cooldown far below the default so the cycle is observable in ms.
+    let cooldown = std::time::Duration::from_millis(120);
+    let health = Arc::new(HealthTracker::new(cooldown));
+    let chain = FallbackProvider::with_health(
+        vec![
+            ("a".into(), Box::new(http_provider(&server_a.uri(), "a-key"))),
+            ("b".into(), Box::new(http_provider(&server_b.uri(), "b-key"))),
+        ],
+        Arc::clone(&health),
+    );
+
+    let turns = [Turn::User {
+        content: "ping".into(),
+    }];
+
+    async fn drain_events(mut s: EventStream) -> String {
+        let mut out = String::new();
+        while let Some(ev) = s.next().await {
+            if let Ok(Event::Chunk(c)) = ev {
+                out.push_str(&c);
+            }
+        }
+        out
+    }
+
+    // Turn 1: A is down -> retries then fails, A recorded cooling, B serves.
+    let t1 = drain_events(chain.chat(&turns).await.unwrap()).await;
+    assert_eq!(t1, "from-b");
+    assert!(health.is_cooling_down("a"), "A must be cooling after failing");
+    let a_calls_after_t1 = a_calls.load(Ordering::SeqCst);
+
+    // Let A "recover" immediately, but it is still inside the cooldown window:
+    // the next turn must NOT re-try A.
+    a_healthy.store(true, Ordering::SeqCst);
+    let t2 = drain_events(chain.chat(&turns).await.unwrap()).await;
+    assert_eq!(t2, "from-b", "A is cooling, so B must keep serving");
+    assert_eq!(
+        a_calls.load(Ordering::SeqCst),
+        a_calls_after_t1,
+        "A must not be hit again while cooling down"
+    );
+
+    // Let the cooldown elapse: now A is tried again and, being healthy, serves.
+    tokio::time::sleep(cooldown + std::time::Duration::from_millis(60)).await;
+    assert!(!health.is_cooling_down("a"), "cooldown must have elapsed");
+    let t3 = drain_events(chain.chat(&turns).await.unwrap()).await;
+    assert_eq!(t3, "hello-from-a", "A recovers and serves after the cooldown");
+
+    // Sanity: DEFAULT_COOLDOWN is documented as 60s (bounded, in-memory only).
+    assert_eq!(DEFAULT_COOLDOWN, std::time::Duration::from_secs(60));
 }

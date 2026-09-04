@@ -78,12 +78,14 @@ impl<T: Provider + ?Sized> Provider for Box<T> {
 
 pub mod fake;
 pub mod fallback;
+pub mod health;
 pub mod http;
 pub mod registry;
 mod redact;
 pub mod sse;
 pub use fake::FakeProvider;
 pub use fallback::FallbackProvider;
+pub use health::{HealthTracker, DEFAULT_COOLDOWN};
 pub use http::{HttpProvider, RetryPolicy};
 pub use redact::redact;
 pub use registry::{ProviderRegistry, RegistryError, FAKE_PROVIDER};
