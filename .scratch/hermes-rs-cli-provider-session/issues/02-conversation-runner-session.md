@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — Hermes home dan konfigurasi kompatibel.
 
-**Status:** ready-for-agent
+**Status:** superseded — split into 02A and 02B
 
 - [ ] Provider-neutral conversation runner memiliki kontrak event yang dapat dipakai CLI dan adapter lain.
 - [ ] Fake provider menghasilkan chunk, completion, error, dan cancellation secara deterministik.
@@ -13,3 +13,6 @@
 - [ ] Session write atomic; kegagalan write mempertahankan session valid sebelumnya.
 - [ ] Secret tidak masuk ke session metadata atau diagnostic output.
 - [ ] Jika format session upstream ternyata kompleks, batas parity dan pemecahan kerja didokumentasikan sebelum implementasi berlanjut.
+
+
+Split tickets: [[02A-conversation-runner-provider-contract]] and [[02B-sqlite-session-persistence]].
