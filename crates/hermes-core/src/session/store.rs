@@ -106,7 +106,18 @@ impl SessionStore {
         Ok(id)
     }
     pub fn save_turn(&mut self, id: &SessionId, turn: &Turn) -> Result<(), SessionStoreError> {
-        let tx = self.conn.transaction()?;
+        // Begin IMMEDIATE (not the rusqlite default DEFERRED) so the write lock
+        // is taken up-front rather than lazily on the first INSERT. With a
+        // DEFERRED transaction a second concurrent connection can first take a
+        // SHARED read lock and then try to upgrade to RESERVED, which deadlocks
+        // against the first writer holding RESERVED but unable to COMMIT while
+        // a reader holds SHARED — SQLite breaks that with an untreatable
+        // SQLITE_BUSY that `busy_timeout` cannot resolve. IMMEDIATE removes the
+        // read-lock holder entirely, so concurrent writers are cleanly
+        // serialized by `busy_timeout`. See Spec 006 #06.
+        let tx = self
+            .conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let (role, content) = match turn {
             Turn::User { content } => ("user", content),
             Turn::Assistant { content } => ("assistant", content),
