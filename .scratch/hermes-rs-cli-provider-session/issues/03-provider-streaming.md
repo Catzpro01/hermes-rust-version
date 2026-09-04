@@ -4,12 +4,12 @@
 
 **Blocked by:** 02 — Conversation runner offline dan session persistence.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Provider dapat dipilih melalui konfigurasi tanpa perubahan pada conversation runner.
-- [ ] Request, authentication, response decoding, dan provider-specific errors terisolasi di adapter.
-- [ ] Streaming chunks dinormalisasi menjadi event runtime.
-- [ ] Empty/malformed chunks dan stream termination ditangani secara aman.
-- [ ] Cancellation menghentikan request dan tidak merusak session sebelumnya.
-- [ ] Credential tidak muncul dalam error, log, atau output diagnostik.
-- [ ] Test tidak membutuhkan credential provider nyata.
+- [x] Provider dapat dipilih melalui konfigurasi tanpa perubahan pada conversation runner.
+- [x] Request, authentication, response decoding, dan provider-specific errors terisolasi di adapter.
+- [x] Streaming chunks dinormalisasi menjadi event runtime.
+- [x] Empty/malformed chunks dan stream termination ditangani secara aman.
+- [x] Cancellation menghentikan request dan tidak merusak session sebelumnya.
+- [x] Credential tidak muncul dalam error, log, atau output diagnostik.
+- [x] Test tidak membutuhkan credential provider nyata.
