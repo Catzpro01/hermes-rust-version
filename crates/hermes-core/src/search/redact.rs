@@ -1,9 +1,8 @@
 /// Redacts common credential-like values from text at the output boundary.
 pub fn redact_credentials(text: &str) -> String {
     let mut result = text.to_owned();
-    for prefix in ["sk-proj-", "sk-"] {
-        result = redact_pattern(&result, prefix, 20);
-    }
+    result = redact_pattern(&result, "sk-proj-", 12);
+    result = redact_pattern(&result, "sk-", 8);
     for key in ["API_KEY=", "api_key=", "SECRET="] {
         result = redact_kv(&result, key);
     }
@@ -13,6 +12,19 @@ fn redact_pattern(text: &str, prefix: &str, min_suffix: usize) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
     while let Some(pos) = rest.find(prefix) {
+        // A secret prefix only counts at a token boundary. Without this check
+        // `find` matches the substring inside ordinary words, so lowering
+        // `min_suffix` redacts things like "ask-anything" or "desk-setup".
+        let boundary = rest[..pos]
+            .chars()
+            .next_back()
+            .is_none_or(|c| !c.is_ascii_alphanumeric() && c != '-' && c != '_');
+        if !boundary {
+            // Emit the matched text verbatim and keep scanning past it.
+            out.push_str(&rest[..pos + prefix.len()]);
+            rest = &rest[pos + prefix.len()..];
+            continue;
+        }
         out.push_str(&rest[..pos]);
         let after = &rest[pos + prefix.len()..];
         let len = after
@@ -88,5 +100,39 @@ mod tests {
     fn preserves_safe() {
         let x = "deploy safely";
         assert_eq!(redact_credentials(x), x);
+    }
+    #[test]
+    fn redacts_short_sk_key() {
+        assert!(!redact_credentials("key sk-short123").contains("sk-short123"));
+    }
+    #[test]
+    fn preserves_non_key_sk_words() {
+        // Ordinary words that merely contain "sk-" must survive redaction.
+        for word in [
+            "ask-anything",
+            "desk-setup",
+            "risk-assessment",
+            "task-tracking",
+            "ask-for-help",
+        ] {
+            assert_eq!(
+                redact_credentials(word),
+                word,
+                "false positive on ordinary word {word:?}"
+            );
+        }
+    }
+    #[test]
+    fn redacts_sk_at_start_of_text() {
+        assert!(!redact_credentials("sk-short123 leaked").contains("sk-short123"));
+    }
+    #[test]
+    fn redacts_short_sk_after_punctuation() {
+        let x = redact_credentials("token=sk-abc12345;");
+        assert!(!x.contains("abc12345"), "leaked: {x}");
+    }
+    #[test]
+    fn preserves_bare_sk_prefix() {
+        assert_eq!(redact_credentials("the sk- prefix"), "the sk- prefix");
     }
 }
