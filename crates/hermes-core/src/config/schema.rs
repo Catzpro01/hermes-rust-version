@@ -50,7 +50,7 @@ pub struct CompressionConfig {
 pub struct ProviderConfig {
     pub api: Option<String>,
     pub name: Option<String>,
-    pub api_mode: Option<String>,
+    pub api_mode: Option<ApiMode>,
     pub key_env: Option<String>,
     #[serde(default)]
     pub models: HashMap<String, serde_yaml::Value>,
@@ -59,20 +59,22 @@ pub struct ProviderConfig {
 
 /// Wire shape a provider speaks. Absent `api_mode` means [`ApiMode::ChatCompletions`],
 /// which keeps configs written before this field existed working unchanged.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+///
+/// Deserialization is strict: because the wire modes are unit variants with
+/// `rename_all = "snake_case"`, any value other than `chat_completions` or
+/// `completions` fails config parsing (`load_config`) with a serde error that
+/// lists both valid values. This is deliberate: an unknown `api_mode` is a
+/// schema error and must surface when the file is loaded, not when the first
+/// HTTP request is attempted. It is distinct from *construction* failures
+/// (missing `key_env`, bad base URL), which stay lazy per the registry.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ApiMode {
     #[default]
     ChatCompletions,
     Completions,
 }
 impl ApiMode {
-    pub fn parse(value: &str) -> Option<Self> {
-        match value {
-            "chat_completions" => Some(Self::ChatCompletions),
-            "completions" => Some(Self::Completions),
-            _ => None,
-        }
-    }
     pub fn as_str(self) -> &'static str {
         match self {
             Self::ChatCompletions => "chat_completions",

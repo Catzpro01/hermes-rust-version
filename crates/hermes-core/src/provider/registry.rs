@@ -162,20 +162,12 @@ fn build_configured(
         .map(|s| (*s).clone())
         .ok_or_else(|| fail(name, "no models declared"))?;
 
-    // Validated here rather than on first request, so a typo surfaces at startup.
-    // Spec 005 ticket 03 turns this into endpoint routing; until then both modes
-    // speak chat_completions.
-    let _api_mode = match provider.api_mode.as_deref() {
-        Some(raw) => ApiMode::parse(raw).ok_or_else(|| {
-            fail(
-                name,
-                &format!("unknown api_mode '{raw}' (valid: chat_completions, completions)"),
-            )
-        })?,
-        // Absent means chat_completions: backward compatible with configs
-        // written before api_mode existed.
-        None => ApiMode::default(),
-    };
+    // `api_mode` is already a strict tagged enum on `ProviderConfig`, so an
+    // unknown value can never reach here: it is rejected when the config file
+    // is parsed (see `ApiMode` in config/schema.rs). Absence means the default,
+    // `chat_completions`, keeping configs written before the field existed
+    // working. Endpoint/payload selection for each mode lives in `HttpProvider`.
+    let api_mode: ApiMode = provider.api_mode.unwrap_or_default();
 
     let raw_url = provider
         .api
@@ -183,11 +175,10 @@ fn build_configured(
         .ok_or_else(|| fail(name, "missing 'api' base URL"))?;
     let base_url = Url::parse(raw_url).map_err(|e| fail(name, &format!("invalid 'api' URL: {e}")))?;
 
-    Ok(Box::new(HttpProvider::new(
-        base_url,
-        resolve_api_key(name, provider)?,
-        model,
-    )))
+    Ok(Box::new(
+        HttpProvider::new(base_url, resolve_api_key(name, provider)?, model)
+            .with_api_mode(api_mode),
+    ))
 }
 
 /// Resolves a provider's credential. Names the variable when it is missing,
@@ -304,15 +295,39 @@ mod tests {
     }
 
     #[test]
-    fn rejects_unknown_api_mode_at_build_time() {
-        let registry = ProviderRegistry::from_config(&config_with(
+    fn rejects_unknown_api_mode_at_config_parse() {
+        // Ticket 03 (hybrid): an unknown api_mode is a schema error and must be
+        // rejected while the config file is parsed, not at build/request time.
+        let err = serde_yaml::from_str::<HermesConfig>(
             "providers:\n  p:\n    api: http://localhost:9/\n    api_mode: stream_magic\n    key_env: HERMES_TEST_SET_E\n    models:\n      m: {}\n",
-        ));
-        std::env::set_var("HERMES_TEST_SET_E", "dummy");
-        let err = err_message(registry.build("p"));
+        )
+        .unwrap_err()
+        .to_string();
         assert!(err.contains("stream_magic"), "must echo the bad value: {err}");
-        assert!(err.contains("chat_completions"), "must list valid values: {err}");
-        std::env::remove_var("HERMES_TEST_SET_E");
+        assert!(err.contains("chat_completions"), "must list chat_completions: {err}");
+        assert!(err.contains("completions"), "must list completions: {err}");
+    }
+
+    #[test]
+    fn absent_api_mode_defaults_to_chat_completions() {
+        // Absent means the documented default, backward compatible with configs
+        // written before api_mode existed.
+        let config = config_with(
+            "providers:\n  p:\n    api: http://localhost:9/\n    key_env: HERMES_TEST_SET_G\n    models:\n      m: {}\n",
+        );
+        assert_eq!(config.providers["p"].api_mode, None);
+        assert_eq!(
+            config.providers["p"].api_mode.unwrap_or_default(),
+            ApiMode::ChatCompletions
+        );
+    }
+
+    #[test]
+    fn completions_api_mode_parses_to_tagged_enum() {
+        let config = config_with(
+            "providers:\n  p:\n    api: http://localhost:9/\n    api_mode: completions\n    key_env: HERMES_TEST_SET_H\n    models:\n      m: {}\n",
+        );
+        assert_eq!(config.providers["p"].api_mode, Some(ApiMode::Completions));
     }
 
     #[test]
