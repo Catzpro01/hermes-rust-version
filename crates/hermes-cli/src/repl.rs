@@ -15,19 +15,26 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 #[cfg(unix)]
 use tokio::signal::unix::{signal, SignalKind};
+use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 
-struct CliConfirmation;
+#[derive(Clone)]
+struct CliConfirmation {
+    requests: mpsc::Sender<(String, oneshot::Sender<bool>)>,
+}
 #[async_trait]
 impl Confirmation for CliConfirmation {
     async fn confirm(&self, prompt: &str) -> bool {
-        eprint!("\n⚠ [Tool] {prompt} ");
-        let _ = std::io::Write::flush(&mut std::io::stderr());
-        let mut input = String::new();
-        if std::io::stdin().read_line(&mut input).is_err() {
+        let (reply, result) = oneshot::channel();
+        if self
+            .requests
+            .send((prompt.to_owned(), reply))
+            .await
+            .is_err()
+        {
             return false;
         }
-        matches!(input.trim().to_ascii_lowercase().as_str(), "y" | "yes")
+        result.await.unwrap_or(false)
     }
 }
 
@@ -51,18 +58,45 @@ pub async fn run_repl(
     };
     let existing = store.resume(&session_id)?.turns;
     let mut runner = ConversationRunner::from_turns(provider, existing);
-    let mut tool_registry = ToolRegistry::new();
-    let tool_root = std::env::current_dir().context("resolve CLI tool root")?;
-    tool_registry.register(ReadFileTool::new(&tool_root));
-    tool_registry.register(ListDirTool::new(&tool_root));
-    tool_registry.register(ShellReadonlyTool::new(
-        CliConfirmation,
-        Duration::from_secs(30),
-    ));
-    tool_registry.register(WriteFileTool::new(&tool_root, CliConfirmation));
     println!("Hermes-RS session {session_id}");
     println!("Commands: /new, /sessions, /resume <id>, /exit");
     let editor = Arc::new(Mutex::new(editor));
+    let (confirmation_tx, mut confirmation_rx) =
+        mpsc::channel::<(String, oneshot::Sender<bool>)>(8);
+    let confirmation_editor = Arc::clone(&editor);
+    tokio::spawn(async move {
+        while let Some((prompt, reply)) = confirmation_rx.recv().await {
+            let answer = tokio::task::spawn_blocking({
+                let editor = Arc::clone(&confirmation_editor);
+                move || {
+                    editor
+                        .lock()
+                        .ok()
+                        .and_then(|mut e| {
+                            e.readline(&format!("confirm {prompt} [y/N] ").to_owned())
+                                .ok()
+                        })
+                        .map(|s| matches!(s.trim().to_ascii_lowercase().as_str(), "y" | "yes"))
+                        .unwrap_or(false)
+                }
+            })
+            .await
+            .unwrap_or(false);
+            let _ = reply.send(answer);
+        }
+    });
+    let mut tool_registry = ToolRegistry::new();
+    let tool_root = std::env::current_dir().context("resolve CLI tool root")?;
+    let confirmation = CliConfirmation {
+        requests: confirmation_tx,
+    };
+    tool_registry.register(ReadFileTool::new(&tool_root));
+    tool_registry.register(ListDirTool::new(&tool_root));
+    tool_registry.register(ShellReadonlyTool::new(
+        confirmation.clone(),
+        Duration::from_secs(30),
+    ));
+    tool_registry.register(WriteFileTool::new(&tool_root, confirmation));
     loop {
         if !std::io::stdin().is_terminal() {
             print!("hermes> ");

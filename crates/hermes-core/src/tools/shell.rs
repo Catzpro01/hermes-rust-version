@@ -35,7 +35,11 @@ impl<C: Confirmation> Tool for ShellTool<C> {
         if !self.confirmation.confirm(&call.arguments).await {
             return Err(ToolError::Denied("confirmation declined".into()));
         }
-        let child = Command::new("sh").arg("-c").arg(&call.arguments).output();
+        let child = Command::new("sh")
+            .arg("-c")
+            .arg(&call.arguments)
+            .kill_on_drop(true)
+            .output();
         let output = tokio::select! { _=cancel.cancelled()=>return Err(ToolError::Cancelled), result=timeout(self.timeout,child)=>result.map_err(|_|ToolError::Timeout(self.timeout))?.map_err(|e|ToolError::Failed(e.to_string()))? };
         let content =
             String::from_utf8_lossy(&[output.stdout, output.stderr].concat()).into_owned();
@@ -103,7 +107,11 @@ impl<C: Confirmation> Tool for ShellReadonlyTool<C> {
         {
             return Err(ToolError::Denied("confirmation declined".into()));
         }
-        let child = Command::new("sh").arg("-c").arg(&call.arguments).output();
+        let child = Command::new("sh")
+            .arg("-c")
+            .arg(&call.arguments)
+            .kill_on_drop(true)
+            .output();
         let output = tokio::select! {_=cancel.cancelled()=>return Err(ToolError::Cancelled),r=timeout(self.timeout,child)=>r.map_err(|_|ToolError::Timeout(self.timeout))?.map_err(|e|ToolError::Failed(e.to_string()))?};
         let content =
             String::from_utf8_lossy(&[output.stdout, output.stderr].concat()).into_owned();

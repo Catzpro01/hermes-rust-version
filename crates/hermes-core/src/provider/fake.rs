@@ -16,6 +16,23 @@ impl Provider for FakeProvider {
                 _ => None,
             })
             .unwrap_or("");
+        if turns.iter().any(|turn| matches!(turn, Turn::Tool { .. })) {
+            return Ok(tool_aware_stream(Box::pin(stream::iter([
+                Ok(Event::Started),
+                Ok(Event::Chunk("tool completed".into())),
+                Ok(Event::Done),
+            ]))));
+        }
+        if input == "tool" {
+            return Ok(tool_aware_stream(Box::pin(stream::iter([
+                Ok(Event::Started),
+                Ok(Event::Chunk(
+                    "<tool_call id=\"fake-1\">read_file: {\"path\":\"Cargo.toml\"}</tool_call>"
+                        .into(),
+                )),
+                Ok(Event::Done),
+            ]))));
+        }
         if input == "error" {
             return Ok(tool_aware_stream(Box::pin(stream::iter([
                 Ok(Event::Started),
