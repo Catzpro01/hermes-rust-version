@@ -45,9 +45,6 @@ async fn run() -> anyhow::Result<()> {
         .try_init()
         .ok();
     let args = Args::parse();
-    if args.provider != "fake" {
-        anyhow::bail!(
-            "provider '{}' is not available in the offline CLI slice; use --provider fake",
             args.provider
         );
     }
