@@ -99,3 +99,25 @@ fn smoke_python_hermes_untouched() {
     let after = fs::metadata(&state).and_then(|m| m.modified()).ok();
     assert_eq!(before, after, "Python Hermes state.db was modified");
 }
+
+#[cfg(unix)]
+#[test]
+fn smoke_sigint_returns_130() {
+    use nix::{
+        sys::signal::{kill, Signal},
+        unistd::Pid,
+    };
+    use std::{process::Stdio, thread, time::Duration};
+    let home = TempDir::new().unwrap();
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_hermes-rs"))
+        .env("HERMES_HOME", home.path())
+        .args(["--provider", "fake"])
+        .stdin(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let _stdin = child.stdin.take();
+    thread::sleep(Duration::from_secs(1));
+    kill(Pid::from_raw(child.id() as i32), Signal::SIGINT).unwrap();
+    let status = child.wait().unwrap();
+    assert_eq!(status.code(), Some(130));
+}

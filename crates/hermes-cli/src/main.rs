@@ -27,7 +27,11 @@ async fn main() {
         Ok(()) => 0,
         Err(error) => {
             eprintln!("error: {error}");
-            1
+            if error.to_string().contains("SIGINT") {
+                130
+            } else {
+                1
+            }
         }
     });
 }
