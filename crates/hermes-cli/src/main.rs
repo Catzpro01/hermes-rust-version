@@ -3,6 +3,7 @@ use hermes_core::config::{load_config, resolve_hermes_home, SecretString};
 use hermes_core::provider::{FakeProvider, HttpProvider, Provider};
 use url::Url;
 
+mod output;
 mod render;
 mod repl;
 mod session_menu;

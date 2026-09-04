@@ -1,3 +1,4 @@
+use crate::output::sanitize_untrusted_output;
 use anyhow::{bail, Context, Result};
 use hermes_core::session::{SessionId, SessionStore};
 use rustyline::{error::ReadlineError, DefaultEditor};
@@ -44,7 +45,11 @@ pub fn list_sessions(store: &SessionStore) -> Result<()> {
                 _ => None,
             })
             .unwrap_or("(empty)");
-        println!("{id}  started={:.3}  {preview}", session.started_at);
+        println!(
+            "{id}  started={:.3}  {}",
+            session.started_at,
+            sanitize_untrusted_output(preview)
+        );
     }
     Ok(())
 }
@@ -70,7 +75,7 @@ fn _bail() -> Result<()> {
 pub fn inspect_session(store: &SessionStore, id: SessionId) -> Result<()> {
     let session = store.resume(&id)?;
     println!("Session: {}", session.id);
-    println!("Source: {}", session.source);
+    println!("Source: {}", sanitize_untrusted_output(&session.source));
     println!("Started: {:.3}", session.started_at);
     println!("Turns: {}", session.turns.len());
     let tools = store.list_tool_call_details(&id)?;
@@ -86,7 +91,12 @@ pub fn show_messages(store: &SessionStore, id: SessionId) -> Result<()> {
             hermes_core::conversation::Turn::Assistant { content } => ("assistant", content),
             hermes_core::conversation::Turn::Tool { name, content } => (name.as_str(), content),
         };
-        println!("[{}] {}: {}", index + 1, role, content);
+        println!(
+            "[{}] {}: {}",
+            index + 1,
+            sanitize_untrusted_output(role),
+            sanitize_untrusted_output(content)
+        );
     }
     Ok(())
 }
@@ -95,7 +105,11 @@ pub fn show_tool_calls(store: &SessionStore, id: SessionId) -> Result<()> {
     for call in store.list_tool_call_details(&id)? {
         println!(
             "{} [{}] {} args={} result={}",
-            call.id, call.status, call.tool_name, call.arguments, call.result
+            call.id,
+            call.status,
+            sanitize_untrusted_output(&call.tool_name),
+            sanitize_untrusted_output(&call.arguments),
+            sanitize_untrusted_output(&call.result)
         );
     }
     Ok(())
