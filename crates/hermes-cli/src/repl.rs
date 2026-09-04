@@ -67,8 +67,19 @@ pub async fn run_repl(
     };
     let existing = store.resume(&session_id)?.turns;
     let mut runner = ConversationRunner::from_turns(provider, existing);
+    // Advisory context limit resolved from config precedence for the active
+    // provider (ProviderConfig.context_length -> ModelConfig.context_length ->
+    // None). Feeds the runner's token accounting + pre-send warning.
+    let mut context_limit = resolve_context_limit(config.as_ref(), &provider_name);
+    runner.set_context_limit(context_limit);
     println!("Hermes-RS session {session_id} (provider {provider_name})");
-    println!("Commands: /provider [name], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /exit");
+    println!("Commands: /provider [name], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
+    if let Some(limit) = context_limit {
+        println!(
+            "[context ~{} tokens / limit {limit}]",
+            runner.estimated_tokens()
+        );
+    }
     let editor = Arc::new(Mutex::new(editor));
     let (confirmation_tx, mut confirmation_rx) =
         mpsc::channel::<(String, oneshot::Sender<bool>)>(8);
@@ -190,6 +201,20 @@ pub async fn run_repl(
                 println!("Resumed {id}");
                 continue;
             }
+            // `/info` shows current context accounting for the active provider.
+            "/info" => {
+                let limit = context_limit
+                    .map(|l| l.to_string())
+                    .unwrap_or_else(|| "none".to_owned());
+                println!(
+                    "provider: {provider_name} | estimated context: ~{} tokens | limit: {limit}",
+                    runner.estimated_tokens()
+                );
+                if let Some(w) = runner.context_warning() {
+                    println!("{w}");
+                }
+                continue;
+            }
             // `/provider` lists available providers and marks the active one.
             "/provider" => {
                 list_providers(&registry, &provider_name);
@@ -209,6 +234,9 @@ pub async fn run_repl(
                         Ok(new_provider) => {
                             runner.replace_provider(new_provider);
                             provider_name = target.to_owned();
+                            // Context limit follows the active provider.
+                            context_limit = resolve_context_limit(config.as_ref(), &provider_name);
+                            runner.set_context_limit(context_limit);
                             println!("Switched provider to {target}");
                         }
                         Err(err) => {
@@ -276,6 +304,20 @@ fn resolve_provider(
     registry.select(Some(name), None, base_url_override, config)
 }
 
+/// Resolves the advisory context limit for the active provider from config
+/// precedence: `providers[<active>].context_length` first, then
+/// `model.context_length`, then `None` (no known limit). The active name may be
+/// a declared provider or a model-level/`fake` entry; the latter falls back to
+/// the model-level value or `None`. Pure and unit-testable.
+fn resolve_context_limit(config: Option<&HermesConfig>, active: &str) -> Option<u64> {
+    let config = config?;
+    config
+        .providers
+        .get(active)
+        .and_then(|p| p.context_length)
+        .or(config.model.context_length)
+}
+
 /// Prints every registered provider (sorted) with the active one marked. If the
 /// active provider came from the model-level fallback and is not a registered
 /// name, it is still printed so the marker is always present.
@@ -320,5 +362,53 @@ mod tests {
         let registry = ProviderRegistry::offline();
         let available = registry.available();
         assert_eq!(available, vec![FAKE_PROVIDER.to_owned()]);
+    }
+
+    fn provider_config(limit: Option<u64>) -> hermes_core::config::ProviderConfig {
+        hermes_core::config::ProviderConfig {
+            api: Some("http://localhost:9/".into()),
+            name: None,
+            api_mode: None,
+            key_env: None,
+            models: std::collections::HashMap::new(),
+            context_length: limit,
+        }
+    }
+
+    #[test]
+    fn context_limit_none_without_config() {
+        assert_eq!(resolve_context_limit(None, "fake"), None);
+        assert_eq!(resolve_context_limit(Some(&HermesConfig::default()), "fake"), None);
+    }
+
+    #[test]
+    fn context_limit_uses_provider_config_first() {
+        let mut config = HermesConfig::default();
+        config.model.context_length = Some(200);
+        config
+            .providers
+            .insert("b".to_owned(), provider_config(Some(4000)));
+        // Declared provider uses its own context_length.
+        assert_eq!(resolve_context_limit(Some(&config), "b"), Some(4000));
+        // An undeclared active (e.g. model-level/fake) falls back to model.
+        assert_eq!(resolve_context_limit(Some(&config), "fake"), Some(200));
+    }
+
+    #[test]
+    fn context_limit_provider_absent_field_falls_back_to_model() {
+        let mut config = HermesConfig::default();
+        config.model.context_length = Some(300);
+        config
+            .providers
+            .insert("b".to_owned(), provider_config(None));
+        // Provider 'b' declared but no context_length -> model value.
+        assert_eq!(resolve_context_limit(Some(&config), "b"), Some(300));
+    }
+
+    #[test]
+    fn context_limit_is_none_when_nothing_configured() {
+        let config = HermesConfig::default();
+        assert_eq!(resolve_context_limit(Some(&config), "fake"), None);
+        assert_eq!(resolve_context_limit(Some(&config), "b"), None);
     }
 }

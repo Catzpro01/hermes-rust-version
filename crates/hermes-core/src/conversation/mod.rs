@@ -35,19 +35,53 @@ pub enum Event {
 pub struct ConversationRunner<P> {
     provider: P,
     turns: Vec<Turn>,
+    /// Advisory context window this runner should stay under, when known
+    /// (from the active provider's `context_length`/compression config). `None`
+    /// means "no known limit" -> no truncation/warning (backward compatible).
+    /// Ticket 01 only reads it for accounting + a non-blocking warning;
+    /// truncation (sliding window) is Ticket 02.
+    context_limit: Option<u64>,
 }
 impl<P: Provider> ConversationRunner<P> {
     pub fn new(provider: P) -> Self {
         Self {
             provider,
             turns: Vec::new(),
+            context_limit: None,
         }
     }
     pub fn turns(&self) -> &[Turn] {
         &self.turns
     }
     pub fn from_turns(provider: P, turns: Vec<Turn>) -> Self {
-        Self { provider, turns }
+        Self {
+            provider,
+            turns,
+            context_limit: None,
+        }
+    }
+
+    /// Sets the advisory context limit (e.g. from config precedence at REPL
+    /// startup or after a `/provider` switch). Does not change stored turns.
+    pub fn set_context_limit(&mut self, limit: Option<u64>) {
+        self.context_limit = limit;
+    }
+
+    /// The advisory context limit this runner is told to respect.
+    pub fn context_limit(&self) -> Option<u64> {
+        self.context_limit
+    }
+
+    /// Estimated tokens across all current turns, delegating to the Spec 006
+    /// helper so the char/4 heuristic lives in exactly one place.
+    pub fn estimated_tokens(&self) -> usize {
+        crate::conversation::context::estimate_turns_tokens(&self.turns)
+    }
+
+    /// Advisory warning when current context is estimated to exceed the limit.
+    /// `None` when within limit or when no limit is configured. Never blocks.
+    pub fn context_warning(&self) -> Option<String> {
+        crate::conversation::context::check_context_limit(&self.turns, self.context_limit)
     }
     pub fn replace_turns(&mut self, turns: Vec<Turn>) {
         self.turns = turns;
@@ -102,6 +136,12 @@ impl<P: Provider> ConversationRunner<P> {
         self.turns.push(Turn::User {
             content: content.into(),
         });
+        // Advisory (never blocking): warn if the full context is estimated to
+        // exceed the runner's context limit before we send it. Truncation is a
+        // later ticket (sliding window); here we only surface a warning.
+        if let Some(warning) = self.context_warning() {
+            tracing::warn!("{warning}");
+        }
         for iteration in 1..=max_iters {
             if cancel.is_cancelled() {
                 self.discard_pending_user();
@@ -206,5 +246,80 @@ impl<P: Provider> ConversationRunner<P> {
         }
         self.push_assistant(answer);
         Ok(events)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::provider::FakeProvider;
+
+    fn runner_with(turns: Vec<Turn>) -> ConversationRunner<FakeProvider> {
+        ConversationRunner::from_turns(FakeProvider, turns)
+    }
+
+    #[test]
+    fn estimated_tokens_delegates_to_estimate_turns_tokens() {
+        // 40-char content => 10 tokens (char/4 heuristic pinned in context.rs).
+        let mut r = runner_with(vec![Turn::User {
+            content: "a".repeat(40),
+        }]);
+        assert_eq!(r.estimated_tokens(), 10);
+        // Adding another 40-char user turn raises the count.
+        r.turns
+            .push(Turn::User {
+                content: "b".repeat(40),
+            });
+        assert_eq!(r.estimated_tokens(), 20);
+    }
+
+    #[test]
+    fn empty_runner_reports_zero_tokens() {
+        let r = runner_with(vec![]);
+        assert_eq!(r.estimated_tokens(), 0);
+        assert_eq!(r.context_limit(), None);
+        assert_eq!(r.context_warning(), None);
+    }
+
+    #[test]
+    fn context_limit_defaults_to_none_and_is_settable() {
+        let mut r = runner_with(vec![]);
+        assert_eq!(r.context_limit(), None);
+        r.set_context_limit(Some(100));
+        assert_eq!(r.context_limit(), Some(100));
+        r.set_context_limit(None);
+        assert_eq!(r.context_limit(), None);
+    }
+
+    #[test]
+    fn context_warning_appears_only_when_over_limit() {
+        // 200-char user turn => 50 estimated tokens.
+        let mut r = runner_with(vec![Turn::User {
+            content: "x".repeat(200),
+        }]);
+        assert_eq!(r.estimated_tokens(), 50);
+        // No limit configured -> no warning.
+        assert_eq!(r.context_warning(), None);
+        // Limit large enough -> no warning.
+        r.set_context_limit(Some(100));
+        assert_eq!(r.context_warning(), None);
+        // Limit below estimate -> warning naming both numbers.
+        r.set_context_limit(Some(40));
+        let w = r.context_warning().expect("should warn");
+        assert!(w.contains("50"), "must name estimate: {w}");
+        assert!(w.contains("40"), "must name limit: {w}");
+    }
+
+    #[tokio::test]
+    async fn chat_records_the_user_turn_before_sending() {
+        let mut r = runner_with(vec![]);
+        // FakeProvider always returns a stream; just ensure a user turn was
+        // recorded (context accounting reflects it).
+        let content = "z".repeat(80);
+        let stream = r.chat(content.clone()).await.unwrap();
+        use futures::StreamExt;
+        stream.collect::<Vec<_>>().await;
+        assert_eq!(r.turns().len(), 1);
+        assert_eq!(r.estimated_tokens(), crate::conversation::context::estimate_tokens(&content));
     }
 }
