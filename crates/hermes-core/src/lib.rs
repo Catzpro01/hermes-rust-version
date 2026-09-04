@@ -4,6 +4,7 @@ pub mod config;
 pub mod conversation;
 pub mod provider;
 pub mod session;
+pub mod tools;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

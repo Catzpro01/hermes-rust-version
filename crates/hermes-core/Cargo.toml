@@ -19,6 +19,7 @@ tokio-util.workspace = true
 tracing.workspace = true
 url.workspace = true
 async-stream.workspace = true
+quick-xml.workspace = true
 rusqlite.workspace = true
 uuid.workspace = true
 
