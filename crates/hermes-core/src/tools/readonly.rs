@@ -108,11 +108,8 @@ impl Tool for ListDirTool {
         call: &ToolCall,
         cancel: CancellationToken,
     ) -> Result<ToolResponse, ToolError> {
-        let path = safe_path(
-            &self.root,
-            &arg_path(&call.arguments).unwrap_or_else(|_| ".".into()),
-        )
-        .await?;
+        let requested = arg_path(&call.arguments)?;
+        let path = safe_path(&self.root, &requested).await?;
         let mut dir = fs::read_dir(path)
             .await
             .map_err(|e| ToolError::Failed(e.to_string()))?;

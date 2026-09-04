@@ -5,7 +5,7 @@ use hermes_core::{
     conversation::{AgenticResult, ConversationRunner},
     provider::{Provider, ProviderError},
     session::SessionStore,
-    tools::{Confirmation, ShellTool, ToolRegistry},
+    tools::{Confirmation, ListDirTool, ReadFileTool, ShellTool, ToolRegistry},
 };
 use rustyline::{error::ReadlineError, DefaultEditor};
 use std::io::IsTerminal;
@@ -44,6 +44,9 @@ pub async fn run_repl(
     let existing = store.resume(&session_id)?.turns;
     let mut runner = ConversationRunner::from_turns(provider, existing);
     let mut tool_registry = ToolRegistry::new();
+    let tool_root = std::env::current_dir().context("resolve CLI tool root")?;
+    tool_registry.register(ReadFileTool::new(&tool_root));
+    tool_registry.register(ListDirTool::new(&tool_root));
     tool_registry.register(ShellTool::new(
         DenyShellConfirmation,
         Duration::from_secs(30),
