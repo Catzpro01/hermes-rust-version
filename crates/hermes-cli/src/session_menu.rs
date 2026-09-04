@@ -117,6 +117,8 @@ pub fn show_tool_calls(store: &SessionStore, id: SessionId) -> Result<()> {
 
 pub fn search_sessions(store: &SessionStore, query: &str) -> Result<()> {
     let limits = hermes_core::search::SearchLimits::default();
+    // Explicit rebuild keeps the external-content index deterministic; this writes only derived FTS state.
+    store.repair_search_index()?;
     let results = match store.search_messages(query, None, limits) {
         Ok(results) => results,
         Err(hermes_core::search::SearchError::IndexNotReady) => {
