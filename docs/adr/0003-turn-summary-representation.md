@@ -1,9 +1,13 @@
 # ADR 0003: Representation of the dropped-context summary
 
-- Status: proposed (for review, alongside Spec 008 closure)
+- Status: accepted
 - Date: 2026-09-05
 - Scope: Spec 008 (memory/context) — turn summarization
 - Related: ticket `03-turn-summarization`, `docs/FTS5_CONTRACT.md`, `docs/PARITY.md`
+
+_Accepted by review (Spec 008 closure). This ADR records the representation for a
+**future** summary-injection feature; Ticket 03 remains display-only and is
+untouched by this decision._
 
 ## Context
 
@@ -69,6 +73,16 @@ copy, never the canonical rows (Spec 008 invariant).
   `"summary"`→`Turn::Summary`; older binaries reading a newer db are not a
   supported combination (Rust-Hermes is a single moving binary, not a
   long-lived db server). Within one binary version the round-trip is lossless.
+
+  **Scope of the "old reader" note (clarification from review):** the reader
+  that must be updated to recognise `"summary"` is Hermes-RS itself — its
+  `SessionStore::resume` gains the `"summary"`→`Turn::Summary` arm when the
+  injection feature lands. This is not about Hermes Python. Hermes Python never
+  writes summaries and opens the user's own `~/.hermes/state.db`, which
+  Rust-Hermes does not mutate; because `role` is a free-form column, any
+  foreign reader must treat an unrecognised role as opaque rather than crash.
+  `smoke_python_hermes_untouched` guards the stronger invariant that Hermes-RS
+  never modifies the Python installation at all.
 
 ### Provider mapping
 
