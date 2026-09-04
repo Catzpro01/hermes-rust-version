@@ -64,23 +64,22 @@ pub fn tool_aware_stream(mut input: EventStream) -> EventStream {
             match event {
                 Event::Chunk(text) => {
                     buffer.push_str(&text);
-                    loop {
-                        if let Some(start) = buffer.find("<tool_call") {
-                            if start > 0 { yield Event::Chunk(buffer[..start].to_owned()); buffer.drain(..start); }
-                            if let Some(end) = buffer.find("</tool_call>") {
-                                let end = end + "</tool_call>".len();
-                                let xml = buffer[..end].to_owned(); buffer.drain(..end);
-                                match parse_tool_events(&xml) {
-                                    Ok(events) => for parsed in events { if let ToolEvent::Call(call) = parsed { yield Event::ToolCall(call); } },
-                                    Err(_) => yield Event::Chunk(xml),
-                                }
-                                continue;
+                    if let Some(start) = buffer.find("<tool_call") {
+                        if start > 0 { yield Event::Chunk(buffer[..start].to_owned()); buffer.drain(..start); }
+                        if let Some(end) = buffer.find("</tool_call>") {
+                            let end = end + "</tool_call>".len();
+                            let xml = buffer[..end].to_owned(); buffer.drain(..end);
+                            match parse_tool_events(&xml) {
+                                Ok(events) => for parsed in events { if let ToolEvent::Call(call) = parsed { yield Event::ToolCall(call); } },
+                                Err(_) => yield Event::Chunk(xml),
                             }
-                            break;
+                            if !buffer.is_empty() { yield Event::Chunk(std::mem::take(&mut buffer)); }
                         }
-                        if buffer.contains("<tool_") { break; }
-                        if buffer.len() > 128 { let split = buffer.len() - 64; let text = buffer[..split].to_owned(); buffer.drain(..split); yield Event::Chunk(text); }
-                        break;
+                    } else {
+                        let marker = "<tool_call";
+                        let keep = (1..marker.len()).rev().find(|n| buffer.ends_with(&marker[..*n])).unwrap_or(0);
+                        if keep == 0 { yield Event::Chunk(std::mem::take(&mut buffer)); }
+                        else if buffer.len() > keep { let split=buffer.len()-keep; let text=buffer[..split].to_owned(); buffer.drain(..split); yield Event::Chunk(text); }
                     }
                 }
                 other => yield other,
