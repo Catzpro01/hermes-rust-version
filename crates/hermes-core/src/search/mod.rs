@@ -1,34 +1,17 @@
-use rusqlite::Connection;
-use thiserror::Error;
-
+pub mod error;
 pub mod migration;
+pub mod query;
+pub mod state;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SearchState {
-    Ready,
-    Unavailable,
-    Corrupt(String),
-}
+pub use error::SearchError;
+pub use query::{escape_fts5_literal, search_messages, SearchLimits, SearchResult};
+pub use state::SearchState;
 
-#[derive(Debug, Error)]
-pub enum SearchError {
-    #[error("FTS5 is not available in this SQLite build")]
-    Fts5Unavailable,
-    #[error("migration failed: {0}")]
-    MigrationFailed(#[source] rusqlite::Error),
-    #[error("index rebuild failed: {0}")]
-    RebuildFailed(#[source] rusqlite::Error),
-    #[error("index not ready: run rebuild first")]
-    IndexNotReady,
-    #[error("index corrupt: {reason}")]
-    IndexCorrupt { reason: String },
-}
+use rusqlite::Connection;
 
 /// Checks the compiled SQLite feature without changing canonical tables.
 pub fn check_fts5_available(conn: &Connection) -> Result<bool, SearchError> {
-    let result = conn.execute_batch(
-        "CREATE VIRTUAL TABLE temp.fts5_availability_probe USING fts5(value); DROP TABLE temp.fts5_availability_probe;",
-    );
+    let result = conn.execute_batch("CREATE VIRTUAL TABLE temp.fts5_availability_probe USING fts5(value); DROP TABLE temp.fts5_availability_probe;");
     Ok(result.is_ok())
 }
 

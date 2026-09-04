@@ -59,6 +59,15 @@ impl SessionStore {
     }
 }
 impl SessionStore {
+    pub fn search_messages(
+        &self,
+        query: &str,
+        session: Option<&SessionId>,
+        limits: crate::search::SearchLimits,
+    ) -> Result<Vec<crate::search::SearchResult>, crate::search::SearchError> {
+        crate::search::search_messages(&self.conn, &self.search_state, query, session, limits)
+    }
+
     pub fn search_state(&self) -> &crate::search::SearchState {
         &self.search_state
     }
