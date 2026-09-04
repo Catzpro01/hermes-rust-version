@@ -103,6 +103,14 @@ pub struct ModelConfig {
     pub dtype: Option<String>,
     pub quantization: Option<String>,
     pub device: Option<String>,
+    /// Ordered names of `providers:` to try after the active provider when it
+    /// fails before producing a stream, e.g. `model.fallback_chain:
+    /// [anthropic, local]`. Empty (default) means no automatic fallback. Names
+    /// must refer to configured `providers:` entries (the built-in `fake` is
+    /// also allowed); an unknown name is rejected at startup. Only consulted
+    /// when the active provider is itself a configured `providers:` entry.
+    #[serde(default)]
+    pub fallback_chain: Vec<String>,
 }
 impl<'de> Deserialize<'de> for ModelConfig {
     fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
@@ -123,6 +131,8 @@ impl<'de> Deserialize<'de> for ModelConfig {
             dtype: Option<String>,
             quantization: Option<String>,
             device: Option<String>,
+            #[serde(default)]
+            fallback_chain: Vec<String>,
         }
         match Input::deserialize(d)? {
             Input::Text(default) => Ok(Self {
@@ -139,6 +149,7 @@ impl<'de> Deserialize<'de> for ModelConfig {
                 dtype: m.dtype,
                 quantization: m.quantization,
                 device: m.device,
+                fallback_chain: m.fallback_chain,
             }),
         }
     }

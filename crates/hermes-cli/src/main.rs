@@ -67,8 +67,12 @@ async fn run() -> anyhow::Result<()> {
         .as_ref()
         .and_then(|c| c.model.provider.clone())
         .filter(|p| p != "auto");
+    // Startup resolves with fallback (config `model.fallback_chain`), so a
+    // single `Box<dyn Provider>` is handed to the REPL whether or not a chain
+    // was configured. The mid-session `/provider <name>` command still uses the
+    // single-provider `select`, letting a user-explicit choice bypass fallback.
     let provider: Box<dyn Provider> = registry
-        .select(
+        .select_with_fallback(
             args.provider.as_deref(),
             config_provider.as_deref(),
             args.api_url.as_deref(),

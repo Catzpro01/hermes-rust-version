@@ -301,6 +301,23 @@ impl Provider for HttpProvider {
             .await
             .map(tool_aware_stream)
     }
+
+    // Override so cancellation passes through a `Box<dyn Provider>` (the shape
+    // the runner and FallbackProvider hold). The inherent `chat_with_cancel`
+    // honours the token both before the request (send_with_retry) and during
+    // the SSE stream; here we additionally apply tool-tag parsing so the
+    // result is indistinguishable from `chat`. Without this override, dynamic
+    // dispatch would fall to the trait default (`self.chat()`), which builds a
+    // fresh token and silently ignores the caller's cancellation.
+    async fn chat_with_cancel(
+        &self,
+        turns: &[Turn],
+        cancel: CancellationToken,
+    ) -> Result<EventStream, ProviderError> {
+        self.chat_with_cancel(turns, cancel)
+            .await
+            .map(tool_aware_stream)
+    }
 }
 
 /// Total per-request timeout applied to the internally-built HTTP client.

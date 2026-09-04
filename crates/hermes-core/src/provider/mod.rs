@@ -25,6 +25,8 @@ pub enum ProviderError {
     Timeout,
     #[error("request cancelled")]
     Cancelled,
+    #[error("all providers in the fallback chain failed (tried: {})", tried.join(", "))]
+    Fallback { tried: Vec<String> },
 }
 
 impl ProviderError {
@@ -37,7 +39,11 @@ impl ProviderError {
         match self {
             ProviderError::Http { status, .. } => RETRYABLE_HTTP_STATUS.contains(status),
             ProviderError::Timeout => true,
-            ProviderError::Message(_) | ProviderError::Cancelled => false,
+            // A fallback-exhausted error is terminal for this request; each hop
+            // already ran its own retry policy before the chain gave up.
+            ProviderError::Message(_) | ProviderError::Cancelled | ProviderError::Fallback { .. } => {
+                false
+            }
         }
     }
 }
@@ -71,11 +77,13 @@ impl<T: Provider + ?Sized> Provider for Box<T> {
 }
 
 pub mod fake;
+pub mod fallback;
 pub mod http;
 pub mod registry;
 mod redact;
 pub mod sse;
 pub use fake::FakeProvider;
+pub use fallback::FallbackProvider;
 pub use http::{HttpProvider, RetryPolicy};
 pub use redact::redact;
 pub use registry::{ProviderRegistry, RegistryError, FAKE_PROVIDER};
@@ -142,9 +150,14 @@ mod tests {
         }
         // A 5xx outside the explicit set is not retried by this classification.
         assert!(!http(501).is_retryable());
-        // Generic transport message and a user cancellation are not retried.
+        // Generic transport message, a user cancellation, and a fallback chain
+        // exhaustion are not retried (each hop already retried internally).
         assert!(!ProviderError::Message("boom".into()).is_retryable());
         assert!(!ProviderError::Cancelled.is_retryable());
+        assert!(!ProviderError::Fallback {
+            tried: vec!["a".into(), "b".into()]
+        }
+        .is_retryable());
     }
 
     #[test]

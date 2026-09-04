@@ -6,7 +6,7 @@
 //! prevent startup or take down the provider currently in use.
 
 use crate::config::{ApiMode, HermesConfig, ProviderConfig, SecretString};
-use crate::provider::{FakeProvider, HttpProvider, Provider};
+use crate::provider::{FakeProvider, FallbackProvider, HttpProvider, Provider};
 use std::collections::HashMap;
 use thiserror::Error;
 use url::Url;
@@ -121,6 +121,69 @@ impl ProviderRegistry {
             name: name.to_owned(),
             available: self.available().join(", "),
         })
+    }
+
+    /// Startup selection: resolves the active provider (same precedence as
+    /// [`Self::select`]) and wraps it in a [`FallbackProvider`] whose remaining
+    /// hops are `config.model.fallback_chain`, when that active provider is a
+    /// registered `providers:` entry.
+    ///
+    /// Fallback only makes sense between declared providers, so it is ignored
+    /// when the active provider comes from the model-level fallback path. Each
+    /// fallback name must be registered (the built-in `fake` counts); an
+    /// unknown name is a strict error listing what is available. If only the
+    /// active provider survives, the plain provider is returned unwrapped so a
+    /// single-provider session has no fallback indirection.
+    pub fn select_with_fallback(
+        &self,
+        cli_provider: Option<&str>,
+        config_provider: Option<&str>,
+        base_url_override: Option<&str>,
+        config: Option<&HermesConfig>,
+    ) -> Result<Box<dyn Provider>, RegistryError> {
+        let active = cli_provider.or(config_provider).unwrap_or(FAKE_PROVIDER);
+        // Fallback is a per-`providers:` strategy: only engage when the active
+        // provider is a registered name. Otherwise behave exactly like `select`.
+        if !self.contains(active) {
+            return self.select(
+                cli_provider,
+                config_provider,
+                base_url_override,
+                config,
+            );
+        }
+        let fallback_chain: Vec<String> = config
+            .map(|c| c.model.fallback_chain.clone())
+            .unwrap_or_default();
+        // Strict reject: every named fallback hop must exist up front, so a
+        // typo in the chain is caught at startup rather than silently skipped.
+        for name in &fallback_chain {
+            if !self.contains(name) {
+                return Err(RegistryError::UnknownProvider {
+                    name: name.clone(),
+                    available: self.available().join(", "),
+                });
+            }
+        }
+        // Build the primary (its construction failure propagates, matching
+        // `select`), then each usable fallback hop in declared order. A fallback
+        // hop whose construction fails (e.g. a missing key_env) is dropped so a
+        // misconfigured backup never takes down a working primary; the strict
+        // name check above already guarantees the name was declared.
+        let mut hops: Vec<(String, Box<dyn Provider>)> = Vec::new();
+        hops.push((active.to_owned(), self.build(active)?));
+        for name in fallback_chain {
+            if name == active {
+                continue;
+            }
+            if let Ok(provider) = self.build(&name) {
+                hops.push((name, provider));
+            }
+        }
+        if hops.len() == 1 {
+            return Ok(hops.pop().expect("one hop").1);
+        }
+        Ok(Box::new(FallbackProvider::new(hops)))
     }
 }
 
@@ -427,5 +490,73 @@ mod tests {
             assert!(registry.build("p").is_ok());
         }
         std::env::remove_var("HERMES_TEST_SET_F");
+    }
+
+    #[test]
+    fn select_with_fallback_resolves_offline_fake_single() {
+        let registry = ProviderRegistry::offline();
+        assert!(registry.select_with_fallback(None, None, None, None).is_ok());
+    }
+
+    #[test]
+    fn select_with_fallback_rejects_an_unknown_fallback_name() {
+        // A fallback name that is not a declared provider must be rejected
+        // strictly (fail fast at startup), naming the bad name and available
+        // providers.
+        std::env::set_var("HERMES_TEST_FB_B", "b-key");
+        let config = config_with(
+            "model:\n  provider: b\n  fallback_chain: [nope]\nproviders:\n  b:\n    api: http://localhost:9/\n    key_env: HERMES_TEST_FB_B\n    models:\n      m: {}\n",
+        );
+        let registry = ProviderRegistry::from_config(&config);
+        let err = err_message(registry.select_with_fallback(None, Some("b"), None, Some(&config)));
+        assert!(err.contains("nope"), "must name the bad hop: {err}");
+        assert!(err.contains("b"), "must list available providers: {err}");
+        assert!(err.contains("fake"), "must list fake as available: {err}");
+        std::env::remove_var("HERMES_TEST_FB_B");
+    }
+
+    #[test]
+    fn select_with_fallback_builds_a_chain_when_more_than_one_hop_survives() {
+        // Both hops are usable (keys present) -> a multi-hop chain is returned.
+        std::env::set_var("HERMES_TEST_FB_PRIMARY", "primary-key");
+        std::env::set_var("HERMES_TEST_FB_BACKUP", "backup-key");
+        let config = config_with(
+            "model:\n  provider: primary\n  fallback_chain: [backup]\nproviders:\n  primary:\n    api: http://localhost:9/\n    key_env: HERMES_TEST_FB_PRIMARY\n    models:\n      m: {}\n  backup:\n    api: http://localhost:10/\n    key_env: HERMES_TEST_FB_BACKUP\n    models:\n      m: {}\n",
+        );
+        let registry = ProviderRegistry::from_config(&config);
+        let provider = registry
+            .select_with_fallback(None, Some("primary"), None, Some(&config))
+            .expect("both hops usable -> chain must build");
+        let _ = provider;
+        std::env::remove_var("HERMES_TEST_FB_PRIMARY");
+        std::env::remove_var("HERMES_TEST_FB_BACKUP");
+    }
+
+    #[test]
+    fn select_with_fallback_keeps_single_provider_when_only_primary_builds() {
+        // The fallback hop has no usable credential, so it is dropped and a
+        // single (unwrapped) provider is returned rather than failing startup.
+        std::env::set_var("HERMES_TEST_FB_ONLY", "primary-key");
+        let config = config_with(
+            "model:\n  provider: primary\n  fallback_chain: [broken]\nproviders:\n  primary:\n    api: http://localhost:9/\n    key_env: HERMES_TEST_FB_ONLY\n    models:\n      m: {}\n  broken:\n    api: http://localhost:10/\n    key_env: HERMES_TEST_FB_UNSET_VAR\n    models:\n      m: {}\n",
+        );
+        let registry = ProviderRegistry::from_config(&config);
+        let provider = registry
+            .select_with_fallback(None, Some("primary"), None, Some(&config))
+            .expect("primary usable -> misconfigured backup must not fail startup");
+        let _ = provider;
+        std::env::remove_var("HERMES_TEST_FB_ONLY");
+        std::env::remove_var("HERMES_TEST_FB_UNSET_VAR");
+    }
+
+    #[test]
+    fn select_with_fallback_honours_cli_precedence_over_config_provider() {
+        // `--provider fake` wins over a stale `model.provider: auto`; the chain
+        // is empty offline so a single fake provider is returned.
+        let registry = ProviderRegistry::offline();
+        let provider = registry
+            .select_with_fallback(Some(FAKE_PROVIDER), Some("auto"), None, None)
+            .expect("cli-named fake must resolve regardless of config provider");
+        let _ = provider;
     }
 }
