@@ -126,3 +126,53 @@ fn inspection_queries_are_read_only_and_isolate_sessions() {
         "inspection queries modified canonical state.db"
     );
 }
+
+#[test]
+fn migration_against_hermes_python_fixture_preserves_canonical_rows() {
+    let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/hermes_state.db");
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("hermes_state.db");
+    std::fs::copy(fixture, &path).unwrap();
+    let mut conn = rusqlite::Connection::open(&path).unwrap();
+    let before = conn
+        .prepare("SELECT id, source, started_at FROM sessions ORDER BY id")
+        .unwrap()
+        .query_map([], |r| {
+            Ok(format!(
+                "{}|{}|{}",
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, f64>(2)?
+            ))
+        })
+        .unwrap()
+        .map(|r| r.unwrap())
+        .collect::<Vec<_>>();
+    hermes_core::search::migration::run_migrations(&mut conn).unwrap();
+    let after = conn
+        .prepare("SELECT id, source, started_at FROM sessions ORDER BY id")
+        .unwrap()
+        .query_map([], |r| {
+            Ok(format!(
+                "{}|{}|{}",
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, f64>(2)?
+            ))
+        })
+        .unwrap()
+        .map(|r| r.unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(before, after);
+    for table in ["message_search", "schema_migrations"] {
+        assert_eq!(
+            conn.query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE name=?1",
+                [table],
+                |r| r.get::<_, i64>(0)
+            )
+            .unwrap(),
+            1
+        );
+    }
+}
