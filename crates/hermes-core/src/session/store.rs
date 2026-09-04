@@ -24,6 +24,22 @@ pub struct ToolCallDetail {
     pub status: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct SessionDetails {
+    pub id: SessionId,
+    pub source: String,
+    pub started_at: f64,
+    pub message_count: usize,
+    pub tool_call_count: usize,
+}
+#[derive(Debug, Clone)]
+pub struct MessageDetails {
+    pub sequence: usize,
+    pub role: String,
+    pub content: String,
+    pub timestamp: f64,
+}
+
 pub struct Session {
     pub id: SessionId,
     pub source: String,
@@ -105,6 +121,45 @@ impl SessionStore {
         })?;
         Ok(rows.collect::<Result<Vec<_>, _>>()?)
     }
+    pub fn session_details(&self, id: &SessionId) -> Result<SessionDetails, SessionStoreError> {
+        let session = self.resume(id)?;
+        let message_count = session.turns.len();
+        let tool_call_count: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM tool_calls WHERE session_id=?1",
+            params![id.to_string()],
+            |r| r.get(0),
+        )?;
+        Ok(SessionDetails {
+            id: *id,
+            source: session.source,
+            started_at: session.started_at,
+            message_count,
+            tool_call_count: tool_call_count as usize,
+        })
+    }
+    pub fn list_messages(&self, id: &SessionId) -> Result<Vec<MessageDetails>, SessionStoreError> {
+        if !self.session_exists(id)? {
+            return Err(SessionStoreError::NotFound(*id));
+        }
+        let mut q=self.conn.prepare("SELECT id,role,COALESCE(content,''),timestamp FROM messages WHERE session_id=?1 ORDER BY id")?;
+        let rows = q.query_map(params![id.to_string()], |r| {
+            Ok(MessageDetails {
+                sequence: r.get::<_, i64>(0)? as usize,
+                role: r.get(1)?,
+                content: r.get(2)?,
+                timestamp: r.get(3)?,
+            })
+        })?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+    fn session_exists(&self, id: &SessionId) -> Result<bool, SessionStoreError> {
+        Ok(self.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM sessions WHERE id=?1)",
+            params![id.to_string()],
+            |r| r.get(0),
+        )?)
+    }
+
     pub fn resume(&self, id: &SessionId) -> Result<Session, SessionStoreError> {
         let mut s = self
             .conn
