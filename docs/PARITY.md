@@ -36,3 +36,9 @@ cargo test --test cli_e2e
 cargo test --test smoke
 ./scripts/smoke-test.sh
 ```
+
+## Verification notes
+
+The checked-in Hermes-compatible fixture reports `sessions.id` as `TEXT`, with UUID values stored as 36-character strings. The live Python Hermes home on the validation VM did not contain `state.db`, so no claim is made about an existing live Python session database.
+
+The config audit covers the currently supported Hermes-RS schema: `model.default`, `model.provider`, `model.base_url`, and `model.api_key`. Unknown fields remain ignored by serde for forward compatibility.
