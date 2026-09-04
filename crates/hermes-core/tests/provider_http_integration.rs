@@ -36,7 +36,7 @@ async fn http_provider_streams_openai_sse_and_authenticates() {
         .await
         .unwrap();
     let events: Vec<_> = stream
-        .collect::<Vec<Result<Event, hermes_core::provider::ProviderError>>()
+        .collect::<Vec<Result<Event, hermes_core::provider::ProviderError>>>())
         .await
         .into_iter()
         .map(Result::unwrap)
