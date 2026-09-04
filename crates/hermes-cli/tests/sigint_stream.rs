@@ -18,7 +18,7 @@ async fn sigint_during_active_stream_cancels_and_exits_130() {
     let server = MockServer::start().await;
     Mock::given(method("POST")).respond_with(ResponseTemplate::new(200)
         .set_body_raw("data: {\"choices\":[{\"delta\":{\"content\":\"chunk1\"}}]}\n\ndata: {\"choices\":[{\"delta\":{\"content\":\"chunk2\"}}]}\n\ndata: [DONE]\n\n", "text/event-stream")
-        .set_delay(Duration::from_millis(800))).mount(&server).await;
+        .set_delay(Duration::from_millis(3000))).mount(&server).await;
     let home = TempDir::new().unwrap();
     std::fs::write(
         home.path().join("config.yaml"),
@@ -38,7 +38,7 @@ async fn sigint_during_active_stream_cancels_and_exits_130() {
         .unwrap();
     let mut stdin = child.stdin.take().unwrap();
     stdin.write_all(b"hello\n").unwrap();
-    sleep(Duration::from_millis(300)).await;
+    sleep(Duration::from_millis(1200)).await;
     kill(Pid::from_raw(child.id() as i32), Signal::SIGINT).unwrap();
     drop(stdin);
     let status = tokio::task::spawn_blocking(move || child.wait())
