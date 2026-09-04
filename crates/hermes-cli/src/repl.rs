@@ -5,8 +5,9 @@ use crate::session_menu::{
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use hermes_core::{
+    config::HermesConfig,
     conversation::{AgenticResult, ConversationRunner},
-    provider::{Provider, ProviderError},
+    provider::{Provider, ProviderError, ProviderRegistry, RegistryError},
     session::SessionStore,
     tools::{
         Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, ToolRegistry, WriteFileTool,
@@ -44,8 +45,13 @@ impl Confirmation for CliConfirmation {
 pub async fn run_repl(
     home: &std::path::Path,
     provider: Box<dyn Provider>,
+    provider_name: String,
+    registry: ProviderRegistry,
+    config: Option<HermesConfig>,
+    base_url_override: Option<String>,
     resume: bool,
 ) -> Result<()> {
+    let mut provider_name = provider_name;
     #[cfg(unix)]
     let mut sigint = signal(SignalKind::interrupt())?;
     let db = home.join("state.db");
@@ -61,8 +67,8 @@ pub async fn run_repl(
     };
     let existing = store.resume(&session_id)?.turns;
     let mut runner = ConversationRunner::from_turns(provider, existing);
-    println!("Hermes-RS session {session_id}");
-    println!("Commands: /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /exit");
+    println!("Hermes-RS session {session_id} (provider {provider_name})");
+    println!("Commands: /provider [name], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /exit");
     let editor = Arc::new(Mutex::new(editor));
     let (confirmation_tx, mut confirmation_rx) =
         mpsc::channel::<(String, oneshot::Sender<bool>)>(8);
@@ -184,6 +190,38 @@ pub async fn run_repl(
                 println!("Resumed {id}");
                 continue;
             }
+            // `/provider` lists available providers and marks the active one.
+            "/provider" => {
+                list_providers(&registry, &provider_name);
+                continue;
+            }
+            // `/provider <name>` switches mid-session. The REPL only reads a new
+            // command once the previous turn has finished (the read loop is idle
+            // here), so a switch is always at a turn boundary and can never split
+            // one turn across two providers.
+            command if command.starts_with("/provider ") => {
+                let target = command.trim_start_matches("/provider").trim();
+                if target.is_empty() {
+                    list_providers(&registry, &provider_name);
+                } else {
+                    match resolve_provider(&registry, config.as_ref(), target, base_url_override.as_deref())
+                    {
+                        Ok(new_provider) => {
+                            runner.replace_provider(new_provider);
+                            provider_name = target.to_owned();
+                            println!("Switched provider to {target}");
+                        }
+                        Err(err) => {
+                            // Failed init leaves the active provider untouched
+                            // (rollback, not a half-finished switch).
+                            eprintln!(
+                                "error: {err}; keeping provider {provider_name}"
+                            );
+                        }
+                    }
+                }
+                continue;
+            }
             _ => {
                 let before = runner.turns().len();
                 let turn_cancel = CancellationToken::new();
@@ -223,4 +261,64 @@ pub async fn run_repl(
         }
     }
     Ok(())
+}
+
+/// Builds a provider by name using the same registry resolution as startup:
+/// the explicit name wins, and the model-level config is the fallback. Returns
+/// an error when the name is unknown or cannot be constructed, so a mid-session
+/// switch can keep the currently active provider (rollback).
+fn resolve_provider(
+    registry: &ProviderRegistry,
+    config: Option<&HermesConfig>,
+    name: &str,
+    base_url_override: Option<&str>,
+) -> Result<Box<dyn Provider>, RegistryError> {
+    registry.select(Some(name), None, base_url_override, config)
+}
+
+/// Prints every registered provider (sorted) with the active one marked. If the
+/// active provider came from the model-level fallback and is not a registered
+/// name, it is still printed so the marker is always present.
+fn list_providers(registry: &ProviderRegistry, active: &str) {
+    let names = registry.available();
+    if !names.iter().any(|n| n == active) {
+        println!("  {active} (active)");
+    }
+    for name in &names {
+        let marker = if name == active { " (active)" } else { "" };
+        println!("  {name}{marker}");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use hermes_core::provider::{FAKE_PROVIDER, ProviderRegistry};
+
+    #[test]
+    fn resolve_provider_resolves_the_builtin_fake_offline() {
+        let registry = ProviderRegistry::offline();
+        // Fake must resolve without any config, producing a usable provider.
+        let _provider = resolve_provider(&registry, None, FAKE_PROVIDER, None)
+            .expect("fake must resolve without config");
+    }
+
+    #[test]
+    fn resolve_provider_rejects_an_unknown_name() {
+        let registry = ProviderRegistry::offline();
+        match resolve_provider(&registry, None, "does-not-exist", None) {
+            Err(RegistryError::UnknownProvider { name, .. }) => {
+                assert_eq!(name, "does-not-exist");
+            }
+            Ok(_) => panic!("unknown provider must not resolve"),
+            Err(other) => panic!("expected UnknownProvider, got {other}"),
+        }
+    }
+
+    #[test]
+    fn offline_registry_lists_fake() {
+        let registry = ProviderRegistry::offline();
+        let available = registry.available();
+        assert_eq!(available, vec![FAKE_PROVIDER.to_owned()]);
+    }
 }

@@ -1,7 +1,7 @@
 use clap::Parser;
 use hermes_core::config::load_config;
 use hermes_core::config::resolve_hermes_home;
-use hermes_core::provider::{Provider, ProviderRegistry};
+use hermes_core::provider::{FAKE_PROVIDER, Provider, ProviderRegistry};
 
 mod output;
 mod render;
@@ -75,5 +75,21 @@ async fn run() -> anyhow::Result<()> {
             config.as_ref(),
         )
         .map_err(|e| anyhow::anyhow!("{e}"))?;
-    repl::run_repl(&home, provider, args.resume).await
+    // The active provider's name mirrors the select precedence above and feeds
+    // the mid-session `/provider` command (available list + active marker).
+    let provider_name = args
+        .provider
+        .clone()
+        .or_else(|| config_provider.clone())
+        .unwrap_or_else(|| FAKE_PROVIDER.to_owned());
+    repl::run_repl(
+        &home,
+        provider,
+        provider_name,
+        registry,
+        config,
+        args.api_url,
+        args.resume,
+    )
+    .await
 }

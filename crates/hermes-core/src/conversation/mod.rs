@@ -50,6 +50,15 @@ impl<P: Provider> ConversationRunner<P> {
     pub fn replace_turns(&mut self, turns: Vec<Turn>) {
         self.turns = turns;
     }
+
+    /// Swaps the provider backing this runner. The conversation history in
+    /// `self.turns` is untouched, so a mid-session `/provider <name>` switch
+    /// keeps the session and all prior turns. Callers must only invoke this at
+    /// a turn boundary (i.e. while no stream from the old provider is active),
+    /// otherwise a single turn could span two providers.
+    pub fn replace_provider(&mut self, provider: P) {
+        self.provider = provider;
+    }
     pub async fn chat(&mut self, content: impl Into<String>) -> Result<EventStream, ProviderError> {
         self.turns.push(Turn::User {
             content: content.into(),
