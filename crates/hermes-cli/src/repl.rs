@@ -12,7 +12,7 @@ pub async fn run_repl(home: &std::path::Path) -> Result<()> {
     let db = home.join("state.db");
     let mut store = SessionStore::open(&db).context("open Hermes state.db")?;
     let mut editor = DefaultEditor::new().context("create terminal editor")?;
-    let session_id = select_session(&store, &mut editor)?;
+    let mut session_id = select_session(&store, &mut editor)?;
     let existing = store.resume(&session_id)?.turns;
     let mut runner = ConversationRunner::from_turns(FakeProvider, existing);
     println!("Hermes-RS session {session_id}");
@@ -43,12 +43,15 @@ pub async fn run_repl(home: &std::path::Path) -> Result<()> {
             }
             "/new" => {
                 let id = store.create_session("cli")?;
+                session_id = id;
+                runner = ConversationRunner::new(FakeProvider);
                 println!("New session {id}");
                 continue;
             }
             command if command.starts_with("/resume ") => {
                 let id = parse_resume(command)?;
                 let history = store.resume(&id)?.turns;
+                session_id = id;
                 runner = ConversationRunner::from_turns(FakeProvider, history);
                 println!("Resumed {id}");
                 continue;
