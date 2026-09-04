@@ -26,6 +26,6 @@ impl Provider for FakeProvider {
             Ok(Event::Started),
             Ok(Event::Chunk(format!("echo: {input}"))),
             Ok(Event::Done),
-        ]))));
+        ]))))
     }
 }
