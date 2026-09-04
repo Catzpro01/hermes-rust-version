@@ -30,7 +30,9 @@ async fn main() {
         Ok(()) => 0,
         Err(error) => {
             eprintln!("error: {error}");
-            if error.to_string().contains("SIGINT") {
+            if error.chain().any(|cause| {
+                cause.to_string().contains("interrupted") || cause.to_string().contains("SIGINT")
+            }) {
                 130
             } else {
                 1

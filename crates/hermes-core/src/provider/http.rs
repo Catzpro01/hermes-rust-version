@@ -67,7 +67,7 @@ impl HttpProvider {
                 },
             })
             .collect();
-        let response = self
+        let request = self
             .client
             .post(url)
             .bearer_auth(self.api_key.expose())
@@ -75,10 +75,11 @@ impl HttpProvider {
                 model: &self.model,
                 stream: true,
                 messages,
-            })
-            .send()
-            .await
-            .map_err(|e| ProviderError::Message(redact(&e.to_string(), &self.api_key)))?;
+            });
+        let response = tokio::select! {
+            _ = cancel.cancelled() => return Err(ProviderError::Cancelled),
+            result = request.send() => result.map_err(|e| ProviderError::Message(redact(&e.to_string(), &self.api_key)))?,
+        };
         let status = response.status();
         if !status.is_success() {
             let body = response.text().await.unwrap_or_default();

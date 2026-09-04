@@ -7,6 +7,8 @@ use hermes_core::{conversation::ConversationRunner, provider::Provider, session:
 use rustyline::{error::ReadlineError, DefaultEditor};
 use std::io::IsTerminal;
 use std::sync::{Arc, Mutex};
+#[cfg(unix)]
+use tokio::signal::unix::{signal, SignalKind};
 use tokio_util::sync::CancellationToken;
 
 pub async fn run_repl(
@@ -14,6 +16,8 @@ pub async fn run_repl(
     provider: Box<dyn Provider>,
     resume: bool,
 ) -> Result<()> {
+    #[cfg(unix)]
+    let mut sigint = signal(SignalKind::interrupt())?;
     let db = home.join("state.db");
     let mut store = SessionStore::open(&db).context("open Hermes state.db")?;
     let mut editor = DefaultEditor::new().context("create terminal editor")?;
@@ -48,10 +52,13 @@ pub async fn run_repl(
                 Err(other) => other.to_string(),
             }
         });
+        #[cfg(unix)]
         let line = tokio::select! {
             result = readline => result.map_err(|e| anyhow::anyhow!(e.to_string()))?,
-            signal = tokio::signal::ctrl_c() => { signal.map_err(|e| anyhow::anyhow!(e.to_string()))?; return Err(anyhow::anyhow!("SIGINT")); }
+            _ = sigint.recv() => return Err(anyhow::anyhow!("interrupted")),
         };
+        #[cfg(not(unix))]
+        let line = readline.await.map_err(|e| anyhow::anyhow!(e.to_string()))?;
         if line == "__HERMES_EOF__" {
             println!();
             break;
@@ -92,19 +99,23 @@ pub async fn run_repl(
             }
             _ => {
                 let before = runner.turns().len();
-                let cancel = CancellationToken::new();
-                let signal_cancel = cancel.clone();
-                let signal_task = tokio::spawn(async move {
-                    if tokio::signal::ctrl_c().await.is_ok() {
-                        signal_cancel.cancel();
+                let turn_cancel = CancellationToken::new();
+                let stream = runner
+                    .chat_with_cancel(input.to_owned(), turn_cancel.clone())
+                    .await
+                    .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+                #[cfg(unix)]
+                let result = tokio::select! {
+                    _ = sigint.recv() => {
+                        turn_cancel.cancel();
+                        runner.discard_pending_user();
+                        println!("\n⚡ interrupted");
+                        return Err(anyhow::anyhow!("interrupted"));
                     }
-                });
-                let result = runner.chat_with_cancel(input.to_owned(), cancel).await;
-                let result = match result {
-                    Ok(stream) => render_stream(stream).await,
-                    Err(error) => Err(anyhow::anyhow!(error.to_string())),
+                    result = render_stream(stream) => result,
                 };
-                signal_task.abort();
+                #[cfg(not(unix))]
+                let result = render_stream(stream).await;
                 match result {
                     Ok(response) => {
                         runner.push_assistant(response);
@@ -115,7 +126,7 @@ pub async fn run_repl(
                     Err(error) if error.to_string().contains("cancelled") => {
                         runner.discard_pending_user();
                         println!("\n⚡ cancelled");
-                        return Err(anyhow::anyhow!("SIGINT"));
+                        return Err(anyhow::anyhow!("interrupted"));
                     }
                     Err(error) => {
                         runner.discard_pending_user();
