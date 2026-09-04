@@ -59,6 +59,10 @@ impl SessionStore {
     }
 }
 impl SessionStore {
+    pub fn repair_search_index(&self) -> Result<usize, crate::search::SearchError> {
+        crate::search::repair_index(&self.conn)
+    }
+
     pub fn search_messages(
         &self,
         query: &str,

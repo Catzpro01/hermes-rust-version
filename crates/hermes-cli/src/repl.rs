@@ -1,5 +1,6 @@
 use crate::session_menu::{
-    inspect_session, list_sessions, parse_resume, select_session, show_messages, show_tool_calls,
+    inspect_session, list_sessions, parse_resume, search_sessions, select_session, show_messages,
+    show_tool_calls,
 };
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -160,7 +161,12 @@ pub async fn run_repl(
                 continue;
             }
             command if command.starts_with("/search ") => {
-                println!("FTS5 search is not implemented yet (read-only placeholder).");
+                let query = command
+                    .split_once(' ')
+                    .map(|(_, q)| q.trim())
+                    .filter(|q| !q.is_empty())
+                    .ok_or_else(|| anyhow::anyhow!("usage: /search <query>"))?;
+                search_sessions(&store, query)?;
                 continue;
             }
             "/new" => {

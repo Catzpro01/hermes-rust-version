@@ -114,3 +114,32 @@ pub fn show_tool_calls(store: &SessionStore, id: SessionId) -> Result<()> {
     }
     Ok(())
 }
+
+pub fn search_sessions(store: &SessionStore, query: &str) -> Result<()> {
+    let limits = hermes_core::search::SearchLimits::default();
+    let results = match store.search_messages(query, None, limits) {
+        Ok(results) => results,
+        Err(hermes_core::search::SearchError::IndexNotReady) => {
+            store.repair_search_index()?;
+            store.search_messages(query, None, limits)?
+        }
+        Err(error) => return Err(anyhow::anyhow!(error)),
+    };
+    if results.is_empty() {
+        println!("No search results.");
+        return Ok(());
+    }
+    println!("Search results for: {}", sanitize_untrusted_output(query));
+    for (index, result) in results.iter().enumerate() {
+        println!(
+            "[{}] session={} message={} role={} rank={:.3}",
+            index + 1,
+            result.session_id,
+            result.message_id,
+            sanitize_untrusted_output(&result.role),
+            result.rank
+        );
+        println!("  {}", sanitize_untrusted_output(&result.snippet));
+    }
+    Ok(())
+}

@@ -79,3 +79,37 @@ fn inspection_commands_show_read_only_session_details() {
     assert!(output.contains("Turns: 2"));
     assert!(output.contains("user: hello inspection"));
 }
+
+#[test]
+fn search_cli_is_sanitized_and_never_executes_results() {
+    let home = tempfile::tempdir().unwrap();
+    let first = assert_cmd::Command::cargo_bin("hermes-rs")
+        .unwrap()
+        .args([
+            "--provider",
+            "fake",
+            "--hermes-home",
+            home.path().to_str().unwrap(),
+        ])
+        .write_stdin("hello searchable\n/exit\n")
+        .output()
+        .unwrap();
+    assert!(first.status.success());
+    let second = assert_cmd::Command::cargo_bin("hermes-rs")
+        .unwrap()
+        .args([
+            "--provider",
+            "fake",
+            "--hermes-home",
+            home.path().to_str().unwrap(),
+            "--resume",
+        ])
+        .write_stdin("/search searchable\n/search rm -rf /\n/exit\n")
+        .output()
+        .unwrap();
+    assert!(second.status.success());
+    let stdout = String::from_utf8_lossy(&second.stdout);
+    assert!(stdout.contains("Search results for: searchable"));
+    assert!(!stdout.contains('\x1b'));
+    assert!(!stdout.contains("tool completed"));
+}
