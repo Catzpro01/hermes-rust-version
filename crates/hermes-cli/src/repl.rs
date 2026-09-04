@@ -3,11 +3,7 @@ use crate::{
     session_menu::{list_sessions, parse_resume, select_session},
 };
 use anyhow::{Context, Result};
-use hermes_core::{
-    conversation::ConversationRunner,
-    provider::{FakeProvider, Provider},
-    session::SessionStore,
-};
+use hermes_core::{conversation::ConversationRunner, provider::Provider, session::SessionStore};
 use rustyline::{error::ReadlineError, DefaultEditor};
 use tokio_util::sync::CancellationToken;
 
@@ -47,7 +43,7 @@ pub async fn run_repl(home: &std::path::Path, provider: Box<dyn Provider>) -> Re
             "/new" => {
                 let id = store.create_session("cli")?;
                 session_id = id;
-                runner = ConversationRunner::new(Box::new(FakeProvider));
+                runner.replace_turns(Vec::new());
                 println!("New session {id}");
                 continue;
             }
@@ -55,7 +51,7 @@ pub async fn run_repl(home: &std::path::Path, provider: Box<dyn Provider>) -> Re
                 let id = parse_resume(command)?;
                 let history = store.resume(&id)?.turns;
                 session_id = id;
-                runner = ConversationRunner::from_turns(Box::new(FakeProvider), history);
+                runner.replace_turns(history);
                 println!("Resumed {id}");
                 continue;
             }

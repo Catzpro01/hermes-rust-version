@@ -36,6 +36,9 @@ impl<P: Provider> ConversationRunner<P> {
     pub fn from_turns(provider: P, turns: Vec<Turn>) -> Self {
         Self { provider, turns }
     }
+    pub fn replace_turns(&mut self, turns: Vec<Turn>) {
+        self.turns = turns;
+    }
     pub async fn chat(&mut self, content: impl Into<String>) -> Result<EventStream, ProviderError> {
         self.turns.push(Turn::User {
             content: content.into(),
