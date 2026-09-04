@@ -30,7 +30,7 @@ pub fn parse_tool_events(input: &str) -> Result<Vec<ToolEvent>, ToolError> {
             Ok(Event::Text(e)) => {
                 if current.is_some() {
                     text.push_str(
-                        &e.decode()
+                        &e.unescape()
                             .map_err(|e| ToolError::InvalidXml(e.to_string()))?,
                     );
                 }

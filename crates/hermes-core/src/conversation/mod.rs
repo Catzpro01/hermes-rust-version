@@ -1,6 +1,7 @@
 //! In-memory conversation state and provider event flow.
 
 use crate::provider::{EventStream, Provider, ProviderError};
+use crate::tools::ToolCall;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +18,7 @@ pub enum Event {
     Chunk(String),
     Done,
     Error(String),
+    ToolCall(ToolCall),
 }
 
 pub struct ConversationRunner<P> {

@@ -1,4 +1,6 @@
-use super::{redact::redact, sse::parse_chunk, EventStream, Provider, ProviderError};
+use super::{
+    redact::redact, sse::parse_chunk, tool_aware_stream, EventStream, Provider, ProviderError,
+};
 use crate::{
     config::SecretString,
     conversation::{Event, Turn},
@@ -108,7 +110,9 @@ struct ApiMessage<'a> {
 #[async_trait]
 impl Provider for HttpProvider {
     async fn chat(&self, turns: &[Turn]) -> Result<EventStream, ProviderError> {
-        self.chat_with_cancel(turns, CancellationToken::new()).await
+        self.chat_with_cancel(turns, CancellationToken::new())
+            .await
+            .map(tool_aware_stream)
     }
 }
 

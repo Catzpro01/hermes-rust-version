@@ -1,4 +1,4 @@
-use super::{EventStream, Provider, ProviderError};
+use super::{tool_aware_stream, EventStream, Provider, ProviderError};
 use crate::conversation::{Event, Turn};
 use async_trait::async_trait;
 use futures::stream;
@@ -17,15 +17,15 @@ impl Provider for FakeProvider {
             })
             .unwrap_or("");
         if input == "error" {
-            return Ok(Box::pin(stream::iter([
+            return Ok(tool_aware_stream(Box::pin(stream::iter([
                 Ok(Event::Started),
                 Err(ProviderError::Message("simulated".into())),
-            ])));
+            ]))));
         }
-        Ok(Box::pin(stream::iter([
+        Ok(tool_aware_stream(Box::pin(stream::iter([
             Ok(Event::Started),
             Ok(Event::Chunk(format!("echo: {input}"))),
             Ok(Event::Done),
-        ])))
+        ]))));
     }
 }
