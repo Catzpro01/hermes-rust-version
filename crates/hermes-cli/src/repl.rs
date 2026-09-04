@@ -5,7 +5,7 @@ use hermes_core::{
     conversation::{AgenticResult, ConversationRunner},
     provider::{Provider, ProviderError},
     session::SessionStore,
-    tools::{Confirmation, ListDirTool, ReadFileTool, ShellTool, ToolRegistry},
+    tools::{Confirmation, ListDirTool, ReadFileTool, ShellTool, ToolRegistry, WriteFileTool},
 };
 use rustyline::{error::ReadlineError, DefaultEditor};
 use std::io::IsTerminal;
@@ -15,11 +15,17 @@ use std::time::Duration;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio_util::sync::CancellationToken;
 
-struct DenyShellConfirmation;
+struct CliConfirmation;
 #[async_trait]
-impl Confirmation for DenyShellConfirmation {
-    async fn confirm(&self, _command: &str) -> bool {
-        false
+impl Confirmation for CliConfirmation {
+    async fn confirm(&self, prompt: &str) -> bool {
+        eprint!("\n⚠ [Tool] {prompt} ");
+        let _ = std::io::Write::flush(&mut std::io::stderr());
+        let mut input = String::new();
+        if std::io::stdin().read_line(&mut input).is_err() {
+            return false;
+        }
+        matches!(input.trim().to_ascii_lowercase().as_str(), "y" | "yes")
     }
 }
 
@@ -47,10 +53,8 @@ pub async fn run_repl(
     let tool_root = std::env::current_dir().context("resolve CLI tool root")?;
     tool_registry.register(ReadFileTool::new(&tool_root));
     tool_registry.register(ListDirTool::new(&tool_root));
-    tool_registry.register(ShellTool::new(
-        DenyShellConfirmation,
-        Duration::from_secs(30),
-    ));
+    tool_registry.register(ShellTool::new(CliConfirmation, Duration::from_secs(30)));
+    tool_registry.register(WriteFileTool::new(&tool_root, CliConfirmation));
     println!("Hermes-RS session {session_id}");
     println!("Commands: /new, /sessions, /resume <id>, /exit");
     let editor = Arc::new(Mutex::new(editor));
