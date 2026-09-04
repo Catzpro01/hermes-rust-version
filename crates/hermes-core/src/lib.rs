@@ -1,6 +1,9 @@
 //! Hermes-RS core: provider-neutral agent domain and compatibility boundary.
 
 pub mod config;
+pub mod conversation;
+pub mod provider;
+pub mod session;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
