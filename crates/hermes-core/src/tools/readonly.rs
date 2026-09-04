@@ -27,7 +27,12 @@ async fn safe_path(root: &Path, requested: &str) -> Result<PathBuf, ToolError> {
     let root = fs::canonicalize(root)
         .await
         .map_err(|e| ToolError::Failed(format!("invalid tool root: {e}")))?;
-    if Path::new(requested).components().any(|component| matches!(component, std::path::Component::ParentDir)) { return Err(ToolError::Denied(path traversal is not allowed.into())); }
+    if Path::new(requested)
+        .components()
+        .any(|component| matches!(component, std::path::Component::ParentDir))
+    {
+        return Err(ToolError::Denied("path traversal is not allowed".into()));
+    }
     let candidate = if Path::new(requested).is_absolute() {
         PathBuf::from(requested)
     } else {
