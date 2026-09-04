@@ -1,5 +1,7 @@
 use clap::Parser;
-use hermes_core::config::resolve_hermes_home;
+use hermes_core::config::{load_config, resolve_hermes_home, SecretString};
+use hermes_core::provider::{FakeProvider, HttpProvider, Provider};
+use url::Url;
 
 mod render;
 mod repl;
@@ -40,5 +42,33 @@ async fn run() -> anyhow::Result<()> {
         );
     }
     let home = resolve_hermes_home(args.hermes_home.as_deref())?;
-    repl::run_repl(&home).await
+    let provider: Box<dyn Provider> = match args.provider.as_str() {
+        "fake" => Box::new(FakeProvider),
+        "openai" | "custom" => {
+            let config = load_config(&home)?;
+            let model = config
+                .model
+                .default
+                .clone()
+                .ok_or_else(|| anyhow::anyhow!("model.default is required"))?;
+            let base_url = config
+                .model
+                .base_url
+                .clone()
+                .unwrap_or_else(|| "https://api.openai.com/".into());
+            let key = std::env::var("OPENAI_API_KEY")
+                .ok()
+                .or_else(|| config.model.api_key.as_ref().map(|k| k.expose().to_owned()))
+                .ok_or_else(|| {
+                    anyhow::anyhow!("OPENAI_API_KEY is required for provider {}", args.provider)
+                })?;
+            Box::new(HttpProvider::new(
+                Url::parse(&base_url)?,
+                SecretString::from(key),
+                model,
+            ))
+        }
+        other => anyhow::bail!("unsupported provider '{other}' (use fake, openai, or custom)"),
+    };
+    repl::run_repl(&home, provider).await
 }

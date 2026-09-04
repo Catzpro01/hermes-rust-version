@@ -10,6 +10,7 @@ clap.workspace = true
 rustyline = "14"
 tracing-subscriber.workspace = true
 futures.workspace = true
+url.workspace = true
 hermes-core = { path = "../hermes-core" }
 tokio.workspace = true
 

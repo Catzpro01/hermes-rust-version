@@ -4,17 +4,19 @@ use crate::{
 };
 use anyhow::{Context, Result};
 use hermes_core::{
-    conversation::ConversationRunner, provider::FakeProvider, session::SessionStore,
+    conversation::ConversationRunner,
+    provider::{FakeProvider, Provider},
+    session::SessionStore,
 };
 use rustyline::{error::ReadlineError, DefaultEditor};
 
-pub async fn run_repl(home: &std::path::Path) -> Result<()> {
+pub async fn run_repl(home: &std::path::Path, provider: Box<dyn Provider>) -> Result<()> {
     let db = home.join("state.db");
     let mut store = SessionStore::open(&db).context("open Hermes state.db")?;
     let mut editor = DefaultEditor::new().context("create terminal editor")?;
     let mut session_id = select_session(&store, &mut editor)?;
     let existing = store.resume(&session_id)?.turns;
-    let mut runner = ConversationRunner::from_turns(FakeProvider, existing);
+    let mut runner = ConversationRunner::from_turns(provider, existing);
     println!("Hermes-RS session {session_id}");
     println!("Commands: /new, /sessions, /resume <id>, /exit");
     loop {
@@ -44,7 +46,7 @@ pub async fn run_repl(home: &std::path::Path) -> Result<()> {
             "/new" => {
                 let id = store.create_session("cli")?;
                 session_id = id;
-                runner = ConversationRunner::new(FakeProvider);
+                runner = ConversationRunner::new(Box::new(FakeProvider));
                 println!("New session {id}");
                 continue;
             }
@@ -52,7 +54,7 @@ pub async fn run_repl(home: &std::path::Path) -> Result<()> {
                 let id = parse_resume(command)?;
                 let history = store.resume(&id)?.turns;
                 session_id = id;
-                runner = ConversationRunner::from_turns(FakeProvider, history);
+                runner = ConversationRunner::from_turns(Box::new(FakeProvider), history);
                 println!("Resumed {id}");
                 continue;
             }

@@ -22,6 +22,13 @@ pub trait Provider: Send + Sync {
     async fn chat(&self, turns: &[Turn]) -> Result<EventStream, ProviderError>;
 }
 
+#[async_trait]
+impl<T: Provider + ?Sized> Provider for Box<T> {
+    async fn chat(&self, turns: &[Turn]) -> Result<EventStream, ProviderError> {
+        (**self).chat(turns).await
+    }
+}
+
 pub mod fake;
 pub mod http;
 mod redact;
