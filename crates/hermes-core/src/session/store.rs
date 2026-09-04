@@ -87,6 +87,9 @@ impl SessionStore {
         &self,
         id: &SessionId,
     ) -> Result<Vec<ToolCallDetail>, SessionStoreError> {
+        if !self.session_exists(id)? {
+            return Err(SessionStoreError::NotFound(*id));
+        }
         let mut q=self.conn.prepare("SELECT id,tool_name,arguments,COALESCE(result,''),status FROM tool_calls WHERE session_id=?1 ORDER BY turn_index")?;
         let rows = q.query_map(params![id.to_string()], |r| {
             Ok(ToolCallDetail {
@@ -104,6 +107,9 @@ impl SessionStore {
         &self,
         id: &SessionId,
     ) -> Result<Vec<(String, ToolExecutionStatus)>, SessionStoreError> {
+        if !self.session_exists(id)? {
+            return Err(SessionStoreError::NotFound(*id));
+        }
         let mut q = self
             .conn
             .prepare("SELECT id,status FROM tool_calls WHERE session_id=?1 ORDER BY turn_index")?;
