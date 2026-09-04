@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["ConfigError"],"fn":["load_config","load_config_with_provider","resolve_hermes_home"],"struct":["HermesConfig","ModelConfig","SecretString"],"type":["HermesHome"]};
