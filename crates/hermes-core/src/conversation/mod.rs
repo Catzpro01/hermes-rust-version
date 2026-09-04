@@ -96,17 +96,30 @@ impl<P: Provider> ConversationRunner<P> {
                 self.discard_pending_user();
                 return Ok(AgenticResult::Cancelled);
             }
-            let mut stream = self
+            let mut stream = match self
                 .provider
                 .chat_with_cancel(&self.turns, cancel.clone())
-                .await?;
+                .await
+            {
+                Ok(stream) => stream,
+                Err(ProviderError::Cancelled) => {
+                    self.discard_pending_user();
+                    return Ok(AgenticResult::Cancelled);
+                }
+                Err(err) => return Err(err),
+            };
             let mut text = String::new();
             let mut calls = Vec::new();
-            while let Some(event) = stream.next().await {
-                match event? {
-                    Event::Chunk(c) => text.push_str(&c),
-                    Event::ToolCall(c) => calls.push(c),
-                    _ => {}
+            while let Some(event_res) = stream.next().await {
+                match event_res {
+                    Ok(Event::Chunk(c)) => text.push_str(&c),
+                    Ok(Event::ToolCall(c)) => calls.push(c),
+                    Ok(_) => {}
+                    Err(ProviderError::Cancelled) => {
+                        self.discard_pending_user();
+                        return Ok(AgenticResult::Cancelled);
+                    }
+                    Err(err) => return Err(err),
                 }
             }
             if calls.is_empty() {

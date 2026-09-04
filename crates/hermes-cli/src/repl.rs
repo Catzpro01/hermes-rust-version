@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use hermes_core::{
     conversation::{AgenticResult, ConversationRunner},
-    provider::Provider,
+    provider::{Provider, ProviderError},
     session::SessionStore,
     tools::{Confirmation, ShellTool, ToolRegistry},
 };
@@ -117,12 +117,12 @@ pub async fn run_repl(
             _ => {
                 let before = runner.turns().len();
                 let turn_cancel = CancellationToken::new();
-                let signal_cancel = turn_cancel.clone();
-                let signal_task = tokio::spawn(async move {
-                    if tokio::signal::ctrl_c().await.is_ok() {
-                        signal_cancel.cancel();
-                    }
-                });
+                #[cfg(unix)]
+                let result = tokio::select! {
+                    _ = sigint.recv() => { turn_cancel.cancel(); runner.discard_pending_user(); return Err(anyhow::anyhow!("interrupted")); }
+                    result = runner.chat_agentic(input.to_owned(), &tool_registry, Some((&store, &session_id)), 10, turn_cancel.clone()) => result,
+                };
+                #[cfg(not(unix))]
                 let result = runner
                     .chat_agentic(
                         input.to_owned(),
@@ -132,19 +132,19 @@ pub async fn run_repl(
                         turn_cancel,
                     )
                     .await;
-                signal_task.abort();
-                match result.map_err(|e| anyhow::anyhow!(e.to_string()))? {
-                    AgenticResult::Done { text, iterations } => {
+                match result {
+                    Ok(AgenticResult::Done { text, iterations }) => {
                         println!("{text}");
                         println!("[iter {iterations}/10]");
                     }
-                    AgenticResult::MaxIterations(limit) => {
+                    Ok(AgenticResult::MaxIterations(limit)) => {
                         eprintln!("\n⚠ Reached max iterations budget ({limit}).")
                     }
-                    AgenticResult::Cancelled => {
-                        println!("\n⚡ cancelled");
-                        continue;
+                    Ok(AgenticResult::Cancelled) | Err(ProviderError::Cancelled) => {
+                        eprintln!("\n⚡ interrupted");
+                        return Err(anyhow::anyhow!("interrupted"));
                     }
+                    Err(error) => return Err(anyhow::anyhow!(error.to_string())),
                 }
                 for turn in &runner.turns()[before..] {
                     store.save_turn(&session_id, turn)?;
