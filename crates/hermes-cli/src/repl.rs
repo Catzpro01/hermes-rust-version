@@ -1,12 +1,16 @@
-use crate::{
-    render::render_stream,
-    session_menu::{list_sessions, parse_resume, select_session},
-};
+use crate::session_menu::{list_sessions, parse_resume, select_session};
 use anyhow::{Context, Result};
-use hermes_core::{conversation::ConversationRunner, provider::Provider, session::SessionStore};
+use async_trait::async_trait;
+use hermes_core::{
+    conversation::{AgenticResult, ConversationRunner},
+    provider::Provider,
+    session::SessionStore,
+    tools::{Confirmation, ShellTool, ToolRegistry},
+};
 use rustyline::{error::ReadlineError, DefaultEditor};
 use std::io::IsTerminal;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 #[cfg(unix)]
 use tokio::signal::unix::{signal, SignalKind};
 use tokio_util::sync::CancellationToken;
