@@ -65,3 +65,37 @@ fn _readline_error(e: ReadlineError) -> anyhow::Error {
 fn _bail() -> Result<()> {
     bail!("invalid session")
 }
+
+pub fn inspect_session(store: &SessionStore, id: SessionId) -> Result<()> {
+    let session = store.resume(&id)?;
+    println!("Session: {}", session.id);
+    println!("Source: {}", session.source);
+    println!("Started: {:.3}", session.started_at);
+    println!("Turns: {}", session.turns.len());
+    let tools = store.list_tool_call_details(&id)?;
+    println!("Tool calls: {}", tools.len());
+    Ok(())
+}
+
+pub fn show_messages(store: &SessionStore, id: SessionId) -> Result<()> {
+    let session = store.resume(&id)?;
+    for (index, turn) in session.turns.iter().enumerate() {
+        let (role, content) = match turn {
+            hermes_core::conversation::Turn::User { content } => ("user", content),
+            hermes_core::conversation::Turn::Assistant { content } => ("assistant", content),
+            hermes_core::conversation::Turn::Tool { name, content } => (name.as_str(), content),
+        };
+        println!("[{}] {}: {}", index + 1, role, content);
+    }
+    Ok(())
+}
+
+pub fn show_tool_calls(store: &SessionStore, id: SessionId) -> Result<()> {
+    for call in store.list_tool_call_details(&id)? {
+        println!(
+            "{} [{}] {} args={} result={}",
+            call.id, call.status, call.tool_name, call.arguments, call.result
+        );
+    }
+    Ok(())
+}

@@ -16,6 +16,14 @@ pub enum SessionStoreError {
     NotFound(SessionId),
 }
 #[derive(Debug, Clone)]
+pub struct ToolCallDetail {
+    pub id: String,
+    pub tool_name: String,
+    pub arguments: String,
+    pub result: String,
+    pub status: String,
+}
+
 pub struct Session {
     pub id: SessionId,
     pub source: String,
@@ -59,6 +67,23 @@ impl SessionStore {
         self.conn.execute("INSERT OR REPLACE INTO tool_calls (id,session_id,turn_index,tool_name,arguments,result,status,created_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)", params![record.id, record.session_id, record.turn_index as i64, record.tool_name, record.arguments, record.result, record.status.as_str(), now()])?;
         Ok(())
     }
+    pub fn list_tool_call_details(
+        &self,
+        id: &SessionId,
+    ) -> Result<Vec<ToolCallDetail>, SessionStoreError> {
+        let mut q=self.conn.prepare("SELECT id,tool_name,arguments,COALESCE(result,''),status FROM tool_calls WHERE session_id=?1 ORDER BY turn_index")?;
+        let rows = q.query_map(params![id.to_string()], |r| {
+            Ok(ToolCallDetail {
+                id: r.get(0)?,
+                tool_name: r.get(1)?,
+                arguments: r.get(2)?,
+                result: r.get(3)?,
+                status: r.get(4)?,
+            })
+        })?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+
     pub fn list_tool_calls(
         &self,
         id: &SessionId,

@@ -1,4 +1,6 @@
-use crate::session_menu::{list_sessions, parse_resume, select_session};
+use crate::session_menu::{
+    inspect_session, list_sessions, parse_resume, select_session, show_messages, show_tool_calls,
+};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use hermes_core::{
@@ -59,7 +61,7 @@ pub async fn run_repl(
     let existing = store.resume(&session_id)?.turns;
     let mut runner = ConversationRunner::from_turns(provider, existing);
     println!("Hermes-RS session {session_id}");
-    println!("Commands: /new, /sessions, /resume <id>, /exit");
+    println!("Commands: /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /exit");
     let editor = Arc::new(Mutex::new(editor));
     let (confirmation_tx, mut confirmation_rx) =
         mpsc::channel::<(String, oneshot::Sender<bool>)>(8);
@@ -143,6 +145,22 @@ pub async fn run_repl(
             "/exit" => break,
             "/sessions" => {
                 list_sessions(&store)?;
+                continue;
+            }
+            command if command.starts_with("/inspect ") => {
+                inspect_session(&store, parse_resume(command)?)?;
+                continue;
+            }
+            command if command.starts_with("/messages ") => {
+                show_messages(&store, parse_resume(command)?)?;
+                continue;
+            }
+            command if command.starts_with("/tool-calls ") => {
+                show_tool_calls(&store, parse_resume(command)?)?;
+                continue;
+            }
+            command if command.starts_with("/search ") => {
+                println!("FTS5 search is not implemented yet (read-only placeholder).");
                 continue;
             }
             "/new" => {
