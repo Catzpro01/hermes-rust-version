@@ -50,6 +50,66 @@ pub fn check_context_limit(turns: &[Turn], context_length: Option<u64>) -> Optio
     }
 }
 
+/// Max turns included verbatim in a [`summarize_dropped`] digest.
+const SUMMARY_MAX_TURNS: usize = 3;
+/// Max characters of a turn's leading text kept in the digest.
+const SUMMARY_MAX_CHARS: usize = 100;
+
+/// Deterministic, advisory summary of turns that the sliding window dropped.
+///
+/// Heuristic only (no LLM): for the first [`SUMMARY_MAX_TURNS`] dropped turns,
+/// keep a short lead (`role: <first line, truncated>`), then report how many
+/// further turns were dropped. Tool turns are summarized by name only.
+///
+/// **This is NOT injected into the LLM context.** Representing a dropped
+/// conversation as a message with a role not present in [`Turn`] (e.g. a
+/// "summary"/"system" role) is deferred until a formal ADR decides the
+/// representation, `state.db` role column, provider mapping, and STRIDE. This
+/// helper only feeds human-facing display (e.g. the REPL `/info`), so it must
+/// never be mistaken for an authentic user/assistant message.
+pub fn summarize_dropped(dropped: &[Turn]) -> String {
+    if dropped.is_empty() {
+        return String::new();
+    }
+    let summaries: Vec<String> = dropped
+        .iter()
+        .take(SUMMARY_MAX_TURNS)
+        .map(|turn| {
+            let (role, text) = match turn {
+                Turn::User { content } => ("User", content.as_str()),
+                Turn::Assistant { content } => ("Asst", content.as_str()),
+                Turn::Tool { name, .. } => ("Tool", name.as_str()),
+            };
+            format!("{role}: {}", first_line_truncated(text, SUMMARY_MAX_CHARS))
+        })
+        .collect();
+    let remaining = dropped.len().saturating_sub(SUMMARY_MAX_TURNS);
+    let suffix = if remaining > 0 {
+        format!(" (+{remaining} more)")
+    } else {
+        String::new()
+    };
+    format!(
+        "[{} turns dropped] {}{}",
+        dropped.len(),
+        summaries.join(" | "),
+        suffix
+    )
+}
+
+/// First line of `text`, truncated to `max_chars` characters. Uses char-safe
+/// slicing so a multi-byte (e.g. CJK) boundary never panics; a truncated value
+/// gets a trailing ellipsis.
+fn first_line_truncated(text: &str, max_chars: usize) -> String {
+    let first_line = text.lines().next().unwrap_or("");
+    let lead: String = first_line.chars().take(max_chars).collect();
+    if first_line.chars().count() > max_chars {
+        format!("{lead}…")
+    } else {
+        lead
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -127,5 +187,56 @@ mod tests {
     fn equal_to_limit_is_not_over() {
         let turns = [u(&"w".repeat(40))]; // 10 estimated == limit 10 -> safe
         assert_eq!(check_context_limit(&turns, Some(10)), None);
+    }
+
+    #[test]
+    fn summarize_empty_returns_empty() {
+        assert_eq!(summarize_dropped(&[]), "");
+    }
+
+    #[test]
+    fn summarize_one_turn_labels_role_and_lead() {
+        let s = summarize_dropped(&[u("hello world this is long content")]);
+        assert!(s.contains("[1 turns dropped]"), "got: {s}");
+        assert!(s.contains("User: hello world"), "got: {s}");
+    }
+
+    #[test]
+    fn summarize_keeps_up_to_three_turns() {
+        let turns = vec![u("one"), a("two"), tool("read_file", "body"), u("four")];
+        let s = summarize_dropped(&turns);
+        assert!(s.contains("[4 turns dropped]"), "got: {s}");
+        assert!(s.contains("User: one"), "got: {s}");
+        assert!(s.contains("Asst: two"), "got: {s}");
+        assert!(s.contains("Tool: read_file"), "tool summarized by name: {s}");
+        // 4th turn (index 3) is beyond the max 3 shown -> counted in "+N more".
+        assert!(s.contains("(+1 more)"), "got: {s}");
+        assert!(!s.contains("four"), "4th turn content must not be shown: {s}");
+    }
+
+    #[test]
+    fn summarize_truncates_long_content_with_ellipsis() {
+        let long = "x".repeat(250);
+        let s = summarize_dropped(&[u(&long)]);
+        assert!(s.contains('…'), "must truncate with ellipsis: {s}");
+        assert!(!s.contains(&long), "must not include the full long content: {s}");
+    }
+
+    #[test]
+    fn summarize_truncation_is_char_safe_for_multibyte() {
+        // 120 CJK chars (> 100) - must not panic slicing mid-byte.
+        let long = "你".repeat(120);
+        let s = summarize_dropped(&[u(&long)]);
+        assert!(s.contains('…'), "must truncate: {s}");
+        // The truncated lead is at most 100 chars + ellipsis, never split bytes.
+        assert!(s.contains('你'), "must preserve valid chars: {s}");
+    }
+
+    #[test]
+    fn summarize_first_line_only() {
+        let multi = "first line\nsecond line that should not appear";
+        let s = summarize_dropped(&[u(multi)]);
+        assert!(s.contains("first line"), "got: {s}");
+        assert!(!s.contains("second line"), "only first line kept: {s}");
     }
 }

@@ -1,63 +1,80 @@
 # 03: Summarization turn yang di-drop
 
 **What to build:** Alih-alih membuang turn tertua mentah-mentah saat window
-menyempit, kompres turn yang dikeluarkan menjadi ringkasan singkat yang
-disisipkan sebagai konteks prefix, sehingga thread panjang tetap "mengingat"
-inti percakapan lama tanpa melampaui batas token.
+menyempit, sediakan ringkasan singkat turn yang dikeluarkan sebagai **visibility
+tool** (bukan injeksi) — sehingga user tahu apa yang terpotong dari konteks aktif
+tanpa mengubah kontrak `Turn`/`state.db`.
 
 **Blocked by:** 02 (sliding window menentukan turn mana yang dikeluarkan).
 
-**Status:** todo
+**Status:** done — commit di VM, 187/187 test hijau (`cargo test --workspace`),
+`clippy --workspace --all-targets -D warnings` bersih.
 
-## Kondisi sekarang (terverifikasi)
+## Keputusan desain (dikunci /ask-matt — Opsi 3)
 
-- Ticket 02 akan memilih turn tertua untuk dikeluarkan dari salinan kirim.
-- Tidak ada representasi ringkasan; turn yang di-drop hilang dari konteks aktif
-  (walau tetap utuh di `state.db`).
+Ringkasan **dihitung & ditampilkan, injeksi ke konteks LLM ditunda**. Alasan:
+enum `Turn` hanya punya `User`/`Assistant`/`Tool` — tidak ada `System`/`Summary`.
+Menyuntik ringkasan sebagai pesan ber-peran yang tidak ada di enum akan
+(a) berisiko ditolak provider (role `system` di tengah percakapan), dan
+(b) menyamarkan ringkasan sebagai pesan asli → vektor prompt-injection
+(Tampering + Elevation). Menambah varian `Turn::Summary` adalah refactor
+lintas-arsitektur (match di conversation/provider/persist `state.db` role
+column/redaction/search) yang butuh ADR formal + STRIDE + parity test — bukan
+keputusan di satu tiket. Konsisten dengan pola Spec 006-04 (helper murni dulu,
+wiring menyusul saat representasi diputuskan).
 
-## Konsep
+## Yang dibangun (Opsi 3)
 
-Saat window memangkas N turn tertua, buat satu `Turn::User`/pesan ringkas (atau
-sistem note) berisi inti dari turn yang dikeluarkan, lalu simpan sebagai elemen
-awal salinan yang dikirim. Dua strategi dipertimbangkan, yang **pilih dipecah
-menjadi keputusan eksplisit**:
+- **`summarize_dropped(&[Turn]) -> String`** di `conversation/context.rs` —
+  heuristic-only, deterministik:
+  - ambil lead baris pertama dari s.d. `SUMMARY_MAX_TURNS = 3` turn,
+    label peran (`User:`/`Asst:`/`Tool: nama`), potong ke `SUMMARY_MAX_CHARS
+    = 100` (char-safe, aman untuk CJK multi-byte),
+  - sisanya dijumlah `(+N more)`, prefix `[M turns dropped]`.
+  - Ini BUKAN prompt yang dikirim ke LLM — murni untuk display/info.
+- **Wiring `/info`** di REPL: setelah token count + window, tampilkan
+  `dropped_turns()` lewat `summarize_dropped`, **melalui redaction +
+  sanitization** (`redact_credentials` + `sanitize_untrusted_output`) sebelum
+  sampai ke terminal.
+- **`ConversationRunner::dropped_turns()`** → prefix turns yang akan di-drop
+  window (untuk display), tanpa memutasi `self.turns`.
 
-- **Heuristik (default, tanpa dependency):** ekstrak pesan User & hasil
-  Tool terakhir dari blok yang dikeluarkan menjadi ringkasan 1–3 kalimat
-  deterministik (mis. role + dua/tiga pesan terakhir), cukup untuk kontinuitas.
-- **LLM-recursive (opt-in):** panggil provider untuk meringkas blok yang
-  dikeluarkan. Berisiko (recursive call, biaya, latensi) — jadikan opsi yang
-  di-disable default.
+## Yang TIDAK dibangun (sengaja ditunda)
 
-Ringkasan harus disimpan sedemikian rupa sehingga state.db tetap canonical dan
-ringkasan tidak disalahartikan sebagai pesan asli pengguna.
+- ❌ Tidak ada injeksi ringkasan ke konteks LLM.
+- ❌ Tidak ada varian `Turn` baru / role baru di `state.db`.
+- ❌ Tidak ada LLM-recursive summarization (bisa jadi sub-tiket/Spec 009).
 
-## Kriteria
+## Kriteria (per /ask-matt)
 
-- [ ] Fungsi `summarize_dropped(dropped: &[Turn]) -> Turn` (heuristik) tersedia
-      & deterministik; dipakai saat window memangkas.
-- [ ] Ringkasan disisipkan sebagai elemen prefix pada salinan kirim, tidak masuk
-      `self.turns` canonical dan tidak disimpan sebagai pesan User palsu.
-- [ ] Ukuran ringkasan token dibatasi eksplisit (pastikan tidak meniadakan
-      penghematan window).
-- [ ] Mode LLM-recursive bila ada di-disable-default & dibatasi (max 1 call,
-      error tidak memblokir — jatuh ke heuristik).
-- [ ] Test: blok yang di-drop → ringkasan mengandung inti (User terakhir/role);
-      token ringkasan << token blok asli.
-- [ ] Tidak regresi: window + summarization tetap <= limit.
+- [x] `summarize_dropped()` helper di `conversation/context.rs`.
+- [x] Heuristik: first line + truncate, max 3 turns, remaining count.
+- [x] Ditampilkan di `/info` saat ada dropped turns (visibility, bukan injeksi).
+- [x] TIDAK diinjeksi ke konteks LLM (belum ada representasi formal).
+- [x] Ringkasan melewati redaction + sanitization sebelum display.
+- [x] Unit test: empty, 1 turn, 3 turns, >3 turns, long content truncation,
+      multibyte char-safe, first-line-only.
+- [x] `state.db` tidak berubah (display path read-only; tak menyentuh storage).
+- [x] 187/187 tests green, clippy clean.
 
 ## STRIDE
 
-- **Integrity/prompt-injection:** ringkasan harus diberi peran eksplisit
-  ("ringkasan percakapan lama"), bukan disuntik sebagai User asli, agar model
-  tak mengira instruksi di dalamnya berasal dari pengguna.
-- Tidak ada surface eksekusi baru (heuristik); mode LLM = jalur network yang
-  sudah ada.
+- **Prompt-injection/Tampering:** ringkasan TIDAK dikirim sebagai pesan; hanya
+  ditampilkan sebagai info ber-label, jadi tak bisa memanipulasi model. Saat
+  injeksi diformalkan (ADR), wajib role terpisah — bukan User palsu.
+- **Information disclosure:** output display dilewatkan `redact_credentials` +
+  ANSI sanitize. Helper di core murni string, tak ada I/O baru.
+- Tidak ada surface eksekusi baru.
 
-## Risiko
+## Perubahan
 
-- Ringkasan heuristik kehilangan nuansa; dokumentasikan sebagai kompromi.
-- Recursive LLM summarization = loop tak terbatas bila tak di-batas; hard-cap.
+- `crates/hermes-core/src/conversation/context.rs`: `summarize_dropped`,
+  `first_line_truncated`, konstanta `SUMMARY_MAX_TURNS`/`SUMMARY_MAX_CHARS`.
+  +6 unit test.
+- `crates/hermes-core/src/conversation/mod.rs`: `ConversationRunner::dropped_turns()`.
+  +1 unit test.
+- `crates/hermes-cli/src/repl.rs`: `/info` menampilkan dropped summary
+  (sanitized + redacted).
 
 ## Dependency
 

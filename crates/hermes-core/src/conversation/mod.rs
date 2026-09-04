@@ -114,6 +114,15 @@ impl<P: Provider> ConversationRunner<P> {
         }
         trimmed
     }
+
+    /// The prefix of `self.turns` that the sliding window would drop from the
+    /// next send (oldest turns). Empty when within the limit or when no limit
+    /// is configured. Used only for human-facing display (e.g. `/info`).
+    pub fn dropped_turns(&self) -> &[Turn] {
+        let sent = self.turns_to_send().len();
+        let drop = self.turns.len().saturating_sub(sent);
+        &self.turns[..drop]
+    }
     pub fn replace_turns(&mut self, turns: Vec<Turn>) {
         self.turns = turns;
     }
@@ -417,5 +426,23 @@ mod tests {
         r.set_context_limit(Some(100));
         let sent = r.turns_to_send();
         assert_eq!(sent.len(), 1, "must never send an empty window");
+    }
+
+    #[test]
+    fn dropped_turns_reports_the_trimmed_prefix() {
+        let history = many_turns(100, 40);
+        let mut r = runner_with(history.clone());
+        // No limit -> nothing dropped.
+        assert_eq!(r.dropped_turns().len(), 0);
+        // Tight limit -> old turns are reported as dropped, newest preserved.
+        r.set_context_limit(Some(120));
+        let dropped = r.dropped_turns();
+        assert!(!dropped.is_empty(), "tight limit must drop some turns");
+        let sent = r.turns_to_send();
+        // dropped (prefix) + sent (suffix) == full history: no turn is lost.
+        assert_eq!(dropped.len() + sent.len(), history.len());
+        assert_eq!(sent, history[dropped.len()..]);
+        // self.turns remains the full history.
+        assert_eq!(r.turns().len(), history.len());
     }
 }

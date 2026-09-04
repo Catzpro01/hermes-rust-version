@@ -1,3 +1,4 @@
+use crate::output::sanitize_untrusted_output;
 use crate::session_menu::{
     inspect_session, list_sessions, parse_resume, search_sessions, select_session, show_messages,
     show_tool_calls,
@@ -6,6 +7,7 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use hermes_core::{
     config::HermesConfig,
+    conversation::context::summarize_dropped,
     conversation::{AgenticResult, ConversationRunner},
     provider::{Provider, ProviderError, ProviderRegistry, RegistryError},
     session::SessionStore,
@@ -206,12 +208,27 @@ pub async fn run_repl(
                 let limit = context_limit
                     .map(|l| l.to_string())
                     .unwrap_or_else(|| "none".to_owned());
+                let sent = runner.turns().len().saturating_sub(runner.dropped_turns().len());
                 println!(
-                    "provider: {provider_name} | estimated context: ~{} tokens | limit: {limit}",
-                    runner.estimated_tokens()
+                    "provider: {provider_name} | estimated context: ~{} tokens | limit: {limit} | window: {sent}/{} turns sent",
+                    runner.estimated_tokens(),
+                    runner.turns().len()
                 );
                 if let Some(w) = runner.context_warning() {
                     println!("{w}");
+                }
+                // Advisory visibility of what the sliding window would drop
+                // (Ticket 03). This is DISPLAY ONLY and is never injected into
+                // the LLM context. Output is ANSI-sanitized and credentials are
+                // redacted before it reaches the terminal.
+                let dropped = runner.dropped_turns();
+                if !dropped.is_empty() {
+                    let summary = summarize_dropped(dropped);
+                    let safe =
+                        hermes_core::search::redact::redact_credentials(&sanitize_untrusted_output(
+                            &summary,
+                        ));
+                    println!("  {safe}");
                 }
                 continue;
             }
