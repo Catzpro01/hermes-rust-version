@@ -19,6 +19,9 @@ struct Args {
     /// Resume the most recently updated session.
     #[arg(long)]
     resume: bool,
+    /// Override the OpenAI-compatible API base URL.
+    #[arg(long)]
+    api_url: Option<String>,
 }
 
 #[tokio::main]
@@ -63,12 +66,13 @@ async fn run() -> anyhow::Result<()> {
                 .default
                 .clone()
                 .ok_or_else(|| anyhow::anyhow!("model.default is required"))?;
-            let base_url = config
-                .model
-                .base_url
+            let base_url = args
+                .api_url
                 .clone()
+                .or_else(|| config.model.base_url.clone())
                 .unwrap_or_else(|| "https://api.openai.com/".into());
             let key = std::env::var("OPENAI_API_KEY")
+                .or_else(|_| std::env::var("HERMES_API_KEY"))
                 .ok()
                 .or_else(|| config.model.api_key.as_ref().map(|k| k.expose().to_owned()))
                 .ok_or_else(|| {

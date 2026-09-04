@@ -656,12 +656,14 @@ dependencies = [
  "hermes-core",
  "nix 0.29.0",
  "predicates",
+ "rusqlite",
  "rustyline",
  "tempfile",
  "tokio",
  "tokio-util",
  "tracing-subscriber",
  "url",
+ "wiremock",
 ]
 
 [[package]]
