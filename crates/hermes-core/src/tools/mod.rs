@@ -107,6 +107,8 @@ impl Default for ToolRegistry {
 pub mod parser;
 pub mod readonly;
 pub mod shell;
+pub mod write;
 pub use parser::parse_tool_events;
 pub use readonly::{ListDirTool, ReadFileTool};
 pub use shell::{Confirmation, ShellTool};
+pub use write::WriteFileTool;

@@ -8,7 +8,7 @@ use tokio_util::sync::CancellationToken;
 const MAX_FILE_BYTES: usize = 100_000;
 const MAX_ENTRIES: usize = 500;
 
-fn arg_path(arguments: &str) -> Result<String, ToolError> {
+pub(crate) fn arg_path(arguments: &str) -> Result<String, ToolError> {
     if let Ok(value) = serde_json::from_str::<Value>(arguments) {
         return value
             .get("path")
@@ -23,7 +23,7 @@ fn arg_path(arguments: &str) -> Result<String, ToolError> {
         .map(str::to_owned)
         .ok_or_else(|| ToolError::Failed("expected path argument".into()))
 }
-async fn safe_path(root: &Path, requested: &str) -> Result<PathBuf, ToolError> {
+pub(crate) async fn safe_path(root: &Path, requested: &str) -> Result<PathBuf, ToolError> {
     let root = fs::canonicalize(root)
         .await
         .map_err(|e| ToolError::Failed(format!("invalid tool root: {e}")))?;
