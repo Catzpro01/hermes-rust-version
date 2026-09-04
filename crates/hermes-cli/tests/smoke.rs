@@ -75,3 +75,27 @@ fn smoke_missing_home_error() {
         .failure()
         .stderr(predicate::str::contains("not found"));
 }
+
+#[test]
+fn smoke_python_hermes_untouched() {
+    let python_home = std::env::var_os("HOME")
+        .map(std::path::PathBuf::from)
+        .map(|p| p.join(".hermes"));
+    let Some(python_home) = python_home else {
+        return;
+    };
+    if !python_home.exists() {
+        return;
+    }
+    let state = python_home.join("state.db");
+    let before = fs::metadata(&state).and_then(|m| m.modified()).ok();
+    let isolated = TempDir::new().unwrap();
+    hermes_cmd()
+        .env("HERMES_HOME", isolated.path())
+        .args(["--provider", "fake"])
+        .write_stdin("test\n/exit\n")
+        .assert()
+        .success();
+    let after = fs::metadata(&state).and_then(|m| m.modified()).ok();
+    assert_eq!(before, after, "Python Hermes state.db was modified");
+}
