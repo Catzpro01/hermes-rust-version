@@ -11,6 +11,33 @@
 | OpenAI-compatible provider | ✅ | `/v1/chat/completions`, Bearer auth, redaction |
 | Streaming response | ✅ | SSE chunks rendered as they arrive |
 | Cancellation | ✅ | Ctrl-C cancels active HTTP stream; partial turn is discarded |
+| Config-declared providers | ✅ | `providers:` in `config.yaml`, selected by `--provider` / `model.provider` |
+| Per-provider credential env | ✅ | `key_env` names the env var a provider uses (see Spec 005 STRIDE) |
+| Mid-session provider switch | ✅ | `/provider <name>` preserves session; failures roll back |
+| Wire-mode routing | ✅ | `api_mode: chat_completions | completions` selects endpoint/payload |
+
+## Spec 005 — provider routing parity
+
+Rust routing now matches the config-declared, per-provider model the installed
+Python Hermes uses for user-defined `providers:` entries:
+
+- **Selection.** Both resolve the active provider from config (CLI override
+  wins over `model.provider`, falling back to a default). Rust falls back to
+  the built-in offline `fake` when nothing is configured.
+- **Credential.** Python providers read their key from per-provider env vars;
+  Rust reads `key_env` with an explicit fallback chain
+  (`key_env` → `model.api_key` → error). A pinned-but-empty `key_env` errors
+  rather than silently borrowing another key, preventing cross-provider
+  credential leakage.
+- **Mid-session switch.** Python persists a session across provider/model
+  changes; Rust `/provider` swaps the backing provider on `ConversationRunner`
+  without touching `self.turns`, and only at a turn boundary. A provider whose
+  construction fails is rolled back, leaving the active one untouched.
+- **Wire mode.** `api_mode` selects between the chat-completions and the legacy
+  completions endpoints; streaming is normalized to the same provider-neutral
+  event sequence so a switch is transparent to callers.
+
+## Differences ⚠️
 
 ## Differences ⚠️
 
@@ -18,7 +45,7 @@
 |---|---|---|---|
 | Session ID format | UUID v4 | UUID v7 | Low — schema-compatible and time-sortable |
 | FTS index | Enabled | Not yet | Low — search is not implemented |
-| Multi-provider routing | Plugin system | Config/CLI based | Medium — no dynamic plugins |
+| Provider catalog | Many built-ins + plugins | Config-declared + built-in `fake` | Medium — Rust has no dynamic plugin loading |
 | Tool execution | Python sandbox | Native shell integration | High — different security model |
 | TUI rendering | Rich/curses | Plain stdout | Low — cosmetic |
 

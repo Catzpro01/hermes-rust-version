@@ -10,7 +10,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 1 — Foundation | 002 | Tool calling, agentic loop | Done |
 | 2 — Inspection & search | 003 | Session/message inspection CLI | Done |
 | 2 — Inspection & search | 004 | FTS5 full-text search | Done |
-| 3 — Multi-model & routing | 005 | Multi-provider runtime routing | Not started |
+| 3 — Multi-model & routing | 005 | Multi-provider runtime routing | Done |
 | 3 — Multi-model & routing | 006 | Model fallback and load balancing | Not started |
 | 4 — Advanced agent | 007 | Tool execution sandbox | Not started |
 | 4 — Advanced agent | 008 | Memory and context management | Not started |
@@ -36,9 +36,35 @@ could not be lowered without masking ordinary words such as `ask-anything`.
 (`sk-proj-` 12, `sk-` 8), with regression tests for short keys,
 punctuation-delimited keys, and false positives.
 
+## Spec 005 closure
+
+Spec 005 ("Multi-provider runtime routing") is complete. Providers are now
+resolved from `config.yaml` rather than a literal name match, credentials come
+from each provider's own `key_env`, `HttpProvider` routes its endpoint and
+payload by a strict `api_mode` enum, and the REPL switches providers mid-session
+with `/provider <name>`.
+
+The five tickets and their landing commits:
+
+| Ticket | Scope | Commit |
+|---|---|---|
+| 01 | Config-driven provider registry | `d9aeec2` |
+| 02 | Per-provider `key_env` resolution + STRIDE | `5e25da3` |
+| 03 | `api_mode` endpoint/payload routing | `f646f65` |
+| 04 | `/provider <name>` mid-session switch | `f15e61d` |
+| 05 | Parity, docs, E2E closure proof | latest |
+
+Closure proof (Spec 005): `crates/hermes-cli/tests/provider_routing_e2e.rs`
+drives the real binary against two wiremock-backed providers. It starts on one
+provider, switches mid-session to the other, and asserts both responses land in
+the same `state.db` session in order, that neither provider's credential
+appears on any output path, and that a failed switch keeps the active provider
+(and its credential) unchanged.
+
 ## Verification
 
-Last full run: `cargo test --workspace` — 14 suites, 89 passed, 0 failed.
+Last full run: `cargo test --workspace` — 119 passed, 0 failed (2 consecutive
+full runs stable); `clippy --workspace --all-targets -D warnings` clean.
 
 ## Invariants
 
