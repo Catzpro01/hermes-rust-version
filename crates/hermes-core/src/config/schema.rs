@@ -60,11 +60,9 @@ impl fmt::Debug for ProviderConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ProviderConfig")
             .field("api", &self.api)
-            .field("name", &self.name)
             .field("api_mode", &self.api_mode)
             .field("key_env", &self.key_env)
             .field("models", &self.models.keys().collect::<Vec<_>>())
-            .field("context_length", &self.context_length)
             .finish()
     }
 }
@@ -126,11 +124,6 @@ impl fmt::Debug for ModelConfig {
             .field("provider", &self.provider)
             .field("base_url", &self.base_url)
             .field("api_key", &self.api_key)
-            .field("context_length", &self.context_length)
-            .field("name", &self.name)
-            .field("dtype", &self.dtype)
-            .field("quantization", &self.quantization)
-            .field("device", &self.device)
             .finish()
     }
 }
