@@ -75,7 +75,7 @@ pub async fn run_repl(
     let mut context_limit = resolve_context_limit(config.as_ref(), &provider_name);
     runner.set_context_limit(context_limit);
     println!("Hermes-RS session {session_id} (provider {provider_name})");
-    println!("Commands: /provider [name], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
+    println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
     if let Some(limit) = context_limit {
         println!(
             "[context ~{} tokens / limit {limit}]",
@@ -210,9 +210,10 @@ pub async fn run_repl(
                     .unwrap_or_else(|| "none".to_owned());
                 let sent = runner.turns().len().saturating_sub(runner.dropped_turns().len());
                 println!(
-                    "provider: {provider_name} | estimated context: ~{} tokens | limit: {limit} | window: {sent}/{} turns sent",
+                    "provider: {provider_name} | estimated context: ~{} tokens | limit: {limit} | window: {sent}/{} turns sent | pinned: {}",
                     runner.estimated_tokens(),
-                    runner.turns().len()
+                    runner.turns().len(),
+                    runner.pinned().len()
                 );
                 if let Some(w) = runner.context_warning() {
                     println!("{w}");
@@ -223,12 +224,57 @@ pub async fn run_repl(
                 // redacted before it reaches the terminal.
                 let dropped = runner.dropped_turns();
                 if !dropped.is_empty() {
-                    let summary = summarize_dropped(dropped);
+                    let summary = summarize_dropped(&dropped);
                     let safe =
                         hermes_core::search::redact::redact_credentials(&sanitize_untrusted_output(
                             &summary,
                         ));
                     println!("  {safe}");
+                }
+                continue;
+            }
+            // `/pin <n>` marks a turn (0-based into current history) so the
+            // sliding window never drops it. Pins are in-memory per-session.
+            command if command.starts_with("/pin ") => {
+                let n = parse_index_arg(command)?;
+                match runner.pin(n) {
+                    Ok(()) => println!("Pinned turn {n}"),
+                    Err(e) => eprintln!("error: {e}"),
+                }
+                continue;
+            }
+            // `/unpin <n>` removes a pin.
+            command if command.starts_with("/unpin ") => {
+                let n = parse_index_arg(command)?;
+                match runner.unpin(n) {
+                    Ok(()) => println!("Unpinned turn {n}"),
+                    Err(e) => eprintln!("error: {e}"),
+                }
+                continue;
+            }
+            // `/pinned` lists all pinned turn indices.
+            "/pinned" => {
+                let pinned = runner.pinned();
+                if pinned.is_empty() {
+                    println!("no pinned turns");
+                } else {
+                    let labels: Vec<String> = pinned
+                        .iter()
+                        .map(|&i| {
+                            // Sanitize a short preview of each pinned turn.
+                            let t = &runner.turns()[i];
+                            let text = match t {
+                                hermes_core::conversation::Turn::User { content }
+                                | hermes_core::conversation::Turn::Assistant { content } => {
+                                    content.as_str()
+                                }
+                                hermes_core::conversation::Turn::Tool { name, .. } => name.as_str(),
+                            };
+                            let preview: String = text.chars().take(40).collect();
+                            format!("{i}:{preview}")
+                        })
+                        .collect();
+                    println!("pinned: {}", labels.join(" | "));
                 }
                 continue;
             }
@@ -319,6 +365,17 @@ fn resolve_provider(
     base_url_override: Option<&str>,
 ) -> Result<Box<dyn Provider>, RegistryError> {
     registry.select(Some(name), None, base_url_override, config)
+}
+
+/// Parses a non-negative integer argument from a slash command, e.g. the index
+/// in `/pin 3`. Returns a usage error on a missing or non-numeric argument.
+fn parse_index_arg(command: &str) -> Result<usize, anyhow::Error> {
+    let raw = command.split_once(' ').map(|(_, r)| r.trim()).unwrap_or("");
+    if raw.is_empty() {
+        return Err(anyhow::anyhow!("usage: {command} needs a turn index"));
+    }
+    raw.parse::<usize>()
+        .map_err(|_| anyhow::anyhow!("'{raw}' is not a valid turn index"))
 }
 
 /// Resolves the advisory context limit for the active provider from config

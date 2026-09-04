@@ -18,17 +18,21 @@ pub fn estimate_tokens(text: &str) -> usize {
     (text.len() / 4).max(1)
 }
 
+/// Estimated tokens contributed by a single turn (Tool counts name + content).
+/// Single source of truth for per-turn token accounting; [`estimate_turns_tokens`]
+/// and the runner's sliding window both build on it.
+pub fn turn_tokens(turn: &Turn) -> usize {
+    match turn {
+        Turn::User { content } => estimate_tokens(content),
+        Turn::Assistant { content } => estimate_tokens(content),
+        Turn::Tool { name, content } => estimate_tokens(name) + estimate_tokens(content),
+    }
+}
+
 /// Estimated total tokens across an entire conversation (`&[Turn]`). Tool
 /// turns count both their tool name and their content.
 pub fn estimate_turns_tokens(turns: &[Turn]) -> usize {
-    turns
-        .iter()
-        .map(|turn| match turn {
-            Turn::User { content } => estimate_tokens(content),
-            Turn::Assistant { content } => estimate_tokens(content),
-            Turn::Tool { name, content } => estimate_tokens(name) + estimate_tokens(content),
-        })
-        .sum()
+    turns.iter().map(turn_tokens).sum()
 }
 
 /// Advisory check: does the estimated context exceed `context_length`?

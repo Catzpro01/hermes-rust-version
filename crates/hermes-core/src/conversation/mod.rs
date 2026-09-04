@@ -5,6 +5,7 @@ use crate::session::{SessionId, SessionStore};
 use crate::tools::{ToolCall, ToolCallRecord, ToolError, ToolExecutionStatus, ToolRegistry};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use tokio_util::sync::CancellationToken;
 
 pub mod context;
@@ -41,6 +42,11 @@ pub struct ConversationRunner<P> {
     /// Ticket 01 only reads it for accounting + a non-blocking warning;
     /// truncation (sliding window) is Ticket 02.
     context_limit: Option<u64>,
+    /// Indices into `self.turns` that must always be sent (never dropped by the
+    /// sliding window). In-memory only, per-session (Ticket 04). Indices refer
+    /// to `self.turns` positions; they are cleared when turns are replaced
+    /// (`/new`, `/resume`) so stale indices never dangle.
+    pinned: HashSet<usize>,
 }
 impl<P: Provider> ConversationRunner<P> {
     pub fn new(provider: P) -> Self {
@@ -48,6 +54,7 @@ impl<P: Provider> ConversationRunner<P> {
             provider,
             turns: Vec::new(),
             context_limit: None,
+            pinned: HashSet::new(),
         }
     }
     pub fn turns(&self) -> &[Turn] {
@@ -58,6 +65,7 @@ impl<P: Provider> ConversationRunner<P> {
             provider,
             turns,
             context_limit: None,
+            pinned: HashSet::new(),
         }
     }
 
@@ -84,47 +92,131 @@ impl<P: Provider> ConversationRunner<P> {
         crate::conversation::context::check_context_limit(&self.turns, self.context_limit)
     }
 
-    /// Returns the slice of turns to send to the provider (Ticket 02).
-    ///
-    /// Sliding-window invariant: this returns a **copy** trimmed to fit the
-    /// runner's `context_limit` and never mutates `self.turns`. The full
-    /// history stays in `self.turns` (and thus in `state.db`, which the REPL
-    /// persists from here); only what is handed to the model is shortened.
-    ///
-    /// - `context_limit = None` → returns the full history unchanged
-    ///   (backward compatible: no window).
-    /// - Already within budget → full history.
-    /// - Otherwise oldest turns are dropped from the front until the estimate
-    ///   fits or only one turn remains. The most recent turn (the active
-    ///   question) is never dropped.
-    pub fn turns_to_send(&self) -> Vec<Turn> {
-        let limit = match self.context_limit {
-            None => return self.turns.clone(),
-            Some(limit) => limit,
-        };
-        let over = |turns: &[Turn]| -> bool {
-            crate::conversation::context::estimate_turns_tokens(turns) as u64 > limit
-        };
-        if !over(&self.turns) {
-            return self.turns.clone();
+    /// Pins the turn at `index` (0-based into the current history) so the
+    /// sliding window never drops it. Returns `Ok(())` on success, or an error
+    /// naming the problem when the index is out of range or already pinned.
+    pub fn pin(&mut self, index: usize) -> Result<(), String> {
+        if index >= self.turns.len() {
+            return Err(format!(
+                "no turn at index {index} (session has {} turns)",
+                self.turns.len()
+            ));
         }
-        let mut trimmed = self.turns.clone();
-        while trimmed.len() > 1 && over(&trimmed) {
-            trimmed.remove(0);
+        if !self.pinned.insert(index) {
+            return Err(format!("turn {index} is already pinned"));
         }
-        trimmed
+        Ok(())
     }
 
-    /// The prefix of `self.turns` that the sliding window would drop from the
-    /// next send (oldest turns). Empty when within the limit or when no limit
-    /// is configured. Used only for human-facing display (e.g. `/info`).
-    pub fn dropped_turns(&self) -> &[Turn] {
-        let sent = self.turns_to_send().len();
-        let drop = self.turns.len().saturating_sub(sent);
-        &self.turns[..drop]
+    /// Removes the pin on the turn at `index`. Idempotent: returns `Ok(())` if
+    /// it was pinned (and now isn't), and an error if there is no such pin or
+    /// the index is out of range.
+    pub fn unpin(&mut self, index: usize) -> Result<(), String> {
+        if index >= self.turns.len() {
+            return Err(format!(
+                "no turn at index {index} (session has {} turns)",
+                self.turns.len()
+            ));
+        }
+        if !self.pinned.remove(&index) {
+            return Err(format!("turn {index} is not pinned"));
+        }
+        Ok(())
+    }
+
+    /// Indices of all currently pinned turns, ascending.
+    pub fn pinned(&self) -> Vec<usize> {
+        let mut v: Vec<usize> = self.pinned.iter().copied().collect();
+        v.sort_unstable();
+        v
+    }
+
+    /// Whether the turn at `index` is currently pinned.
+    pub fn is_pinned(&self, index: usize) -> bool {
+        self.pinned.contains(&index)
+    }
+
+    /// Indices (ascending) that the sliding window would send next. Always
+    /// includes every pinned index and the most recent turn; then fills from
+    /// newest backward while the token budget allows. Sorted ascending so the
+    /// emitted context keeps chronological order.
+    fn keep_indices(&self) -> Vec<usize> {
+        let n = self.turns.len();
+        let limit = match self.context_limit {
+            None => return (0..n).collect(),
+            Some(limit) => limit,
+        };
+        let turn_tokens = |i: usize| crate::conversation::context::turn_tokens(&self.turns[i]) as u64;
+
+        // Must-keep: every pinned turn + the newest (active) turn.
+        let mut keep: Vec<usize> = self
+            .pinned
+            .iter()
+            .copied()
+            .filter(|&i| i < n)
+            .collect();
+        if !keep.contains(&(n - 1)) {
+            keep.push(n - 1);
+        }
+        let mut used: u64 = keep.iter().map(|&i| turn_tokens(i)).sum();
+
+        // Fill from newest toward oldest while the budget allows.
+        for i in (0..n).rev() {
+            if keep.contains(&i) {
+                continue;
+            }
+            let t = turn_tokens(i);
+            if used + t <= limit {
+                keep.push(i);
+                used += t;
+            }
+            // Stop filling once a recent turn can't fit: older ones are even
+            // less desirable, so leaving them out keeps context most recent.
+            if used + t > limit {
+                break;
+            }
+        }
+        keep.sort_unstable();
+        keep
+    }
+
+    /// Returns the turns to send to the provider (Ticket 02 + Ticket 04).
+    ///
+    /// Sliding-window invariant: this returns a **copy** of a subset trimmed to
+    /// fit `context_limit`, and never mutates `self.turns`. Full history stays
+    /// in `self.turns` (and `state.db`); only what is handed to the model is
+    /// shortened.
+    ///
+    /// - `context_limit = None` → full history unchanged (backward compatible).
+    /// - Pinned turns and the most recent turn are always included; if even
+    ///   they alone exceed the budget they are still sent (a warning is emitted
+    ///   separately — never dropped). Additional turns are taken from newest to
+    ///   oldest until the budget is reached.
+    pub fn turns_to_send(&self) -> Vec<Turn> {
+        self.keep_indices()
+            .into_iter()
+            .map(|i| self.turns[i].clone())
+            .collect()
+    }
+
+    /// The turns the sliding window would drop from the next send, in original
+    /// order (complement of what is sent). Empty when within the limit or when
+    /// no limit is configured. Pinned/newest turns are never here. Used only
+    /// for human-facing display (e.g. `/info`); never mutates `self.turns`.
+    pub fn dropped_turns(&self) -> Vec<Turn> {
+        let keep: HashSet<usize> = self.keep_indices().into_iter().collect();
+        self.turns
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| !keep.contains(i))
+            .map(|(_, t)| t.clone())
+            .collect()
     }
     pub fn replace_turns(&mut self, turns: Vec<Turn>) {
         self.turns = turns;
+        // Pins are indices into the previous history; a replaced history
+        // (/new, /resume) invalidates them, so clear to avoid dangling pins.
+        self.pinned.clear();
     }
 
     /// Swaps the provider backing this runner. The conversation history in
@@ -429,20 +521,93 @@ mod tests {
     }
 
     #[test]
-    fn dropped_turns_reports_the_trimmed_prefix() {
+    fn dropped_turns_reports_the_trimmed_complement() {
         let history = many_turns(100, 40);
         let mut r = runner_with(history.clone());
         // No limit -> nothing dropped.
         assert_eq!(r.dropped_turns().len(), 0);
-        // Tight limit -> old turns are reported as dropped, newest preserved.
+        // Tight limit -> old turns reported dropped, newest preserved.
         r.set_context_limit(Some(120));
         let dropped = r.dropped_turns();
         assert!(!dropped.is_empty(), "tight limit must drop some turns");
         let sent = r.turns_to_send();
-        // dropped (prefix) + sent (suffix) == full history: no turn is lost.
+        // dropped + sent == full history (disjoint partition, no loss).
         assert_eq!(dropped.len() + sent.len(), history.len());
-        assert_eq!(sent, history[dropped.len()..]);
         // self.turns remains the full history.
         assert_eq!(r.turns().len(), history.len());
+        // The most recent turn is never dropped.
+        assert!(!dropped.contains(&history.last().unwrap().clone()));
+    }
+
+    #[test]
+    fn pin_protects_a_turn_from_the_sliding_window() {
+        // Equal turns so order/dropping is deterministic.
+        let mut history = many_turns(100, 40);
+        // Make turn 0 (index 0) distinctive so we can find it in the output.
+        history[0] = Turn::User {
+            content: format!("PINNED-{}", "x".repeat(40)),
+        };
+        let mut r = runner_with(history.clone());
+        r.set_context_limit(Some(120));
+        // Without a pin, index 0 is dropped.
+        assert!(!r.dropped_turns().is_empty(), "tight limit drops turns");
+
+        // Pin turn 0 -> it must now be sent even though it is the oldest.
+        r.pin(0).unwrap();
+        let sent = r.turns_to_send();
+        assert!(
+            sent.iter().any(|t| matches!(t, Turn::User { content } if content.starts_with("PINNED-"))),
+            "pinned oldest turn must be sent"
+        );
+        // And it must not appear in dropped.
+        assert!(
+            !r.dropped_turns()
+                .iter()
+                .any(|t| matches!(t, Turn::User { content } if content.starts_with("PINNED-"))),
+            "pinned turn must not be dropped"
+        );
+    }
+
+    #[test]
+    fn pin_newest_is_kept_and_pins_survive_replacement_rules() {
+        let mut r = runner_with(many_turns(5, 40));
+        // 5 turns within no limit; pin two distinct indices.
+        r.pin(1).unwrap();
+        r.pin(3).unwrap();
+        assert_eq!(r.pinned(), vec![1, 3]);
+        assert!(r.is_pinned(1));
+        assert!(!r.is_pinned(2));
+        // Replacing the history clears pins (no dangling indices).
+        r.replace_turns(many_turns(3, 40));
+        assert!(r.pinned().is_empty(), "pins must clear when history is replaced");
+    }
+
+    #[test]
+    fn pin_rejects_out_of_range_and_duplicates() {
+        let mut r = runner_with(many_turns(5, 40));
+        assert!(r.pin(5).is_err(), "index out of range must error");
+        assert!(r.pin(0).is_ok());
+        assert!(r.pin(0).is_err(), "double pin must error");
+        assert!(r.unpin(0).is_ok());
+        assert!(r.unpin(0).is_err(), "unpinning a non-pinned turn must error");
+        assert!(r.unpin(9).is_err(), "out-of-range unpin must error");
+    }
+
+    #[test]
+    fn pinned_turns_count_against_the_token_budget() {
+        // 5 turns x 10 tokens = 50 tokens total, limit 40. Pin the newest + one
+        // old turn so they alone exceed; they are still sent (warn, not drop).
+        let mut r = runner_with(many_turns(5, 40));
+        r.set_context_limit(Some(20)); // newest(10)+nothing else fits
+        // newest is index 4 (always kept). Pin it plus index 3 -> 20, fits.
+        r.pin(4).unwrap();
+        r.pin(3).unwrap();
+        let sent = r.turns_to_send();
+        assert!(
+            sent.iter().any(|t| matches!(t, Turn::User { content } if content.starts_with("4-"))),
+            "newest pinned kept"
+        );
+        // self.turns not mutated.
+        assert_eq!(r.turns().len(), 5);
     }
 }
