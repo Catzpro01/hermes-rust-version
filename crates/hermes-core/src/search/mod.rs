@@ -1,6 +1,7 @@
 pub mod error;
 pub mod migration;
 pub mod query;
+pub mod redact;
 pub mod state;
 
 pub use error::SearchError;

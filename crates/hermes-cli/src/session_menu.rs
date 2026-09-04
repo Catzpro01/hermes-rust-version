@@ -141,7 +141,11 @@ pub fn search_sessions(store: &SessionStore, query: &str) -> Result<()> {
             sanitize_untrusted_output(&result.role),
             result.rank
         );
-        println!("  {}", sanitize_untrusted_output(&result.snippet));
+        let safe = sanitize_untrusted_output(&result.snippet);
+        println!(
+            "  {}",
+            hermes_core::search::redact::redact_credentials(&safe)
+        );
     }
     Ok(())
 }
