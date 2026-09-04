@@ -56,6 +56,15 @@ pub fn search_messages(
     if limits.max_results == 0 || query.is_empty() {
         return Ok(Vec::new());
     }
+    let indexed: i64 = conn
+        .query_row("SELECT COUNT(*) FROM message_search", [], |r| r.get(0))
+        .map_err(SearchError::QueryFailed)?;
+    let canonical: i64 = conn
+        .query_row("SELECT COUNT(*) FROM messages", [], |r| r.get(0))
+        .map_err(SearchError::QueryFailed)?;
+    if indexed == 0 && canonical > 0 {
+        return Err(SearchError::IndexNotReady);
+    }
     let literal = escape_fts5_literal(query);
     let session_filter = session.map(SessionId::to_string);
     let mut stmt = conn.prepare("SELECT m.session_id, m.id, m.role, substr(COALESCE(m.content, ''), 1, ?1), bm25(message_search) FROM message_search JOIN messages AS m ON m.id = message_search.rowid WHERE message_search MATCH ?2 AND (?3 IS NULL OR m.session_id = ?3) ORDER BY bm25(message_search), m.id LIMIT ?4").map_err(SearchError::QueryFailed)?;
