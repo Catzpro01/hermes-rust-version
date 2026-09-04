@@ -33,6 +33,9 @@ impl<P: Provider> ConversationRunner<P> {
     pub fn turns(&self) -> &[Turn] {
         &self.turns
     }
+    pub fn from_turns(provider: P, turns: Vec<Turn>) -> Self {
+        Self { provider, turns }
+    }
     pub async fn prompt(
         &mut self,
         content: impl Into<String>,

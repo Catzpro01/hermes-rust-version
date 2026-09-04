@@ -6,5 +6,9 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+clap.workspace = true
+rustyline = "14"
+tracing-subscriber.workspace = true
+futures.workspace = true
 hermes-core = { path = "../hermes-core" }
 tokio.workspace = true
