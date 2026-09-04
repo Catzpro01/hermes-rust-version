@@ -35,15 +35,16 @@ pub fn list_sessions(store: &SessionStore) -> Result<()> {
         return Ok(());
     }
     for id in sessions {
-        let history = store.resume(&id)?.turns;
-        let preview = history
+        let session = store.resume(&id)?;
+        let preview = session
+            .turns
             .iter()
             .find_map(|turn| match turn {
                 hermes_core::conversation::Turn::User { content } => Some(content.as_str()),
                 _ => None,
             })
             .unwrap_or("(empty)");
-        println!("{id}  {preview}");
+        println!("{id}  started={:.3}  {preview}", session.started_at);
     }
     Ok(())
 }
