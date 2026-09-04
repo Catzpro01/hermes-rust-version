@@ -7,6 +7,8 @@ use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tokio_util::sync::CancellationToken;
 
+pub mod context;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Turn {
     User { content: String },
