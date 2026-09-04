@@ -5,5 +5,5 @@ mod home;
 mod schema;
 
 pub use error::ConfigError;
-pub use home::{load_config, resolve_hermes_home, HermesHome};
+pub use home::{load_config, load_config_with_provider, resolve_hermes_home, HermesHome};
 pub use schema::{HermesConfig, ModelConfig, SecretString};

@@ -1,0 +1,9 @@
+(function() {
+    const implementors = Object.fromEntries([["hermes_core",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.98.1/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"struct\" href=\"hermes_core/struct.AgentConfig.html\" title=\"struct hermes_core::AgentConfig\">AgentConfig</a>",0],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.98.1/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"enum\" href=\"hermes_core/config/enum.ConfigError.html\" title=\"enum hermes_core::config::ConfigError\">ConfigError</a>",0],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.98.1/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"struct\" href=\"hermes_core/config/struct.HermesConfig.html\" title=\"struct hermes_core::config::HermesConfig\">HermesConfig</a>",0],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.98.1/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"struct\" href=\"hermes_core/struct.Message.html\" title=\"struct hermes_core::Message\">Message</a>",0],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.98.1/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"struct\" href=\"hermes_core/config/struct.ModelConfig.html\" title=\"struct hermes_core::config::ModelConfig\">ModelConfig</a>",0],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.98.1/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"struct\" href=\"hermes_core/config/struct.SecretString.html\" title=\"struct hermes_core::config::SecretString\">SecretString</a>",0]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":59,"fragment_lengths":[1673]}

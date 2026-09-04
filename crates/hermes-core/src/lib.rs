@@ -54,6 +54,19 @@ mod tests {
         assert!(!d.path().join("config.yaml.tmp").exists());
     }
     #[test]
+    fn applies_explicit_provider_override_without_writing() {
+        let d = tempdir().unwrap();
+        let path = d.path().join("config.yaml");
+        fs::write(&path, "model:\n  provider: auto\n").unwrap();
+        let c = load_config_with_provider(d.path(), Some("openai")).unwrap();
+        assert_eq!(c.model.provider.as_deref(), Some("openai"));
+        assert_eq!(
+            fs::read_to_string(path).unwrap(),
+            "model:\n  provider: auto\n"
+        );
+    }
+
+    #[test]
     fn rejects_invalid_yaml() {
         let d = tempdir().unwrap();
         fs::write(d.path().join("config.yaml"), "model: [broken").unwrap();

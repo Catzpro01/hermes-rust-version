@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Hermes home dapat ditemukan dari default dan override eksplisit.
-- [ ] Konfigurasi provider/model dapat dibaca tanpa mengubah instalasi Python Hermes.
-- [ ] Precedence override terdokumentasi dan teruji.
-- [ ] Missing, malformed, dan unknown provider menghasilkan error actionable tanpa secret.
-- [ ] Pengujian memakai Hermes home disposable.
+- [x] Hermes home dapat ditemukan dari default dan override eksplisit.
+- [x] Konfigurasi provider/model dapat dibaca tanpa mengubah instalasi Python Hermes.
+- [x] Precedence override terdokumentasi dan teruji.
+- [x] Missing, malformed, dan unknown provider menghasilkan error actionable tanpa secret.
+- [x] Pengujian memakai Hermes home disposable.

@@ -38,6 +38,25 @@ pub fn load_config(home: &Path) -> Result<HermesConfig, ConfigError> {
     serde_yaml::from_str(&text).map_err(|source| ConfigError::ParseFailed { path, source })
 }
 
+/// Loads config and applies an explicit provider override without writing the file.
+pub fn load_config_with_provider(
+    home: &Path,
+    provider: Option<&str>,
+) -> Result<HermesConfig, ConfigError> {
+    let mut config = load_config(home)?;
+    if let Some(provider) = provider {
+        let provider = provider.trim();
+        if provider.is_empty() {
+            return Err(ConfigError::InvalidOverride {
+                field: "provider".into(),
+                reason: "value cannot be empty".into(),
+            });
+        }
+        config.model.provider = Some(provider.to_owned());
+    }
+    Ok(config)
+}
+
 trait ExpandUser {
     fn expand_user(self) -> PathBuf;
 }
