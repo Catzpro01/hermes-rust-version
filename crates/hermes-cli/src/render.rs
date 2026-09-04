@@ -15,6 +15,11 @@ pub async fn render_stream(mut events: EventStream) -> anyhow::Result<String> {
             }
             Event::Done => println!(),
             Event::Error(message) => eprintln!("\n⚠ {message}"),
+            Event::ToolCall(call) => eprintln!(
+                "
+[tool_call {}]",
+                call.name
+            ),
         }
     }
     Ok(full)
