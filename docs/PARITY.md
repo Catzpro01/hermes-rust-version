@@ -46,3 +46,15 @@ The config audit covers the currently supported Hermes-RS schema: `model.default
 ## Operational SIGINT verification
 
 The Unix integration test `sigint_stream` synchronizes on the first SSE chunk before sending `SIGINT`. It verifies exit code 130 and zero persisted assistant messages after cancellation.
+
+## Spec 002 tool status
+
+| Capability | Status | Notes |
+|---|---|---|
+| XML tool-call parsing | ✅ | Streaming tag-aware parser |
+| Agentic loop | ✅ | Cancellable, maximum 10 iterations |
+| SQLite tool-call records | ✅ | Tool name, arguments, result, status |
+| Read-only filesystem tools | ✅ | cwd jail and output limits |
+| Confirmed writes | ✅ | Atomic write and default-deny confirmation |
+| Readonly shell policy | ✅ | Blocklist, timeout, cancellation |
+| Security documentation | ✅ | See `docs/SECURITY.md` |
