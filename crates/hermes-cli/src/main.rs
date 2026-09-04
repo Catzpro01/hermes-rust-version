@@ -16,6 +16,9 @@ struct Args {
     /// Provider for the first offline CLI slice.
     #[arg(long, default_value = "fake")]
     provider: String,
+    /// Resume the most recently updated session.
+    #[arg(long)]
+    resume: bool,
 }
 
 #[tokio::main]
@@ -42,6 +45,11 @@ async fn run() -> anyhow::Result<()> {
         );
     }
     let home = resolve_hermes_home(args.hermes_home.as_deref())?;
+    // Validate an existing config even in fake mode, while keeping fake mode usable
+    // with a disposable home that only contains state.db.
+    if home.join("config.yaml").exists() {
+        let _ = load_config(&home).map_err(|e| anyhow::anyhow!("Invalid config: {e}"))?;
+    }
     let provider: Box<dyn Provider> = match args.provider.as_str() {
         "fake" => Box::new(FakeProvider),
         "openai" | "custom" => {
@@ -70,5 +78,5 @@ async fn run() -> anyhow::Result<()> {
         }
         other => anyhow::bail!("unsupported provider '{other}' (use fake, openai, or custom)"),
     };
-    repl::run_repl(&home, provider).await
+    repl::run_repl(&home, provider, args.resume).await
 }

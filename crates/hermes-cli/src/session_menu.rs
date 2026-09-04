@@ -35,7 +35,15 @@ pub fn list_sessions(store: &SessionStore) -> Result<()> {
         return Ok(());
     }
     for id in sessions {
-        println!("{id}");
+        let history = store.resume(&id)?.turns;
+        let preview = history
+            .iter()
+            .find_map(|turn| match turn {
+                hermes_core::conversation::Turn::User { content } => Some(content.as_str()),
+                _ => None,
+            })
+            .unwrap_or("(empty)");
+        println!("{id}  {preview}");
     }
     Ok(())
 }

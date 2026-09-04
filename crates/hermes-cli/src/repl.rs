@@ -5,18 +5,34 @@ use crate::{
 use anyhow::{Context, Result};
 use hermes_core::{conversation::ConversationRunner, provider::Provider, session::SessionStore};
 use rustyline::{error::ReadlineError, DefaultEditor};
+use std::io::IsTerminal;
 use tokio_util::sync::CancellationToken;
 
-pub async fn run_repl(home: &std::path::Path, provider: Box<dyn Provider>) -> Result<()> {
+pub async fn run_repl(
+    home: &std::path::Path,
+    provider: Box<dyn Provider>,
+    resume: bool,
+) -> Result<()> {
     let db = home.join("state.db");
     let mut store = SessionStore::open(&db).context("open Hermes state.db")?;
     let mut editor = DefaultEditor::new().context("create terminal editor")?;
-    let mut session_id = select_session(&store, &mut editor)?;
+    let mut session_id = if resume || !std::io::stdin().is_terminal() {
+        match store.list()?.last().copied() {
+            Some(id) => id,
+            None => store.create_session("cli")?,
+        }
+    } else {
+        select_session(&store, &mut editor)?
+    };
     let existing = store.resume(&session_id)?.turns;
     let mut runner = ConversationRunner::from_turns(provider, existing);
     println!("Hermes-RS session {session_id}");
     println!("Commands: /new, /sessions, /resume <id>, /exit");
     loop {
+        if !std::io::stdin().is_terminal() {
+            print!("hermes> ");
+            std::io::Write::flush(&mut std::io::stdout())?;
+        }
         let line = match editor.readline("hermes> ") {
             Ok(line) => {
                 if !line.trim().is_empty() {
