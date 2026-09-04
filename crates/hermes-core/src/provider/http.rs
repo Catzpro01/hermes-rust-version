@@ -34,7 +34,7 @@ pub struct HttpProvider {
 impl HttpProvider {
     pub fn new(base_url: Url, api_key: SecretString, model: impl Into<String>) -> Self {
         Self {
-            client: Client::new(),
+            client: default_client(),
             base_url,
             api_key,
             model: model.into(),
@@ -126,7 +126,15 @@ impl HttpProvider {
         let request = self.build_request(turns)?;
         let response = tokio::select! {
             _ = cancel.cancelled() => return Err(ProviderError::Cancelled),
-            result = request.send() => result.map_err(|e| ProviderError::Message(redact(&e.to_string(), &self.api_key)))?,
+            result = request.send() => match result {
+                Ok(response) => response,
+                // A transport timeout is distinct from a generic message error
+                // so it can be classified retryable.
+                Err(e) if e.is_timeout() => return Err(ProviderError::Timeout),
+                Err(e) => {
+                    return Err(ProviderError::Message(redact(&e.to_string(), &self.api_key)))
+                }
+            },
         };
         let status = response.status();
         if !status.is_success() {
@@ -207,9 +215,17 @@ impl Provider for HttpProvider {
     }
 }
 
-#[allow(dead_code)]
-fn _timeout() -> Duration {
-    Duration::from_secs(30)
+/// Total per-request timeout applied to the internally-built HTTP client.
+/// Prevents a request from hanging indefinitely (a DoS vector) and lets a
+/// timeout surface as a retryable [`ProviderError::Timeout`].
+const HTTP_CLIENT_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Builds the default client with the request timeout applied.
+fn default_client() -> Client {
+    Client::builder()
+        .timeout(HTTP_CLIENT_TIMEOUT)
+        .build()
+        .expect("reqwest client build should not fail")
 }
 
 #[cfg(test)]
@@ -247,5 +263,12 @@ mod tests {
     #[test]
     fn empty_turns_still_close_with_an_assistant_cue() {
         assert_eq!(render_completions_prompt(&[]), "Assistant:");
+    }
+
+    #[test]
+    fn http_client_timeout_is_thirty_seconds() {
+        // Ticket 01: a real (not dead) 30s request timeout. Changing this is a
+        // deliberate, test-visible act.
+        assert_eq!(HTTP_CLIENT_TIMEOUT, Duration::from_secs(30));
     }
 }

@@ -232,3 +232,105 @@ async fn tool_calls_are_parsed_in_completions_mode() {
         .expect("expected a parsed echo ToolCall in completions mode");
     assert_eq!(call.arguments, "x");
 }
+
+/// Runs a chat request and returns the error it produces (panicking on success).
+/// `chat` returns a non-`Debug` stream on `Ok`, so errors must be extracted via
+/// `match` rather than `Result::unwrap_err`.
+async fn chat_error(
+    provider: &HttpProvider,
+    content: &str,
+) -> hermes_core::provider::ProviderError {
+    match provider
+        .chat(&[Turn::User {
+            content: content.into(),
+        }])
+        .await
+    {
+        Ok(_stream) => panic!("expected an error, got a stream"),
+        Err(err) => err,
+    }
+}
+
+#[tokio::test]
+async fn transient_http_errors_are_retryable() {
+    // Ticket 01: a rate-limit (429) and a 5xx must surface as an Http error
+    // that is_retryable() is true, so retry/fallback can react.
+    for status in [429u16, 503] {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/v1/chat/completions"))
+            .respond_with(
+                ResponseTemplate::new(reqwest::StatusCode::from_u16(status).unwrap())
+                    .set_body_string("upstream busy"),
+            )
+            .mount(&server)
+            .await;
+        let provider = HttpProvider::new(
+            Url::parse(&(server.uri() + "/")).unwrap(),
+            SecretString::from("k"),
+            "m",
+        );
+        let err = chat_error(&provider, "hi").await;
+        assert!(matches!(
+            err,
+            hermes_core::provider::ProviderError::Http { status: s, .. } if s == status
+        ));
+        assert!(err.is_retryable(), "{status} error must be retryable: {err}");
+    }
+}
+
+#[tokio::test]
+async fn permanent_http_errors_are_not_retryable() {
+    // Ticket 01: a 4xx (e.g. 400/401) is permanent and must not be retried.
+    for status in [400u16, 401] {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/v1/chat/completions"))
+            .respond_with(ResponseTemplate::new(reqwest::StatusCode::from_u16(status).unwrap()))
+            .mount(&server)
+            .await;
+        let provider = HttpProvider::new(
+            Url::parse(&(server.uri() + "/")).unwrap(),
+            SecretString::from("k"),
+            "m",
+        );
+        let err = chat_error(&provider, "hi").await;
+        assert!(matches!(
+            err,
+            hermes_core::provider::ProviderError::Http { status: s, .. } if s == status
+        ));
+        assert!(!err.is_retryable(), "{status} must not be retryable: {err}");
+    }
+}
+
+#[tokio::test]
+async fn transport_timeout_yields_a_retryable_timeout() {
+    // Ticket 01: a request that exceeds the client timeout must surface as
+    // ProviderError::Timeout (not a generic Message), which is_retryable().
+    // The default client uses a 30s timeout, which is too slow for a unit
+    // test, so we inject a client with a short timeout via with_client.
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/v1/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(200).set_delay(std::time::Duration::from_millis(800)),
+        )
+        .mount(&server)
+        .await;
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_millis(200))
+        .build()
+        .unwrap();
+    let provider = HttpProvider::with_client(
+        client,
+        Url::parse(&(server.uri() + "/")).unwrap(),
+        SecretString::from("k"),
+        "m",
+    );
+    let err = chat_error(&provider, "hi").await;
+    assert!(
+        matches!(err, hermes_core::provider::ProviderError::Timeout),
+        "expected a Timeout error, got: {err}"
+    );
+    assert!(err.is_retryable(), "timeout must be retryable");
+}
