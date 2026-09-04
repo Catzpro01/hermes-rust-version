@@ -10,6 +10,8 @@ use thiserror::Error;
 pub enum ProviderError {
     #[error("provider error: {0}")]
     Message(String),
+    #[error("provider returned HTTP {status}: {message}")]
+    Http { status: u16, message: String },
     #[error("request cancelled")]
     Cancelled,
 }
@@ -21,4 +23,9 @@ pub trait Provider: Send + Sync {
 }
 
 pub mod fake;
+pub mod http;
+mod redact;
+pub mod sse;
 pub use fake::FakeProvider;
+pub use http::HttpProvider;
+pub use redact::redact;

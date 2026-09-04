@@ -8,6 +8,16 @@ impl SecretString {
         &self.0
     }
 }
+impl From<String> for SecretString {
+    fn from(value: String) -> Self {
+        Self(value)
+    }
+}
+impl From<&str> for SecretString {
+    fn from(value: &str) -> Self {
+        Self(value.to_owned())
+    }
+}
 impl fmt::Debug for SecretString {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("SecretString(***REDACTED***)")
