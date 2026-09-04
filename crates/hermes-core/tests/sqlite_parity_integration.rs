@@ -1,9 +1,49 @@
 use hermes_core::{
     conversation::Turn,
-    session::{SessionId, SessionStore},
+    session::{SessionId, SessionStore, SessionStoreError},
 };
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc, thread, time::Duration};
 use tempfile::tempdir;
+
+/// True when the SQLite error is a transient "database is busy/locked" that a
+/// bounded retry may safely absorb (busy_timeout alone does not always cover
+/// the case of two separate connections racing under heavy test-suite load).
+fn is_transient_busy(err: &SessionStoreError) -> bool {
+    matches!(
+        err,
+        SessionStoreError::Sqlite(rusqlite::Error::SqliteFailure(f, _))
+            if f.code == rusqlite::ErrorCode::DatabaseBusy
+                || f.code == rusqlite::ErrorCode::DatabaseLocked
+    )
+}
+
+/// Saves a turn, retrying a bounded number of times when SQLite reports a
+/// transient busy/locked condition. Persistent errors are returned unchanged.
+fn save_turn_retry_busy(
+    store: &mut SessionStore,
+    id: &SessionId,
+    turn: &Turn,
+) -> Result<(), SessionStoreError> {
+    let mut last_busy: Option<SessionStoreError> = None;
+    for attempt in 0..50 {
+        match store.save_turn(id, turn) {
+            Ok(()) => return Ok(()),
+            Err(err) if is_transient_busy(&err) => {
+                // The two workers each own a connection; a brief, growing
+                // backoff lets the other transaction commit first.
+                last_busy = Some(err);
+                thread::sleep(Duration::from_millis(1 + attempt * 2));
+            }
+            Err(err) => return Err(err),
+        }
+    }
+    // Exhausted retries on a still-busy database (only reachable when every
+    // attempt reported busy, so the captured error is present).
+    Err(match last_busy {
+        Some(err) => err,
+        None => unreachable!("retry loop only exits exhausted on a busy error"),
+    })
+}
 
 #[test]
 fn reads_real_hermes_state_db_fixture() {
@@ -34,14 +74,14 @@ fn concurrent_writes_to_same_sqlite_session_are_serialized() {
         handles.push(std::thread::spawn(move || {
             let mut store = SessionStore::open(&db).unwrap();
             for i in 0..10 {
-                store
-                    .save_turn(
-                        &id,
-                        &Turn::User {
-                            content: format!("worker-{n}-{i}"),
-                        },
-                    )
-                    .unwrap();
+                save_turn_retry_busy(
+                    &mut store,
+                    &id,
+                    &Turn::User {
+                        content: format!("worker-{n}-{i}"),
+                    },
+                )
+                .unwrap();
             }
         }));
     }

@@ -42,9 +42,13 @@ impl ProviderRegistry {
         for (name, provider) in &config.providers {
             let owned_name = name.clone();
             let owned_provider = provider.clone();
+            // The model-level key is the global fallback when a provider does
+            // not pin its own key_env. It is captured here (not read from the
+            // config later) so construction stays free of any registry state.
+            let fallback_key = config.model.api_key.clone();
             factories.insert(
                 name.clone(),
-                Box::new(move || build_configured(&owned_name, &owned_provider)),
+                Box::new(move || build_configured(&owned_name, &owned_provider, fallback_key.clone())),
             );
         }
         if !factories.contains_key(FAKE_PROVIDER) {
@@ -153,6 +157,7 @@ fn model_level_fallback(
 fn build_configured(
     name: &str,
     provider: &ProviderConfig,
+    fallback_key: Option<SecretString>,
 ) -> Result<Box<dyn Provider>, RegistryError> {
     // Sorted so the choice is deterministic; `models` is a HashMap.
     let mut model_names: Vec<&String> = provider.models.keys().collect();
@@ -176,28 +181,54 @@ fn build_configured(
     let base_url = Url::parse(raw_url).map_err(|e| fail(name, &format!("invalid 'api' URL: {e}")))?;
 
     Ok(Box::new(
-        HttpProvider::new(base_url, resolve_api_key(name, provider)?, model)
-            .with_api_mode(api_mode),
+        HttpProvider::new(
+            base_url,
+            resolve_api_key(name, provider, fallback_key)?,
+            model,
+        )
+        .with_api_mode(api_mode),
     ))
 }
 
-/// Resolves a provider's credential. Names the variable when it is missing,
-/// never its value.
-fn resolve_api_key(name: &str, provider: &ProviderConfig) -> Result<SecretString, RegistryError> {
+/// Resolves a configured provider's credential. Names variables, never values.
+///
+/// Fallback chain (documented in `docs/SECURITY.md` under Spec 005 — STRIDE):
+/// 1. If `key_env` is pinned (declared, non-empty) and the environment variable
+///    it names holds a non-empty value, use it.
+/// 2. If `key_env` is pinned but the variable is unset/empty, **error** naming
+///    the variable — it must NOT silently fall back to `model.api_key`. The
+///    operator explicitly chose that variable, so using a different key would
+///    risk sending one provider's credential to another provider's endpoint
+///    (cross-provider credential leakage / Spoofing).
+/// 3. If `key_env` is absent, fall back to the global `model.api_key`, then
+///    error if neither is available.
+fn resolve_api_key(
+    name: &str,
+    provider: &ProviderConfig,
+    fallback_key: Option<SecretString>,
+) -> Result<SecretString, RegistryError> {
+    // (1)/(2) Pinned key_env.
     if let Some(var) = provider.key_env.as_deref().filter(|v| !v.trim().is_empty()) {
-        if let Ok(value) = std::env::var(var) {
-            if !value.is_empty() {
-                return Ok(SecretString::from(value));
-            }
+        let set = std::env::var(var)
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .map(SecretString::from);
+        return set.ok_or_else(|| {
+            fail(
+                name,
+                &format!("environment variable '{var}' is not set or empty"),
+            )
+        });
+    }
+    // (3) No pin: fall back to the global model key, then error.
+    if let Some(key) = fallback_key {
+        if !key.expose().is_empty() {
+            return Ok(key);
         }
-        return Err(fail(
-            name,
-            &format!("environment variable '{var}' is not set or empty"),
-        ));
     }
     Err(fail(
         name,
-        "no 'key_env' declared and no fallback configured",
+        "no 'key_env' declared and no 'model.api_key' fallback configured",
     ))
 }
 
@@ -292,6 +323,61 @@ mod tests {
         ));
         assert!(registry.build("p").is_ok());
         std::env::remove_var("HERMES_TEST_SET_D");
+    }
+
+    #[test]
+    fn absent_key_env_falls_back_to_model_api_key() {
+        // A configured provider that does not pin key_env uses the global
+        // model.api_key (chain: key_env -> model.api_key -> error).
+        std::env::remove_var("HERMES_TEST_ABSENT_FALLBACK_J");
+        let registry = ProviderRegistry::from_config(&config_with(
+            "model:\n  api_key: sk-global-dummy\nproviders:\n  p:\n    api: http://localhost:9/\n    models:\n      m: {}\n",
+        ));
+        assert!(
+            registry.build("p").is_ok(),
+            "absent key_env should fall back to model.api_key"
+        );
+    }
+
+    #[test]
+    fn pinned_but_empty_key_env_does_not_fall_back_to_model_key() {
+        // Credential-confusion guard: an explicitly pinned key_env whose
+        // variable is unset/empty must ERROR, even when model.api_key is
+        // present. Falling back would send a different provider's key to this
+        // endpoint (cross-provider credential leakage).
+        std::env::remove_var("HERMES_TEST_PINNED_EMPTY_K");
+        let registry = ProviderRegistry::from_config(&config_with(
+            "model:\n  api_key: sk-openai-should-never-leak\nproviders:\n  p:\n    api: http://localhost:9/\n    key_env: HERMES_TEST_PINNED_EMPTY_K\n    models:\n      m: {}\n",
+        ));
+        let err = err_message(registry.build("p"));
+        assert!(
+            err.contains("HERMES_TEST_PINNED_EMPTY_K"),
+            "must name the pinned var: {err}"
+        );
+        assert!(
+            !err.contains("sk-openai-should-never-leak"),
+            "must never mention a fallback value: {err}"
+        );
+        assert!(
+            !err.contains("model.api_key"),
+            "pinned-but-empty must not silently fall back: {err}"
+        );
+    }
+
+    #[test]
+    fn no_key_env_and_no_model_key_errors_with_guidance() {
+        // Neither a pin nor a global key => error that names both options,
+        // never a value.
+        let registry = ProviderRegistry::from_config(&config_with(
+            "providers:\n  p:\n    api: http://localhost:9/\n    models:\n      m: {}\n",
+        ));
+        let err = err_message(registry.build("p"));
+        assert!(err.contains("key_env"), "must mention key_env: {err}");
+        assert!(
+            err.contains("model.api_key"),
+            "must mention model.api_key option: {err}"
+        );
+        assert!(!err.contains("***REDACTED***"), "nothing to redact: {err}");
     }
 
     #[test]
