@@ -6,8 +6,9 @@ tak tersentuh — mengikuti pola closure Spec 004/005/006/008.
 
 **Blocked by:** 01–04.
 
-**Status:** ready-for-review (implementasi selesai di VM; menunggu review
-`@matt` sebelum push).
+**Status:** done (approve `@matt`; Spec 009 & Phase 4 ditutup). Commit `f9d6ffc`;
+247/247 hijau, clippy bersih. Push ke GitHub tertunda — butuh one-shot token
+(origin saat ini tanpa token; origin/main masih di `6a38fa1`).
 
 ## Kriteria
 
