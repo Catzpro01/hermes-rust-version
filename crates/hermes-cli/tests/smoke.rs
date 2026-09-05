@@ -24,7 +24,7 @@ fn smoke_fake_provider_full_cycle() {
         .assert()
         .success()
         .stdout(predicate::str::contains("echo: hello"))
-        .stdout(predicate::str::contains("hermes>"));
+        .stdout(predicate::str::contains("❯ ")); // Spec 013 T03: brand prompt replaced hermes>
     assert!(fs::metadata(db).unwrap().len() > 0);
 }
 

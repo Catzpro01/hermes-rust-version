@@ -62,6 +62,13 @@ pub async fn run_repl(
     let db = home.join("state.db");
     let mut store = SessionStore::open(&db).context("open Hermes state.db")?;
     let mut editor = DefaultEditor::new().context("create terminal editor")?;
+    // Spec 013 Ticket 03 — startup welcome banner (Python parity, spec §3).
+    // TTY-only: piped E2E invocations must keep byte-stable, ANSI-free stdout
+    // (render-boundary invariant; several E2E tests assert no `\x1b` on piped
+    // output).
+    if std::io::stdin().is_terminal() {
+        let _ = crate::tui::welcome::print_banner(&mut std::io::stdout(), terminal_width());
+    }
     let mut session_id = if resume || !std::io::stdin().is_terminal() {
         match store.list()?.last().copied() {
             Some(id) => id,
@@ -150,7 +157,7 @@ pub async fn run_repl(
     }
     loop {
         if !std::io::stdin().is_terminal() {
-            print!("hermes> ");
+            print!("{}", crate::tui::welcome::PROMPT_SYMBOL);
             std::io::Write::flush(&mut std::io::stdout())?;
         }
         let editor_for_read = Arc::clone(&editor);
@@ -159,7 +166,7 @@ pub async fn run_repl(
                 Ok(editor) => editor,
                 Err(_) => return "editor lock poisoned".to_owned(),
             };
-            match editor.readline("hermes> ") {
+            match editor.readline(crate::tui::welcome::PROMPT_SYMBOL) {
                 Ok(line) => line,
                 Err(ReadlineError::Eof) => "__HERMES_EOF__".to_owned(),
                 Err(ReadlineError::Interrupted) => "__HERMES_INTERRUPTED__".to_owned(),
@@ -494,6 +501,35 @@ pub async fn run_repl(
                     }
                 }
             }
+            // Spec 013 Ticket 03 — `/help` with the verbatim kawaii header.
+            "/help" => {
+                use crate::tui::welcome::{HELP_HEADER, SEPARATOR};
+                println!("{HELP_HEADER}");
+                println!("{SEPARATOR}");
+                for (cmd, desc) in [
+                    ("/exit", "leave Hermes-RS"),
+                    ("/new", "start a new session"),
+                    ("/sessions", "list sessions"),
+                    ("/resume <id>", "resume a session"),
+                    ("/info", "provider + context accounting"),
+                    ("/search <query>", "full-text search (read-only)"),
+                    ("/inspect <id>", "inspect a session"),
+                    ("/messages <id>", "show session messages"),
+                    ("/tool-calls <id>", "show session tool calls"),
+                    ("/pin <n>", "pin a turn (never windowed)"),
+                    ("/unpin <n>", "unpin a turn"),
+                    ("/pinned", "list pinned turns"),
+                    ("/goal [on|off|reset]", "guided goal tracking"),
+                    ("/plan [on|off|reset]", "plan-then-execute"),
+                    ("/reflect [on|off]", "self-reflection gate"),
+                    ("/provider [name]", "show / switch provider"),
+                    ("/mcp [list|restart <name>]", "MCP servers"),
+                    ("/help", "this help"),
+                ] {
+                    println!("  {cmd:<24} {desc}");
+                }
+                continue;
+            }
             _ => {
                 let before = runner.turns().len();
                 let turn_cancel = CancellationToken::new();
@@ -514,7 +550,15 @@ pub async fn run_repl(
                     .await;
                 match result {
                     Ok(AgenticResult::Done { text, iterations }) => {
-                        println!("{text}");
+                        // Spec 013 Ticket 03 — response box (spec §5.1):
+                        // gold bold frame on TTY stdout, plain frame piped so
+                        // E2E output stays byte-stable and ANSI-free.
+                        let frame = if std::io::stdin().is_terminal() {
+                            crate::tui::welcome::response_frame_tty(&text, terminal_width())
+                        } else {
+                            crate::tui::welcome::response_frame(&text, 60)
+                        };
+                        println!("\n{frame}");
                         println!("[iter {iterations}/10]");
                     }
                     Ok(AgenticResult::MaxIterations(limit)) => {
@@ -535,7 +579,19 @@ pub async fn run_repl(
             }
         }
     }
+    // Spec 013 Ticket 03 — goodbye on clean exit only. SIGINT never reaches
+    // this point (it returns `interrupted` early) and must stay a bare
+    // exit-130 (invariant #2).
+    println!("{}", crate::tui::welcome::GOODBYE);
     Ok(())
+}
+
+/// Best-effort terminal width in columns for banner/response-frame sizing
+/// (fallback 100 when the size cannot be determined).
+fn terminal_width() -> u16 {
+    crossterm::terminal::size()
+        .map(|(cols, _)| cols.max(60))
+        .unwrap_or(100)
 }
 
 /// Builds a provider by name using the same registry resolution as startup:

@@ -19,11 +19,13 @@
 //! every exit path (normal quit, Ctrl-C, error, or unwind).
 
 mod app;
+mod art;
 mod channel;
 mod event;
 mod layout;
 mod theme;
 mod worker;
+pub mod welcome;
 #[cfg(test)]
 mod e2e;
 

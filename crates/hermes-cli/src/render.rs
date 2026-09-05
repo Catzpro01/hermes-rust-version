@@ -17,8 +17,8 @@ pub async fn render_stream(mut events: EventStream) -> anyhow::Result<String> {
             Event::Done => println!(),
             Event::Error(message) => eprintln!("\n⚠ {message}"),
             Event::ToolCall(call) => eprintln!(
-                "
-[tool_call {}]",
+                "\n{} tool_call {}",
+                crate::tui::welcome::TOOL_PREFIX,
                 call.name
             ),
         }

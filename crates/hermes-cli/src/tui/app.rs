@@ -423,7 +423,7 @@ impl App {
         let body = if input.is_empty() {
             "Type a message (Enter to send, ↑/↓ history, PgUp/PgDn scroll, q quit)".to_owned()
         } else {
-            format!("> {input}")
+            format!("{}{input}", crate::tui::welcome::PROMPT_SYMBOL)
         };
         let block = Block::default().borders(Borders::ALL).title("Input");
         let paragraph = Paragraph::new(body).block(block);
