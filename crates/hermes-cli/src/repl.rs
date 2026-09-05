@@ -77,7 +77,7 @@ pub async fn run_repl(
     let mut ctx = resolve_context(config.as_ref(), &provider_name);
     runner.set_context_limit(ctx.limit);
     println!("Hermes-RS session {session_id} (provider {provider_name})");
-    println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
+    println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /plan [on|off|reset], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
     if let Some(limit) = ctx.limit {
         println!(
             "[context ~{} tokens / limit {limit} | compression {}]",
@@ -319,6 +319,47 @@ pub async fn run_repl(
                         println!("Goal marked blocked");
                     }
                     other => eprintln!("error: unknown /goal arg '{other}' (use on|off|reset)"),
+                }
+                continue;
+            }
+            // `/plan` shows planned mode and the active plan (Spec 009 Ticket 02).
+            "/plan" => {
+                println!(
+                    "plan mode: {}",
+                    if runner.plan_mode() { "on" } else { "off" }
+                );
+                match runner.plan() {
+                    None => println!("no active plan"),
+                    Some(plan) => {
+                        let mut body = String::from("active plan:\n");
+                        for (i, step) in plan.steps().iter().enumerate() {
+                            body.push_str(&format!("  {}. {step}\n", i + 1));
+                        }
+                        let safe =
+                            hermes_core::search::redact::redact_credentials(
+                                &sanitize_untrusted_output(&body),
+                            );
+                        print!("{safe}");
+                    }
+                }
+                continue;
+            }
+            // `/plan on|off|reset` controls planned mode / plan state.
+            command if command.starts_with("/plan ") => {
+                match command.trim_start_matches("/plan").trim() {
+                    "on" => {
+                        runner.set_plan_mode(true);
+                        println!("Plan mode on (a plan will be generated for your next task)");
+                    }
+                    "off" => {
+                        runner.set_plan_mode(false);
+                        println!("Plan mode off (reactive)");
+                    }
+                    "reset" => {
+                        runner.clear_plan();
+                        println!("Active plan cleared");
+                    }
+                    other => eprintln!("error: unknown /plan arg '{other}' (use on|off|reset)"),
                 }
                 continue;
             }

@@ -80,9 +80,12 @@ impl FallbackProvider {
     ///
     /// A hop that fails (any non-`Cancelled` error, after its own retries) is
     /// recorded as cooling down; a hop that succeeds clears any prior failure.
+    /// An ephemeral `instruction` (Spec 009) is forwarded to every hop via
+    /// `chat_with_instruction`; `None` behaves exactly like `chat_with_cancel`.
     async fn first_available(
         &self,
         turns: &[Turn],
+        instruction: Option<&str>,
         cancel: &CancellationToken,
     ) -> Result<EventStream, ProviderError> {
         let mut tried: Vec<String> = Vec::new();
@@ -94,7 +97,10 @@ impl FallbackProvider {
             if self.health.is_cooling_down(name) {
                 continue;
             }
-            match provider.chat_with_cancel(turns, cancel.clone()).await {
+            match provider
+                .chat_with_instruction(turns, instruction, cancel.clone())
+                .await
+            {
                 Ok(stream) => {
                     self.health.record_success(name);
                     return Ok(stream);
@@ -114,7 +120,7 @@ impl FallbackProvider {
 impl Provider for FallbackProvider {
     async fn chat(&self, turns: &[Turn]) -> Result<EventStream, ProviderError> {
         let cancel = CancellationToken::new();
-        self.first_available(turns, &cancel).await
+        self.first_available(turns, None, &cancel).await
     }
 
     async fn chat_with_cancel(
@@ -122,7 +128,16 @@ impl Provider for FallbackProvider {
         turns: &[Turn],
         cancel: CancellationToken,
     ) -> Result<EventStream, ProviderError> {
-        self.first_available(turns, &cancel).await
+        self.first_available(turns, None, &cancel).await
+    }
+
+    async fn chat_with_instruction(
+        &self,
+        turns: &[Turn],
+        instruction: Option<&str>,
+        cancel: CancellationToken,
+    ) -> Result<EventStream, ProviderError> {
+        self.first_available(turns, instruction, &cancel).await
     }
 }
 

@@ -1,6 +1,12 @@
 //! In-memory conversation state and provider event flow.
 
 use crate::provider::{EventStream, Provider, ProviderError};
+/// Ephemeral instruction that asks the model to emit a delimited plan
+/// (Spec 009 Ticket 02). Sent only via the instruction channel; never persisted
+/// and never a user turn.
+const PLAN_INSTRUCTION: &str = "You are a planning assistant. Given the user's \
+goal, produce a concise step-by-step plan wrapped in [[plan]]...[[/plan]]. Only \
+output the plan.";
 use crate::session::{SessionId, SessionStore};
 use crate::tools::{ToolCall, ToolCallRecord, ToolError, ToolExecutionStatus, ToolRegistry};
 use futures::StreamExt;
@@ -10,8 +16,10 @@ use tokio_util::sync::CancellationToken;
 
 pub mod context;
 pub mod goal;
+pub mod plan;
 
 use goal::{GoalStatus, GoalTracker};
+use plan::Plan;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Turn {
@@ -54,6 +62,11 @@ pub struct ConversationRunner<P> {
     /// default so behavior is unchanged unless tracking is enabled. Never
     /// persisted; never introduces a new role/Turn variant.
     goal: GoalTracker,
+    /// Spec 009 (Ticket 02) — whether the agent is in planned mode. Off by
+    /// default so `chat_agentic` stays reactive (zero regression).
+    plan_mode: bool,
+    /// The active in-memory plan (Ticket 02). `None` until generated.
+    plan: Option<Plan>,
 }
 impl<P: Provider> ConversationRunner<P> {
     pub fn new(provider: P) -> Self {
@@ -63,6 +76,8 @@ impl<P: Provider> ConversationRunner<P> {
             context_limit: None,
             pinned: HashSet::new(),
             goal: GoalTracker::new(),
+            plan_mode: false,
+            plan: None,
         }
     }
     pub fn turns(&self) -> &[Turn] {
@@ -75,6 +90,8 @@ impl<P: Provider> ConversationRunner<P> {
             context_limit: None,
             pinned: HashSet::new(),
             goal: GoalTracker::new(),
+            plan_mode: false,
+            plan: None,
         }
     }
 
@@ -89,10 +106,12 @@ impl<P: Provider> ConversationRunner<P> {
         self.context_limit
     }
 
-    /// Estimated tokens across all current turns, delegating to the Spec 006
-    /// helper so the char/4 heuristic lives in exactly one place.
+    /// Estimated tokens across all current turns plus any active in-memory
+    /// plan (Spec 009), delegating to the Spec 006 helper so the char/4
+    /// heuristic lives in exactly one place.
     pub fn estimated_tokens(&self) -> usize {
         crate::conversation::context::estimate_turns_tokens(&self.turns)
+            + self.plan.as_ref().map(Plan::tokens).unwrap_or(0)
     }
 
     /// Advisory warning when current context is estimated to exceed the limit.
@@ -179,6 +198,81 @@ impl<P: Provider> ConversationRunner<P> {
         self.goal.reset();
     }
 
+    // -- Spec 009 plan-then-execute (Ticket 02) -----------------------------
+
+    /// Enables/disables planned mode. Turning it off clears any active plan so
+    /// execution returns to reactive.
+    pub fn set_plan_mode(&mut self, on: bool) {
+        self.plan_mode = on;
+        if !on {
+            self.plan = None;
+        }
+    }
+    pub fn plan_mode(&self) -> bool {
+        self.plan_mode
+    }
+    /// The active in-memory plan, if any.
+    pub fn plan(&self) -> Option<&Plan> {
+        self.plan.as_ref()
+    }
+    /// Clears the active plan (keeps plan_mode).
+    pub fn clear_plan(&mut self) {
+        self.plan = None;
+    }
+    /// An ephemeral re-supply of the active plan (when planned and present) to
+    /// carry on execution sends, or `None` otherwise. Never persisted.
+    fn active_plan_instruction(&self) -> Option<String> {
+        if !self.plan_mode {
+            return None;
+        }
+        self.plan.as_ref().map(Plan::instruction_text)
+    }
+    /// Generates a plan for the current conversation via one ephemeral
+    /// instruction round-trip (Ticket 02). In planned mode only: sends the
+    /// current window plus the [`PLAN_INSTRUCTION`], reads the raw assistant
+    /// text, and stores the parsed plan. No-op (returns the existing plan)
+    /// when not in planned mode. The round-trip shares the caller's iteration
+    /// budget and is never persisted.
+    pub async fn ensure_plan(
+        &mut self,
+        cancel: CancellationToken,
+    ) -> Result<Option<Plan>, ProviderError> {
+        if !self.plan_mode {
+            return Ok(self.plan.clone());
+        }
+        if self.plan.is_some() {
+            return Ok(self.plan.clone());
+        }
+        // A plan needs a task; with no user turn there is nothing to plan.
+        if !self
+            .turns
+            .iter()
+            .any(|t| matches!(t, Turn::User { .. }))
+        {
+            return Ok(None);
+        }
+        let to_send = self.turns_to_send();
+        let mut stream = self
+            .provider
+            .chat_with_instruction(&to_send, Some(PLAN_INSTRUCTION), cancel)
+            .await?;
+        let mut text = String::new();
+        while let Some(event) = stream.next().await {
+            match event {
+                Ok(Event::Chunk(chunk)) => text.push_str(&chunk),
+                Ok(_) => {}
+                Err(ProviderError::Cancelled) => return Err(ProviderError::Cancelled),
+                Err(err) => return Err(err),
+            }
+        }
+        // If the model did not emit a delimited plan, fall back to no plan
+        // (reactive) rather than erroring.
+        if let Some(plan) = crate::conversation::plan::parse_plan(&text) {
+            self.plan = Some(plan.clone());
+        }
+        Ok(self.plan.clone())
+    }
+
     /// Indices (ascending) that the sliding window would send next. Always
     /// includes every pinned index and the most recent turn; then fills from
     /// newest backward while the token budget allows. Sorted ascending so the
@@ -260,8 +354,9 @@ impl<P: Provider> ConversationRunner<P> {
         // Pins are indices into the previous history; a replaced history
         // (/new, /resume) invalidates them, so clear to avoid dangling pins.
         self.pinned.clear();
-        // Goal state belongs to the previous session too.
+        // Goal/plan state belongs to the previous session too.
         self.clear_goal();
+        self.plan = None;
     }
 
     /// Swaps the provider backing this runner. The conversation history in
@@ -321,23 +416,49 @@ impl<P: Provider> ConversationRunner<P> {
         // yet, treat this initiating user prompt as the goal. Off by default,
         // so this never fires unless the user enables it (zero regression).
         self.goal.record_if_tracking_empty(&content);
+        // Spec 009 (Ticket 02): in planned mode, generate a plan (one ephemeral
+        // instruction round) before executing tools. Sharing the iteration
+        // budget: a planning round consumes one of `max_iters`, so the
+        // execution loop below runs with one fewer attempt. Off by default, so
+        // this branch is never taken in reactive mode (zero regression).
+        let plan_round = self.plan_mode && self.plan.is_none();
+        if plan_round {
+            match self.ensure_plan(cancel.clone()).await {
+                Ok(_) => {}
+                Err(ProviderError::Cancelled) => {
+                    self.discard_pending_user();
+                    return Ok(AgenticResult::Cancelled);
+                }
+                Err(err) => return Err(err),
+            }
+        }
         // Advisory (never blocking): warn if the full context is estimated to
         // exceed the runner's context limit before we send it. Truncation is a
         // later ticket (sliding window); here we only surface a warning.
         if let Some(warning) = self.context_warning() {
             tracing::warn!("{warning}");
         }
-        for iteration in 1..=max_iters {
+        // Planning shares the budget: when a planning round was taken, one fewer
+        // iteration remains for execution (total <= max_iters).
+        let exec_budget = if plan_round {
+            max_iters.saturating_sub(1).max(1)
+        } else {
+            max_iters
+        };
+        for iteration in 1..=exec_budget {
             if cancel.is_cancelled() {
                 self.discard_pending_user();
                 return Ok(AgenticResult::Cancelled);
             }
             // Recompute the window each iteration (tool results may have grown
-            // the context since the last send). self.turns stays untouched.
+            // the context since the last send). self.turns stays untouched. In
+            // planned mode the active plan is re-supplied as an ephemeral
+            // instruction so the model keeps it in view while executing.
             let to_send = self.turns_to_send();
+            let instruction = self.active_plan_instruction();
             let mut stream = match self
                 .provider
-                .chat_with_cancel(&to_send, cancel.clone())
+                .chat_with_instruction(&to_send, instruction.as_deref(), cancel.clone())
                 .await
             {
                 Ok(stream) => stream,
@@ -702,5 +823,97 @@ mod tests {
         r.replace_turns(vec![Turn::User { content: "y".into() }]);
         assert_eq!(r.goal(), None);
         assert_eq!(r.goal_status(), GoalStatus::NotStarted);
+    }
+
+    // -- Spec 009 plan (Ticket 02) -----------------------------------------
+
+    /// A provider that echoes a fixed assistant reply (no tool calls), so plan
+    /// generation can be tested deterministically through the runner.
+    struct Reply(&'static str);
+    #[async_trait::async_trait]
+    impl Provider for Reply {
+        async fn chat(
+            &self,
+            _turns: &[Turn],
+        ) -> Result<crate::provider::EventStream, ProviderError> {
+            use futures::stream;
+            Ok(Box::pin(stream::iter([
+                Ok(Event::Started),
+                Ok(Event::Chunk(self.0.to_owned())),
+                Ok(Event::Done),
+            ])))
+        }
+    }
+
+    #[test]
+    fn plan_mode_defaults_off_and_turning_it_off_clears_the_plan() {
+        let mut r = runner_with(vec![]);
+        assert!(!r.plan_mode());
+        assert!(r.plan().is_none());
+        r.set_plan_mode(true);
+        assert!(r.plan_mode());
+        r.set_plan_mode(false);
+        assert!(!r.plan_mode());
+        assert!(r.plan().is_none());
+    }
+
+    #[tokio::test]
+    async fn ensure_plan_generates_and_stores_a_plan_in_planned_mode() {
+        let mut r = ConversationRunner::new(Reply(
+            "[[plan]]\n1. list files\n2. read config\n[[/plan]]",
+        ));
+        r.turns
+            .push(Turn::User { content: "inspect the repo".into() });
+        r.set_plan_mode(true);
+        assert!(r.plan().is_none());
+        let plan = r.ensure_plan(CancellationToken::new()).await.unwrap();
+        let plan = plan.expect("plan must be generated");
+        assert_eq!(plan.steps(), &["1. list files", "2. read config"]);
+        assert_eq!(r.plan().unwrap().steps(), &["1. list files", "2. read config"]);
+        // estimated tokens now include the plan's token contribution.
+        assert_eq!(
+            r.estimated_tokens(),
+            crate::conversation::context::estimate_turns_tokens(&r.turns) + plan.tokens()
+        );
+    }
+
+    #[tokio::test]
+    async fn ensure_plan_is_a_noop_outside_planned_mode() {
+        let mut r = ConversationRunner::new(Reply(
+            "[[plan]]\n1. x\n[[/plan]]",
+        ));
+        r.turns.push(Turn::User { content: "task".into() });
+        // Reactive (plan_mode off): no plan is produced.
+        let plan = r.ensure_plan(CancellationToken::new()).await.unwrap();
+        assert!(plan.is_none());
+        assert!(r.plan().is_none());
+    }
+
+    #[tokio::test]
+    async fn ensure_plan_ignores_literal_tool_tags_in_plan_text() {
+        // A plan that quotes a <tool_call> still parses as a plan and is never
+        // executed: ensure_plan only reads assistant text.
+        let mut r = ConversationRunner::new(Reply(
+            "[[plan]]\nnote: do not run <tool_call> yet\n[[/plan]]",
+        ));
+        r.turns.push(Turn::User { content: "task".into() });
+        r.set_plan_mode(true);
+        let plan = r.ensure_plan(CancellationToken::new()).await.unwrap();
+        let plan = plan.expect("plan must be generated");
+        assert!(
+            plan.steps().iter().any(|s| s.contains("<tool_call>")),
+            "literal tool tag must be preserved as text, got {plan:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn replace_turns_clears_the_plan() {
+        let mut r = ConversationRunner::new(Reply("[[plan]]\n1. a\n[[/plan]]"));
+        r.turns.push(Turn::User { content: "task".into() });
+        r.set_plan_mode(true);
+        let _ = r.ensure_plan(CancellationToken::new()).await.unwrap();
+        assert!(r.plan().is_some(), "plan should be generated");
+        r.replace_turns(vec![Turn::User { content: "x".into() }]);
+        assert!(r.plan().is_none(), "replace_turns must clear the plan");
     }
 }

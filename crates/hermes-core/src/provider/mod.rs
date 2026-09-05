@@ -60,6 +60,28 @@ pub trait Provider: Send + Sync {
     ) -> Result<EventStream, ProviderError> {
         self.chat(turns).await
     }
+
+    /// Spec 009 (Ticket 02) — ephemeral instruction channel for plan
+    /// generation. `Some(instruction)` asks the provider to send the given
+    /// system-level instruction alongside `turns` (prepended as a `system`
+    /// message in chat mode, or a header in completions mode). The instruction
+    /// is never persisted, never a user turn, and never part of canonical
+    /// history.
+    ///
+    /// The **default implementation ignores the instruction and behaves
+    /// identically to `chat_with_cancel`**, so any provider that does not
+    /// override it is unchanged (backward compatible, `None`-equivalent).
+    /// Providers that support an instruction channel (e.g. [`HttpProvider`])
+    /// override this; the returned stream is expected to be the plain textual
+    /// response (a plan request must not be mis-parsed for tool calls).
+    async fn chat_with_instruction(
+        &self,
+        turns: &[Turn],
+        _instruction: Option<&str>,
+        cancel: CancellationToken,
+    ) -> Result<EventStream, ProviderError> {
+        self.chat_with_cancel(turns, cancel).await
+    }
 }
 
 #[async_trait]
@@ -73,6 +95,16 @@ impl<T: Provider + ?Sized> Provider for Box<T> {
         cancel: CancellationToken,
     ) -> Result<EventStream, ProviderError> {
         (**self).chat_with_cancel(turns, cancel).await
+    }
+    async fn chat_with_instruction(
+        &self,
+        turns: &[Turn],
+        instruction: Option<&str>,
+        cancel: CancellationToken,
+    ) -> Result<EventStream, ProviderError> {
+        (**self)
+            .chat_with_instruction(turns, instruction, cancel)
+            .await
     }
 }
 

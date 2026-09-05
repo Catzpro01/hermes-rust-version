@@ -119,6 +119,7 @@ impl HttpProvider {
     fn build_request(
         &self,
         turns: &[Turn],
+        instruction: Option<&str>,
     ) -> Result<reqwest::RequestBuilder, ProviderError> {
         let url = self
             .base_url
@@ -127,23 +128,7 @@ impl HttpProvider {
         let builder = self.client.post(url).bearer_auth(self.api_key.expose());
         let request = match self.api_mode {
             ApiMode::ChatCompletions => {
-                let messages: Vec<_> = turns
-                    .iter()
-                    .map(|t| match t {
-                        Turn::User { content } => ApiMessage {
-                            role: "user",
-                            content,
-                        },
-                        Turn::Assistant { content } => ApiMessage {
-                            role: "assistant",
-                            content,
-                        },
-                        Turn::Tool { name: _, content } => ApiMessage {
-                            role: "tool",
-                            content,
-                        },
-                    })
-                    .collect();
+                let messages = build_chat_messages(turns, instruction);
                 builder.json(&ChatRequest {
                     model: &self.model,
                     stream: true,
@@ -151,7 +136,7 @@ impl HttpProvider {
                 })
             }
             ApiMode::Completions => {
-                let prompt = render_completions_prompt(turns);
+                let prompt = render_completions_prompt_with_instruction(turns, instruction);
                 builder.json(&CompletionRequest {
                     model: &self.model,
                     stream: true,
@@ -169,9 +154,10 @@ impl HttpProvider {
     async fn attempt(
         &self,
         turns: &[Turn],
+        instruction: Option<&str>,
         cancel: &CancellationToken,
     ) -> Result<reqwest::Response, ProviderError> {
-        let request = self.build_request(turns)?;
+        let request = self.build_request(turns, instruction)?;
         let response = tokio::select! {
             _ = cancel.cancelled() => return Err(ProviderError::Cancelled),
             result = request.send() => match result {
@@ -204,11 +190,12 @@ impl HttpProvider {
     async fn send_with_retry(
         &self,
         turns: &[Turn],
+        instruction: Option<&str>,
         cancel: &CancellationToken,
     ) -> Result<reqwest::Response, ProviderError> {
         let mut attempt: u32 = 1;
         loop {
-            match self.attempt(turns, cancel).await {
+            match self.attempt(turns, instruction, cancel).await {
                 Ok(response) => return Ok(response),
                 Err(err) => {
                     if err.is_retryable() && attempt < self.retry.max_attempts {
@@ -226,12 +213,18 @@ impl HttpProvider {
         }
     }
 
-    pub async fn chat_with_cancel(
+    /// Low-level send returning the **raw** SSE event stream (no tool-tag
+    /// parsing). `instruction` is sent as an ephemeral system-level instruction
+    /// when present. Used by normal chat (`None`, then tool-parsed by the
+    /// [`Provider`] impl) and by plan generation (`Some`, read as plain text so
+    /// a literal `<tool_call>` in the plan cannot trigger the tool parser).
+    async fn chat_with_cancel_raw(
         &self,
         turns: &[Turn],
+        instruction: Option<&str>,
         cancel: CancellationToken,
     ) -> Result<EventStream, ProviderError> {
-        let response = self.send_with_retry(turns, &cancel).await?;
+        let response = self.send_with_retry(turns, instruction, &cancel).await?;
         let mut bytes = response.bytes_stream();
         let api_key = self.api_key.clone();
         let stream = try_stream! { yield Event::Started; let mut remainder=Vec::new(); loop { let next=tokio::select! { _=cancel.cancelled()=>{ Err(ProviderError::Cancelled) }, item=bytes.next()=>Ok(item) }; let chunk=match next { Err(e)=>Err(e)?, Ok(None)=>break, Ok(Some(Err(e)))=>Err(ProviderError::Message(redact(&e.to_string(), &api_key)))?, Ok(Some(Ok(b)))=>b }; for event in parse_chunk(&chunk,&mut remainder)? { let done=matches!(event,Event::Done); yield event; if done { return; } } } if !remainder.is_empty() { for event in parse_chunk(b"\n",&mut remainder)? { yield event; } } };
@@ -257,6 +250,49 @@ struct CompletionRequest<'a> {
     model: &'a str,
     stream: bool,
     prompt: &'a str,
+}
+
+/// Builds the `chat.completions` message list. When an ephemeral `instruction`
+/// is present it is prepended as a `system` message; otherwise the list is
+/// exactly the conversation turns. Pure and unit-testable.
+fn build_chat_messages<'a>(turns: &'a [Turn], instruction: Option<&'a str>) -> Vec<ApiMessage<'a>> {
+    let mut messages = Vec::with_capacity(turns.len() + usize::from(instruction.is_some()));
+    if let Some(instr) = instruction {
+        messages.push(ApiMessage {
+            role: "system",
+            content: instr,
+        });
+    }
+    for t in turns {
+        messages.push(match t {
+            Turn::User { content } => ApiMessage {
+                role: "user",
+                content,
+            },
+            Turn::Assistant { content } => ApiMessage {
+                role: "assistant",
+                content,
+            },
+            Turn::Tool { name: _, content } => ApiMessage {
+                role: "tool",
+                content,
+            },
+        });
+    }
+    messages
+}
+
+/// Renders the completions `prompt`, optionally prefixed with an ephemeral
+/// instruction header (there is no per-message role in this mode).
+fn render_completions_prompt_with_instruction(
+    turns: &[Turn],
+    instruction: Option<&str>,
+) -> String {
+    let transcript = render_completions_prompt(turns);
+    match instruction {
+        Some(instr) => format!("[Instruction] {instr}\n\n{transcript}"),
+        None => transcript,
+    }
 }
 
 /// Turns the provider-neutral conversation into a single `prompt` for the
@@ -303,18 +339,34 @@ impl Provider for HttpProvider {
     }
 
     // Override so cancellation passes through a `Box<dyn Provider>` (the shape
-    // the runner and FallbackProvider hold). The inherent `chat_with_cancel`
-    // honours the token both before the request (send_with_retry) and during
-    // the SSE stream; here we additionally apply tool-tag parsing so the
-    // result is indistinguishable from `chat`. Without this override, dynamic
-    // dispatch would fall to the trait default (`self.chat()`), which builds a
-    // fresh token and silently ignores the caller's cancellation.
+    // the runner and FallbackProvider hold). The raw method honours the token
+    // both before the request (send_with_retry) and during the SSE stream; here
+    // we additionally apply tool-tag parsing so the result is indistinguishable
+    // from `chat`. Without this override, dynamic dispatch would fall to the
+    // trait default (`self.chat()`), which builds a fresh token and silently
+    // ignores the caller's cancellation.
     async fn chat_with_cancel(
         &self,
         turns: &[Turn],
         cancel: CancellationToken,
     ) -> Result<EventStream, ProviderError> {
-        self.chat_with_cancel(turns, cancel)
+        self.chat_with_cancel_raw(turns, None, cancel)
+            .await
+            .map(tool_aware_stream)
+    }
+
+    // Spec 009 (Ticket 02): like `chat_with_cancel` (tool-aware), but with an
+    // ephemeral `system` instruction prepended when present. The plan/execution
+    // stream is still tool-parsed so the model may call tools while following a
+    // plan; a stray literal `<tool_call>` inside a *plan* is never executed by
+    // the runner because plan generation reads only the assistant text.
+    async fn chat_with_instruction(
+        &self,
+        turns: &[Turn],
+        instruction: Option<&str>,
+        cancel: CancellationToken,
+    ) -> Result<EventStream, ProviderError> {
+        self.chat_with_cancel_raw(turns, instruction, cancel)
             .await
             .map(tool_aware_stream)
     }
@@ -368,6 +420,40 @@ mod tests {
     #[test]
     fn empty_turns_still_close_with_an_assistant_cue() {
         assert_eq!(render_completions_prompt(&[]), "Assistant:");
+    }
+
+    #[test]
+    fn chat_messages_prepend_a_system_instruction_when_present() {
+        let turns = [Turn::User {
+            content: "hi".into(),
+        }];
+        // Without instruction: exactly the turn (no system message).
+        let none = build_chat_messages(&turns, None);
+        assert_eq!(none.len(), 1);
+        assert_eq!(none[0].role, "user");
+        // With instruction: a system message leads, then the turns in order.
+        let with = build_chat_messages(&turns, Some("produce a plan"));
+        assert_eq!(with.len(), 2);
+        assert_eq!(with[0].role, "system");
+        assert_eq!(with[0].content, "produce a plan");
+        assert_eq!(with[1].role, "user");
+        assert_eq!(with[1].content, "hi");
+    }
+
+    #[test]
+    fn completions_prompt_prepends_an_instruction_header_only_when_present() {
+        let turns = [Turn::User {
+            content: "hi".into(),
+        }];
+        let base = render_completions_prompt(&turns);
+        assert_eq!(
+            render_completions_prompt_with_instruction(&turns, None),
+            base,
+            "None must be identical to the plain transcript"
+        );
+        let with = render_completions_prompt_with_instruction(&turns, Some("do X"));
+        assert!(with.starts_with("[Instruction] do X\n\n"), "got: {with}");
+        assert!(with.ends_with(&base), "transcript must follow the header");
     }
 
     #[test]
