@@ -15,9 +15,10 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 4 — Advanced agent | 007 | Tool execution sandbox | Not started |
 | 4 — Advanced agent | 008 | Memory and context management | Done |
 | 4 — Advanced agent | 009 | Multi-turn planning and reflection | Done |
-| 5 — Ecosystem | 010 | Plugin/extension system (WASM) | Not started |
+| 5 — Ecosystem | 010 | Plugin/extension system (WASM) | Deferred (v2.0 backlog — Spec 011b) |
 | 5 — Ecosystem | 011 | MCP client | Done |
 | 5 — Ecosystem | 012 | TUI dashboard (ratatui) | Done |
+| 5 — Ecosystem | 013 | Hermes Python UI parity (visual) | Done |
 
 ## Spec 004 closure
 
@@ -235,17 +236,44 @@ closure (docs + headless E2E) is this commit. Headless E2E lives in
 `crates/hermes-cli/src/tui/e2e.rs` (`TestBackend` full-session simulation,
 sanitization, Ctrl-C → exit-130 mapping). `312` tests green, clippy clean.
 
-**Phase 5 status note (accurate):** Phase 5 spans Spec 010, 011 and 012. Spec
-011 (MCP) and Spec 012 (TUI) are **Done**. Spec 010 (plugin/extension system,
-WASM) and Phase-4 Spec 007 (tool-execution sandbox) remain **Not started** and
-are the only non-`Done` specs in the roadmap. A blanket "Phase 5 100% DONE"
-claim is therefore only correct if Spec 010 is descoped from the milestone.
+## Spec 013 — Hermes Python UI parity closure
+
+Hermes-RS reproduces the Python Hermes default skin ("gold and kawaii") in the
+REPL — banner (figlet logo + caduceus + panel), prompt, streaming response
+box, reasoning box, tool lines, spinner and the full-width status bar —
+verified byte-by-byte against the read-only Python ground truth on
+2026-09-05 (Ticket 06 side-by-side; raw pty captures in `/tmp/t06_out/`).
+Detail: `docs/PARITY.md` ("Spec 013 — UI parity (visual)") and
+`docs/HERMES_UI_SPEC.md` (verbatim spec, T01).
+
+| Ticket | Scope | Commit(s) |
+|---|---|---|
+| T01 | Visual archaeology → `docs/HERMES_UI_SPEC.md` (verbatim Python captures) | `7608316` |
+| T02 | Color palette & theme system (dark-canonical, truecolor/256 fallback) | `7608316` |
+| T03 | Banner, prompt & strings (verbatim logo/caduceus, welcome layout) | `df5f7f8` + `8f250f3` |
+| T04 | Streaming response box, reasoning box, tool lines & spinner | `c99b13c` |
+| T05 | Status bar parity (tiers, gauge, thresholds, full-width line) | `584833b` + `c7a2950` |
+| T06 | Side-by-side visual verification, parity docs & closure | this commit |
+
+Non-negotiables held through the slice: dark gold & kawaii palette; no figlet
+dependency (art is embedded verbatim constants); sanitization only at the CLI
+stdout boundary (canonical SQLite untouched); TTY-only ANSI (piped stdout
+byte-stable); the Python installation unmodified
+(`smoke_python_hermes_untouched`). `400` tests green, clippy
+`-D warnings` clean.
+
+
+**Phase 5 status note (final):** Phase 5 spans Spec 010, 011, 012 and 013.
+Spec 011 (MCP), Spec 012 (TUI) and Spec 013 (Python UI parity) are **Done**;
+Spec 010 (plugin/extension system, WASM) is formally **deferred to the v2.0
+backlog** per the Spec 011b decision. **Phase 5 (Ecosystem) is therefore 100%
+DONE** for the v1.0 milestone. (Phase-4 Spec 007, tool-execution sandbox,
+remains Not started outside Phase 5.)
 
 ## Verification
 
-Last full run: `cargo test --workspace` — 312 passed, 0 failed (multiple
-consecutive full runs stable); `clippy --workspace --all-targets -D warnings`
-clean.
+Last full run (2026-09-05, Spec 013 closure): `cargo test --workspace` — 400
+passed, 0 failed; `clippy --workspace --all-targets -D warnings` clean.
 
 ## Invariants
 

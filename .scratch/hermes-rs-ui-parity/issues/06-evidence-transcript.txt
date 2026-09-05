@@ -1,0 +1,69 @@
+# 013-06 evidence — Hermes-RS REPL, live pty capture 2026-09-05
+# hermes-rs --provider fake --hermes-home <tmp>  (COLUMNS=80 LINES=24)
+# inputs: hello | plan itanswer | tool | long message (>60 cells) | /exit
+# (rendered from raw bytes /tmp/t06_out/t06_rs_repl_80.bin, SGR stripped)
+
+┌Welcome to Hermes-RS!─────────────────────────────────────────────────────────┐
+│                                                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀Welcome to Hermes-RS!                         │
+│  ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀Type your message or /help for commands.      │
+│  ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀                                              │
+│  ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                              │
+│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘Hermes-RS session 01a0725d-7cae-7fd3-b092-7c2aa840bde1 (provider fake)
+Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /plan [on|off|reset], /reflect [on|off], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit
+ ⚕ fake │ [░░░░░░░░░░] -- │ 2s                                                  
+❯ hello
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+echo: hello
+╰──────────────────────────────────────────────────────────────────────────────╯
+[iter 1/10]
+ ⚕ fake │ [░░░░░░░░░░] -- │ 10s                                                 
+❯ plan itanswer
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+echo: plan itanswer
+╰──────────────────────────────────────────────────────────────────────────────╯
+[iter 1/10]
+ ⚕ fake │ [░░░░░░░░░░] -- │ 17s                                                 
+❯ tool
+  ┊ ◇ read_file
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+tool completed
+╰──────────────────────────────────────────────────────────────────────────────╯
+[iter 2/10]
+ ⚕ fake │ [░░░░░░░░░░] -- │ 25s                                                 
+❯ this is a deliberately very long user message to push the response box width ❯ this is a deliberately very long user message to push the response box width b
+eyond the default 60 cells
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+tool completed
+╰──────────────────────────────────────────────────────────────────────────────╯
+[iter 1/10]
+ ⚕ fake │ [░░░░░░░░░░] -- │ 33s                                                 
+❯ /exit
+Goodbye! ⚕
+
+## Raw SGR — status bar (full tier, 80 cols, first render)
+'\x1b[38;2;192;192;192;48;2;26;26;46m ⚕ \x1b[1;38;2;255;215;0;48;2;26;26;46mfake\x1b[38;2;139;134;130;48;2;26;26;46m │ \x1b[38;2;139;134;130;48;2;26;26;46m[░░░░░░░░░░]\x1b[38;2;139;134;130;48;2;26;26;46m \x1b[38;2;139;134;130;48;2;26;26;46m--\x1b[38;2;139;134;130;48;2;26;26;46m │ \x1b[38;2;139;134;130;48;2;26;26;46m2s\x1b[38;2;192;192;192;48;2;26;26;46m \x1b[38;2;192;192;192;48;2;26;26;46m                                                 \x1b[0m'
+
+Legend: 48;2;26;26;46 = bg #1a1a2e (navy); 1;38;2;255;215;0 = bold #FFD700;
+38;2;139;134;130 = #8B8682 (dim); 38;2;192;192;192 = #C0C0C0 (bar/icon).
+
+## Raw SGR — response box header/body
+'\x1b[1;38;2;255;215;0m╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮\x1b[0m\r\n\x1b[38;2;255;248;220mecho: hello\x1b[0m\r\n\x1b[1;38;2;255;215;0m'
+
+## Raw SGR — tool line
+'K❯ \r\x1b[2Ctool\x1b[?2004l\r\n\r\x1b[2K\r  \x1b[2;3m┊ ◇ read_file\x1b[0m\r\n\r\n\x1b[1;38;2'
+
+## Raw SGR — prompt
+'  \x1b[0m\r\n\x1b[?2004h\r\x1b[K❯ \r\x1b[2Chello\x1b[?2004l\r\n\r\x1b[2K\r\r\n'

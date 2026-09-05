@@ -187,6 +187,47 @@ same provider/config as the REPL — it never forks a second loop.
 Python-side equivalent of a terminal dashboard is out of scope for this Rust
 rewrite.
 
+## Spec 013 — UI parity (visual)
+
+Goal: the Hermes-RS default look & feel ("gold and kawaii") is visually
+identical to the Python Hermes default skin. Verified 2026-09-05 by
+side-by-side comparison: live `pty` captures of `hermes-rs` (REPL at 50/60/80/
+100/110 columns, TUI at 100 columns; raw bytes incl. SGR escapes) checked
+element-by-element against (a) the verbatim Python captures in
+`docs/HERMES_UI_SPEC.md` (T01, taken on this VM) and (b) the Python sources
+under `~/.hermes/hermes-agent/` (`cli.py`, `hermes_cli/banner.py`). The Python
+installation was read-only throughout (`smoke_python_hermes_untouched`).
+
+| Element | Python default skin (ground truth) | Hermes-RS (live pty capture 2026-09-05) | Status |
+|---|---|---|---|
+| Figlet logo `HERMES_AGENT_LOGO` (shown ≥95 cols) | 6 rows, 101/101/98/98/98/98 cells; rows 1-2 `bold #FFD700`, 3-4 `#FFBF00`, 5-6 `#CD7F32` (`cli.py` `HERMES_AGENT_LOGO`) | Row-for-row byte-identical text + identical SGR tiers (110-col capture); pinned by `logo_is_verbatim_bytes` | 100% (edge: at exactly 100 cols the 101-cell panel buffer clips the last cell of rows 1-2; ≥101 cols renders full — verified at 110) |
+| Caduceus hero art | 15 × 30-cell rows, gradient `#CD7F32` / `#FFBF00` / `#FFD700` / `#B8860B` (`banner.py` `HERMES_CADUCEUS`) | 15/15 rows identical in text and color; pinned by `caduceus_is_verbatim_bytes` | 100% |
+| Banner panel border | `banner_border` `#CD7F32` | border emitted as `38;2;205;127;50` | 100% |
+| Prompt symbol | `❯ ` with empty style — inherits the terminal (`'prompt': ''`) | `PROMPT_SYMBOL "❯ "` plain, inherits the terminal | 100% |
+| Response box (streaming) | `╭─ ⚕ Hermes ──╮` / `╰──╯` bold accent `#FFD700`; body `banner_text` `#FFF8DC`; no side borders; width = longest line, clamped to terminal | Byte-identical frames (`1;38;2;255;215;0` header/footer, `38;2;255;248;220` body), same width rule (T04 tests) | 100% |
+| Reasoning box | `┌─ Reasoning ─┐` dim + italic, always before the response box | Byte-pinned in T04 end-to-end tests (the `fake` provider has no reasoning trigger, so no live capture; zero-change closure constraint) | 100% (test-verified) |
+| Tool-activity line | `  ┊ ◇ {header}` dim | `  ┊ ◇ {name}` with SGR `2;3` (dim + italic) | 100% |
+| Spinner | braille `dots`, 120 ms, `\r  {frame} {message} ({elapsed:.1}s)` | Same frame set, rate and format (injectable-clock unit tests); fast `fake` responses (<120 ms) clear the spinner before a frame is drawn, so captures show the cleared line | 100% (test-verified) |
+| Status bar — **all visual customizers: 100% compatible** | 3 width tiers (<52 / <76 / ≥76 cols); ` · ` vs ` │ ` separators; context gauge `used/total` + 10-block bar `[████░░░░░░]`; thresholds Dim (unknown) / Good `#8FBC8F` <50 / Warn `#FFD700` ≥50 / Bad `#FF8C00` >80 / Critical `#FF6B6B` ≥95; Python banker's rounding; full-width navy `#1a1a2e` line, padded or trimmed with `...`; ` ─ {title}` right badge suppressed <24 cols | Tiers, separators, gauge + bar, color thresholds (incl. banker's rounding via `py_round`), full-width `48;2;26;26;46` line — raw SGR confirmed in the 50/60/80/100-col captures; 22 unit tests (T05) | 100% |
+| Goodbye line | `Goodbye! ⚕` (`cli.py:18000`) | `Goodbye! ⚕` (80-col capture) | 100% |
+| Brand strings | "Hermes Agent …" | "Hermes-RS …" (T02 decision, approved) | Intentional difference |
+| User-message echo | `─`×40 accent separator + `●` bold-text line in the scrollback | Prompt echo `❯ <text>`; no scrollback line | Intentional structural difference (line-REPL echo model) |
+| Agentic iteration marker | not printed | dim `[iter N/10]` line | Rust-only informational |
+| CLI surface (`--help` / `--version`) | argparse help (~90 subcommands), `Hermes Agent vX …` | Subset help + `hermes-rs 0.1.0` | Intentional (Spec 013 scope = in-app look & feel; the display-mode flag `--tui` exists in both) |
+
+Status-bar visual customizers are marked **100% compatible**: tier
+thresholds, separators, context-style thresholds, gauge rendering, the title
+badge and the full-width pad/trim behavior all match the Python defaults.
+Runtime data the Rust engine does not have (compression counter, background
+tasks, YOLO, focus, session title) is hidden — exactly as Python hides absent
+segments — and the renderer is data-driven, so each segment appears
+automatically when the data exists.
+
+Capture artifacts (VM `/tmp/t06_out/`, 2026-09-05): `t06_rs_repl_{50,60,80,100,110}.bin`
+(raw pty bytes, SGR included), `t06_rs_tui_100.bin`, plus `--help`/`--version`
+stdout; Python reference outputs at `/tmp/t06_py_help.txt` and
+`/tmp/t06_py_version.txt` (venv interpreter, read-only).
+
 ## Differences ⚠️
 
 | Feature | Python | Rust | Impact |
