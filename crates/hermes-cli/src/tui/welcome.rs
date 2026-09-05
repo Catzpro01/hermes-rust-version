@@ -22,7 +22,7 @@ use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::block::{Padding, Title};
-use ratatui::widgets::{Block, Borders, Paragraph, Widget};
+use ratatui::widgets::{Block, Borders, Paragraph, Widget, Wrap};
 
 use super::art::{
     caduceus_lines, logo_lines, CADUCEUS_LINES, CADUCEUS_WIDTH, LOGO_LINES, LOGO_WIDTH,
@@ -121,7 +121,11 @@ pub fn render_banner(area: Rect, buf: &mut Buffer, theme: &HermesTheme) {
         )),
         Line::from(Span::styled(WELCOME_HINT, theme.banner_dim())),
     ];
-    Paragraph::new(copy).render(right, buf);
+    // Wrap (never clip): at the 60-col minimum the right column is only
+    // ~24 cells wide and the 41-char hint must break to a second line.
+    Paragraph::new(copy)
+        .wrap(Wrap { trim: false })
+        .render(right, buf);
 }
 
 /// Renders the 6-line `HERMES_AGENT_LOGO` top-aligned in `area`, left-aligned
@@ -424,6 +428,22 @@ mod tests {
         assert!(
             pos >= CADUCEUS_WIDTH,
             "hint must sit in the right column (got col {pos})"
+        );
+    }
+
+    #[test]
+    fn banner_narrow_width_keeps_full_welcome_copy() {
+        // Minimum panel width: the right column is only ~24 cells wide, so
+        // the dim hint (41 chars) must wrap onto a second line, never clip.
+        let theme = HermesTheme::dark_canonical();
+        let area = Rect::new(0, 0, BANNER_MIN_WIDTH, BANNER_PANEL_HEIGHT);
+        let mut buf = Buffer::empty(area);
+        render_banner(area, &mut buf, &theme);
+        let whole: String = buf.content.iter().map(|c| c.symbol().to_owned()).collect();
+        assert!(whole.contains("Type your message or"), "hint head clipped");
+        assert!(
+            whole.contains("/help for commands."),
+            "hint tail must survive the 60-col wrap: {whole:?}"
         );
     }
 

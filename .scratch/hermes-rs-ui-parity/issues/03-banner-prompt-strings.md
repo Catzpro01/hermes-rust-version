@@ -68,13 +68,21 @@
 - [x] Prompt ❯ in REPL + TUI
 - [x] tool_prefix ┊ in render.rs
 - [x] 4 E2E tests (help, goodbye, response frame, prompt symbol)
-- [x] Unit tests (strings, logo, caduceus, banner buffer, ANSI, frame math)
+- [x] Unit tests (strings, logo, caduceus, banner buffer, ANSI, frame math, narrow-width wrap)
 - [x] 323+ tests green, clippy clean
 - [x] No ANSI in piped stdout (E2E invariant)
 
+## Follow-up review (siklus 1 — wajib, diterapkan sebelum closure)
+- 🟡 **Clipping hint di lebar minimum (60 kolom):** tanpa wrap, baris
+   (41 char) terpotong di
+   karena kolom kanan hanya ±24 sel. Dibuktikan **red** oleh
+   (dump buffer menunjukkan
+  pemotongan), lalu **fixed** dengan  pada
+  paragraph welcome copy → **green** (hint wrap per-kata:  / ).
+
 ## Bukti verifikasi (VM master)
-`cargo test --workspace` = **338/338 green** (323 baseline + 15 baru:
-art 4, welcome 7, branding_e2e 4).
+`cargo test --workspace` = **339/339 green** (323 baseline + 16 baru:
+art 4, welcome 8, branding_e2e 4).
 `cargo clippy --workspace --all-targets -- -D warnings` = bersih (RC=0).
 `rustfmt --check` bersih pada art.rs, welcome.rs, branding_e2e.rs.
 Instalasi Python Hermes tak tersentuh (test `smoke_python_hermes_untouched` green).
