@@ -65,13 +65,6 @@ pub async fn run_repl(
     let db = home.join("state.db");
     let mut store = SessionStore::open(&db).context("open Hermes state.db")?;
     let mut editor = DefaultEditor::new().context("create terminal editor")?;
-    // Spec 013 Ticket 03 — startup welcome banner (Python parity, spec §3).
-    // TTY-only: piped E2E invocations must keep byte-stable, ANSI-free stdout
-    // (render-boundary invariant; several E2E tests assert no `\x1b` on piped
-    // output).
-    if std::io::stdin().is_terminal() {
-        let _ = crate::tui::welcome::print_banner(&mut std::io::stdout(), terminal_width());
-    }
     let mut session_id = if resume || !std::io::stdin().is_terminal() {
         match store.list()?.last().copied() {
             Some(id) => id,
@@ -88,6 +81,53 @@ pub async fn run_repl(
     // accounting + pre-send warning.
     let mut ctx = resolve_context(config.as_ref(), &provider_name);
     runner.set_context_limit(ctx.limit);
+    // Spec 017 T02 — the v0.21.0 banner shows the session id, the resolved
+    // context, the core tools and the configured MCP servers, so the core
+    // tool registry + confirmation channel are built BEFORE the banner (MCP
+    // servers connect after it and are shown as "configured").
+    let mut tool_registry = ToolRegistry::new();
+    let tool_root = std::env::current_dir().context("resolve CLI tool root")?;
+    let (confirmation_tx, mut confirmation_rx) =
+        mpsc::channel::<(String, oneshot::Sender<bool>)>(8);
+    let confirmation = CliConfirmation {
+        requests: confirmation_tx,
+    };
+    tool_registry.register(ReadFileTool::new(&tool_root));
+    tool_registry.register(ListDirTool::new(&tool_root));
+    tool_registry.register(ShellReadonlyTool::new(
+        confirmation.clone(),
+        Duration::from_secs(30),
+    ));
+    tool_registry.register(WriteFileTool::new(&tool_root, confirmation.clone()));
+    // Spec 013 T03 / Spec 017 T02 — startup welcome banner (v0.21.0 Python
+    // parity). TTY-only: piped E2E invocations must keep byte-stable,
+    // ANSI-free stdout (render-boundary invariant; several E2E tests assert
+    // no `\x1b` on piped output).
+    if std::io::stdin().is_terminal() {
+        let mcp_servers = config
+            .as_ref()
+            .map(|c| {
+                let mut names: Vec<String> = c.mcp_servers.keys().cloned().collect();
+                names.sort();
+                names
+            })
+            .unwrap_or_default();
+        let banner_info = crate::tui::welcome::BannerInfo {
+            model: config.as_ref().and_then(|c| c.model.name.clone()),
+            context_tokens: ctx.limit,
+            cwd: std::env::current_dir()
+                .map(|p| p.display().to_string())
+                .unwrap_or_default(),
+            session_id: Some(session_id.to_string()),
+            tools: tool_registry.names(),
+            mcp_servers,
+        };
+        let _ = crate::tui::welcome::print_banner(
+            &mut std::io::stdout(),
+            terminal_width(),
+            &banner_info,
+        );
+    }
     println!("Hermes-RS session {session_id} (provider {provider_name})");
     println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /plan [on|off|reset], /reflect [on|off], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
     if let Some(limit) = ctx.limit {
@@ -98,8 +138,6 @@ pub async fn run_repl(
         );
     }
     let editor = Arc::new(Mutex::new(editor));
-    let (confirmation_tx, mut confirmation_rx) =
-        mpsc::channel::<(String, oneshot::Sender<bool>)>(8);
     let confirmation_editor = Arc::clone(&editor);
     // Spec 013 Ticket 04 — kawaii waiting face while awaiting approval
     // (spec §7); the flag pauses + clears the spinner line for the duration
@@ -135,18 +173,6 @@ pub async fn run_repl(
             }
         }
     });
-    let mut tool_registry = ToolRegistry::new();
-    let tool_root = std::env::current_dir().context("resolve CLI tool root")?;
-    let confirmation = CliConfirmation {
-        requests: confirmation_tx,
-    };
-    tool_registry.register(ReadFileTool::new(&tool_root));
-    tool_registry.register(ListDirTool::new(&tool_root));
-    tool_registry.register(ShellReadonlyTool::new(
-        confirmation.clone(),
-        Duration::from_secs(30),
-    ));
-    tool_registry.register(WriteFileTool::new(&tool_root, confirmation.clone()));
     // Spec 011: connect configured MCP servers and register their tools. Off by
     // default (no `mcp_servers` -> nothing spawns). A server that fails to
     // start/discover is reported per-server and skipped; the rest stay up.
