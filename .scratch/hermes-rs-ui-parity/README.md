@@ -27,7 +27,7 @@ eksavasi **verbatim** dari instalasi Python asli `~/.hermes/hermes-agent`
 | 03 | [Banner, prompt & strings](issues/03-banner-prompt-strings.md) | DONE — APPROVED (`df5f7f8` + `8f250f3`) |
 | 04 | [Streaming box, reasoning box & spinner](issues/04-streaming-box-spinner.md) | DONE — APPROVED (`c99b13c`) |
 | 05 | [Status bar parity](issues/05-status-bar.md) | DONE — APPROVED (`584833b` + `c7a2950`) |
-| 06 | [Parity, docs & closure](issues/06-parity-docs-closure.md) | DONE (commit ini, review Matt pending) |
+| 06 | [Parity, docs & closure](issues/06-parity-docs-closure.md) | DONE — APPROVED () |
 
 ## Invariant yang tetap berlaku
 

@@ -1,5 +1,5 @@
 # 013-06: Parity, Docs & Closure
-**Status:** DONE — menunggu review Matt (commit ini).
+**Status:** DONE — APPROVED (review final Matt: Spec 013 & Phase 5 resmi ditutup 100%, commit ffd360c).
 
 ## Cakupan (Ticket 06)
 Verifikasi side-by-side visual Hermes-RS (REPL & TUI) vs Hermes Python
