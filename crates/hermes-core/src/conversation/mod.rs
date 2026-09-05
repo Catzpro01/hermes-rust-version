@@ -17,10 +17,12 @@ use tokio_util::sync::CancellationToken;
 pub mod context;
 pub mod goal;
 pub mod plan;
+pub mod recovery;
 pub mod reflection;
 
 use goal::{GoalStatus, GoalTracker};
 use plan::Plan;
+use recovery::RetryTracker;
 use reflection::ReflectionTracker;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -34,6 +36,10 @@ pub enum Turn {
 pub enum AgenticResult {
     Done { text: String, iterations: usize },
     MaxIterations(usize),
+    /// Execution was stopped because it is blocked (e.g. a user denial, or
+    /// retries exhausted for a failing step) — semantically distinct from
+    /// merely running out of iterations.
+    Blocked { reason: String },
     Cancelled,
 }
 
@@ -72,6 +78,8 @@ pub struct ConversationRunner<P> {
     /// Spec 009 (Ticket 03) — self-reflection gate. Off by default so reactive
     /// mode is unchanged.
     reflection: ReflectionTracker,
+    /// Spec 009 (Ticket 04) — bounded retry/recovery tracking per tool.
+    recovery: RetryTracker,
 }
 impl<P: Provider> ConversationRunner<P> {
     pub fn new(provider: P) -> Self {
@@ -84,6 +92,7 @@ impl<P: Provider> ConversationRunner<P> {
             plan_mode: false,
             plan: None,
             reflection: ReflectionTracker::new(),
+            recovery: RetryTracker::new(),
         }
     }
     pub fn turns(&self) -> &[Turn] {
@@ -99,6 +108,7 @@ impl<P: Provider> ConversationRunner<P> {
             plan_mode: false,
             plan: None,
             reflection: ReflectionTracker::new(),
+            recovery: RetryTracker::new(),
         }
     }
 
@@ -257,6 +267,27 @@ impl<P: Provider> ConversationRunner<P> {
     ) -> reflection::Verdict {
         reflection::apply_verdict(&mut self.reflection, status, retries_remaining, &mut self.goal)
     }
+
+    // -- Spec 009 recovery / parameter mutation (Ticket 04) -----------------
+
+    /// Recovery is active only when reflection is enabled (opt-in). Off by
+    /// default -> the tool loop is unchanged.
+    pub fn recovery_enabled(&self) -> bool {
+        self.reflection_enabled()
+    }
+    /// Resets per-task recovery/retry state.
+    pub fn reset_recovery(&mut self) {
+        self.recovery.reset();
+    }
+    /// Whether an exact argument set for `tool` was already attempted.
+    pub fn is_attempted(&self, tool: &str, arguments: &str) -> bool {
+        self.recovery.is_tried(tool, arguments)
+    }
+    /// The Option 1 "already tried" note for `tool` (what the model sees so it
+    /// picks different parameters).
+    pub fn already_tried_note(&self, tool: &str) -> Option<String> {
+        self.recovery.already_tried_note(tool)
+    }
     /// Generates a plan for the current conversation via one ephemeral
     /// instruction round-trip (Ticket 02). In planned mode only: sends the
     /// current window plus the [`PLAN_INSTRUCTION`], reads the raw assistant
@@ -387,6 +418,7 @@ impl<P: Provider> ConversationRunner<P> {
         // Goal/plan state belongs to the previous session too.
         self.clear_goal();
         self.plan = None;
+        self.reset_recovery();
     }
 
     /// Swaps the provider backing this runner. The conversation history in
@@ -470,6 +502,8 @@ impl<P: Provider> ConversationRunner<P> {
         }
         // Spec 009 (Ticket 03): a new task resets per-step reflection count.
         self.reflection.reset_step();
+        // Spec 009 (Ticket 04): a new task resets retry/recovery state too.
+        self.reset_recovery();
         // Planning shares the budget: when a planning round was taken, one fewer
         // iteration remains for execution (total <= max_iters).
         let exec_budget = if plan_round {
@@ -481,6 +515,15 @@ impl<P: Provider> ConversationRunner<P> {
             if cancel.is_cancelled() {
                 self.discard_pending_user();
                 return Ok(AgenticResult::Cancelled);
+            }
+            // Spec 009 (Ticket 03/04): once the goal is blocked (user denial or
+            // retries exhausted), stop the loop early with a Blocked result
+            // rather than burning remaining iterations. Reactive mode is off by
+            // default, so this never triggers unless reflection/recovery is on.
+            if self.recovery_enabled() && self.goal_status() == GoalStatus::Blocked {
+                return Ok(AgenticResult::Blocked {
+                    reason: "a tool step is blocked (user denial or retries exhausted)".into(),
+                });
             }
             // Recompute the window each iteration (tool results may have grown
             // the context since the last send). self.turns stays untouched. In
@@ -529,6 +572,26 @@ impl<P: Provider> ConversationRunner<P> {
                     self.discard_pending_user();
                     return Ok(AgenticResult::Cancelled);
                 }
+                // Spec 009 (Ticket 04, Option 1): reject an exact repeat of a
+                // call that already failed retryably — do NOT execute it again.
+                // Feed an "already tried" note so the model mutates parameters.
+                if self.recovery_enabled() && self.is_attempted(&call.name, &call.arguments) {
+                    let note = self.already_tried_note(&call.name).unwrap_or_default();
+                    let dup = format!(
+                        "duplicate of an earlier failed call — adjust parameters. {note}"
+                    );
+                    self.turns.push(Turn::Tool {
+                        name: call.name.clone(),
+                        content: dup.clone(),
+                    });
+                    if !self.recovery.can_retry(&call.name) {
+                        self.set_goal_status(GoalStatus::Blocked);
+                        return Ok(AgenticResult::Blocked {
+                            reason: format!("no retries left for tool '{}'", call.name),
+                        });
+                    }
+                    continue;
+                }
                 let result = registry.execute(&call, cancel.clone()).await;
                 let (content, status) = match result {
                     Ok(r) => (r.content, ToolExecutionStatus::Success),
@@ -551,6 +614,20 @@ impl<P: Provider> ConversationRunner<P> {
                 // verdict marks the goal Blocked; OffPlan is left for recovery
                 // (Ticket 04).
                 self.reflect_tool_outcome(status.clone(), retries_remaining);
+                // Spec 009 (Ticket 04): record a retryable failure and mark the
+                // goal blocked once per-tool retries are exhausted. Denied is
+                // never recorded (never retried, per Ticket 03 / Spec 002).
+                if self.recovery_enabled()
+                    && matches!(
+                        status,
+                        ToolExecutionStatus::Error | ToolExecutionStatus::Timeout
+                    )
+                {
+                    self.recovery.record(&call.name, &call.arguments);
+                    if !self.recovery.can_retry(&call.name) {
+                        self.set_goal_status(GoalStatus::Blocked);
+                    }
+                }
                 if let Some((store, id)) = store_ctx {
                     let record = ToolCallRecord {
                         id: call
@@ -1005,5 +1082,30 @@ mod tests {
             reflection::Verdict::Blocked
         );
         assert_eq!(r.goal_status(), GoalStatus::Blocked);
+    }
+
+    // -- Spec 009 recovery (Ticket 04) --------------------------------------
+
+    #[test]
+    fn recovery_tracks_reflection_and_defaults_off() {
+        let mut r = runner_with(vec![]);
+        assert!(!r.recovery_enabled(), "recovery must default off");
+        // Recovery is active only when reflection is on.
+        r.set_reflection(true);
+        assert!(r.recovery_enabled());
+        assert!(!r.is_attempted("read_file", "{\"path\":\"x\"}"));
+        assert_eq!(r.already_tried_note("read_file"), None);
+        // Resetting per-task state keeps the toggle but clears the tracker.
+        r.reset_recovery();
+        assert!(r.recovery_enabled());
+        assert!(!r.is_attempted("read_file", "{\"path\":\"x\"}"));
+    }
+
+    #[test]
+    fn blocked_result_is_distinct_from_max_iterations() {
+        assert_ne!(
+            AgenticResult::Blocked { reason: "denied".into() },
+            AgenticResult::MaxIterations(10)
+        );
     }
 }

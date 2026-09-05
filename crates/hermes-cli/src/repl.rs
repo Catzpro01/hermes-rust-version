@@ -448,6 +448,9 @@ pub async fn run_repl(
                     Ok(AgenticResult::MaxIterations(limit)) => {
                         eprintln!("\n⚠ Reached max iterations budget ({limit}).")
                     }
+                    Ok(AgenticResult::Blocked { reason }) => {
+                        eprintln!("\n⛔ blocked: {reason}");
+                    }
                     Ok(AgenticResult::Cancelled) | Err(ProviderError::Cancelled) => {
                         eprintln!("\n⚡ interrupted");
                         return Err(anyhow::anyhow!("interrupted"));

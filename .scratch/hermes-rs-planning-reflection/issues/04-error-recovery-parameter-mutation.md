@@ -6,7 +6,8 @@ dan beri batas retry agar tak loop tak produktif.
 
 **Blocked by:** 03.
 
-**Status:** breakdown (belum implementasi).
+**Status:** ready-for-review (selesai di VM: 241/241 hijau, clippy bersih;
+menunggu review `@matt` sebelum push).
 
 ## Kondisi sekarang (terverifikasi)
 
@@ -33,16 +34,41 @@ dan beri batas retry agar tak loop tak produktif.
 
 ## Kriteria
 
-- [ ] Fingerprint argumen deterministik; retry dgn argumen identik ditolak
-      (uji: model tak bisa ulang parameter sama).
-- [ ] `MAX_RETRIES` per (tool, step) di-enforce; habis → `MaxIterations` atau
-      tandai step `Blocked` (tiket 01/03).
-- [ ] `Denied` tidak pernah di-retry (policy-safety). `Timeout`/`Failed`
-      retryable sesuai klasifikasi.
-- [ ] Tak menambah tool/shell; recovery murni re-instruksi model + tracker.
-- [ ] Test unit + integration (identik ditolak, batas retry, denial tak
-      di-retry); clippy bersih.
-- [ ] `state.db`/`tool_calls` tak berubah semantik; recovery in-memory.
+**Keputusan desain (pilihan user = Opsi A / Option 1):** hasil tool gagal
+di-annotasi dgn set argumen yg sudah dicoba (`[already tried: ...]`) sehingga
+model memilih parameter berbeda. Tidak ada kanal instruksi baru; hanya tracker
+in-memory + re-instruksi lewat hasil tool. Variant `AgenticResult::Blocked`
+BARU (tidak reuse `MaxIterations`).
+
+- [x] Fingerprint argumen deterministik (FNV-1a ter-canonical-kan dgn trim;
+      deviasi hash dipin dalam doc module); retry argumen identik ditolak di
+      loop tool sebelum eksekusi.
+- [x] `MAX_RETRIES` per tool = 3 (const `recovery::MAX_RETRIES`); habis →
+      goal `Blocked` (verdict Ticket 03) → early-stop `AgenticResult::Blocked`.
+- [x] `Denied` tidak pernah di-record/retry (spec-invariant 002); hanya
+      `Error`/`Timeout` yg retryable dicatat.
+- [x] Tak menambah tool/shell; recovery = `RetryTracker` in-memory + note.
+- [x] Test unit + integration; clippy bersih. 8 test baru: 4 unit
+      `recovery.rs` (determinisme, repeat identik terdeteksi, batas retry,
+      note), 2 unit runner di `mod.rs`, 2 integration di `agentic_loop_tests`
+      (retryable bounded + repeat tak dieksekusi; denial tak di-retry).
+- [x] `state.db`/`tool_calls` tak berubah semantik; recovery murni in-memory.
+
+## Catatan implementasi (mirror, sblm push)
+
+- Module baru `crates/hermes-core/src/conversation/recovery.rs`.
+- `conversation/mod.rs`: field `recovery: RetryTracker` (in-memory), aksesor
+  `recovery_enabled` (= `reflection_enabled`; off default → reactive zero
+  regression), `reset_recovery` (dipanggil di awal task & `replace_turns`).
+- Di loop tool: (1) setelah status tool, jika retryable `Error`/`Timeout` →
+  `recovery.record`; jika tak `can_retry` → goal `Blocked`. (2) Sebelum
+  eksekusi: jika argumen identik sdh dicoba (`is_attempted`) → tolak, kirim
+  note `duplicate... already tried`, `continue`; tak ulang persis.
+- Early-stop: di atas loop, jika `recovery_enabled` && goal `Blocked` →
+  `Ok(AgenticResult::Blocked{reason})`.
+- REPL: match arm baru utk `AgenticResult::Blocked`.
+- Interaksi dgn Ticket 03 anti-loop (`MAX_REFLECTIONS`) masih berlaku —
+  recovery & reflection sama-sama bisa tandai Blocked; keduanya off default.
 
 ## STRIDE
 
