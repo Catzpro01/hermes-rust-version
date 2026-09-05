@@ -9,8 +9,8 @@ autocomplete /slash, tips, session picker. Sumber ground truth:
 
 | # | Tiket | Status |
 |---|---|---|
-| Fase 0 | [Re-Archaeology total](issues/00-phase0-rearchaeology.md) | DONE — menunggu review Matt (HARD STOP sebelum coding) |
-| T01 | `inquire` + wizard skeleton | Not started |
+| Fase 0 | [Re-Archaeology total](issues/00-phase0-rearchaeology.md) | DONE — APPROVED Matt (8 koreksi diterima) |
+| T01 | [inquire + wizard skeleton](issues/01-wizard-skeleton.md) | DONE — 429/429 + clippy clean, menunggu review Matt |
 | T02 | Banner v0.21.0 | Not started |
 | T03 | Info line | Not started |
 | T04 | Tips rotating | Not started |
