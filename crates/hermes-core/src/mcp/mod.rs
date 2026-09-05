@@ -8,8 +8,12 @@
 pub mod client;
 pub mod error;
 pub mod jsonrpc;
+pub mod server;
+pub mod tool;
 pub mod transport;
 
 pub use client::{McpClient, CLIENT_NAME, CLIENT_VERSION};
 pub use error::McpError;
+pub use server::McpServer;
+pub use tool::{McpTool, McpToolDescriptor, MCP_TOOL_TIMEOUT};
 pub use transport::{McpTransport, StdioTransport};
