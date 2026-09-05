@@ -61,7 +61,7 @@ pub(crate) fn agent_event_to_tui(event: AgentEvent) -> TuiEvent {
             reflection_on,
         },
         AgentEvent::TokenTick { estimate, limit } => TuiEvent::TokenTick { estimate, limit },
-        AgentEvent::Done { text } => TuiEvent::sanitized_chunk(&text),
+        AgentEvent::Done { text } => TuiEvent::Done(crate::output::sanitize_untrusted_output(&text)),
         AgentEvent::Error { message } => {
             TuiEvent::Notice(crate::output::sanitize_untrusted_output(&message))
         }
@@ -187,6 +187,22 @@ async fn run_loop(
         estimate: rt.runner.estimated_tokens(),
         limit: rt.runner.context_limit(),
     });
+    // Ticket 04: replay the session's persisted tool calls so the tool log is
+    // populated when a user resumes an older session.
+    if let Ok(records) = rt.store.list_tool_calls(&rt.session_id) {
+        if !records.is_empty() {
+            queue.push(TuiEvent::Notice(format!(
+                "resumed session with {} prior tool call(s)",
+                records.len()
+            )));
+            for (name, status) in records {
+                queue.push(TuiEvent::ToolDone {
+                    name,
+                    status: status.as_str().to_owned(),
+                });
+            }
+        }
+    }
     queue.push(TuiEvent::Notice(
         "Hermes-RS TUI live — type a message and press Enter (q to quit).".to_owned(),
     ));
@@ -254,6 +270,7 @@ async fn run_loop(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tui::app::App;
     use hermes_core::conversation::goal::GoalStatus;
     use hermes_core::tools::ToolExecutionStatus;
 
@@ -324,9 +341,36 @@ mod tests {
     fn maps_iteration_and_final() {
         let it = agent_event_to_tui(AgentEvent::Iteration { current: 3, max: 10 });
         assert_eq!(it, TuiEvent::Iteration(3));
+        // Final answer is carried by `Done` (not re-emitted as a streaming chunk).
         let done = agent_event_to_tui(AgentEvent::Done {
             text: "final answer\x1b[0m".to_owned(),
         });
-        assert_eq!(done, TuiEvent::Chunk("final answer".to_owned()));
+        assert_eq!(done, TuiEvent::Done("final answer".to_owned()));
+    }
+
+    /// End-to-end redaction: a secret injected at the core boundary must not
+    /// reach the rendered terminal buffer (rendered headlessly).
+    #[test]
+    fn injected_credential_never_reaches_the_panel() {
+        let secret = "sk-proj-supersecret1234567890";
+        let started = agent_event_to_tui(AgentEvent::ToolStarted {
+            name: "write_file".to_owned(),
+            arguments: format!("{{\"token\":\"{secret}\"}}"),
+        });
+        let mut app = App::default();
+        app.apply(started);
+        app.apply(TuiEvent::ToolDone {
+            name: "write_file".to_owned(),
+            status: "success".to_owned(),
+        });
+        let backend = ratatui::backend::TestBackend::new(80, 24);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        terminal.draw(|frame| app.render(frame)).unwrap();
+        let buffer = terminal.backend().buffer();
+        let rendered: String = buffer.content.iter().map(|c| c.symbol()).collect();
+        assert!(
+            !rendered.contains("supersecret1234567890"),
+            "secret leaked into the rendered panel"
+        );
     }
 }
