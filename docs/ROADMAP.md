@@ -14,7 +14,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 3 — Multi-model & routing | 006 | Model fallback and load balancing | Done |
 | 4 — Advanced agent | 007 | Tool execution sandbox | Not started |
 | 4 — Advanced agent | 008 | Memory and context management | Done |
-| 4 — Advanced agent | 009 | Multi-turn planning and reflection | Not started |
+| 4 — Advanced agent | 009 | Multi-turn planning and reflection | Done |
 | 5 — Ecosystem | 010 | Plugin/extension system (WASM) | Not started |
 | 5 — Ecosystem | 011 | MCP server | Not started |
 | 5 — Ecosystem | 012 | TUI dashboard (ratatui) | Not started |
@@ -123,11 +123,42 @@ is never injected (the provider receives only verbatim history turns), and
 `state.db`/`/messages` still expose every canonical turn while read/resume
 leaves the file byte-identical.
 
+## Spec 009 closure
+
+Spec 009 ("Multi-turn planning and reflection") is complete. Building on the
+Spec 002 agentic loop, the runner now supports a guided
+goal → plan → execute → reflect → recover → done flow. Every piece is
+**off by default** and driven by in-memory runner state plus ephemeral
+instructions — never a new persisted role and never a fake `User` turn — so the
+reactive loop stays a zero-regression Spec 002 path.
+
+The five tickets and their landing commits:
+
+| Ticket | Scope | Commit |
+|---|---|---|
+| 01 | Goal extraction & tracking (`/goal`) | `7395878` |
+| 02 | Plan-then-execute (`/plan`) + ephemeral instruction channel (ADR 0004) | `5d4e896` |
+| 03 | Deterministic self-reflection gate (`/reflect`) | `6a38fa1` |
+| 04 | Error recovery via parameter mutation, never retry a denied tool (ADR 0005) | `9d514ef` |
+| 05 | Parity, docs, E2E closure proof | this commit |
+
+Closure proof (Spec 009): `crates/hermes-core/tests/planning_reflection_e2e.rs`
+drives a scripted, deterministic provider through the full guided pipeline and
+asserts the goal is extracted, a plan is generated and kept in memory, a
+retryable tool failure is recovered by mutating parameters (the identical repeat
+is **not** re-executed), a second tool step runs, and the run finishes `Done`
+with the goal `Achieved` — all within the iteration budget, with exactly one
+`User` turn (no fabricated role). Companion tests pin the negative invariants: a
+`Denied` tool immediately `Blocked` and never retried, and reactive mode
+(`/plan`/`/reflect`/`/goal` off) behaving exactly as the Spec 002 loop. The goal
+is marked `Achieved` on a guided, tool-free completion only when reflection is
+on (reactive goal tracking never auto-closes a goal).
+
 ## Verification
 
-Last full run: `cargo test --workspace` — 198 passed, 0 failed (multiple
-consecutive full runs stable; the concurrency test also ran 12× sequentially);
-`clippy --workspace --all-targets -D warnings` clean.
+Last full run: `cargo test --workspace` — 247 passed, 0 failed (multiple
+consecutive full runs stable); `clippy --workspace --all-targets -D warnings`
+clean.
 
 ## Invariants
 
@@ -142,8 +173,9 @@ consecutive full runs stable; the concurrency test also ran 12× sequentially);
 
 ## Notes
 
-- Ticket files live under
-  `.scratch/hermes-rs-cli-provider-session/issues/`, not `.scratch/issues/`.
+- Ticket files live under `.scratch/<feature>/issues/` (e.g.
+  `.scratch/hermes-rs-planning-reflection/issues/` for Spec 009), not
+  `.scratch/issues/`.
 - Fixture databases are per crate: `crates/hermes-cli/tests/fixtures/` and
   `crates/hermes-core/tests/fixtures/`.
 - `target/debug` currently occupies roughly 11 GB on a 19 GB disk. The

@@ -6,25 +6,36 @@ tak tersentuh — mengikuti pola closure Spec 004/005/006/008.
 
 **Blocked by:** 01–04.
 
-**Status:** breakdown (belum implementasi).
+**Status:** ready-for-review (implementasi selesai di VM; menunggu review
+`@matt` sebelum push).
 
 ## Kriteria
 
-- [ ] E2E: tugas kompleks yang butuh >1 tool step → goal diekstrak → plan
+- [x] E2E: tugas kompleks yang butuh >1 tool step → goal diekstrak → plan
       terbentuk → tool dieksekusi → refleksi menilai → recovery bermutasi-param
       saat gagal → `Done` (goal `Achieved`) dalam batas iterasi.
-- [ ] E2E negative: argumen tool gagal yg diulang identik **tidak** terjadi
-      (RetryTracker menolak); `Denied` tak pernah di-retry; tak ada fake `User`
-      turn; plan/reflection tak jadi role db baru.
-- [ ] E2E: mode reaktif (tanpa `/plan on`) berperilaku seperti Spec 002 (regresi
-      nol).
-- [ ] Regresi: seluruh suite hijau; jumlah test dilaporkan, bukan diasumsikan.
-- [ ] `docs/PARITY.md` diperbarui dgn perilaku planning/reflection (Rust-side;
-      Python tak punya padanan → dicatat sbg perbedaan).
-- [ ] `docs/ROADMAP.md`: Spec 009 → Done, hanya setelah suite hijau.
-- [ ] `smoke_python_hermes_untouched` tetap lulus.
-- [ ] (Jika plan/reflection akan dipersist di masa depan) ADR analog 0003
-      ditulis sebelum role baru masuk db.
+      (`planning_reflection_e2e::full_pipeline_plans_reflects_recovers_and_marks_goal_achieved`)
+- [x] E2E negative: argumen gagal identik tak dieksekusi ulang (counter tool
+      `["bad","good"]` — repeat `bad` di-skip); `Denied` tak pernah di-retry
+      (`denied_in_planned_session_blocks_and_is_never_retried`); tak ada fake
+      `User` turn (jumlah `User` turn == 1); plan/reflection tak jadi role db
+      (keduanya ephemeral/in-memory, tak pernah jadi turn).
+- [x] E2E: mode reaktif (tanpa `/plan on`) = Spec 002 regresi nol
+      (`reactive_mode_is_zero_regression_spec002`).
+- [x] Regresi: 247/247 hijau (241 + 6 baru), clippy `-D warnings` bersih.
+- [x] `docs/PARITY.md` — section "Spec 009 — planning, reflection & recovery".
+- [x] `docs/ROADMAP.md` — Spec 009 → Done + section closure + verification 247.
+- [x] `smoke_python_hermes_untouched` tetap lulus (bagian dari suite 247).
+- [x] Tak perlu ADR role baru sekarang (plan/reflection tidak dipersist; ADR
+      0003/0004/0005 menetapkan representasi ephemeral).
+
+## Catatan tambahan (Ticket 05)
+
+- Runner: goal aktif InProgress kini ditandai `Achieved` pada penyelesaian
+  normal tanpa tool **hanya saat gate refleksi on**; mode reaktif (refleksi off)
+  tidak menutup goal secara otomatis (regresi nol untuk `/goal` reaktif).
+- 3 unit test baru di `conversation/mod.rs` + 3 integration di
+  `planning_reflection_e2e.rs`.
 
 ## Pelajaran yang wajib diterapkan (Spec 004/005/006/008)
 

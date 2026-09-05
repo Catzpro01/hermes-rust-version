@@ -559,6 +559,15 @@ impl<P: Provider> ConversationRunner<P> {
             }
             if calls.is_empty() {
                 self.push_assistant(text.clone());
+                // Spec 009 (Ticket 05): a normal, tool-free completion formally
+                // closes an active, in-progress goal as Achieved — but only
+                // while the reflection gate is on. In plain reactive goal
+                // tracking (reflection off) the goal stays open rather than
+                // being auto-closed by an answer that happens to use no tool.
+                // No-op when no goal is active or it is already closed.
+                if self.reflection_enabled() && self.goal_status() == GoalStatus::InProgress {
+                    self.set_goal_status(GoalStatus::Achieved);
+                }
                 return Ok(AgenticResult::Done {
                     text,
                     iterations: iteration,
@@ -1107,5 +1116,52 @@ mod tests {
             AgenticResult::Blocked { reason: "denied".into() },
             AgenticResult::MaxIterations(10)
         );
+    }
+
+    // -- Spec 009 goal closure on completion (Ticket 05) --------------------
+
+    #[tokio::test]
+    async fn reflection_on_closes_goal_as_achieved_on_done() {
+        // Guided mode (reflection on, goal tracked): a tool-free final answer
+        // completes the goal -> Done with goal Achieved.
+        let mut r = ConversationRunner::new(Reply("done, no more tools"));
+        r.set_reflection(true);
+        r.set_goal_tracking(true);
+        let reg = ToolRegistry::new();
+        let out = r
+            .chat_agentic("task", &reg, None, 10, CancellationToken::new())
+            .await
+            .unwrap();
+        assert!(matches!(out, AgenticResult::Done { .. }));
+        assert_eq!(r.goal_status(), GoalStatus::Achieved);
+    }
+
+    #[tokio::test]
+    async fn reactive_mode_never_auto_closes_a_goal() {
+        // Reflection off (the default): even with a goal tracked, finishing
+        // with no tool calls must NOT mark the goal Achieved (zero regression
+        // for plain reactive goal tracking).
+        let mut r = ConversationRunner::new(Reply("answer, no tools"));
+        r.set_goal_tracking(true); // goal tracked but reflection is off
+        let reg = ToolRegistry::new();
+        let _ = r
+            .chat_agentic("task", &reg, None, 10, CancellationToken::new())
+            .await
+            .unwrap();
+        assert_eq!(r.goal(), Some("task"));
+        assert_eq!(r.goal_status(), GoalStatus::InProgress);
+    }
+
+    #[tokio::test]
+    async fn no_goal_is_left_untouched_on_done() {
+        // Neither toggle on: no goal is ever recorded or closed.
+        let mut r = ConversationRunner::new(Reply("plain answer"));
+        let reg = ToolRegistry::new();
+        let _ = r
+            .chat_agentic("task", &reg, None, 10, CancellationToken::new())
+            .await
+            .unwrap();
+        assert_eq!(r.goal(), None);
+        assert_eq!(r.goal_status(), GoalStatus::NotStarted);
     }
 }

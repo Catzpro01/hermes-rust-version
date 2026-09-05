@@ -6,8 +6,9 @@ dan beri batas retry agar tak loop tak produktif.
 
 **Blocked by:** 03.
 
-**Status:** ready-for-review (selesai di VM: 241/241 hijau, clippy bersih;
-menunggu review `@matt` sebelum push).
+**Status:** done (approve `@matt`). Commit `9d514ef`; 241/241 hijau, clippy
+bersih. Push ke GitHub tertunda — butuh one-shot token (origin saat ini tanpa
+token).
 
 ## Kondisi sekarang (terverifikasi)
 

@@ -98,6 +98,41 @@ are Rust-side behaviors, tracked in ADR 0003:
   injected into the model context**; ADR 0003 fixes the future
   `Turn::Summary` representation so no fake `User` turn is ever introduced.
 
+## Spec 009 — planning, reflection & recovery parity
+
+Rust adds a guided multi-turn loop (goal → plan → execute → reflect → recover →
+done) layered on top of the Spec 002 agentic loop. Python Hermes at the time of
+this slice has no equivalent goal/plan/reflection engine; all of this is
+Rust-side behavior. The guidance lives in **in-memory runner state plus
+ephemeral instructions** — it is never a new persisted role and never a fake
+`User` turn:
+
+- **Goal extraction & tracking (`/goal`).** Off by default. When enabled, the
+  first user prompt of an agentic session is recorded (char-safe, capped) as the
+  active goal with a lifecycle (`NotStarted → InProgress → Achieved/Blocked`).
+  State is in-memory and advisory; it is never written to `state.db`.
+- **Plan-then-execute (`/plan`).** Off by default. Planned mode sends one
+  ephemeral instruction round (no user turn, no system-prompt activation) that
+  asks the model for a `[[plan]]…[[/plan]]` step list; the parsed plan is kept in
+  memory and re-supplied to the model during execution via the ephemeral
+  instruction channel (ADR 0004). A plan shares the iteration budget (≤ 10).
+- **Self-reflection gate (`/reflect`).** Off by default. After each tool result a
+  deterministic heuristic classifies on-plan / off-plan / blocked and applies it
+  to the goal lifecycle: `Success → on-plan`, `Denied → blocked` (never
+  retried), and retryable `Error`/`Timeout` → off-plan (recover) up to an
+  anti-loop cap. An active, in-progress goal is marked `Achieved` only when the
+  guided (reflection-on) loop finishes normally with a tool-free answer.
+- **Error recovery via parameter mutation.** When a tool fails retryably,
+  `RetryTracker` records the FNV-1a fingerprint of the argument set and the
+  runner rejects an *identical* repeat before re-executing it, annotating the
+  tool result with an "already tried" note so the model picks different
+  parameters (ADR 0005). Distinct failures are bounded (`MAX_RETRIES = 3`); when
+  exhausted the step is `Blocked` and the loop early-stops via the new
+  `AgenticResult::Blocked` variant (distinct from `MaxIterations`). `Denied`
+  tools are never recorded/retried.
+- **Off by default / zero regression.** With `/goal`, `/plan`, and `/reflect`
+  all off, the tool loop is byte-for-byte the Spec 002 reactive agentic loop.
+
 ## Differences ⚠️
 
 | Feature | Python | Rust | Impact |
