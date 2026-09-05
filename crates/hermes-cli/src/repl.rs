@@ -19,7 +19,8 @@ use hermes_core::{
     },
 };
 use rustyline::{error::ReadlineError, DefaultEditor};
-use std::io::IsTerminal;
+use std::io::{IsTerminal, Write};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 #[cfg(unix)]
@@ -98,25 +99,38 @@ pub async fn run_repl(
     let (confirmation_tx, mut confirmation_rx) =
         mpsc::channel::<(String, oneshot::Sender<bool>)>(8);
     let confirmation_editor = Arc::clone(&editor);
-    tokio::spawn(async move {
-        while let Some((prompt, reply)) = confirmation_rx.recv().await {
-            let answer = tokio::task::spawn_blocking({
-                let editor = Arc::clone(&confirmation_editor);
-                move || {
-                    editor
-                        .lock()
-                        .ok()
-                        .and_then(|mut e| {
-                            e.readline(&format!("confirm {prompt} [y/N] ").to_owned())
-                                .ok()
-                        })
-                        .map(|s| matches!(s.trim().to_ascii_lowercase().as_str(), "y" | "yes"))
-                        .unwrap_or(false)
-                }
-            })
-            .await
-            .unwrap_or(false);
-            let _ = reply.send(answer);
+    // Spec 013 Ticket 04 — kawaii waiting face while awaiting approval
+    // (spec §7); the flag pauses + clears the spinner line for the duration
+    // of the prompt. The face is display-only (never enters canonical text).
+    let confirm_active = Arc::new(AtomicBool::new(false));
+    tokio::spawn({
+        let confirm_flag = Arc::clone(&confirm_active);
+        async move {
+            let mut n = 0u32;
+            while let Some((prompt, reply)) = confirmation_rx.recv().await {
+                let face = crate::tui::kawaii::KAWAII_WAITING
+                    [(n as usize) % crate::tui::kawaii::KAWAII_WAITING.len()];
+                n += 1;
+                confirm_flag.store(true, Ordering::Relaxed);
+                let answer = tokio::task::spawn_blocking({
+                    let editor = Arc::clone(&confirmation_editor);
+                    move || {
+                        editor
+                            .lock()
+                            .ok()
+                            .and_then(|mut e| {
+                                e.readline(&format!("{face} confirm {prompt} [y/N] ").to_owned())
+                                    .ok()
+                            })
+                            .map(|s| matches!(s.trim().to_ascii_lowercase().as_str(), "y" | "yes"))
+                            .unwrap_or(false)
+                    }
+                })
+                .await
+                .unwrap_or(false);
+                confirm_flag.store(false, Ordering::Relaxed);
+                let _ = reply.send(answer);
+            }
         }
     });
     let mut tool_registry = ToolRegistry::new();
@@ -533,45 +547,148 @@ pub async fn run_repl(
             _ => {
                 let before = runner.turns().len();
                 let turn_cancel = CancellationToken::new();
-                #[cfg(unix)]
-                let result = tokio::select! {
-                    _ = sigint.recv() => { turn_cancel.cancel(); runner.discard_pending_user(); return Err(anyhow::anyhow!("interrupted")); }
-                    result = runner.chat_agentic(input.to_owned(), &tool_registry, Some((&store, &session_id)), 10, turn_cancel.clone()) => result,
+                // Spec 013 Ticket 04 — live streaming display. ONE task owns
+                // the whole turn (turn future + observer channel + 120 ms
+                // spinner tick + SIGINT), so stdout writes are ordered and
+                // race-free. Every chunk is scrubbed + redacted at this
+                // boundary (invariant 4); canonical bytes stay untouched
+                // (invariant 5).
+                let tty = std::io::stdin().is_terminal();
+                let width = if tty { terminal_width() } else { 60 };
+                let (disp_tx, mut disp_rx) =
+                    mpsc::channel::<hermes_core::conversation::AgentEvent>(64);
+                runner.set_observer(disp_tx);
+                let mut renderer = crate::streaming::StreamRenderer::new(tty, width);
+                let mut spinner: Option<crate::streaming::SpinnerState> = tty.then(|| {
+                    crate::streaming::SpinnerState::new(crate::streaming::SpinnerMode::Thinking)
+                });
+                let mut turn = Box::pin(runner.chat_agentic(
+                    input.to_owned(),
+                    &tool_registry,
+                    Some((&store, &session_id)),
+                    10,
+                    turn_cancel.clone(),
+                ));
+                let mut next_tick = std::time::Instant::now() + crate::streaming::TICK_INTERVAL;
+                let result: Result<AgenticResult, ProviderError> = loop {
+                    // 1. Drain every ready display event, in arrival order.
+                    while let Ok(ev) = disp_rx.try_recv() {
+                        let _ = crate::streaming::apply_event(
+                            &mut renderer,
+                            &mut spinner,
+                            &mut std::io::stdout(),
+                            &ev,
+                        );
+                    }
+                    // 2. Spinner tick due? (TTY only; paused while the
+                    //    approval prompt is up — the waiting face then sits
+                    //    on the prompt line instead).
+                    let tick_due =
+                        tty && spinner.is_some() && !confirm_active.load(Ordering::Relaxed);
+                    let wake_at = tokio::time::Instant::from(next_tick);
+                    #[cfg(unix)]
+                    {
+                        tokio::select! {
+                            res = &mut turn => break res,
+                            ev = disp_rx.recv() => {
+                                if let Some(ev) = ev {
+                                    let _ = crate::streaming::apply_event(
+                                        &mut renderer,
+                                        &mut spinner,
+                                        &mut std::io::stdout(),
+                                        &ev,
+                                    );
+                                }
+                            }
+                            _ = sigint.recv() => {
+                                // Spec 013 invariant #2: exit 130, partial
+                                // turn discarded. Close any open box and clear
+                                // the spinner line before leaving.
+                                turn_cancel.cancel();
+                                let _ = renderer.finish(&mut std::io::stdout());
+                                if tty {
+                                    let mut out = std::io::stdout();
+                                    let _ = write!(&mut out, "\r\x1b[2K");
+                                    let _ = std::io::Write::flush(&mut out);
+                                }
+                                // Release the turn future's `&mut runner`
+                                // borrow before discarding the partial turn.
+                                drop(turn);
+                                runner.discard_pending_user();
+                                return Err(anyhow::anyhow!("interrupted"));
+                            }
+                            _ = tokio::time::sleep_until(wake_at), if tick_due => {
+                                if let Some(sp) = &mut spinner {
+                                    let line = sp.advance();
+                                    let mut out = std::io::stdout();
+                                    let _ = write!(&mut out, "\r{line}");
+                                    let _ = std::io::Write::flush(&mut out);
+                                    next_tick = std::time::Instant::now()
+                                        + crate::streaming::TICK_INTERVAL;
+                                }
+                            }
+                        }
+                    }
+                    #[cfg(not(unix))]
+                    {
+                        tokio::select! {
+                            res = &mut turn => break res,
+                            ev = disp_rx.recv() => {
+                                if let Some(ev) = ev {
+                                    let _ = crate::streaming::apply_event(
+                                        &mut renderer,
+                                        &mut spinner,
+                                        &mut std::io::stdout(),
+                                        &ev,
+                                    );
+                                }
+                            }
+                            _ = tokio::time::sleep_until(wake_at), if tick_due => {
+                                if let Some(sp) = &mut spinner {
+                                    let line = sp.advance();
+                                    let mut out = std::io::stdout();
+                                    let _ = write!(&mut out, "\r{line}");
+                                    let _ = std::io::Write::flush(&mut out);
+                                    next_tick = std::time::Instant::now()
+                                        + crate::streaming::TICK_INTERVAL;
+                                }
+                            }
+                        }
+                    }
                 };
-                #[cfg(not(unix))]
-                let result = runner
-                    .chat_agentic(
-                        input.to_owned(),
-                        &tool_registry,
-                        Some((&store, &session_id)),
-                        10,
-                        turn_cancel,
-                    )
-                    .await;
+                // The turn future is complete; drop it so its borrows of
+                // `runner`/`store` end before we save turns below.
+                drop(turn);
                 match result {
                     Ok(AgenticResult::Done { text, iterations }) => {
-                        // Spec 013 Ticket 03 — response box (spec §5.1):
-                        // gold bold frame on TTY stdout, plain frame piped so
-                        // E2E output stays byte-stable and ANSI-free.
-                        let frame = if std::io::stdin().is_terminal() {
-                            crate::tui::welcome::response_frame_tty(&text, terminal_width())
-                        } else {
-                            crate::tui::welcome::response_frame(&text, 60)
-                        };
-                        println!("\n{frame}");
+                        // Spec 013 Ticket 04 — the streaming path already
+                        // rendered the answer (box + scrubbed text), so the
+                        // final text is NOT printed again (no duplication).
+                        // Non-streaming providers (no Chunk events) fall back
+                        // to rendering the final text through the same
+                        // renderer path — box + scrubbing still apply.
+                        if !renderer.any_text() {
+                            let _ = renderer.emit_final(&mut std::io::stdout(), &text);
+                        }
                         println!("[iter {iterations}/10]");
                     }
                     Ok(AgenticResult::MaxIterations(limit)) => {
+                        let _ = renderer.finish(&mut std::io::stdout());
                         eprintln!("\n⚠ Reached max iterations budget ({limit}).")
                     }
                     Ok(AgenticResult::Blocked { reason }) => {
+                        let _ = renderer.finish(&mut std::io::stdout());
                         eprintln!("\n⛔ blocked: {reason}");
                     }
                     Ok(AgenticResult::Cancelled) | Err(ProviderError::Cancelled) => {
+                        let _ = renderer.finish(&mut std::io::stdout());
                         eprintln!("\n⚡ interrupted");
                         return Err(anyhow::anyhow!("interrupted"));
                     }
-                    Err(error) => return Err(anyhow::anyhow!(error.to_string())),
+                    Err(error) => {
+                        let _ = renderer.finish(&mut std::io::stdout());
+                        return Err(anyhow::anyhow!(error.to_string()));
+                    }
                 }
                 for turn in &runner.turns()[before..] {
                     store.save_turn(&session_id, turn)?;

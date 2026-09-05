@@ -247,6 +247,30 @@ fn sgr_for(cell: &Cell, depth: ColorDepth) -> String {
     }
 }
 
+/// Cell width of [`RESPONSE_LABEL`] — ` ⚕ Hermes ` = space + ⚕ + space +
+/// 6 letters + space = 10 narrow cells. Pinned against the constant by a
+/// unit test; used by the Ticket 04 streaming box math.
+pub(crate) const RESPONSE_LABEL_WIDTH: usize = 10;
+
+/// SGR for `response_border` gold bold (`#FFD700`) — response-frame header
+/// and footer (Ticket 03 frame + Ticket 04 streaming box).
+pub fn sgr_bold_gold(depth: ColorDepth) -> String {
+    format!("\x1b[1;{}m", color_code(Color::Rgb(255, 215, 0), depth))
+}
+
+/// SGR for `_DIM` (dim + italic) — reasoning box and tool lines (spec §5.2/§6).
+pub fn sgr_dim_italic(_depth: ColorDepth) -> String {
+    "\x1b[2;3m".to_owned()
+}
+
+/// SGR for `banner_text` (`#FFF8DC`) — streamed response body (spec §5.1).
+pub fn sgr_banner_text(depth: ColorDepth) -> String {
+    format!("\x1b[{}m", color_code(Color::Rgb(255, 248, 220), depth))
+}
+
+/// SGR reset.
+pub const SGR_RESET: &str = "\x1b[0m";
+
 /// SGR color code for an fg/bg color at the given depth (truecolor, or the
 /// Ticket 02 256 approximation otherwise).
 fn color_code(color: Color, depth: ColorDepth) -> String {
@@ -260,64 +284,6 @@ fn color_code(color: Color, depth: ColorDepth) -> String {
             }
         }
     }
-}
-
-// ---------------------------------------------------------------------------
-// Response frame (spec §5.1)
-// ---------------------------------------------------------------------------
-
-/// Cell width of [`RESPONSE_LABEL`] — ` ⚕ Hermes ` = space + ⚕ + space +
-/// 6 letters + space = 10 narrow cells. Pinned against the constant by a
-/// unit test (kept out of `const` because `chars().count()` is not const).
-const RESPONSE_LABEL_WIDTH: usize = 10;
-
-/// The response box around a finished assistant answer (spec §5.1), plain
-/// text: `╭─{label}─…╮` / body / `╰─…╯`. Total function: tiny widths clamp
-/// instead of panicking (same convention as the Ticket 02/04 layout code).
-pub fn response_frame(text: &str, width: u16) -> String {
-    let w = width as usize;
-    let fill = w.saturating_sub(2).saturating_sub(RESPONSE_LABEL_WIDTH);
-    let header = format!("╭─{RESPONSE_LABEL}{}╮", "─".repeat(fill.saturating_sub(1)));
-    let footer = format!("╰{}╯", "─".repeat(w.saturating_sub(2)));
-    let mut out = String::new();
-    out.push_str(&header);
-    for line in text.lines() {
-        out.push('\n');
-        out.push_str(line);
-    }
-    out.push('\n');
-    out.push_str(&footer);
-    out
-}
-
-/// [`response_frame`] with the frame (header/footer only) colored
-/// `response_border` gold bold (`#FFD700`) for TTY stdout. The body is
-/// deliberately uncolored — it is untrusted model output and the render
-/// boundary never restyles it.
-pub fn response_frame_ansi(text: &str, width: u16, depth: ColorDepth) -> String {
-    let w = width as usize;
-    let fill = w.saturating_sub(2).saturating_sub(RESPONSE_LABEL_WIDTH);
-    let gold = format!("\x1b[1;{}m", color_code(Color::Rgb(255, 215, 0), depth));
-    let header = format!(
-        "{gold}╭─{RESPONSE_LABEL}{}╮\x1b[0m",
-        "─".repeat(fill.saturating_sub(1))
-    );
-    let footer = format!("{gold}╰{}╯\x1b[0m", "─".repeat(w.saturating_sub(2)));
-    let mut out = String::new();
-    out.push_str(&header);
-    for line in text.lines() {
-        out.push('\n');
-        out.push_str(line);
-    }
-    out.push('\n');
-    out.push_str(&footer);
-    out
-}
-
-/// [`response_frame_ansi`] with the environment-detected color depth — the
-/// convenience entry point used by the TTY REPL path.
-pub fn response_frame_tty(text: &str, width: u16) -> String {
-    response_frame_ansi(text, width, detect_color_depth())
 }
 
 #[cfg(test)]
@@ -481,31 +447,5 @@ mod tests {
         let s3 = String::from_utf8_lossy(&out3);
         assert!(!s3.contains("██╗"), "logo hidden below 95 cols");
         assert!(s3.contains("┌"), "panel still present");
-    }
-
-    #[test]
-    fn response_frame_width_matches_python_math() {
-        let f = response_frame("hello", 60);
-        let lines: Vec<&str> = f.lines().collect();
-        assert_eq!(lines.len(), 3);
-        assert_eq!(lines[0].chars().count(), 60, "header spans full width");
-        assert!(lines[0].starts_with("╭─ ⚕ Hermes "));
-        assert!(lines[0].ends_with('╮'));
-        assert_eq!(lines[1], "hello");
-        assert!(lines[2].starts_with('╰'));
-        assert!(lines[2].ends_with('╯'));
-        assert_eq!(lines[2].chars().count(), 60);
-    }
-
-    #[test]
-    fn response_frame_is_total_on_tiny_widths_and_empty_text() {
-        let f = response_frame("x", 8);
-        assert!(f.starts_with("╭─ ⚕ Hermes "));
-        assert!(f.ends_with('╯'));
-        let empty = response_frame("", 60);
-        assert_eq!(empty.lines().count(), 2);
-        let ansi = response_frame_ansi("hi", 40, ColorDepth::Truecolor);
-        assert!(ansi.contains("38;2;255;215;0"), "gold bold frame on TTY");
-        assert!(ansi.contains("hi"));
     }
 }

@@ -7,6 +7,7 @@ mod output;
 mod render;
 mod repl;
 mod session_menu;
+mod streaming;
 mod tui;
 
 #[derive(Debug, Parser)]

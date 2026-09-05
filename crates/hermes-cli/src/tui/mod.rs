@@ -21,9 +21,10 @@
 mod app;
 mod art;
 mod channel;
-mod event;
+pub(crate) mod event;
 mod layout;
-mod theme;
+pub(crate) mod kawaii;
+pub(crate) mod theme;
 mod worker;
 pub mod welcome;
 #[cfg(test)]

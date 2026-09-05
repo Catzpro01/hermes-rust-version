@@ -25,7 +25,7 @@ eksavasi **verbatim** dari instalasi Python asli `~/.hermes/hermes-agent`
 | 01 | [Visual archaeology → HERMES_UI_SPEC.md](issues/01-visual-archaeology.md) | DONE (`7608316`) |
 | 02 | [Color palette & theme system](issues/02-colors-theme.md) | DONE (`7608316`) |
 | 03 | [Banner, prompt & strings](issues/03-banner-prompt-strings.md) | DONE (commit ini, review Matt pending) |
-| 04 | Sisa §5/§7: kotak streaming + spinner (TBD) | Not started |
+| 04 | [Streaming box, reasoning box & spinner](issues/04-streaming-box-spinner.md) | DONE (commit ini, review Matt pending) |
 | 05 | Sisa §8: status bar bottom-chrome (TBD) | Not started |
 | 06 | Parity, docs, E2E closure proof (TBD) | Not started |
 
