@@ -7,6 +7,7 @@ mod output;
 mod render;
 mod repl;
 mod session_menu;
+mod tui;
 
 #[derive(Debug, Parser)]
 #[command(name = "hermes-rs", version, about = "Hermes Agent Rust rewrite")]
@@ -24,6 +25,10 @@ struct Args {
     /// Override the OpenAI-compatible API base URL.
     #[arg(long)]
     api_url: Option<String>,
+    /// Launch the Ratatui TUI dashboard instead of the readline REPL
+    /// (Spec 012). Requires an interactive terminal.
+    #[arg(long)]
+    tui: bool,
 }
 
 #[tokio::main]
@@ -49,6 +54,17 @@ async fn run() -> anyhow::Result<()> {
         .try_init()
         .ok();
     let args = Args::parse();
+    // Spec 012: TUI requires an interactive terminal. Rejecting a piped stdin
+    // here prevents crossterm raw-mode from hanging/crashing smoke/E2E tests
+    // that spawn the binary with piped input, and stops `echo x | hermes-rs
+    // --tui` from silently doing the wrong thing.
+    if args.tui {
+        use std::io::IsTerminal;
+        if !std::io::stdin().is_terminal() {
+            anyhow::bail!("--tui requires an interactive terminal");
+        }
+        return tui::run_tui().await;
+    }
     let home = resolve_hermes_home(args.hermes_home.as_deref())?;
     // Load once. A missing config.yaml is allowed so the offline `fake` slice
     // stays usable with a disposable home containing only state.db.

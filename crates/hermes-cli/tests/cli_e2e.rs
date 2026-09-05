@@ -111,3 +111,28 @@ fn search_cli_is_sanitized_and_never_executes_results() {
     assert!(!stdout.contains('\x1b'));
     assert!(!stdout.contains("tool completed"));
 }
+
+#[test]
+fn tui_flag_rejects_piped_non_interactive_stdin() {
+    // Spec 012 Ticket 01: --tui on a non-TTY (piped) stdin must error clearly
+    // rather than entering crossterm raw mode and hanging/crashing.
+    let home = tempdir().unwrap();
+    std::fs::write(
+        home.path().join("config.yaml"),
+        "model:\n  provider: auto\n",
+    )
+    .unwrap();
+    let mut command = Command::cargo_bin("hermes-rs").unwrap();
+    command
+        .args([
+            "--tui",
+            "--provider",
+            "fake",
+            "--hermes-home",
+            home.path().to_str().unwrap(),
+        ])
+        .write_stdin("hello\n")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("--tui requires an interactive terminal"));
+}

@@ -15,6 +15,9 @@ url.workspace = true
 hermes-core = { path = "../hermes-core" }
 tokio.workspace = true
 tokio-util.workspace = true
+# Spec 012 — TUI dashboard (display-only; no core dependency).
+ratatui = "0.29"
+crossterm = "0.28"
 
 [dev-dependencies]
 assert_cmd = "2"
