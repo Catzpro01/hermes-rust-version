@@ -6,7 +6,7 @@ use crate::session_menu::{
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use hermes_core::{
-    config::HermesConfig,
+    config::{HermesConfig, McpServerConfig},
     conversation::context::summarize_dropped,
     conversation::goal::GoalStatus,
     conversation::{AgenticResult, ConversationRunner},
@@ -127,42 +127,25 @@ pub async fn run_repl(
     // Spec 011: connect configured MCP servers and register their tools. Off by
     // default (no `mcp_servers` -> nothing spawns). A server that fails to
     // start/discover is reported per-server and skipped; the rest stay up.
-    // Servers are held in `mcp_servers`; each McpServer's child is killed on
+    // Each live server is tracked in `mcp_handles` so `/mcp list` and
+    // `/mcp restart <name>` can inspect/swap it. Child processes are killed on
     // drop (kill_on_drop) when run_repl returns on any exit path.
-    let mut mcp_servers: Vec<McpServer> = Vec::new();
+    let mut mcp_handles: Vec<McpHandle> = Vec::new();
     if let Some(config) = &config {
         let mut names: Vec<&String> = config.mcp_servers.keys().collect();
         names.sort();
         for name in names {
             let cfg = &config.mcp_servers[name];
-            match McpServer::spawn(name, cfg.clone()).await {
-                Err(e) => eprintln!("mcp[{name}]: failed to start: {e}"),
-                Ok(server) => {
-                    let confirm = server.confirm;
-                    match server.list_tools().await {
-                        Err(e) => eprintln!("mcp[{name}]: tool discovery failed: {e}"),
-                        Ok(descs) => {
-                            let mut added = 0;
-                            for desc in &descs {
-                                let tool = McpTool::new(&server, desc, confirm, confirmation.clone());
-                                if tool_registry.get(tool.name()).is_some() {
-                                    eprintln!(
-                                        "mcp[{name}]: duplicate tool '{}' skipped",
-                                        tool.name()
-                                    );
-                                } else {
-                                    tool_registry.register(tool);
-                                    added += 1;
-                                }
-                            }
-                            eprintln!(
-                                "mcp[{name}]: connected, registered {added} tool(s)"
-                            );
-                        }
-                    }
-                    mcp_servers.push(server);
-                }
+            let handle = McpHandle::connect(name, cfg.clone(), confirmation.clone(), &mut tool_registry).await;
+            if handle.server.is_some() {
+                eprintln!(
+                    "mcp[{name}]: connected, registered {} tool(s)",
+                    handle.tool_names.len()
+                );
+            } else if let Some(e) = &handle.error {
+                eprintln!("mcp[{name}]: {e}");
             }
+            mcp_handles.push(handle);
         }
     }
     loop {
@@ -465,6 +448,52 @@ pub async fn run_repl(
                 }
                 continue;
             }
+            // `/mcp` / `/mcp list` shows each connected MCP server and its tool
+            // count (Spec 011b #04). `/mcp restart <name>` swaps one server.
+            "/mcp" | "/mcp list" => {
+                if mcp_handles.is_empty() {
+                    println!("no MCP servers connected (add `mcp_servers:` to config.yaml)");
+                } else {
+                    println!("MCP servers:");
+                    for h in &mcp_handles {
+                        let status = if h.server.is_some() { "connected" } else { "down" };
+                        let mode = if h.config.confirm { "confirm" } else { "auto" };
+                        println!(
+                            "  {:<12} {:<10} {} tool(s) ({} mode)",
+                            h.name,
+                            status,
+                            h.tool_names.len(),
+                            mode
+                        );
+                    }
+                }
+                continue;
+            }
+            command if command.starts_with("/mcp restart ") => {
+                let target = command.trim_start_matches("/mcp restart").trim();
+                if target.is_empty() {
+                    eprintln!("usage: /mcp restart <name>");
+                    continue;
+                }
+                match mcp_handles
+                    .iter_mut()
+                    .find(|h| h.name == target)
+                {
+                    None => eprintln!("error: no MCP server named '{target}'"),
+                    Some(handle) => {
+                        handle.restart(confirmation.clone(), &mut tool_registry).await;
+                        if handle.server.is_some() {
+                            eprintln!(
+                                "mcp[{target}]: restarted, registered {} tool(s)",
+                                handle.tool_names.len()
+                            );
+                        } else if let Some(e) = &handle.error {
+                            eprintln!("mcp[{target}]: restart failed: {e}");
+                        }
+                        continue;
+                    }
+                }
+            }
             _ => {
                 let before = runner.turns().len();
                 let turn_cancel = CancellationToken::new();
@@ -579,6 +608,118 @@ fn compression_label(ctx: &ResolvedContext) -> String {
     match ctx.compression_target {
         Some(t) => format!("on (target ~{t} tokens)"),
         None => "on (no target)".to_owned(),
+    }
+}
+
+/// A live MCP server plus enough metadata for the REPL to list and restart it.
+struct McpHandle {
+    name: String,
+    config: McpServerConfig,
+    /// The live server, or `None` after a failed start/restart.
+    server: Option<McpServer>,
+    /// Registry names (`{server}__{tool}`) this handle registered.
+    tool_names: Vec<String>,
+    /// A human-readable error from the most recent connect/restart attempt.
+    error: Option<String>,
+}
+impl McpHandle {
+    /// Spawns `name` from `cfg`, discovers its tools, and registers them into
+    /// `registry` under `{server}__{tool}` names. Returns a handle; on failure
+    /// the handle carries `server: None` and `error: Some(..)`.
+    async fn connect<C: Confirmation + Clone + Send + Sync + 'static>(
+        name: &str,
+        cfg: McpServerConfig,
+        confirmation: C,
+        registry: &mut ToolRegistry,
+    ) -> McpHandle {
+        let server = match McpServer::spawn(name, cfg.clone()).await {
+            Ok(s) => s,
+            Err(e) => {
+                return McpHandle {
+                    name: name.to_owned(),
+                    config: cfg,
+                    server: None,
+                    tool_names: Vec::new(),
+                    error: Some(e.to_string()),
+                };
+            }
+        };
+        let mut handle = McpHandle {
+            name: name.to_owned(),
+            config: cfg,
+            server: Some(server),
+            tool_names: Vec::new(),
+            error: None,
+        };
+        if let Err(e) = handle.discover_and_register(confirmation, registry).await {
+            // Tool discovery failed but the child is up; drop it and mark down.
+            if let Some(s) = handle.server.take() {
+                s.shutdown().await;
+            }
+            handle.error = Some(e.to_string());
+        }
+        handle
+    }
+
+    /// Runs `tools/list` on the live server and registers each tool. Returns the
+    /// number added, or an error.
+    async fn discover_and_register<C: Confirmation + Clone + Send + Sync + 'static>(
+        &mut self,
+        confirmation: C,
+        registry: &mut ToolRegistry,
+    ) -> Result<(), String> {
+        let Some(server) = &self.server else {
+            return Err("no live server".into());
+        };
+        let descs = server
+            .list_tools()
+            .await
+            .map_err(|e| format!("tool discovery failed: {e}"))?;
+        let confirm = server.confirm;
+        let mut added = Vec::new();
+        for desc in &descs {
+            let tool = McpTool::new(server, desc, confirm, confirmation.clone());
+            if registry.get(tool.name()).is_some() {
+                continue; // collision: leave existing tool; do not silently clobber
+            }
+            registry.register(tool);
+            added.push(desc.hermes_name());
+        }
+        self.tool_names = added;
+        Ok(())
+    }
+
+    /// Restarts this server: shuts the child down, unregisters its tools, then
+    /// re-spawns and re-registers from the stored config.
+    async fn restart<C: Confirmation + Clone + Send + Sync + 'static>(
+        &mut self,
+        confirmation: C,
+        registry: &mut ToolRegistry,
+    ) {
+        // Drop the old child and remove its tools from the shared registry.
+        if let Some(s) = self.server.take() {
+            s.shutdown().await;
+        }
+        for tn in &self.tool_names {
+            registry.unregister(tn);
+        }
+        self.tool_names.clear();
+        self.error = None;
+        // Re-connect.
+        let name = self.name.clone();
+        let cfg = self.config.clone();
+        match McpServer::spawn(&name, cfg.clone()).await {
+            Ok(server) => {
+                self.server = Some(server);
+                if let Err(e) = self.discover_and_register(confirmation, registry).await {
+                    if let Some(s) = self.server.take() {
+                        s.shutdown().await;
+                    }
+                    self.error = Some(e.to_string());
+                }
+            }
+            Err(e) => self.error = Some(e.to_string()),
+        }
     }
 }
 

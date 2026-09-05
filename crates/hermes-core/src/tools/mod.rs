@@ -84,8 +84,18 @@ impl ToolRegistry {
     pub fn register(&mut self, tool: impl Tool + 'static) {
         self.tools.insert(tool.name().to_owned(), Box::new(tool));
     }
+    /// Removes a tool by name. Returns `true` if it was present. Used by the
+    /// REPL to swap an MCP server's tools on `/mcp restart`.
+    pub fn unregister(&mut self, name: &str) -> bool {
+        self.tools.remove(name).is_some()
+    }
     pub fn get(&self, name: &str) -> Option<&dyn Tool> {
         self.tools.get(name).map(|t| t.as_ref())
+    }
+    /// All registered tool names (unsorted). Used by the REPL to find an MCP
+    /// server's tools by their `{server}__{tool}` prefix for `/mcp restart`.
+    pub fn names(&self) -> Vec<String> {
+        self.tools.keys().cloned().collect()
     }
     pub async fn execute(
         &self,
@@ -112,3 +122,38 @@ pub use parser::parse_tool_events;
 pub use readonly::{ListDirTool, ReadFileTool};
 pub use shell::{validate_readonly_command, Confirmation, ShellReadonlyTool, ShellTool};
 pub use write::WriteFileTool;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use async_trait::async_trait;
+
+    struct Dummy;
+    #[async_trait]
+    impl Tool for Dummy {
+        fn name(&self) -> &str {
+            "dummy"
+        }
+        fn description(&self) -> &str {
+            "dummy"
+        }
+        async fn execute(
+            &self,
+            _: &ToolCall,
+            _: CancellationToken,
+        ) -> Result<ToolResponse, ToolError> {
+            Err(ToolError::Failed("unused".into()))
+        }
+    }
+
+    #[test]
+    fn unregister_removes_and_reports() {
+        let mut r = ToolRegistry::new();
+        r.register(Dummy);
+        assert!(r.get("dummy").is_some());
+        assert!(r.unregister("dummy"));
+        assert!(r.get("dummy").is_none());
+        // Removing an absent tool reports false.
+        assert!(!r.unregister("dummy"));
+    }
+}

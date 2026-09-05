@@ -151,10 +151,15 @@ client, so this is Rust-side behavior:
   used by the Spec 002/009 agentic loop. Execution forwards `tools/call` to the
   child; results are flattened back to `ToolResponse`. Child processes are
   killed on drop when the session ends.
-- **Security.** Server config is trusted input; `env` secrets are redacted on
-  every display path; `confirm: true` routes a server's tools through the Spec
-  002 confirmation gate (a decline is `Denied`, never retried); per-call
-  timeouts bound a hanging server (see `docs/SECURITY.md`).
+- **Security (Spec 011b hardening).** Server config is trusted input; `env`
+  secrets are redacted on every display path and `${VAR}` placeholders are
+  expanded from the environment at spawn (an unset var errors naming the var).
+  Confirmation **defaults to ON** (secure-by-default): a server runs its tools
+  through the Spec 002 confirmation gate unless it sets `confirm: false`
+  explicitly (a decline is `Denied`, never retried). Inbound JSON-RPC messages
+  over 10 MB are rejected (message-size limit), and per-call timeouts bound a
+  hanging server. `/mcp` and `/mcp restart <name>` list/inspect and restart
+  servers (see `docs/SECURITY.md`).
 
 ## Differences ⚠️
 

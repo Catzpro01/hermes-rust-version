@@ -10,6 +10,11 @@ use async_trait::async_trait;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStdin, ChildStdout};
 
+/// Maximum size (bytes) of a single inbound JSON-RPC message line. Guards
+/// against an MCP server sending an oversized response (DoS). A message over
+/// this bound is rejected rather than processed.
+pub const MAX_MESSAGE_BYTES: usize = 10 * 1024 * 1024; // 10 MB
+
 /// Byte-oriented transport over which NDJSON JSON-RPC messages flow.
 #[async_trait]
 pub trait McpTransport: Send {

@@ -28,7 +28,7 @@ impl fmt::Debug for SecretString {
 /// existed behave unchanged. `env` values may hold secrets and are redacted on
 /// every display/log path (see the manual `Debug`); the raw values remain
 /// readable for spawning via the public field.
-#[derive(Clone, Serialize, Deserialize, Default)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct McpServerConfig {
     /// Executable to launch (e.g. `npx`). Must be non-empty.
     pub command: String,
@@ -39,9 +39,27 @@ pub struct McpServerConfig {
     pub env: HashMap<String, String>,
     /// When true, every tool from this server goes through the Spec 002
     /// confirmation gate (a denial surfaces `ToolError::Denied`, never
-    /// bypassed). Default false runs the server's tools as configured.
-    #[serde(default)]
+    /// bypassed). **Defaults to true (secure-by-default)**: a server must set
+    /// `confirm: false` explicitly to run its tools without per-call approval.
+    /// This prevents a configured MCP server from executing silently.
+    #[serde(default = "default_true_confirm")]
     pub confirm: bool,
+}
+/// serde default helper: confirmation is ON unless a config sets `confirm: false`.
+fn default_true_confirm() -> bool {
+    true
+}
+impl Default for McpServerConfig {
+    /// Programmatic default also confirms (consistent with the secure config
+    /// default); callers that want auto-run set `confirm: false` explicitly.
+    fn default() -> Self {
+        Self {
+            command: String::new(),
+            args: Vec::new(),
+            env: HashMap::new(),
+            confirm: true,
+        }
+    }
 }
 impl fmt::Debug for McpServerConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -249,18 +267,30 @@ mcp_servers:
       GITHUB_PERSONAL_ACCESS_TOKEN: "tok-secret"
   local:
     command: "./my-server"
-    confirm: true
+    confirm: false
+  guarded:
+    command: "./guarded"
 "#;
         let c: HermesConfig = serde_yaml::from_str(yaml).unwrap();
-        assert_eq!(c.mcp_servers.len(), 2);
+        assert_eq!(c.mcp_servers.len(), 3);
         let gh = &c.mcp_servers["github"];
         assert_eq!(gh.command, "npx");
         assert_eq!(gh.args, vec!["-y", "@modelcontextprotocol/server-github"]);
         assert_eq!(gh.env["GITHUB_PERSONAL_ACCESS_TOKEN"], "tok-secret");
-        assert!(!gh.confirm);
-        assert!(c.mcp_servers["local"].confirm);
-        // Both commands present -> no validation problems.
+        // Secure-by-default: no explicit confirm -> true.
+        assert!(gh.confirm);
+        // Explicit opt-out is respected.
+        assert!(!c.mcp_servers["local"].confirm);
+        // A server with no confirm field defaults to true.
+        assert!(c.mcp_servers["guarded"].confirm);
         assert!(c.validate_mcp_servers().is_empty());
+    }
+
+    #[test]
+    fn mcp_server_confirm_defaults_to_true() {
+        // Programmatic default confirms; explicit false opts out.
+        assert!(McpServerConfig::default().confirm);
+        assert!(!McpServerConfig { confirm: false, ..McpServerConfig::default() }.confirm);
     }
 
     #[test]

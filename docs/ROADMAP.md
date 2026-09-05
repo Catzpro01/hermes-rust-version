@@ -181,9 +181,25 @@ maps a failing tool to an error, proves the `confirm: true` + deny path returns
 MCP result lands as a normal `Turn::Tool`. A companion test asserts the zero-MCP
 default path adds no tools.
 
+## Spec 011b — MCP hardening & REPL commands
+
+A follow-up hardening pass closed four gaps identified in review (the original
+Spec 011 approval over-claimed `/mcp` commands, a default-confirm policy, a
+message-size limit, and `${VAR}` env expansion):
+
+| # | Scope |
+|---|---|
+| 01 | **Default confirmation ON (secure-by-default).** `McpServerConfig.confirm` now defaults to `true` unless a config sets `confirm: false` explicitly, so a configured MCP server cannot run its tools silently. |
+| 02 | **Message-size limit.** Inbound JSON-RPC lines over 10 MB are rejected (`McpError::Protocol`), guarding against an oversized server response (DoS). |
+| 03 | **`${VAR}` env expansion.** MCP `env` values expand `${NAME}` / `$NAME` from the process environment at spawn; an unset variable errors naming the variable (never its value), and expanded values are never logged. |
+| 04 | **`/mcp` REPL commands.** `/mcp` / `/mcp list` shows each server's status and tool count; `/mcp restart <name>` shuts the child down, unregisters its tools, and respawns + re-discovers. `ToolRegistry::unregister`/`names` back the restart. |
+
+Landing commit: the Spec 011b pass (Ticket 05 → parity). Spec 011/011b tooling is
+now fully covered (281 tests).
+
 ## Verification
 
-Last full run: `cargo test --workspace` — 273 passed, 0 failed (multiple
+Last full run: `cargo test --workspace` — 281 passed, 0 failed (multiple
 consecutive full runs stable); `clippy --workspace --all-targets -D warnings`
 clean.
 

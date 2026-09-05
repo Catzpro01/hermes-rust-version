@@ -97,10 +97,19 @@ child command and its tools run that server's code.
   (`***REDACTED***`) on every `Debug`/display path while the key name stays
   visible; values are never logged. The child gets exactly the `env` the user
   set — Hermes does not forward its own credentials to a server.
-- **Confirmation gate (opt-in).** A server can set `confirm: true` to route all
-  its tools through the Spec 002 confirmation callback. A decline surfaces
-  `ToolError::Denied`, which is never retried. Default (`confirm: false`) runs
-  a server's tools as configured.
+- **Confirmation gate (secure-by-default).** MCP tools default to requiring the
+  Spec 002 confirmation callback; a server must set `confirm: false` explicitly
+  to run its tools without per-call approval. This stops a configured server
+  from executing silently. A decline surfaces `ToolError::Denied`, never
+  retried.
+- **Environment expansion.** `env` values may contain `${VAR}` / `$VAR`
+  placeholders expanded from the process environment at spawn. An unset
+  variable is an error naming the variable (never its value); expanded values
+  are never logged.
+- **Message-size limit.** Inbound JSON-RPC messages over 10 MB are rejected,
+  guarding against an oversized server response (DoS).
+- **REPL visibility.** `/mcp` lists each server and its status; `/mcp restart
+  <name>` replaces a server's child process and re-discovers its tools.
 - **Transport scope.** Hermes talks to the server only over that child's
   stdin/stdout (newline-delimited JSON-RPC). Hermes opens no network socket to
   the server; any network a server performs is the server's own configured

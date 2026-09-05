@@ -34,9 +34,13 @@ impl McpServer {
     /// handshake, and returns a live server. On any failure the child is
     /// killed and the error returned (the caller keeps other servers alive).
     pub async fn spawn(name: &str, cfg: McpServerConfig) -> Result<Self, McpError> {
+        // Spec 011b (#03): expand ${VAR} placeholders in env values from the
+        // process environment before launching. An unset variable errors here
+        // (naming the variable), so a bad env never silently reaches the child.
+        let env = super::env::expand_env_map(&cfg.env)?;
         let mut cmd = Command::new(&cfg.command);
         cmd.args(&cfg.args)
-            .envs(&cfg.env)
+            .envs(&env)
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())

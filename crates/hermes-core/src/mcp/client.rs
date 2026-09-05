@@ -92,12 +92,20 @@ impl<T: McpTransport> McpClient<T> {
 
     /// Reads inbound lines until the response matching `expected_id` arrives.
     /// Peer notifications (server → client) are read and ignored while waiting.
+    /// Each line is bounded by [`MAX_MESSAGE_BYTES`] to prevent a DoS from an
+    /// oversized server response.
     async fn await_response(&mut self, expected_id: u64) -> Result<Value, McpError> {
         loop {
             let line = match self.transport.read_line().await? {
                 Some(l) => l,
                 None => return Err(McpError::Closed),
             };
+            if line.len() > super::transport::MAX_MESSAGE_BYTES {
+                return Err(McpError::Protocol(format!(
+                    "inbound message exceeds {} byte limit",
+                    super::transport::MAX_MESSAGE_BYTES
+                )));
+            }
             match jsonrpc::parse_inbound(&line) {
                 None => {
                     return Err(McpError::Protocol(format!("malformed inbound line: {line}")));
@@ -137,7 +145,7 @@ fn matches_jsonrpc_id(id: &Value, expected: u64) -> bool {
 mod tests {
     use super::*;
     use crate::mcp::jsonrpc;
-    use crate::mcp::McpTransport;
+    use crate::mcp::{transport::MAX_MESSAGE_BYTES, McpTransport};
     use std::collections::VecDeque;
 
     /// A scripted transport: inbound lines are queued up front; outbound writes
@@ -253,5 +261,42 @@ mod tests {
         let mut c = McpClient::new(FakeTransport::new(vec![resp]));
         c.initialized = true;
         assert!(matches!(c.request("x", None).await, Err(McpError::IdMismatch { .. })));
+    }
+
+    #[tokio::test]
+    async fn oversized_inbound_message_is_rejected() {
+        // A response line larger than the 10 MB limit must be refused (DoS
+        // guard), not parsed/processed.
+        let big = format!(
+            "{}{}",
+            serde_json::to_string(&json!({"jsonrpc":"2.0","id":1,"result":{"pad":""}})).unwrap(),
+            "x".repeat(MAX_MESSAGE_BYTES + 1)
+        );
+        let mut c = McpClient::new(FakeTransport::new(vec![big]));
+        c.initialized = true;
+        let err = c.request("x", None).await.unwrap_err();
+        match err {
+            McpError::Protocol(m) => assert!(m.contains("limit"), "got: {m}"),
+            other => panic!("expected Protocol(limit), got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn near_limit_message_is_accepted() {
+        // A response that stays under the limit (but is still valid JSON) works.
+        let body = "y".repeat(MAX_MESSAGE_BYTES - 200);
+        let resp = format!(
+            "{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"{body}\"}}"
+        );
+        assert!(
+            resp.len() <= MAX_MESSAGE_BYTES,
+            "resp {} > limit {}",
+            resp.len(),
+            MAX_MESSAGE_BYTES
+        );
+        let mut c = McpClient::new(FakeTransport::new(vec![resp]));
+        c.initialized = true;
+        let v = c.request("x", None).await.unwrap();
+        assert!(v.is_string());
     }
 }

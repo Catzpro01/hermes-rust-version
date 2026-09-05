@@ -6,6 +6,7 @@
 //! See `.scratch/hermes-rs-mcp-client/issues/` for the ticket breakdown.
 
 pub mod client;
+pub mod env;
 pub mod error;
 pub mod jsonrpc;
 pub mod server;
@@ -16,4 +17,4 @@ pub use client::{McpClient, CLIENT_NAME, CLIENT_VERSION};
 pub use error::McpError;
 pub use server::McpServer;
 pub use tool::{McpTool, McpToolDescriptor, MCP_TOOL_TIMEOUT};
-pub use transport::{McpTransport, StdioTransport};
+pub use transport::{McpTransport, StdioTransport, MAX_MESSAGE_BYTES};
