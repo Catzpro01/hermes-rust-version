@@ -7,7 +7,7 @@ reflect.
 
 **Blocked by:** 02.
 
-**Status:** breakdown (belum implementasi).
+**Status:** done — commit di VM, 233 test hijau, clippy clean.
 
 ## Kondisi sekarang (terverifikasi)
 
@@ -33,15 +33,15 @@ reflect.
 
 ## Kriteria
 
-- [ ] Setelah tool result non-success, refleksi menilai on/off-plan dan
+- [x] Setelah tool result non-success, refleksi menilai on/off-plan dan
       menandai langkah untuk recovery (04) — tidak sekadar meneruskan teks.
-- [ ] Batas refleksi per langkah di-enforce (uji: loop refleksi tak berlanjut
+- [x] Batas refleksi per langkah di-enforce (uji: loop refleksi tak berlanjut
       selamanya; `MaxIterations`/`Blocked` keluar).
-- [ ] Goal yang tercapai memicu status `Achieved` (tiket 01) dan menghentikan
+- [~] Goal yang tercapai memicu status `Achieved` (tiket 01) dan menghentikan
       loop lebih awal.
-- [ ] Mode reaktif (tanpa plan) → refleksi tak mengubah perilaku (regresi nol).
-- [ ] Token refleksi dihitung dlm budget; window/pin Spec 008 tetap berlaku.
-- [ ] Test + clippy hijau.
+- [x] Mode reaktif (tanpa plan) → refleksi tak mengubah perilaku (regresi nol).
+- [x] Token refleksi dihitung dlm budget; window/pin Spec 008 tetap berlaku.
+- [x] Test + clippy hijau.
 
 ## STRIDE
 
@@ -55,3 +55,15 @@ reflect.
 ## Dependency
 
 02 (membutuhkan rencana utk dinilai); goal tracking 01 untuk `Achieved`.
+
+## Catatan cakupan implementasi (Ticket 03)
+- Refleksi default = **heuristik deterministik** (`verdict`: OnPlan/OffPlan/Blocked
+  berdasar status tool + sisa retry), bukan LLM. `Denied` selalu Blocked (tak
+  pernah di-retry). Anti-loop `MAX_REFLECTIONS=2`.
+- Wire: `chat_agentic` memanggil `reflect_tool_outcome(status, retries_remaining)`
+  tiap hasil tool (no-op saat reflection off → reactive identik). Goal diblokir
+  saat Denied/exhaust; status `Achieved` di-set manual (`/goal achieved`).
+- **Belum diimplementasikan (menyusul Ticket 04 orchestration):**
+  - *early-stop* loop saat goal `Achieved` di tengah eksekusi (orchestration).
+  - round-trip LLM reflection utuh (instruksi `reflect_instruction` & helper
+    `needs_llm_reflection` tersedia; method runner utuh ada di 04/05).

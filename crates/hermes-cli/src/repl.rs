@@ -77,7 +77,7 @@ pub async fn run_repl(
     let mut ctx = resolve_context(config.as_ref(), &provider_name);
     runner.set_context_limit(ctx.limit);
     println!("Hermes-RS session {session_id} (provider {provider_name})");
-    println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /plan [on|off|reset], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
+    println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /plan [on|off|reset], /reflect [on|off], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
     if let Some(limit) = ctx.limit {
         println!(
             "[context ~{} tokens / limit {limit} | compression {}]",
@@ -360,6 +360,29 @@ pub async fn run_repl(
                         println!("Active plan cleared");
                     }
                     other => eprintln!("error: unknown /plan arg '{other}' (use on|off|reset)"),
+                }
+                continue;
+            }
+            // `/reflect` shows / toggles the reflection gate (Spec 009 Ticket 03).
+            "/reflect" => {
+                println!(
+                    "reflection: {} (reflections used this step: {})",
+                    if runner.reflection_enabled() { "on" } else { "off" },
+                    runner.reflections_used()
+                );
+                continue;
+            }
+            command if command.starts_with("/reflect ") => {
+                match command.trim_start_matches("/reflect").trim() {
+                    "on" => {
+                        runner.set_reflection(true);
+                        println!("Reflection on (tool outcomes gate the goal)");
+                    }
+                    "off" => {
+                        runner.set_reflection(false);
+                        println!("Reflection off");
+                    }
+                    other => eprintln!("error: unknown /reflect arg '{other}' (use on|off)"),
                 }
                 continue;
             }

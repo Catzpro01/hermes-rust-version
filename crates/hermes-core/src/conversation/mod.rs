@@ -17,9 +17,11 @@ use tokio_util::sync::CancellationToken;
 pub mod context;
 pub mod goal;
 pub mod plan;
+pub mod reflection;
 
 use goal::{GoalStatus, GoalTracker};
 use plan::Plan;
+use reflection::ReflectionTracker;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Turn {
@@ -67,6 +69,9 @@ pub struct ConversationRunner<P> {
     plan_mode: bool,
     /// The active in-memory plan (Ticket 02). `None` until generated.
     plan: Option<Plan>,
+    /// Spec 009 (Ticket 03) — self-reflection gate. Off by default so reactive
+    /// mode is unchanged.
+    reflection: ReflectionTracker,
 }
 impl<P: Provider> ConversationRunner<P> {
     pub fn new(provider: P) -> Self {
@@ -78,6 +83,7 @@ impl<P: Provider> ConversationRunner<P> {
             goal: GoalTracker::new(),
             plan_mode: false,
             plan: None,
+            reflection: ReflectionTracker::new(),
         }
     }
     pub fn turns(&self) -> &[Turn] {
@@ -92,6 +98,7 @@ impl<P: Provider> ConversationRunner<P> {
             goal: GoalTracker::new(),
             plan_mode: false,
             plan: None,
+            reflection: ReflectionTracker::new(),
         }
     }
 
@@ -226,6 +233,29 @@ impl<P: Provider> ConversationRunner<P> {
             return None;
         }
         self.plan.as_ref().map(Plan::instruction_text)
+    }
+
+    // -- Spec 009 self-reflection gate (Ticket 03) --------------------------
+
+    /// Enables/disables the reflection gate. Default off -> reactive unchanged.
+    pub fn set_reflection(&mut self, on: bool) {
+        self.reflection.set_enabled(on);
+    }
+    pub fn reflection_enabled(&self) -> bool {
+        self.reflection.enabled()
+    }
+    /// Reflections consumed for the current plan step (anti-loop accounting).
+    pub fn reflections_used(&self) -> usize {
+        self.reflection.reflections_used()
+    }
+    /// Applies the deterministic heuristic verdict for one tool outcome to the
+    /// goal lifecycle. No-op unless reflection is enabled. Returns the verdict.
+    pub fn reflect_tool_outcome(
+        &mut self,
+        status: ToolExecutionStatus,
+        retries_remaining: bool,
+    ) -> reflection::Verdict {
+        reflection::apply_verdict(&mut self.reflection, status, retries_remaining, &mut self.goal)
     }
     /// Generates a plan for the current conversation via one ephemeral
     /// instruction round-trip (Ticket 02). In planned mode only: sends the
@@ -438,6 +468,8 @@ impl<P: Provider> ConversationRunner<P> {
         if let Some(warning) = self.context_warning() {
             tracing::warn!("{warning}");
         }
+        // Spec 009 (Ticket 03): a new task resets per-step reflection count.
+        self.reflection.reset_step();
         // Planning shares the budget: when a planning round was taken, one fewer
         // iteration remains for execution (total <= max_iters).
         let exec_budget = if plan_round {
@@ -489,6 +521,9 @@ impl<P: Provider> ConversationRunner<P> {
                     iterations: iteration,
                 });
             }
+            // Whether later iterations remain (retries are possible only while
+            // the execution budget is not exhausted).
+            let retries_remaining = iteration < exec_budget;
             for call in calls {
                 if cancel.is_cancelled() {
                     self.discard_pending_user();
@@ -510,6 +545,12 @@ impl<P: Provider> ConversationRunner<P> {
                     name: call.name.clone(),
                     content: content.clone(),
                 });
+                // Spec 009 (Ticket 03): heuristic reflection on the tool result.
+                // No-op unless reflection is enabled (off by default -> the
+                // reactive path is byte-for-byte unchanged). A Denied/Blocked
+                // verdict marks the goal Blocked; OffPlan is left for recovery
+                // (Ticket 04).
+                self.reflect_tool_outcome(status.clone(), retries_remaining);
                 if let Some((store, id)) = store_ctx {
                     let record = ToolCallRecord {
                         id: call
@@ -915,5 +956,54 @@ mod tests {
         assert!(r.plan().is_some(), "plan should be generated");
         r.replace_turns(vec![Turn::User { content: "x".into() }]);
         assert!(r.plan().is_none(), "replace_turns must clear the plan");
+    }
+
+    // -- Spec 009 reflection (Ticket 03) ------------------------------------
+
+    #[test]
+    fn reflection_defaults_off_and_is_inert_when_off() {
+        let mut r = runner_with(vec![]);
+        assert!(!r.reflection_enabled());
+        assert!(r.set_goal("task".into()));
+        r.set_goal_status(GoalStatus::InProgress);
+        // Even a Denied outcome has no effect when reflection is disabled.
+        r.reflect_tool_outcome(ToolExecutionStatus::Denied, true);
+        assert_eq!(r.goal_status(), GoalStatus::InProgress);
+        assert_eq!(r.reflections_used(), 0);
+    }
+
+    #[test]
+    fn denied_blocks_the_goal_when_reflection_is_on() {
+        let mut r = runner_with(vec![]);
+        r.set_reflection(true);
+        assert!(r.reflection_enabled());
+        assert!(r.set_goal("task".into()));
+        r.set_goal_status(GoalStatus::InProgress);
+        // Success keeps the goal in progress.
+        r.reflect_tool_outcome(ToolExecutionStatus::Success, true);
+        assert_eq!(r.goal_status(), GoalStatus::InProgress);
+        // A user denial always blocks the goal (never retried).
+        r.reflect_tool_outcome(ToolExecutionStatus::Denied, true);
+        assert_eq!(r.goal_status(), GoalStatus::Blocked);
+    }
+
+    #[test]
+    fn off_plan_error_increments_reflection_count_until_blocked() {
+        let mut r = runner_with(vec![]);
+        r.set_reflection(true);
+        assert!(r.set_goal("task".into()));
+        r.set_goal_status(GoalStatus::InProgress);
+        assert_eq!(
+            r.reflect_tool_outcome(ToolExecutionStatus::Error, true),
+            reflection::Verdict::OffPlan
+        );
+        assert_eq!(r.reflections_used(), 1);
+        assert_eq!(r.goal_status(), GoalStatus::InProgress);
+        // Exhausting retries -> blocked immediately.
+        assert_eq!(
+            r.reflect_tool_outcome(ToolExecutionStatus::Timeout, false),
+            reflection::Verdict::Blocked
+        );
+        assert_eq!(r.goal_status(), GoalStatus::Blocked);
     }
 }
