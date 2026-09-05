@@ -1,5 +1,5 @@
 # 013-03: Banner, Prompt, & Strings
-**Status:** DONE (commit ini, review Matt pending).
+**Status:** DONE — APPROVED review Matt (commits df5f7f8 + 8f250f3).
 
 ## Cakupan final (Ticket 03)
 - **`tui/art.rs` (generated)** — `HERMES_AGENT_LOGO` (6 baris, tier warna
