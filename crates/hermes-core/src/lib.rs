@@ -2,6 +2,7 @@
 
 pub mod config;
 pub mod conversation;
+pub mod mcp;
 pub mod provider;
 pub mod search;
 pub mod session;
