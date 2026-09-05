@@ -1,6 +1,7 @@
 # 01: Config `mcp_servers` + model + redaksi + STRIDE
 
-**Status:** in-progress.
+**Status:** done. Commit `e69c4dd`; 254/254 hijau saat itu (akhirnya 273/273),
+clippy bersih.
 
 **What to build:** Bagian config & model untuk MCP, plus model ancaman STRIDE
 untuk surface eksekusi baru (menjalankan child process MCP). Belum spawn

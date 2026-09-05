@@ -1,5 +1,7 @@
 # 02: JSON-RPC 2.0 stdio transport + handshake `initialize`
 
+**Status:** done. Commit `da588d9`; clippy bersih.
+
 **What to build:** Inti transport protokol MCP — klien JSON-RPC 2.0 yang
 berbicara **newline-delimited JSON (NDJSON) over stdio** ke child process, plus
 handshake `initialize` → `notifications/initialized`. Belum discovery/eksekusi

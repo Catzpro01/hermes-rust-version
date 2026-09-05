@@ -10,10 +10,12 @@ use hermes_core::{
     conversation::context::summarize_dropped,
     conversation::goal::GoalStatus,
     conversation::{AgenticResult, ConversationRunner},
+    mcp::{McpServer, McpTool},
     provider::{Provider, ProviderError, ProviderRegistry, RegistryError},
     session::SessionStore,
     tools::{
-        Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, ToolRegistry, WriteFileTool,
+        Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, Tool, ToolRegistry,
+        WriteFileTool,
     },
 };
 use rustyline::{error::ReadlineError, DefaultEditor};
@@ -121,7 +123,48 @@ pub async fn run_repl(
         confirmation.clone(),
         Duration::from_secs(30),
     ));
-    tool_registry.register(WriteFileTool::new(&tool_root, confirmation));
+    tool_registry.register(WriteFileTool::new(&tool_root, confirmation.clone()));
+    // Spec 011: connect configured MCP servers and register their tools. Off by
+    // default (no `mcp_servers` -> nothing spawns). A server that fails to
+    // start/discover is reported per-server and skipped; the rest stay up.
+    // Servers are held in `mcp_servers`; each McpServer's child is killed on
+    // drop (kill_on_drop) when run_repl returns on any exit path.
+    let mut mcp_servers: Vec<McpServer> = Vec::new();
+    if let Some(config) = &config {
+        let mut names: Vec<&String> = config.mcp_servers.keys().collect();
+        names.sort();
+        for name in names {
+            let cfg = &config.mcp_servers[name];
+            match McpServer::spawn(name, cfg.clone()).await {
+                Err(e) => eprintln!("mcp[{name}]: failed to start: {e}"),
+                Ok(server) => {
+                    let confirm = server.confirm;
+                    match server.list_tools().await {
+                        Err(e) => eprintln!("mcp[{name}]: tool discovery failed: {e}"),
+                        Ok(descs) => {
+                            let mut added = 0;
+                            for desc in &descs {
+                                let tool = McpTool::new(&server, desc, confirm, confirmation.clone());
+                                if tool_registry.get(tool.name()).is_some() {
+                                    eprintln!(
+                                        "mcp[{name}]: duplicate tool '{}' skipped",
+                                        tool.name()
+                                    );
+                                } else {
+                                    tool_registry.register(tool);
+                                    added += 1;
+                                }
+                            }
+                            eprintln!(
+                                "mcp[{name}]: connected, registered {added} tool(s)"
+                            );
+                        }
+                    }
+                    mcp_servers.push(server);
+                }
+            }
+        }
+    }
     loop {
         if !std::io::stdin().is_terminal() {
             print!("hermes> ");

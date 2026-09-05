@@ -16,7 +16,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 4 — Advanced agent | 008 | Memory and context management | Done |
 | 4 — Advanced agent | 009 | Multi-turn planning and reflection | Done |
 | 5 — Ecosystem | 010 | Plugin/extension system (WASM) | Not started |
-| 5 — Ecosystem | 011 | MCP server | Not started |
+| 5 — Ecosystem | 011 | MCP client | Done |
 | 5 — Ecosystem | 012 | TUI dashboard (ratatui) | Not started |
 
 ## Spec 004 closure
@@ -154,9 +154,36 @@ with the goal `Achieved` — all within the iteration budget, with exactly one
 is marked `Achieved` on a guided, tool-free completion only when reflection is
 on (reactive goal tracking never auto-closes a goal).
 
+## Spec 011 closure
+
+Spec 011 ("Model Context Protocol client") is complete. Hermes-RS connects to
+MCP servers as a client over JSON-RPC 2.0 stdio, discovers each server's tools,
+and registers them in the existing `ToolRegistry` under `{server}__{tool}` names
+so the Spec 002/009 agentic loop can call them like built-in tools. Everything
+is off by default (empty `mcp_servers:`), keeping configs written before Spec
+011 unchanged; server `env` secrets are redacted; `confirm: true` routes a
+server's tools through the confirmation gate.
+
+The five tickets and their landing commits:
+
+| Ticket | Scope | Commit |
+|---|---|---|
+| 01 | Config `mcp_servers` + model + env redaction + STRIDE | `e69c4dd` |
+| 02 | JSON-RPC 2.0 stdio transport + `initialize` handshake | `da588d9` |
+| 03/04 | Spawn child + `tools/list` → `{server}__{tool}` wrappers + `tools/call` execution + confirm gate + graceful shutdown | `5ee3d4d` |
+| 05 | REPL registration + live E2E closure + PARITY/SECURITY/ROADMAP | this commit |
+
+Closure proof (Spec 011): `crates/hermes-core/tests/mcp_e2e.rs` spawns a
+controllable child-process MCP server (`mcp_test_server`), performs the real
+handshake, discovers two tools, executes `echo` through the Hermes tool registry,
+maps a failing tool to an error, proves the `confirm: true` + deny path returns
+`Denied`, and drives the tool through `ConversationRunner::chat_agentic` so the
+MCP result lands as a normal `Turn::Tool`. A companion test asserts the zero-MCP
+default path adds no tools.
+
 ## Verification
 
-Last full run: `cargo test --workspace` — 247 passed, 0 failed (multiple
+Last full run: `cargo test --workspace` — 273 passed, 0 failed (multiple
 consecutive full runs stable); `clippy --workspace --all-targets -D warnings`
 clean.
 

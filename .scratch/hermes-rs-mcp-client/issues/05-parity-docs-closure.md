@@ -7,9 +7,14 @@ pola closure Spec 004/005/006/008/009.
 
 **Blocked by:** 01–04
 
+**Status:** ready-for-review (implementasi selesai di VM; menunggu review
+`@matt` sebelum push).
+
 ## Kriteria
 
-- [ ] E2E: helper MCP server (child process sungguhan, controllable) di-spawn;
+- [x] E2E: helper MCP server (`mcp_test_server`, child sungguhan) di-spawn;
+      handshake → `tools/list` (2 tool) → tool terdaftar `{server}__{tool}` →
+      agentic loop memanggil (hasil jadi `Turn::Tool`) → shutdown kill child.
       `initialize`/`initialized` → `tools/list` (≥2 tool) → tool terdaftar di
       `ToolRegistry` dgn nama `"{server}__{tool}"` → agentic loop memanggilnya
       → hasil benar kembali → shutdown: child mati (PID berhenti) saat runner

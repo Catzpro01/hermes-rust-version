@@ -110,9 +110,10 @@ impl McpServer {
         Ok(out)
     }
 
-    /// Closes the child process (graceful best-effort kill + reap). Further
-    /// tool calls on this server will fail because the child is gone.
-    pub async fn shutdown(&mut self) {
+    /// Closes the child process (graceful best-effort kill + reap). Consumes
+    /// the server. Further tool calls on a closed server fail because the child
+    /// is gone.
+    pub async fn shutdown(mut self) {
         let _ = self.child.kill().await;
         let _ = self.child.wait().await;
     }

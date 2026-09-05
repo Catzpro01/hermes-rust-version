@@ -79,3 +79,33 @@ The legacy single-provider path (`model_level_fallback`, used only when no
   introduced by key resolution; a failed resolution only prevents that one
   provider from being constructed and does not affect an already-active
   provider (rollback semantics of `/provider`).
+
+## MCP servers (Spec 011 — Model Context Protocol client)
+
+Hermes-RS can spawn child-process MCP servers (from `mcp_servers:` in
+`config.yaml`) and register their `tools/list` tools into the `ToolRegistry`.
+This is a **new execution surface**: each configured server launches an arbitrary
+child command and its tools run that server's code.
+
+- **Config is trusted input.** `command`/`args`/`env` come from the user's own
+  `config.yaml`, the same trust level as provider config. Adding an MCP server
+  is equivalent to granting a new capability; a user must know what a server can
+  do before enabling it.
+- **Disabled by default.** An empty `mcp_servers:` map spawns nothing and adds
+  no tools, so configs written before Spec 011 behave unchanged.
+- **Secret env redaction.** MCP `env` values may hold tokens. They are redacted
+  (`***REDACTED***`) on every `Debug`/display path while the key name stays
+  visible; values are never logged. The child gets exactly the `env` the user
+  set — Hermes does not forward its own credentials to a server.
+- **Confirmation gate (opt-in).** A server can set `confirm: true` to route all
+  its tools through the Spec 002 confirmation callback. A decline surfaces
+  `ToolError::Denied`, which is never retried. Default (`confirm: false`) runs
+  a server's tools as configured.
+- **Transport scope.** Hermes talks to the server only over that child's
+  stdin/stdout (newline-delimited JSON-RPC). Hermes opens no network socket to
+  the server; any network a server performs is the server's own configured
+  behavior.
+- **Limits.** Each MCP tool call has a bounded per-call timeout; a hanging server
+  cannot wedge the agent forever. Servers failing to start/discover are reported
+  and skipped without taking down the rest of the session. Child processes are
+  killed on drop (`kill_on_drop`) when the session ends.

@@ -133,6 +133,29 @@ ephemeral instructions** — it is never a new persisted role and never a fake
 - **Off by default / zero regression.** With `/goal`, `/plan`, and `/reflect`
   all off, the tool loop is byte-for-byte the Spec 002 reactive agentic loop.
 
+## Spec 011 — MCP client parity
+
+Rust connects to Model Context Protocol (MCP) servers as a client so it can use
+the ecosystem of existing MCP servers (GitHub, PostgreSQL, search, etc.) without
+writing each tool by hand. Python Hermes at the time of this slice has no MCP
+client, so this is Rust-side behavior:
+
+- **Config.** `mcp_servers: { name: { command, args, env, confirm } }` in
+  `config.yaml`. Empty by default → nothing spawns (zero regression).
+- **Transport.** JSON-RPC 2.0 over newline-delimited stdio to a spawned child
+  process. The client is built over a small transport seam so protocol logic is
+  unit-tested without a real child; production uses the child's stdin/stdout.
+- **Lifecycle.** Startup spawns each configured server, runs `initialize` /
+  `notifications/initialized`, discovers tools via `tools/list`, and registers
+  each as a Hermes `Tool` named `{server}__{tool}` in the same `ToolRegistry`
+  used by the Spec 002/009 agentic loop. Execution forwards `tools/call` to the
+  child; results are flattened back to `ToolResponse`. Child processes are
+  killed on drop when the session ends.
+- **Security.** Server config is trusted input; `env` secrets are redacted on
+  every display path; `confirm: true` routes a server's tools through the Spec
+  002 confirmation gate (a decline is `Denied`, never retried); per-call
+  timeouts bound a hanging server (see `docs/SECURITY.md`).
+
 ## Differences ⚠️
 
 | Feature | Python | Rust | Impact |
