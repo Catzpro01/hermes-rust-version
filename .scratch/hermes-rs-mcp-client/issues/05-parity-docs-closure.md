@@ -7,8 +7,8 @@ pola closure Spec 004/005/006/008/009.
 
 **Blocked by:** 01–04
 
-**Status:** ready-for-review (implementasi selesai di VM; menunggu review
-`@matt` sebelum push).
+**Status:** done (Spec 011 selesai & ter-push; menunggu konfirmasi approval
+`@matt`).
 
 ## Kriteria
 
