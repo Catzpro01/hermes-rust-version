@@ -118,3 +118,35 @@ child command and its tools run that server's code.
   cannot wedge the agent forever. Servers failing to start/discover are reported
   and skipped without taking down the rest of the session. Child processes are
   killed on drop (`kill_on_drop`) when the session ends.
+
+## TUI dashboard (Spec 012 — sanitization boundary & terminal safety)
+
+The opt-in Ratatui dashboard (`--tui`) is **display-only**: it renders state
+already produced by the shared engine and accepts input; it performs no tool
+execution, network, or filesystem work of its own. Its security posture:
+
+- **Sanitization at the source, not the renderer.** The agentic loop exposes
+  *raw* data through a UI-free `AgentEvent` observer in `hermes-core`
+  (`events.rs`). The CLI boundary (`worker::agent_event_to_tui`) scrubs every
+  text field — ANSI/control sequences are stripped and credentials are redacted
+  (`***REDACTED***`) — *before* it becomes a display `TuiEvent`. The renderer
+  only ever sees clean text, so there is no second path that could forget to
+  sanitize. A headless E2E injects a credential and an ANSI escape into a core
+  event and asserts neither reaches the `TestBackend` buffer.
+- **No new attack surface.** No I/O, network, or execution is added. All tool
+  work still flows through the existing `chat_agentic` + `ToolRegistry`, and
+  the TUI's interactive confirmation sink **denies by default** (`DenyConfirmation`),
+  so a destructive tool cannot run without an explicit approve flow (matching
+  Spec 002 / Spec 011b secure-by-default).
+- **Terminal-state integrity.** Raw mode + alternate screen are entered under a
+  `RawGuard` `Drop` guard that restores the terminal on *every* exit path —
+  normal quit (`q`), Ctrl-C (exit 130 via the `interrupted` mapping), error, and
+  unwind/panic. The terminal is never left in raw mode with the cursor hidden.
+- **Non-`Send` session store handled without `unsafe`.** `SessionStore` wraps a
+  `rusqlite` connection (not `Send`), so the TUI worker runs inline (as the
+  REPL does) and is `select!`-ed against the blocking renderer, keeping the
+  renderer responsive without shared-mutable access to the connection.
+- **Input is a prompt, never a command.** Keystrokes go into a `Vec<char>`
+  input buffer (multi-byte safe) and are forwarded to the engine as a prompt
+  line — never executed directly. Cursor/backspace/history operate on the local
+  buffer only.

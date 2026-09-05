@@ -17,7 +17,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 4 — Advanced agent | 009 | Multi-turn planning and reflection | Done |
 | 5 — Ecosystem | 010 | Plugin/extension system (WASM) | Not started |
 | 5 — Ecosystem | 011 | MCP client | Done |
-| 5 — Ecosystem | 012 | TUI dashboard (ratatui) | Not started |
+| 5 — Ecosystem | 012 | TUI dashboard (ratatui) | Done |
 
 ## Spec 004 closure
 
@@ -197,9 +197,53 @@ message-size limit, and `${VAR}` env expansion):
 Landing commit: the Spec 011b pass (Ticket 05 → parity). Spec 011/011b tooling is
 now fully covered (281 tests).
 
+## Spec 012 — TUI dashboard (ratatui) closure
+
+Spec 012 adds an **opt-in Ratatui terminal dashboard** (`--tui`) as an
+alternative front end to the readline REPL. It reuses the same single agentic
+engine and data stores; it never forks a second agentic loop. The default path
+(no `--tui`) is byte-for-byte unchanged.
+
+Architecture:
+
+- **Core observer (UI-free).** `ConversationRunner` gained an optional
+  `AgentEvent` observer (`events.rs`) — an additive, default-`None` sink that
+  emits streaming chunks, tool start/done, iteration, status and token ticks at
+  6+ points inside `chat_agentic`. REPL and existing callers never set it, so
+  behavior is unchanged (zero regression); the TUI subscribes. `AgentEvent` is a
+  domain contract any future front end (web, MCP dashboard) can consume.
+- **Worker → renderer via a bounded, drop-oldest queue** (capacity 256). The
+  producer never blocks; on overflow a stale frame is dropped rather than
+  deadlocking the turn. Renderer→worker user input is unbounded (never lossy).
+- **Sanitization at the CLI boundary.** Raw `AgentEvent`s are scrubbed
+  (ANSI/control stripped + credentials redacted) in `worker::agent_event_to_tui`
+  *before* becoming display `TuiEvent`s; the renderer never sanitizes. A
+  headless E2E injects a credential + ANSI into a core event and asserts neither
+  reaches the `TestBackend` buffer.
+- **Renderer shell** runs on a blocking thread; the worker (which holds a
+  non-`Send` `SessionStore`) runs inline and is `select!`-ed against it.
+  `RawGuard` (a `Drop` guard) restores the terminal on every exit path
+  (q, Ctrl-C, error, unwind).
+- **Panels.** Streaming transcript (live chunks finalized by `Done`), a tool
+  log (`▶`/`✓` with redacted args), a two-line status header (session, provider,
+  token meter, iteration, goal/plan/reflection), scrollable transcript
+  (PgUp/PgDn), and a single-line input editor with cursor movement + history
+  (↑/↓). Tool-log replay from `state.db` populates the panel on session resume.
+
+Landing commits (Tickets 01–04): `1b74109`, `679e972`, `041d7a8`, `bfbe108`;
+closure (docs + headless E2E) is this commit. Headless E2E lives in
+`crates/hermes-cli/src/tui/e2e.rs` (`TestBackend` full-session simulation,
+sanitization, Ctrl-C → exit-130 mapping). `312` tests green, clippy clean.
+
+**Phase 5 status note (accurate):** Phase 5 spans Spec 010, 011 and 012. Spec
+011 (MCP) and Spec 012 (TUI) are **Done**. Spec 010 (plugin/extension system,
+WASM) and Phase-4 Spec 007 (tool-execution sandbox) remain **Not started** and
+are the only non-`Done` specs in the roadmap. A blanket "Phase 5 100% DONE"
+claim is therefore only correct if Spec 010 is descoped from the milestone.
+
 ## Verification
 
-Last full run: `cargo test --workspace` — 281 passed, 0 failed (multiple
+Last full run: `cargo test --workspace` — 312 passed, 0 failed (multiple
 consecutive full runs stable); `clippy --workspace --all-targets -D warnings`
 clean.
 

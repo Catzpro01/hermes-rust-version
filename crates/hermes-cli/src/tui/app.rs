@@ -203,6 +203,18 @@ impl App {
         self.history_pos = None;
     }
 
+    /// Number of finalized transcript messages (for tests/assertions).
+    #[cfg(test)]
+    pub(crate) fn messages_len(&self) -> usize {
+        self.messages.len()
+    }
+
+    /// The in-flight streaming assistant text (for tests/assertions).
+    #[cfg(test)]
+    pub(crate) fn streaming(&self) -> &str {
+        &self.streaming
+    }
+
     /// Handles a key event, mutating input/scroll state and returning a control
     /// decision for the renderer loop.
     pub fn handle_key(&mut self, key: crossterm::event::KeyEvent) -> KeyAction {

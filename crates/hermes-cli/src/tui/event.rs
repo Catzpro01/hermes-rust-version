@@ -54,6 +54,7 @@ pub enum TuiEvent {
 
 impl TuiEvent {
     /// Constructs a pre-sanitized `Chunk`.
+    #[allow(dead_code)] // superseded by worker::scrub (which also redacts); kept as a tested helper
     pub fn sanitized_chunk(raw: &str) -> Self {
         TuiEvent::Chunk(crate::output::sanitize_untrusted_output(raw))
     }

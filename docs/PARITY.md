@@ -161,6 +161,32 @@ client, so this is Rust-side behavior:
   hanging server. `/mcp` and `/mcp restart <name>` list/inspect and restart
   servers (see `docs/SECURITY.md`).
 
+## Spec 012 — TUI dashboard parity
+
+Hermes-RS adds an **opt-in Ratatui terminal dashboard** (`--tui`) that the
+Python Hermes at the time of this slice does not have. This is an *extra*
+Rust-side capability rather than a parity gap: the default Rust entry point
+remains the readline REPL (identical to before), and `--tui` is an alternative
+front end over the **same** single agentic engine, the same `state.db`, and the
+same provider/config as the REPL — it never forks a second loop.
+
+- **Core observer.** A UI-free `AgentEvent` observer on `ConversationRunner`
+  (`crates/hermes-core/src/conversation/events.rs`) streams chunks, tool
+  start/done, iteration, status and token ticks. It is additive and
+  default-`None` (REPL/tests unaffected), and is a domain contract any future
+  front end can consume.
+- **Sanitization boundary.** Raw `AgentEvent`s are scrubbed (ANSI/control
+  stripped + credentials redacted) at the CLI boundary in
+  `crates/hermes-cli/src/tui/worker.rs` before becoming display `TuiEvent`s;
+  the renderer never sanitizes.
+- **Panels.** Streaming transcript, tool log, status header (token meter,
+  provider, session, goal/plan/reflection), scrollable transcript, single-line
+  input with history. Headless E2E via `TestBackend` covers a full simulated
+  session, credential/ANSI sanitization, and Ctrl-C → exit-130 mapping.
+
+Python-side equivalent of a terminal dashboard is out of scope for this Rust
+rewrite.
+
 ## Differences ⚠️
 
 | Feature | Python | Rust | Impact |
@@ -169,7 +195,7 @@ client, so this is Rust-side behavior:
 | FTS index | Enabled | Not yet | Low — search is not implemented |
 | Provider catalog | Many built-ins + plugins | Config-declared + built-in `fake` | Medium — Rust has no dynamic plugin loading |
 | Tool execution | Python sandbox | Native shell integration | High — different security model |
-| TUI rendering | Rich/curses | Plain stdout | Low — cosmetic |
+| TUI dashboard | Rich/curses terminal output only (no dedicated dashboard) | Opt-in Ratatui `--tui` dashboard + readline REPL | Rust-only capability (Spec 012) |
 
 ## Known Gaps 🚧
 

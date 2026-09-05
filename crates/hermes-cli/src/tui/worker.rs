@@ -34,11 +34,18 @@ use super::channel::{EventQueue, TuiCommand};
 use super::event::TuiEvent;
 use crate::repl::resolve_context;
 
+/// Scrubs a raw text field for display: strips ANSI/control sequences, then
+/// redacts credentials. Applied to every model/tool text at the CLI boundary —
+/// the renderer never sanitizes.
+fn scrub(text: &str) -> String {
+    super::event::redact(&crate::output::sanitize_untrusted_output(text))
+}
+
 /// Maps a raw core [`AgentEvent`] to a display [`TuiEvent`], sanitizing and
 /// redacting all text at this boundary. Pure + unit-testable.
 pub(crate) fn agent_event_to_tui(event: AgentEvent) -> TuiEvent {
     match event {
-        AgentEvent::Chunk { text } => TuiEvent::sanitized_chunk(&text),
+        AgentEvent::Chunk { text } => TuiEvent::Chunk(scrub(&text)),
         AgentEvent::ToolStarted { name, arguments } => TuiEvent::tool_started(name, &arguments),
         AgentEvent::ToolDone {
             name,
@@ -61,10 +68,8 @@ pub(crate) fn agent_event_to_tui(event: AgentEvent) -> TuiEvent {
             reflection_on,
         },
         AgentEvent::TokenTick { estimate, limit } => TuiEvent::TokenTick { estimate, limit },
-        AgentEvent::Done { text } => TuiEvent::Done(crate::output::sanitize_untrusted_output(&text)),
-        AgentEvent::Error { message } => {
-            TuiEvent::Notice(crate::output::sanitize_untrusted_output(&message))
-        }
+        AgentEvent::Done { text } => TuiEvent::Done(scrub(&text)),
+        AgentEvent::Error { message } => TuiEvent::Notice(scrub(&message)),
     }
 }
 

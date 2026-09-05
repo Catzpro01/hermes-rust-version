@@ -23,6 +23,8 @@ mod channel;
 mod event;
 mod layout;
 mod worker;
+#[cfg(test)]
+mod e2e;
 
 use std::io::{self, Write};
 use std::sync::Arc;
