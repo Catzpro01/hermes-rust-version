@@ -22,6 +22,44 @@ impl fmt::Debug for SecretString {
         f.write_str("SecretString(***REDACTED***)")
     }
 }
+/// A configured MCP server: spawn `command` with `args`/`env` as a child
+/// process speaking JSON-RPC over stdio (Spec 011). Off by default (an empty
+/// `mcp_servers` map spawns nothing), so configs written before this field
+/// existed behave unchanged. `env` values may hold secrets and are redacted on
+/// every display/log path (see the manual `Debug`); the raw values remain
+/// readable for spawning via the public field.
+#[derive(Clone, Serialize, Deserialize, Default)]
+pub struct McpServerConfig {
+    /// Executable to launch (e.g. `npx`). Must be non-empty.
+    pub command: String,
+    #[serde(default)]
+    pub args: Vec<String>,
+    /// Extra environment for the child. Values may be secrets.
+    #[serde(default)]
+    pub env: HashMap<String, String>,
+    /// When true, every tool from this server goes through the Spec 002
+    /// confirmation gate (a denial surfaces `ToolError::Denied`, never
+    /// bypassed). Default false runs the server's tools as configured.
+    #[serde(default)]
+    pub confirm: bool,
+}
+impl fmt::Debug for McpServerConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut keys: Vec<&String> = self.env.keys().collect();
+        keys.sort();
+        let env = keys
+            .into_iter()
+            .map(|k| format!("{k}=***REDACTED***"))
+            .collect::<Vec<_>>();
+        f.debug_struct("McpServerConfig")
+            .field("command", &self.command)
+            .field("args", &self.args)
+            .field("env", &env)
+            .field("confirm", &self.confirm)
+            .finish()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct HermesConfig {
     #[serde(default)]
@@ -38,6 +76,28 @@ pub struct HermesConfig {
     pub eval_every: Option<u64>,
     #[serde(default)]
     pub eval_size: Option<u64>,
+    /// Named MCP servers (Spec 011). Empty by default -> no MCP spawn, no MCP
+    /// tools (zero regression).
+    #[serde(default)]
+    pub mcp_servers: HashMap<String, McpServerConfig>,
+}
+impl HermesConfig {
+    /// Semantic validation of configured MCP servers. Returns `(server, reason)`
+    /// pairs for each problem; empty means valid. A server with an empty
+    /// `command` cannot be spawned and is reported here rather than failing at
+    /// first use.
+    pub fn validate_mcp_servers(&self) -> Vec<(String, String)> {
+        let mut problems = Vec::new();
+        let mut names: Vec<&String> = self.mcp_servers.keys().collect();
+        names.sort();
+        for name in names {
+            let cfg = &self.mcp_servers[name];
+            if cfg.command.trim().is_empty() {
+                problems.push((name.clone(), "mcp server command must not be empty".into()));
+            }
+        }
+        problems
+    }
 }
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CompressionConfig {
@@ -162,5 +222,86 @@ impl fmt::Debug for ModelConfig {
             .field("base_url", &self.base_url)
             .field("api_key", &self.api_key)
             .finish()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_has_no_mcp_servers() {
+        let c = HermesConfig::default();
+        assert!(c.mcp_servers.is_empty());
+        assert!(c.validate_mcp_servers().is_empty());
+    }
+
+    #[test]
+    fn parses_mcp_servers_section() {
+        let yaml = r#"
+model:
+  default: gpt
+mcp_servers:
+  github:
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-github"]
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "tok-secret"
+  local:
+    command: "./my-server"
+    confirm: true
+"#;
+        let c: HermesConfig = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(c.mcp_servers.len(), 2);
+        let gh = &c.mcp_servers["github"];
+        assert_eq!(gh.command, "npx");
+        assert_eq!(gh.args, vec!["-y", "@modelcontextprotocol/server-github"]);
+        assert_eq!(gh.env["GITHUB_PERSONAL_ACCESS_TOKEN"], "tok-secret");
+        assert!(!gh.confirm);
+        assert!(c.mcp_servers["local"].confirm);
+        // Both commands present -> no validation problems.
+        assert!(c.validate_mcp_servers().is_empty());
+    }
+
+    #[test]
+    fn debug_redacts_env_values_but_shows_keys_and_command() {
+        let mut env = HashMap::new();
+        env.insert("GITHUB_PERSONAL_ACCESS_TOKEN".to_owned(), "super-secret".to_owned());
+        env.insert("B".to_owned(), "other".to_owned());
+        let c = McpServerConfig {
+            command: "npx".into(),
+            args: vec!["-y".into(), "pkg".into()],
+            env,
+            confirm: false,
+        };
+        let dbg = format!("{c:?}");
+        assert!(dbg.contains("npx"), "command must be visible: {dbg}");
+        assert!(dbg.contains("GITHUB_PERSONAL_ACCESS_TOKEN"), "env key visible: {dbg}");
+        assert!(dbg.contains("B"), "other env key visible: {dbg}");
+        assert!(!dbg.contains("super-secret"), "value must be redacted: {dbg}");
+        assert!(!dbg.contains("other"), "value must be redacted: {dbg}");
+        assert!(dbg.contains("REDACTED"));
+    }
+
+    #[test]
+    fn validation_reports_empty_command_per_server() {
+        let mut c = HermesConfig::default();
+        c.mcp_servers.insert("ok".into(), McpServerConfig { command: "npx".into(), ..Default::default() });
+        c.mcp_servers.insert("bad".into(), McpServerConfig { command: "  ".into(), ..Default::default() });
+        let problems = c.validate_mcp_servers();
+        assert_eq!(problems.len(), 1);
+        assert_eq!(problems[0].0, "bad");
+        assert!(problems[0].1.contains("command must not be empty"));
+    }
+
+    #[test]
+    fn full_config_debug_redacts_server_env() {
+        let mut c = HermesConfig::default();
+        let mut env = HashMap::new();
+        env.insert("K".to_owned(), "hidden".to_owned());
+        c.mcp_servers.insert("srv".into(), McpServerConfig { command: "run".into(), env, ..Default::default() });
+        let dbg = format!("{c:?}");
+        assert!(!dbg.contains("hidden"), "server env value leaked in HermesConfig debug: {dbg}");
+        assert!(dbg.contains("REDACTED"));
     }
 }

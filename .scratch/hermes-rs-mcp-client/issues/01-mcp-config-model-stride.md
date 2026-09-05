@@ -1,5 +1,7 @@
 # 01: Config `mcp_servers` + model + redaksi + STRIDE
 
+**Status:** in-progress.
+
 **What to build:** Bagian config & model untuk MCP, plus model ancaman STRIDE
 untuk surface eksekusi baru (menjalankan child process MCP). Belum spawn
 process / belum transport; tiket ini murni data model + validasi + dokumentasi

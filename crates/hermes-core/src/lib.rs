@@ -88,4 +88,28 @@ mod tests {
             Err(ConfigError::ConfigFileMissing { .. })
         ));
     }
+    #[test]
+    fn rejects_mcp_server_with_empty_command_at_load() {
+        let d = tempdir().unwrap();
+        fs::write(
+            d.path().join("config.yaml"),
+            "mcp_servers:\n  github:\n    command: \"\"\n",
+        )
+        .unwrap();
+        assert!(matches!(
+            load_config(d.path()),
+            Err(ConfigError::McpServerInvalid { server, .. }) if server == "github"
+        ));
+    }
+    #[test]
+    fn empty_or_valid_mcp_servers_load_fine() {
+        let d = tempdir().unwrap();
+        fs::write(
+            d.path().join("config.yaml"),
+            "mcp_servers:\n  gh:\n    command: npx\n    args: [\"-y\", \"pkg\"]\n    env:\n      TOK: \"abc\"\n",
+        )
+        .unwrap();
+        let c = load_config(d.path()).unwrap();
+        assert_eq!(c.mcp_servers["gh"].command, "npx");
+    }
 }

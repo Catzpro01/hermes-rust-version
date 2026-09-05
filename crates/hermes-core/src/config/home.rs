@@ -35,7 +35,14 @@ pub fn load_config(home: &Path) -> Result<HermesConfig, ConfigError> {
         path: path.clone(),
         source,
     })?;
-    serde_yaml::from_str(&text).map_err(|source| ConfigError::ParseFailed { path, source })
+    let config: HermesConfig =
+        serde_yaml::from_str(&text).map_err(|source| ConfigError::ParseFailed { path, source })?;
+    // Spec 011: surface invalid MCP server config at load time (an empty
+    // `command` cannot be spawned), not at first use.
+    if let Some((server, reason)) = config.validate_mcp_servers().into_iter().next() {
+        return Err(ConfigError::McpServerInvalid { server, reason });
+    }
+    Ok(config)
 }
 
 /// Loads config and applies an explicit provider override without writing the file.

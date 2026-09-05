@@ -23,4 +23,6 @@ pub enum ConfigError {
     ProviderNotConfigured { name: String },
     #[error("invalid override for field '{field}': {reason}")]
     InvalidOverride { field: String, reason: String },
+    #[error("invalid MCP server '{server}': {reason}")]
+    McpServerInvalid { server: String, reason: String },
 }
