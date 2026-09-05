@@ -19,6 +19,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 5 — Ecosystem | 011 | MCP client | Done |
 | 5 — Ecosystem | 012 | TUI dashboard (ratatui) | Done |
 | 5 — Ecosystem | 013 | Hermes Python UI parity (visual) | Done |
+| 6 — CLI surface | 014 | CLI subcommands parity (shell access) | In progress |
 
 ## Spec 004 closure
 
