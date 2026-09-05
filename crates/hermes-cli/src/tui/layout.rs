@@ -10,8 +10,8 @@
 
 use ratatui::layout::Rect;
 
-/// Fixed reserved height for the top status bar (title + border).
-pub const HEADER_HEIGHT: u16 = 3;
+/// Fixed reserved height for the top status bar (title + two status lines).
+pub const HEADER_HEIGHT: u16 = 4;
 /// Fixed reserved height for the bottom input line (border + text row).
 pub const INPUT_HEIGHT: u16 = 3;
 

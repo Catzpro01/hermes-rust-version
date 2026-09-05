@@ -41,6 +41,9 @@ pub struct App {
     pub estimate: usize,
     pub limit: Option<u64>,
     pub iteration: usize,
+    pub goal_status: String,
+    pub plan_active: bool,
+    pub reflection_on: bool,
     // Histories (bounded).
     pub transcript: VecDeque<String>,
     pub tool_log: VecDeque<String>,
@@ -64,6 +67,15 @@ impl App {
                 self.limit = limit;
             }
             TuiEvent::Iteration(n) => self.iteration = n,
+            TuiEvent::StatusMeta {
+                goal_status,
+                plan_active,
+                reflection_on,
+            } => {
+                self.goal_status = goal_status;
+                self.plan_active = plan_active;
+                self.reflection_on = reflection_on;
+            }
             TuiEvent::Chunk(text) => self.push_transcript(text),
             TuiEvent::Done(final_text) => {
                 self.push_transcript(format!("· {final_text}"));
@@ -163,12 +175,22 @@ impl App {
         } else {
             self.provider.clone()
         };
-        let line = format!(
+        let line1 = format!(
             "session: {session}   provider: {provider}   tokens: {tokens}   iteration: {}",
             self.iteration
         );
+        // Ticket 03 status line: goal / plan / reflection.
+        let goal = if self.goal_status.is_empty() {
+            "not started".to_owned()
+        } else {
+            self.goal_status.clone()
+        };
+        let plan = if self.plan_active { "on" } else { "off" };
+        let reflect = if self.reflection_on { "on" } else { "off" };
+        let line2 = format!("goal: {goal}    plan: {plan}    reflection: {reflect}");
+        let body = format!("{line1}\n{line2}");
         let paragraph =
-            Paragraph::new(line).block(Block::default().borders(Borders::ALL).title("Hermes-RS"));
+            Paragraph::new(body).block(Block::default().borders(Borders::ALL).title("Hermes-RS"));
         frame.render_widget(paragraph, area);
     }
 

@@ -2,10 +2,10 @@
 //!
 //! Architecture
 //! ============
-//! * **Worker** — the agentic turn runner lives in a tokio task and only ever
-//!   *pushes* display events into an [`EventQueue`]. In Ticket 02 this is a
-//!   labelled demonstration worker; real agentic data wiring lands in Tickets
-//!   03/04 by reusing the same queue boundary.
+//! * **Worker** — the real agentic worker drives prompts through the shared
+//!   `ConversationRunner::chat_agentic` (Spec 009 + Spec 012 observer) and
+//!   *pushes* sanitized display events into an [`EventQueue`]. It runs inline
+//!   (its `SessionStore` is not `Send`), selected against the renderer.
 //! * **Renderer** — a Ratatui terminal loop runs on a dedicated blocking
 //!   thread (so it never stalls the async worker). Each frame it drains the
 //!   queue into [`App`], redraws, and services keyboard input.
@@ -78,24 +78,37 @@ enum Exit {
 
 /// Runs the TUI dashboard until the user quits. Must only be reached after the
 /// interactive-terminal gate in `main`.
-pub async fn run_tui() -> anyhow::Result<()> {
+pub async fn run_tui(
+    home: &std::path::Path,
+    provider: Box<dyn hermes_core::provider::Provider>,
+    provider_name: String,
+    config: Option<hermes_core::config::HermesConfig>,
+) -> anyhow::Result<()> {
     let queue = Arc::new(EventQueue::new(DEFAULT_QUEUE_CAPACITY));
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel::<TuiCommand>();
+    let home_buf = home.to_path_buf();
 
-    // Worker runs in a tokio task so the blocking renderer never stalls it.
-    let worker_queue = Arc::clone(&queue);
-    let worker = tokio::spawn(async move { worker::run_demo(cmd_rx, worker_queue).await });
-
-    // Renderer runs on a blocking thread (separate from the async worker).
+    // Renderer runs on a blocking thread so it never stalls the async worker,
+    // and it never touches the non-`Send` SessionStore.
     let renderer_queue = Arc::clone(&queue);
     let renderer_cmd = cmd_tx.clone();
-    let exit = tokio::task::spawn_blocking(move || render_loop(renderer_queue, renderer_cmd))
-        .await
-        .with_context(|| "TUI renderer task panicked")??;
+    let renderer = tokio::task::spawn_blocking(move || render_loop(renderer_queue, renderer_cmd));
 
-    // Dropping our sender lets the worker observe channel closure and wind down.
-    drop(cmd_tx);
-    let _ = worker.await;
+    // The agentic worker runs **inline** (like the REPL) because `SessionStore`
+    // is not `Send` and therefore cannot be `tokio::spawn`ed. We `select!`
+    // between it and the blocking renderer; `cmd_tx` stays alive here so the
+    // worker only winds down once the renderer quits and this sender drops.
+    let worker_queue = Arc::clone(&queue);
+    let exit = tokio::select! {
+        res = renderer => {
+            drop(cmd_tx); // unblock the worker (channel closes)
+            let inner = res.with_context(|| "TUI renderer task panicked")?;
+            inner?
+        }
+        _ = worker::run_agent(worker_queue, cmd_rx, home_buf, provider, provider_name, config) => {
+            anyhow::bail!("TUI worker ended unexpectedly")
+        }
+    };
 
     match exit {
         Exit::Clean => Ok(()),

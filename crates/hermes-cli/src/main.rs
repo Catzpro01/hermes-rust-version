@@ -63,7 +63,6 @@ async fn run() -> anyhow::Result<()> {
         if !std::io::stdin().is_terminal() {
             anyhow::bail!("--tui requires an interactive terminal");
         }
-        return tui::run_tui().await;
     }
     let home = resolve_hermes_home(args.hermes_home.as_deref())?;
     // Load once. A missing config.yaml is allowed so the offline `fake` slice
@@ -102,14 +101,18 @@ async fn run() -> anyhow::Result<()> {
         .clone()
         .or_else(|| config_provider.clone())
         .unwrap_or_else(|| FAKE_PROVIDER.to_owned());
-    repl::run_repl(
-        &home,
-        provider,
-        provider_name,
-        registry,
-        config,
-        args.api_url,
-        args.resume,
-    )
-    .await
+    if args.tui {
+        tui::run_tui(&home, provider, provider_name, config).await
+    } else {
+        repl::run_repl(
+            &home,
+            provider,
+            provider_name,
+            registry,
+            config,
+            args.api_url,
+            args.resume,
+        )
+        .await
+    }
 }

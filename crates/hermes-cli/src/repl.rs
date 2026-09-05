@@ -566,10 +566,10 @@ fn parse_index_arg(command: &str) -> Result<usize, anyhow::Error> {
 /// effective limit (fed to the sliding window) and enough context to render a
 /// human-readable `/info` line about compression status.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct ResolvedContext {
-    limit: Option<u64>,
-    compression_enabled: bool,
-    compression_target: Option<u64>,
+pub(crate) struct ResolvedContext {
+    pub(crate) limit: Option<u64>,
+    pub(crate) compression_enabled: bool,
+    pub(crate) compression_target: Option<u64>,
 }
 
 /// Resolves the advisory context window for the active provider from config
@@ -578,7 +578,7 @@ struct ResolvedContext {
 /// `compression.enabled` is explicitly true), then `None`. The active name may
 /// be a declared provider or a model-level/`fake` entry; the latter falls back
 /// to the model-level value or `None`. Pure and unit-testable.
-fn resolve_context(config: Option<&HermesConfig>, active: &str) -> ResolvedContext {
+pub(crate) fn resolve_context(config: Option<&HermesConfig>, active: &str) -> ResolvedContext {
     let compression = config.and_then(|c| c.compression.as_ref());
     // Compression is OFF by default (backward compatible): it only contributes
     // a limit when the user explicitly set `enabled: true`.

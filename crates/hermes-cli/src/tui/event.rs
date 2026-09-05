@@ -17,6 +17,12 @@ pub enum TuiEvent {
         session_id: String,
         provider: String,
     },
+    /// Goal / plan / reflection meta for the status header (Ticket 03).
+    StatusMeta {
+        goal_status: String,
+        plan_active: bool,
+        reflection_on: bool,
+    },
     /// Advisory token accounting changed (estimate / configured limit).
     TokenTick {
         estimate: usize,
@@ -104,6 +110,11 @@ mod tests {
         assert_ne!(a, TuiEvent::Iteration(3));
         let _ = [
             TuiEvent::StatusChanged { session_id: "s".into(), provider: "p".into() },
+            TuiEvent::StatusMeta {
+                goal_status: "NotStarted".into(),
+                plan_active: false,
+                reflection_on: false,
+            },
             TuiEvent::TokenTick { estimate: 10, limit: Some(100) },
             TuiEvent::Chunk("c".into()),
             TuiEvent::ToolStarted { name: "t".into(), arguments: "".into() },

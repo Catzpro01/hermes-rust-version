@@ -15,10 +15,13 @@ use std::collections::HashSet;
 use tokio_util::sync::CancellationToken;
 
 pub mod context;
+pub mod events;
 pub mod goal;
 pub mod plan;
 pub mod recovery;
 pub mod reflection;
+
+pub use events::AgentEvent;
 
 use goal::{GoalStatus, GoalTracker};
 use plan::Plan;
@@ -80,6 +83,11 @@ pub struct ConversationRunner<P> {
     reflection: ReflectionTracker,
     /// Spec 009 (Ticket 04) — bounded retry/recovery tracking per tool.
     recovery: RetryTracker,
+    /// Spec 012 — optional live event observer. `None` (the default) keeps the
+    /// runner silent for the REPL and existing callers (zero regression); when
+    /// set, `chat_agentic` emits [`AgentEvent`]s on a best-effort, non-blocking
+    /// basis.
+    observer: Option<tokio::sync::mpsc::Sender<AgentEvent>>,
 }
 impl<P: Provider> ConversationRunner<P> {
     pub fn new(provider: P) -> Self {
@@ -93,6 +101,7 @@ impl<P: Provider> ConversationRunner<P> {
             plan: None,
             reflection: ReflectionTracker::new(),
             recovery: RetryTracker::new(),
+            observer: None,
         }
     }
     pub fn turns(&self) -> &[Turn] {
@@ -109,6 +118,22 @@ impl<P: Provider> ConversationRunner<P> {
             plan: None,
             reflection: ReflectionTracker::new(),
             recovery: RetryTracker::new(),
+            observer: None,
+        }
+    }
+
+    /// Registers an observer to receive live agentic events (Spec 012).
+    /// Default is `None`. Callers may clear it by dropping or by not calling.
+    pub fn set_observer(&mut self, sender: tokio::sync::mpsc::Sender<AgentEvent>) {
+        self.observer = Some(sender);
+    }
+
+    /// Best-effort emission to the observer, if any. Never blocks: a full
+    /// channel drops the event (a stale display frame is acceptable; blocking a
+    /// producer would deadlock the turn).
+    fn emit(&self, event: AgentEvent) {
+        if let Some(sender) = &self.observer {
+            let _ = sender.try_send(event);
         }
     }
 
@@ -504,6 +529,17 @@ impl<P: Provider> ConversationRunner<P> {
         self.reflection.reset_step();
         // Spec 009 (Ticket 04): a new task resets retry/recovery state too.
         self.reset_recovery();
+        // Spec 012: refresh status + token accounting once a turn is underway
+        // (after the user turn and any planning round were recorded).
+        self.emit(AgentEvent::StatusChanged {
+            goal_status: Some(self.goal_status()),
+            plan_active: self.plan_mode(),
+            reflection_on: self.reflection_enabled(),
+        });
+        self.emit(AgentEvent::TokenTick {
+            estimate: self.estimated_tokens(),
+            limit: self.context_limit(),
+        });
         // Planning shares the budget: when a planning round was taken, one fewer
         // iteration remains for execution (total <= max_iters).
         let exec_budget = if plan_round {
@@ -516,6 +552,11 @@ impl<P: Provider> ConversationRunner<P> {
                 self.discard_pending_user();
                 return Ok(AgenticResult::Cancelled);
             }
+            // Spec 012: surface iteration progress for the observer.
+            self.emit(AgentEvent::Iteration {
+                current: iteration,
+                max: exec_budget,
+            });
             // Spec 009 (Ticket 03/04): once the goal is blocked (user denial or
             // retries exhausted), stop the loop early with a Blocked result
             // rather than burning remaining iterations. Reactive mode is off by
@@ -547,7 +588,10 @@ impl<P: Provider> ConversationRunner<P> {
             let mut calls = Vec::new();
             while let Some(event_res) = stream.next().await {
                 match event_res {
-                    Ok(Event::Chunk(c)) => text.push_str(&c),
+                    Ok(Event::Chunk(c)) => {
+                        text.push_str(&c);
+                        self.emit(AgentEvent::Chunk { text: c });
+                    }
                     Ok(Event::ToolCall(c)) => calls.push(c),
                     Ok(_) => {}
                     Err(ProviderError::Cancelled) => {
@@ -568,6 +612,13 @@ impl<P: Provider> ConversationRunner<P> {
                 if self.reflection_enabled() && self.goal_status() == GoalStatus::InProgress {
                     self.set_goal_status(GoalStatus::Achieved);
                 }
+                // Spec 012: notify the observer of a clean completion and a
+                // final token refresh.
+                self.emit(AgentEvent::Done { text: text.clone() });
+                self.emit(AgentEvent::TokenTick {
+                    estimate: self.estimated_tokens(),
+                    limit: self.context_limit(),
+                });
                 return Ok(AgenticResult::Done {
                     text,
                     iterations: iteration,
@@ -601,6 +652,11 @@ impl<P: Provider> ConversationRunner<P> {
                     }
                     continue;
                 }
+                // Spec 012: notify the observer that a tool call is running.
+                self.emit(AgentEvent::ToolStarted {
+                    name: call.name.clone(),
+                    arguments: call.arguments.clone(),
+                });
                 let result = registry.execute(&call, cancel.clone()).await;
                 let (content, status) = match result {
                     Ok(r) => (r.content, ToolExecutionStatus::Success),
@@ -613,6 +669,12 @@ impl<P: Provider> ConversationRunner<P> {
                     }
                     Err(e) => (e.to_string(), ToolExecutionStatus::Error),
                 };
+                // Spec 012: notify the observer of the completed tool call.
+                self.emit(AgentEvent::ToolDone {
+                    name: call.name.clone(),
+                    status: status.clone(),
+                    result: content.clone(),
+                });
                 self.turns.push(Turn::Tool {
                     name: call.name.clone(),
                     content: content.clone(),
@@ -937,6 +999,49 @@ mod tests {
             .chat_agentic("also email it", &reg, None, 10, CancellationToken::new())
             .await;
         assert_eq!(r.goal(), Some("fetch the monthly report"));
+    }
+
+    #[tokio::test]
+    async fn observer_streams_live_agent_events() {
+        use tokio::sync::mpsc;
+        let mut r = ConversationRunner::new(FakeProvider);
+        let (tx, mut rx) = mpsc::channel::<AgentEvent>(256);
+        r.set_observer(tx);
+        let reg = ToolRegistry::new();
+        let res = r
+            .chat_agentic("hello observer", &reg, None, 5, CancellationToken::new())
+            .await
+            .unwrap();
+        match res {
+            AgenticResult::Done { text, .. } => assert!(text.contains("observer")),
+            other => panic!("expected Done, got {other:?}"),
+        }
+        // Drain whatever the non-blocking channel still holds (the producer may
+        // have run ahead of us, so buffer has capacity 256 >> events emitted).
+        let mut seen: Vec<AgentEvent> = Vec::new();
+        while let Ok(ev) = rx.try_recv() {
+            seen.push(ev);
+        }
+        assert!(seen.iter().any(|e| matches!(e, AgentEvent::StatusChanged { .. })));
+        assert!(seen.iter().any(|e| matches!(e, AgentEvent::TokenTick { .. })));
+        assert!(seen.iter().any(|e| matches!(e, AgentEvent::Iteration { .. })));
+        assert!(seen.iter().any(|e| matches!(e, AgentEvent::Chunk { .. })));
+        assert!(seen
+            .iter()
+            .any(|e| matches!(e, AgentEvent::Done { .. })));
+    }
+
+    #[tokio::test]
+    async fn observer_is_optional_and_off_by_default() {
+        // Without an observer the loop still runs and returns a result (zero
+        // regression / zero overhead path).
+        let mut r = ConversationRunner::new(FakeProvider);
+        let reg = ToolRegistry::new();
+        let res = r
+            .chat_agentic("no observer", &reg, None, 3, CancellationToken::new())
+            .await
+            .unwrap();
+        assert!(matches!(res, AgenticResult::Done { .. }));
     }
 
     #[test]
