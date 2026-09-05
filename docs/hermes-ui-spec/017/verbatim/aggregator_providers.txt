@@ -1,0 +1,5 @@
+# VERBATIM (ast.unparse) — hermes_cli/models.py @ L3735
+# variable: _AGGREGATOR_PROVIDERS
+# source: Hermes Python v0.21.0 (READ-ONLY reference)
+
+frozenset({'nous', 'openrouter', 'ai-gateway', 'copilot', 'kilocode'})

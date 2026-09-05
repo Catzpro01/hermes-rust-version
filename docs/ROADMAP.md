@@ -20,6 +20,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 5 — Ecosystem | 012 | TUI dashboard (ratatui) | Done |
 | 5 — Ecosystem | 013 | Hermes Python UI parity (visual) | Done |
 | 6 — CLI surface | 014 | CLI subcommands parity (shell access) | In progress |
+| 7 — Total parity | 017 | Hermes Python v0.21.0 total byte-level parity (wizard, katalog, UX) | Fase 0 re-archaeology — menunggu review Matt |
 
 ## Spec 004 closure
 

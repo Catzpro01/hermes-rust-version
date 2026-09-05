@@ -1,0 +1,5 @@
+# VERBATIM (ast.unparse) — hermes_cli/tools_config.py @ L159
+# variable: _DEFAULT_OFF_TOOLSETS
+# source: Hermes Python v0.21.0 (READ-ONLY reference)
+
+{'homeassistant', 'spotify', 'discord', 'discord_admin', 'video', 'video_gen', 'x_search', 'a2a'}

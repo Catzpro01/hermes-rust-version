@@ -1,0 +1,5 @@
+# VERBATIM (ast.unparse) — hermes_cli/tips.py @ L495
+# variable: COMPOSER_PLACEHOLDERS
+# source: Hermes Python v0.21.0 (READ-ONLY reference)
+
+['Ask anything, or type / for commands…', "Summarize what's in this folder", 'Draft a reply to the last email in my inbox', 'Plan a feature, then build it step by step', 'Find and fix a failing test', 'Research this topic and write me a brief', 'What changed in this repo recently?', 'Turn these notes into a to-do list', 'Explain this error and how to fix it', 'Set a reminder or schedule a recurring task', 'Type / to browse commands, or Ctrl+P for the palette']
