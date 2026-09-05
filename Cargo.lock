@@ -806,6 +806,7 @@ dependencies = [
  "ratatui",
  "rusqlite",
  "rustyline",
+ "serde_yaml",
  "tempfile",
  "tokio",
  "tokio-util",

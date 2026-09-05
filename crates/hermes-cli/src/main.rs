@@ -9,6 +9,7 @@ mod repl;
 mod session_menu;
 mod status_bar;
 mod streaming;
+mod subcommands;
 mod tui;
 
 #[derive(Debug, Parser)]
@@ -73,27 +74,6 @@ enum McpAction {
     Restart { name: String },
 }
 
-/// Shell-verbatim name of a subcommand (matches clap's kebab-case rendering).
-fn subcommand_name(cmd: &Commands) -> &'static str {
-    match cmd {
-        Commands::Model => "model",
-        Commands::Sessions => "sessions",
-        Commands::Inspect { .. } => "inspect",
-        Commands::Messages { .. } => "messages",
-        Commands::ToolCalls { .. } => "tool-calls",
-        Commands::Search { .. } => "search",
-        Commands::Info => "info",
-        Commands::Mcp { .. } => "mcp",
-    }
-}
-
-/// T01 placeholder for the Spec 014 subcommands (implemented in T02-T07).
-/// Static output only - no state, provider or network access - so the
-/// CLI-boundary sanitization/redaction contract is trivially satisfied.
-fn subcommand_placeholder(cmd: &Commands) -> String {
-    format!("coming soon: {} (Spec 014)", subcommand_name(cmd))
-}
-
 #[tokio::main]
 async fn main() {
     std::process::exit(match run().await {
@@ -117,12 +97,12 @@ async fn run() -> anyhow::Result<()> {
         .try_init()
         .ok();
     let args = Args::parse();
-    // Spec 014 (T01): a subcommand runs to completion and exits before any
-    // home/config/provider/TTY work. No subcommand -> REPL/TUI path exactly
-    // as before (zero regression).
+    // Spec 014 (T02): a subcommand runs to completion and exits before any
+    // provider resolution or session creation (it loads home/config itself;
+    // see subcommands::run). No subcommand -> REPL/TUI path exactly as before
+    // (zero regression).
     if let Some(cmd) = &args.command {
-        println!("{}", subcommand_placeholder(cmd));
-        return Ok(());
+        return subcommands::run(cmd, &args).await;
     }
     // Spec 012: TUI requires an interactive terminal. Rejecting a piped stdin
     // here prevents crossterm raw-mode from hanging/crashing smoke/E2E tests
@@ -274,38 +254,5 @@ mod tests {
 
         let e = parse(&["hermes-rs", "search", "q", "--tui"]);
         assert!(e.tui);
-    }
-
-    #[test]
-    fn placeholder_names_and_message_are_pinned() {
-        let cases: Vec<(Commands, &str)> = vec![
-            (Commands::Model, "model"),
-            (Commands::Sessions, "sessions"),
-            (Commands::Inspect { id: "x".into() }, "inspect"),
-            (Commands::Messages { id: "x".into() }, "messages"),
-            (Commands::ToolCalls { id: "x".into() }, "tool-calls"),
-            (Commands::Search { query: "x".into() }, "search"),
-            (Commands::Info, "info"),
-            (Commands::Mcp { action: None }, "mcp"),
-            (
-                Commands::Mcp {
-                    action: Some(McpAction::List),
-                },
-                "mcp",
-            ),
-            (
-                Commands::Mcp {
-                    action: Some(McpAction::Restart { name: "s".into() }),
-                },
-                "mcp",
-            ),
-        ];
-        for (cmd, name) in cases {
-            assert_eq!(subcommand_name(&cmd), name);
-            assert_eq!(
-                subcommand_placeholder(&cmd),
-                format!("coming soon: {name} (Spec 014)")
-            );
-        }
     }
 }

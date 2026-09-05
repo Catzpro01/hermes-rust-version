@@ -268,6 +268,12 @@ pub fn sgr_banner_text(depth: ColorDepth) -> String {
     format!("\x1b[{}m", color_code(Color::Rgb(255, 248, 220), depth))
 }
 
+/// SGR for dim brown secondary text (`#B8860B`) — `hermes model` markers and
+/// labels (Spec 014 T02).
+pub fn sgr_dim_brown(depth: ColorDepth) -> String {
+    format!("\x1b[{}m", color_code(Color::Rgb(184, 134, 11), depth))
+}
+
 /// SGR reset.
 pub const SGR_RESET: &str = "\x1b[0m";
 
