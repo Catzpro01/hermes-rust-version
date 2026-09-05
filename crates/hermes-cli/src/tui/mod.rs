@@ -22,6 +22,7 @@ mod app;
 mod channel;
 mod event;
 mod layout;
+mod theme;
 mod worker;
 #[cfg(test)]
 mod e2e;
