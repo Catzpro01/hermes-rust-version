@@ -1,132 +1,150 @@
-//! Spec 012 — TUI dashboard event model & boundary (Ticket 01).
+//! Spec 012 — TUI dashboard (Ratatui + crossterm). Opt-in via `--tui`.
 //!
-//! The agentic worker (running a turn) communicates with the Ratatui renderer
-//! exclusively through [`TuiEvent`] on a bounded channel. By convention every
-//! `String` payload is **pre-sanitized and pre-redacted at the source** (the
-//! same `sanitize_untrusted_output` + `redact_credentials` the readline REPL
-//! uses) before it is put on the channel. The renderer never sees raw model or
-//! tool content, so there is no second path that could forget to sanitize.
+//! Architecture
+//! ============
+//! * **Worker** — the agentic turn runner lives in a tokio task and only ever
+//!   *pushes* display events into an [`EventQueue`]. In Ticket 02 this is a
+//!   labelled demonstration worker; real agentic data wiring lands in Tickets
+//!   03/04 by reusing the same queue boundary.
+//! * **Renderer** — a Ratatui terminal loop runs on a dedicated blocking
+//!   thread (so it never stalls the async worker). Each frame it drains the
+//!   queue into [`App`], redraws, and services keyboard input.
+//! * **Channel** — worker→renderer is a bounded, drop-oldest queue (Warning B);
+//!   renderer→worker is an unbounded [`TuiCommand`] sender (user keystrokes are
+//!   never lossy).
+//! * **Sanitization boundary** — every `TuiEvent` payload is pre-sanitized and
+//!   pre-redacted at the source; the renderer never sanitizes.
+//!
+//! Terminal hygiene is an invariant: a [`RawGuard`] restores the terminal on
+//! every exit path (normal quit, Ctrl-C, error, or unwind).
 
-/// A display event emitted by the agentic worker toward the TUI renderer.
-/// Every text payload is already sanitized/redacted at the source.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[allow(dead_code)] // variants are constructed by the renderer workers (Ticket 02+)
-pub enum TuiEvent {
-    /// Conversation-level status changed (session id, provider name).
-    StatusChanged {
-        session_id: String,
-        provider: String,
-    },
-    /// Advisory token accounting changed (estimate / configured limit).
-    TokenTick {
-        estimate: usize,
-        limit: Option<u64>,
-    },
-    /// A chunk of assistant text streamed (pre-sanitized).
-    Chunk(String),
-    /// A tool call was issued (arguments pre-sanitized/redacted/trimmed).
-    ToolStarted {
-        name: String,
-        arguments: String,
-    },
-    /// A tool call finished with the given status string.
-    ToolDone {
-        name: String,
-        status: String,
-    },
-    /// Iteration counter advanced within an agentic turn.
-    Iteration(usize),
-    /// The turn produced a final (tool-free) assistant answer.
-    Done(String),
-    /// A non-fatal message to surface (pre-sanitized).
-    Notice(String),
-    /// The turn stopped because it hit the iteration budget.
-    MaxIterations(usize),
-    /// The goal is blocked (reason pre-sanitized).
-    Blocked(String),
-}
+mod app;
+mod channel;
+mod event;
+mod layout;
+mod worker;
 
-impl TuiEvent {
-    /// Constructs a pre-sanitized `Chunk`.
-    #[allow(dead_code)] // used by the renderer workers (Ticket 02+)
-    pub fn sanitized_chunk(raw: &str) -> Self {
-        TuiEvent::Chunk(crate::output::sanitize_untrusted_output(raw))
-    }
-    /// Constructs a `ToolStarted` with sanitized + redacted arguments.
-    #[allow(dead_code)] // used by the renderer workers (Ticket 02+)
-    pub fn tool_started(name: impl Into<String>, arguments: &str) -> Self {
-        let safe = redact(&crate::output::sanitize_untrusted_output(arguments));
-        let safe: String = safe.chars().take(120).collect();
-        TuiEvent::ToolStarted {
-            name: name.into(),
-            arguments: safe,
-        }
+use std::io::{self, Write};
+use std::sync::Arc;
+use std::time::Duration;
+
+use anyhow::Context;
+use ratatui::backend::CrosstermBackend;
+use ratatui::Terminal;
+
+use app::{App, KeyAction};
+use channel::{EventQueue, TuiCommand, DEFAULT_QUEUE_CAPACITY};
+
+use crossterm::cursor;
+use crossterm::event as cev;
+use crossterm::terminal::{self, EnterAlternateScreen, LeaveAlternateScreen};
+use crossterm::ExecutableCommand;
+
+/// Terminal-guard that guarantees restoration even on early return/unwind.
+struct RawGuard;
+
+impl RawGuard {
+    fn enter() -> anyhow::Result<Self> {
+        terminal::enable_raw_mode()
+            .with_context(|| "failed to enter raw mode (interactive terminal required)")?;
+        let mut stdout = io::stdout();
+        stdout
+            .execute(EnterAlternateScreen)
+            .with_context(|| "failed to switch to the alternate screen")?;
+        stdout
+            .execute(cursor::Hide)
+            .with_context(|| "failed to hide the cursor")?;
+        Ok(RawGuard)
     }
 }
 
-/// Redacts credentials in untrusted content (mirrors the REPL render path).
-#[allow(dead_code)] // used by the renderer panels (Ticket 02+)
-pub(crate) fn redact(input: &str) -> String {
-    hermes_core::search::redact::redact_credentials(input)
+impl Drop for RawGuard {
+    fn drop(&mut self) {
+        let _ = terminal::disable_raw_mode();
+        let _ = io::stdout().execute(LeaveAlternateScreen);
+        let _ = io::stdout().execute(cursor::Show);
+        let _ = io::stdout().flush();
+    }
 }
 
-/// Entry point for the TUI dashboard (Spec 012). Ticket 01 only establishes the
-/// event model and the entry point signature; the Ratatui renderer loop and
-/// panels are added in later tickets. The gate on an interactive terminal is
-/// enforced in `main` before this is reached.
+/// The renderer loop's exit classification (maps to process exit codes).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Exit {
+    /// Normal quit (e.g. `q`) → exit 0.
+    Clean,
+    /// Ctrl-C → exit 130.
+    Interrupted,
+}
+
+/// Runs the TUI dashboard until the user quits. Must only be reached after the
+/// interactive-terminal gate in `main`.
 pub async fn run_tui() -> anyhow::Result<()> {
-    eprintln!("TUI dashboard not wired yet (Spec 012 Ticket 02+)");
-    Ok(())
+    let queue = Arc::new(EventQueue::new(DEFAULT_QUEUE_CAPACITY));
+    let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel::<TuiCommand>();
+
+    // Worker runs in a tokio task so the blocking renderer never stalls it.
+    let worker_queue = Arc::clone(&queue);
+    let worker = tokio::spawn(async move { worker::run_demo(cmd_rx, worker_queue).await });
+
+    // Renderer runs on a blocking thread (separate from the async worker).
+    let renderer_queue = Arc::clone(&queue);
+    let renderer_cmd = cmd_tx.clone();
+    let exit = tokio::task::spawn_blocking(move || render_loop(renderer_queue, renderer_cmd))
+        .await
+        .with_context(|| "TUI renderer task panicked")??;
+
+    // Dropping our sender lets the worker observe channel closure and wind down.
+    drop(cmd_tx);
+    let _ = worker.await;
+
+    match exit {
+        Exit::Clean => Ok(()),
+        Exit::Interrupted => anyhow::bail!("interrupted (Ctrl-C)"),
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+/// Blocking renderer loop: raw mode, event draining, draw, keyboard handling.
+fn render_loop(queue: Arc<EventQueue>, cmd_tx: tokio::sync::mpsc::UnboundedSender<TuiCommand>) -> anyhow::Result<Exit> {
+    let _guard = RawGuard::enter()?;
+    let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))
+        .with_context(|| "failed to initialise terminal")?;
+    terminal.clear().with_context(|| "failed to clear terminal")?;
 
-    #[test]
-    fn sanitized_chunk_strips_ansi_and_controls() {
-        let ev = TuiEvent::sanitized_chunk("hi\x1b[31mred\x1b[0m\x07plain");
-        assert_eq!(ev, TuiEvent::Chunk("hiredplain".to_owned()));
-    }
+    let mut app = App::default();
+    let mut interrupted = false;
 
-    #[test]
-    fn tool_started_redacts_credentials_and_truncates() {
-        // Redaction keeps a recognizable prefix (e.g. `sk-proj-`) but removes
-        // the secret value that follows it.
-        let long = "{\"path\":\"/x\",\"token\":\"sk-proj-abcdefghijklmno\"}".to_owned();
-        let ev = TuiEvent::tool_started("read_file", &long);
-        match ev {
-            TuiEvent::ToolStarted { name, arguments } => {
-                assert_eq!(name, "read_file");
-                assert!(
-                    !arguments.contains("abcdefghijklmno"),
-                    "secret value leaked: {arguments}"
-                );
-                assert!(arguments.len() <= 120);
+    loop {
+        terminal.autoresize()?;
+        // Drain every pending worker event into display state.
+        for ev in queue.drain() {
+            app.apply(ev);
+        }
+
+        terminal.draw(|frame| app.render(frame))?;
+
+        if app.should_quit {
+            break;
+        }
+
+        // Poll keyboard briefly (bounded tick: no uncontrolled busy-loop).
+        if cev::poll(Duration::from_millis(50))? {
+            if let cev::Event::Key(key) = cev::read()? {
+                if key.kind == cev::KeyEventKind::Press {
+                    match app.handle_key(key) {
+                        KeyAction::None => {}
+                        KeyAction::Submit(line) => {
+                            let _ = cmd_tx.send(TuiCommand::Line(line));
+                        }
+                        KeyAction::Quit => break,
+                        KeyAction::QuitInterrupt => {
+                            interrupted = true;
+                            break;
+                        }
+                    }
+                }
             }
-            other => panic!("expected ToolStarted, got {other:?}"),
         }
     }
 
-    #[test]
-    fn enum_is_debug_and_eq() {
-        // Ensures variants used by the renderer are comparable (for tests).
-        let a = TuiEvent::Iteration(2);
-        let b = TuiEvent::Iteration(2);
-        assert_eq!(a, b);
-        assert_ne!(a, TuiEvent::Iteration(3));
-        // All variants exist (smoke construction).
-        let _ = [
-            TuiEvent::StatusChanged { session_id: "s".into(), provider: "p".into() },
-            TuiEvent::TokenTick { estimate: 10, limit: Some(100) },
-            TuiEvent::Chunk("c".into()),
-            TuiEvent::ToolStarted { name: "t".into(), arguments: "".into() },
-            TuiEvent::ToolDone { name: "t".into(), status: "success".into() },
-            TuiEvent::Iteration(1),
-            TuiEvent::Done("d".into()),
-            TuiEvent::Notice("n".into()),
-            TuiEvent::MaxIterations(10),
-            TuiEvent::Blocked("r".into()),
-        ];
-    }
+    Ok(if interrupted { Exit::Interrupted } else { Exit::Clean })
 }
