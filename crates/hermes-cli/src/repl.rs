@@ -58,6 +58,8 @@ pub async fn run_repl(
     resume: bool,
 ) -> Result<()> {
     let mut provider_name = provider_name;
+    // Spec 013 Ticket 05 — session start for the status-bar duration segment.
+    let session_start = std::time::Instant::now();
     #[cfg(unix)]
     let mut sigint = signal(SignalKind::interrupt())?;
     let db = home.join("state.db");
@@ -170,6 +172,33 @@ pub async fn run_repl(
         }
     }
     loop {
+        // Spec 013 Ticket 05 — status bar (spec §8): re-rendered before each
+        // prompt — one line, navy background, wrap-safe (trimmed to fit).
+        // TTY-only: piped stdout must stay byte-stable and ANSI-free.
+        if std::io::stdin().is_terminal() {
+            let data = crate::status_bar::StatusBarData {
+                model: provider_name.clone(),
+                context_tokens: runner.estimated_tokens() as u64,
+                context_limit: ctx.limit,
+                // core has no compression counter yet — 0 hides the badge
+                // (Ticket 05 decision; the API is ready for the datum).
+                compressions: 0,
+                bg_tasks: 0,
+                bg_processes: 0,
+                bg_subagents: 0,
+                goal_active: runner.goal_status() == GoalStatus::InProgress,
+                goal_turns_used: 0,
+                goal_max_turns: 0,
+                yolo: false,
+                duration_secs: session_start.elapsed().as_secs_f64(),
+                focus_label: None,
+                session_title: String::new(),
+            };
+            println!(
+                "{}",
+                crate::status_bar::render_line_tty(terminal_width() as usize, &data)
+            );
+        }
         if !std::io::stdin().is_terminal() {
             print!("{}", crate::tui::welcome::PROMPT_SYMBOL);
             std::io::Write::flush(&mut std::io::stdout())?;

@@ -26,7 +26,7 @@ eksavasi **verbatim** dari instalasi Python asli `~/.hermes/hermes-agent`
 | 02 | [Color palette & theme system](issues/02-colors-theme.md) | DONE (`7608316`) |
 | 03 | [Banner, prompt & strings](issues/03-banner-prompt-strings.md) | DONE (commit ini, review Matt pending) |
 | 04 | [Streaming box, reasoning box & spinner](issues/04-streaming-box-spinner.md) | DONE (commit ini, review Matt pending) |
-| 05 | Sisa §8: status bar bottom-chrome (TBD) | Not started |
+| 05 | [Status bar parity](issues/05-status-bar.md) | DONE (commit ini, review Matt pending) |
 | 06 | Parity, docs, E2E closure proof (TBD) | Not started |
 
 ## Invariant yang tetap berlaku
