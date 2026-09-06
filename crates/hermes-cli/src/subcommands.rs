@@ -139,7 +139,6 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
                 println!("no MCP servers connected (add `mcp_servers:` to config.yaml)");
             }
         }
-        other => println!("{}", placeholder(other)),
     }
     Ok(())
 }

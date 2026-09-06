@@ -14,7 +14,7 @@ mod tui;
 mod wizard;
 
 #[derive(Debug, Parser)]
-#[command(name = "hermes-rs", version, about = "Hermes Agent Rust rewrite")]
+#[command(name = "hermes-rs", version = "0.21.0-rs", about = "Hermes Agent Rust rewrite - Rust implementation of Hermes Agent v0.21.0", long_about = "Hermes Agent Rust rewrite - Rust implementation of Hermes Agent\n\nUsage: hermes-rs [OPTIONS] [COMMAND]\n\nCommands: model, sessions, inspect, messages, tool-calls, search, info, mcp, help, version\nMirrors Python Hermes Agent where implemented.")]
 struct Args {
     /// Hermes home directory; defaults to HERMES_HOME or ~/.hermes.
     #[arg(long, global = true)]
