@@ -104,38 +104,120 @@ fn global_flags_parse_after_subcommand() {
 
 #[test]
 fn mcp_subcommand_placeholder_with_action() {
+    // After T06, mcp is real - with no config, shows no servers message
     hermes_cmd()
         .env("HERMES_HOME", TempDir::new().unwrap().path())
         .args(["mcp", "restart", "srv-1"])
         .write_stdin("")
         .assert()
         .success()
-        .stdout(predicate::str::contains("coming soon: mcp (Spec 014)"));
+        .stdout(predicate::str::contains("no MCP servers connected"));
 }
 
 #[test]
+fn mcp_list_with_no_config() {
+    let home = TempDir::new().unwrap();
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["mcp", "list"])
+        .write_stdin("")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("no MCP servers connected"));
+}
+
+#[test]
+fn info_subcommand_shows_home_and_provider() {
+    let home = TempDir::new().unwrap();
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["info"])
+        .write_stdin("")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Hermes Home:"))
+        .stdout(predicate::str::contains("Active provider:"));
+}
+
+
+#[test]
 fn tool_calls_subcommand_parses_kebab_case() {
+    // After T04, tool-calls is real - kebab-case still works but validates UUID
     hermes_cmd()
         .env("HERMES_HOME", TempDir::new().unwrap().path())
         .args(["tool-calls", "abc"])
         .write_stdin("")
         .assert()
-        .success()
-        .stdout(predicate::str::contains(
-            "coming soon: tool-calls (Spec 014)",
-        ));
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains("invalid session id 'abc' (expected a UUID)"));
+}
+
+#[test]
+fn messages_subcommand_parses_and_validates() {
+    hermes_cmd()
+        .env("HERMES_HOME", TempDir::new().unwrap().path())
+        .args(["messages", "not-a-uuid"])
+        .write_stdin("")
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains("invalid session id 'not-a-uuid' (expected a UUID)"));
+}
+
+#[test]
+fn tool_calls_and_messages_unknown_id_is_clear_error() {
+    let missing = "99999999-9999-9999-9999-999999999999";
+    let home = TempDir::new().unwrap();
+    drop(seed_state_db(home.path()));
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["tool-calls", missing])
+        .write_stdin("")
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains(format!("session not found: {missing}")));
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["messages", missing])
+        .write_stdin("")
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains(format!("session not found: {missing}")));
 }
 
 #[test]
 fn search_subcommand_placeholder() {
+    // After T05, search is real - with no store, prints "No search results."
+    let home = TempDir::new().unwrap();
     hermes_cmd()
-        .env("HERMES_HOME", TempDir::new().unwrap().path())
+        .env("HERMES_HOME", home.path())
         .args(["search", "deploy"])
         .write_stdin("")
         .assert()
         .success()
-        .stdout(predicate::str::contains("coming soon: search (Spec 014)"));
+        .stdout(predicate::str::contains("No search results."));
 }
+
+#[test]
+fn search_with_store_and_redaction() {
+    // With store, search should work and redact credentials
+    let home = TempDir::new().unwrap();
+    drop(seed_state_db(home.path()));
+    // Search for existing content should return results (or no results, but not placeholder)
+    let out = hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["search", "parity"])
+        .write_stdin("")
+        .assert()
+        .success();
+    // Should not contain placeholder
+    let stdout = String::from_utf8_lossy(&out.get_output().stdout);
+    assert!(!stdout.contains("coming soon: search"), "search should be implemented, not placeholder: {stdout}");
+}
+
 
 #[test]
 fn inspect_requires_an_id() {

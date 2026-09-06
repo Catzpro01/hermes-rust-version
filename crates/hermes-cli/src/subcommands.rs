@@ -68,6 +68,77 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
             };
             inspect_session(&store, id)?;
         }
+        Commands::Messages { id } => {
+            // Spec 014 T04: identical rendering to REPL's `/messages <id>`
+            let id = parse_session_id(id)?;
+            let Some(store) = open_existing_store(&home)? else {
+                anyhow::bail!("session not found: {id}");
+            };
+            crate::session_menu::show_messages(&store, id)?;
+        }
+        Commands::ToolCalls { id } => {
+            // Spec 014 T04: identical rendering to REPL's `/tool-calls <id>`
+            // Kebab-case `tool-calls` parsed by clap, name() returns "tool-calls"
+            let id = parse_session_id(id)?;
+            let Some(store) = open_existing_store(&home)? else {
+                anyhow::bail!("session not found: {id}");
+            };
+            crate::session_menu::show_tool_calls(&store, id)?;
+        }
+        Commands::Search { query } => {
+            // Spec 014 T05: FTS5 search + redaction, read-only state.db
+            // Identical rendering to REPL's `/search <query>`
+            let Some(store) = open_existing_store(&home)? else {
+                println!("No search results.");
+                return Ok(());
+            };
+            crate::session_menu::search_sessions(&store, query)?;
+        }
+        Commands::Info => {
+            // Spec 014 T06: provider & context info
+            // Show active provider, hermes home, and basic context
+            println!("Hermes Home: {}", home.display());
+            if let Some(cfg) = config.as_ref() {
+                println!("Active provider: {}", active_provider(Some(cfg), args.provider.as_deref()));
+                println!("Providers configured: {}", cfg.providers.len());
+                if let Some(model) = &cfg.model.provider {
+                    println!("Model provider: {}", model);
+                }
+            } else {
+                println!("Active provider: fake (built-in)");
+                println!("No config.yaml found");
+            }
+            // Try to show session count if store exists
+            if let Some(store) = open_existing_store(&home)? {
+                match store.list() {
+                    Ok(sessions) => println!("Sessions: {}", sessions.len()),
+                    Err(_) => println!("Sessions: unknown"),
+                }
+            }
+        }
+        Commands::Mcp { action } => {
+            // Spec 014 T06: MCP server status
+            // For shell, show placeholder with action, or list if config has mcp_servers
+            if let Some(cfg) = config.as_ref() {
+                if cfg.mcp_servers.is_empty() {
+                    println!("no MCP servers connected (add `mcp_servers:` to config.yaml)");
+                } else {
+                    match action {
+                        None | Some(crate::McpAction::List) => {
+                            println!("MCP servers:");
+                            for (name, srv) in &cfg.mcp_servers {
+                                println!("  {}: command={} (confirm={})", name, srv.command, srv.confirm);
+                            }
+                        }
+                        Some(crate::McpAction::Restart { name }) => {
+                            println!("mcp[{name}]: restart not supported in shell mode, use REPL /mcp restart");
+                        }
+                    }
+                }
+            } else {
+                println!("no MCP servers connected (add `mcp_servers:` to config.yaml)");
+            }
+        }
         other => println!("{}", placeholder(other)),
     }
     Ok(())
