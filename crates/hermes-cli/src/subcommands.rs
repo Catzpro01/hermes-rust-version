@@ -167,11 +167,13 @@ fn parse_session_id(raw: &str) -> anyhow::Result<SessionId> {
 /// T01 placeholder for subcommands not yet implemented (T04-T06). Static
 /// output only — no state, provider or network access — so the CLI-boundary
 /// sanitization contract is trivially satisfied.
+#[allow(dead_code)]
 pub(crate) fn placeholder(cmd: &Commands) -> String {
     format!("coming soon: {} (Spec 014)", name(cmd))
 }
 
 /// Shell-verbatim name of a subcommand (matches clap's kebab-case rendering).
+#[allow(dead_code)]
 pub(crate) fn name(cmd: &Commands) -> &'static str {
     match cmd {
         Commands::Model => "model",
