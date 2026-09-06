@@ -1,9 +1,10 @@
-//! Spec 014 (T02+): shell subcommands.
+//! Spec 014 (T03+): shell subcommands.
 //!
 //! Subcommands reuse the same data sources and output functions as the REPL
 //! (`session_menu`, `search`, MCP handles) so the shell and the REPL render
 //! identically. Output is colored only on a TTY: piped stdout stays
-//! ANSI-free, the same invariant as the banner and status bar.
+//! ANSI-free, the same invariant as the banner and status bar (session
+//! output is plain in both REPL and shell — byte-level parity).
 //!
 //! Dispatch happens after `load_config` but before provider resolution and
 //! session creation (review Matt, T01): `hermes model` needs config.yaml
@@ -16,7 +17,9 @@ use std::path::{Path, PathBuf};
 use anyhow::Context;
 use hermes_core::config::{load_config, resolve_hermes_home, HermesConfig, ProviderConfig};
 use hermes_core::provider::FAKE_PROVIDER;
+use hermes_core::session::{SessionId, SessionStore};
 
+use crate::session_menu::{inspect_session, list_sessions};
 use crate::tui::theme::detect_color_depth;
 use crate::tui::welcome::{sgr_banner_text, sgr_bold_gold, sgr_dim_brown, SGR_RESET};
 use crate::{Args, Commands};
@@ -37,7 +40,7 @@ pub(crate) fn load_home_config(
 
 /// Run one subcommand to completion (never enters the REPL/TUI).
 pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
-    let (_home, config) = load_home_config(args.hermes_home.as_deref())?;
+    let (home, config) = load_home_config(args.hermes_home.as_deref())?;
     match cmd {
         Commands::Model => {
             let colored = io::stdout().is_terminal();
@@ -46,12 +49,52 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
                 .with_context(|| "render model list")?;
             out.flush()?;
         }
+        Commands::Sessions => {
+            // Identical rendering to the REPL's `/sessions` (same function).
+            // A missing store means "no sessions" — subcommands never create
+            // the canonical store (the REPL/TUI own creation at startup).
+            match open_existing_store(&home)? {
+                Some(store) => list_sessions(&store)?,
+                None => println!("No sessions."),
+            }
+        }
+        Commands::Inspect { id } => {
+            // Identical rendering to the REPL's `/inspect <id>` (same
+            // function); an unknown id is a clear error with a non-zero exit
+            // (T03 contract).
+            let id = parse_session_id(id)?;
+            let Some(store) = open_existing_store(&home)? else {
+                anyhow::bail!("session not found: {id}");
+            };
+            inspect_session(&store, id)?;
+        }
         other => println!("{}", placeholder(other)),
     }
     Ok(())
 }
 
-/// T01 placeholder for subcommands not yet implemented (T03-T06). Static
+/// Open the canonical `state.db` only when it already exists. Session
+/// subcommands are read-only: they never create the store and never write
+/// state rows (opening an existing store runs the same idempotent DDL as a
+/// REPL startup). Returns `None` when the store file is absent so the caller
+/// can render the empty-store case without touching disk.
+fn open_existing_store(home: &Path) -> anyhow::Result<Option<SessionStore>> {
+    let path = home.join("state.db");
+    if !path.exists() {
+        return Ok(None);
+    }
+    let store = SessionStore::open(&path).context("open Hermes state.db")?;
+    Ok(Some(store))
+}
+
+/// Parse a session id from the shell. A malformed (non-UUID) id is a clear
+/// error; `main` maps any subcommand error to a non-zero exit.
+fn parse_session_id(raw: &str) -> anyhow::Result<SessionId> {
+    raw.parse()
+        .map_err(|_| anyhow::anyhow!("invalid session id '{raw}' (expected a UUID)"))
+}
+
+/// T01 placeholder for subcommands not yet implemented (T04-T06). Static
 /// output only — no state, provider or network access — so the CLI-boundary
 /// sanitization contract is trivially satisfied.
 pub(crate) fn placeholder(cmd: &Commands) -> String {
@@ -114,7 +157,11 @@ pub fn render_model(
 
     if show.is_empty() {
         // No configured provider matches: the built-in `fake` is always there.
-        let prefix = if active == FAKE_PROVIDER { "  * " } else { "    " };
+        let prefix = if active == FAKE_PROVIDER {
+            "  * "
+        } else {
+            "    "
+        };
         let suffix = if active == FAKE_PROVIDER {
             " (active, built-in)"
         } else {
@@ -203,8 +250,8 @@ fn write_dim(w: &mut impl Write, colored: bool, text: &str) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hermes_core::config::HermesConfig;
     use crate::McpAction;
+    use hermes_core::config::HermesConfig;
 
     fn config_with(providers: &[(&str, Option<&str>, &[&str])]) -> HermesConfig {
         let mut c = HermesConfig::default();
@@ -214,8 +261,10 @@ mod tests {
                 ..Default::default()
             };
             for m in models.iter() {
-                p.models
-                    .insert(m.to_string(), serde_yaml::Value::Mapping(Default::default()));
+                p.models.insert(
+                    m.to_string(),
+                    serde_yaml::Value::Mapping(Default::default()),
+                );
             }
             c.providers.insert(name.to_string(), p);
         }
@@ -255,8 +304,7 @@ mod tests {
     fn model_unknown_filter_is_an_error() {
         let c = config_with(&[("a", None, &["m1"])]);
         let mut out = Vec::new();
-        let err = render_model(Some(&c), Some("nope"), false, &mut out)
-            .expect_err("must error");
+        let err = render_model(Some(&c), Some("nope"), false, &mut out).expect_err("must error");
         assert!(err.to_string().contains("unknown provider 'nope'"));
         assert!(err.to_string().contains("a"));
     }
@@ -345,5 +393,27 @@ mod tests {
             assert_eq!(name(&cmd), n);
             assert_eq!(placeholder(&cmd), format!("coming soon: {n} (Spec 014)"));
         }
+    }
+
+    #[test]
+    fn parse_session_id_accepts_uuid_and_rejects_garbage() {
+        let id = parse_session_id("550e8400-e29b-41d4-a716-446655440000").expect("valid uuid");
+        assert_eq!(id.to_string(), "550e8400-e29b-41d4-a716-446655440000");
+        let err = parse_session_id("abc-123").unwrap_err().to_string();
+        assert!(
+            err.contains("invalid session id 'abc-123' (expected a UUID)"),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn open_existing_store_is_none_when_state_db_absent() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let store = open_existing_store(dir.path()).expect("no error");
+        assert!(store.is_none(), "missing state.db must not open a store");
+        assert!(
+            !dir.path().join("state.db").exists(),
+            "store file must not be created"
+        );
     }
 }

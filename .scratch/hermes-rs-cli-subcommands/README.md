@@ -31,7 +31,7 @@ masuk REPL chat**. Sumber data sudah ada dan siap dipakai:
 |---|---|---|
 | 01 | [Subcommand parser foundation](issues/01-subcommand-parser-foundation.md) | DONE (commit ini, review Matt pending) |
 | 02 | [hermes model](issues/02-model-subcommand.md) | DONE (commit ini, review Matt pending) |
-| 03 | `hermes sessions` + `inspect <id>` | Not started |
+| 03 | [hermes sessions + inspect <id>](issues/03-sessions-inspect.md) | DONE (commit ini, review Matt pending) |
 | 04 | `hermes messages <id>` + `tool-calls <id>` | Not started |
 | 05 | `hermes search <query>` | Not started |
 | 06 | `hermes info` + `hermes mcp` | Not started |
