@@ -3,6 +3,8 @@ use hermes_core::config::load_config;
 use hermes_core::config::resolve_hermes_home;
 use hermes_core::provider::{Provider, ProviderRegistry, FAKE_PROVIDER};
 
+pub(crate) mod approval;
+pub(crate) mod radiolist;
 mod output;
 mod render;
 mod repl;
@@ -14,29 +16,73 @@ mod tui;
 mod wizard;
 
 #[derive(Debug, Parser)]
-#[command(name = "hermes-rs", version = "0.21.0-rs", about = "Hermes Agent Rust rewrite - Rust implementation of Hermes Agent v0.21.0", long_about = "Hermes Agent Rust rewrite - Rust implementation of Hermes Agent\n\nUsage: hermes-rs [OPTIONS] [COMMAND]\n\nCommands: model, sessions, inspect, messages, tool-calls, search, info, mcp, help, version\nMirrors Python Hermes Agent where implemented.")]
+#[command(
+    name = "hermes-rs",
+    version = "0.21.0-rs",
+    about = "Hermes Agent Rust rewrite - Rust implementation of Hermes Agent v0.21.0",
+    long_about = "Hermes Agent Rust rewrite - Rust implementation of Hermes Agent
+
+Usage: hermes-rs [OPTIONS] [COMMAND]
+
+Commands: model, sessions, inspect, messages, tool-calls, search, info, mcp, setup, help, version
+Mirrors Python Hermes Agent where implemented."
+)]
 struct Args {
     /// Hermes home directory; defaults to HERMES_HOME or ~/.hermes.
     #[arg(long, global = true)]
     hermes_home: Option<std::path::PathBuf>,
+
     /// Provider name from config.yaml; overrides model.provider.
     /// Defaults to model.provider, then to "fake" when neither is set.
     #[arg(long, global = true)]
     provider: Option<String>,
+
     /// Resume the most recently updated session.
-    #[arg(long)]
+    #[arg(short = 'r', long, aliases = ["continue", "c"])]
     resume: bool,
+
+    /// Override the model name for this invocation.
+    #[arg(short = 'm', long)]
+    model: Option<String>,
+
+    /// One-shot mode: send a single prompt and print response.
+    #[arg(short = 'z', long)]
+    oneshot: Option<String>,
+
+    /// Comma-separated toolsets to enable.
+    #[arg(short = 't', long)]
+    toolsets: Option<String>,
+
+    /// Preload one or more skills.
+    #[arg(short = 's', long)]
+    skills: Option<String>,
+
+    /// Run in an isolated git worktree.
+    #[arg(short = 'w', long)]
+    worktree: bool,
+
+    /// Bypass all dangerous command approval prompts.
+    #[arg(long)]
+    yolo: bool,
+
+    /// Troubleshooting mode: disable customizations.
+    #[arg(long)]
+    safe_mode: bool,
+
     /// Override the OpenAI-compatible API base URL.
     #[arg(long, global = true)]
     api_url: Option<String>,
+
     /// Launch the Ratatui TUI dashboard instead of the readline REPL
     /// (Spec 012). Requires an interactive terminal.
     #[arg(long, global = true)]
     tui: bool,
+
     /// Spec 017 (T01): run the setup-wizard skeleton. Hidden from `--help`
     /// until T05 replaces it with the `hermes setup` subcommand.
     #[arg(long, hide = true)]
     setup_skeleton: bool,
+
     /// Shell subcommand (Spec 014). Omitted -> interactive REPL
     /// (zero regression: the pre-014 default behavior).
     #[command(subcommand)]
@@ -49,6 +95,9 @@ struct Args {
 /// tickets 02-07 wire them up. T01 keeps every variant a static placeholder.
 #[derive(Debug, Subcommand)]
 enum Commands {
+    /// Interactive setup wizard
+    Setup,
+
     /// List available models for the active provider
     Model,
     /// List all chat sessions

@@ -1,9 +1,10 @@
 use crate::output::sanitize_untrusted_output;
 use anyhow::{bail, Context, Result};
 use hermes_core::session::{SessionId, SessionStore};
-use rustyline::{error::ReadlineError, DefaultEditor};
+use rustyline::history::History;
+use rustyline::{error::ReadlineError, Editor, Helper};
 
-pub fn select_session(store: &SessionStore, editor: &mut DefaultEditor) -> Result<SessionId> {
+pub fn select_session<H: Helper, I: History>(store: &SessionStore, editor: &mut Editor<H, I>) -> Result<SessionId> {
     let sessions = store.list()?;
     if sessions.is_empty() {
         return Ok(store.create_session("cli")?);

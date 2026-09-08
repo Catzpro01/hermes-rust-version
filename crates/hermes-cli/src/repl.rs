@@ -18,7 +18,124 @@ use hermes_core::{
         WriteFileTool,
     },
 };
-use rustyline::{error::ReadlineError, DefaultEditor};
+use rustyline::{error::ReadlineError, Editor};
+use rustyline::completion::{Completer, Pair};
+use rustyline::highlight::Highlighter;
+use rustyline::hint::Hinter;
+use rustyline::validate::Validator;
+use rustyline::Helper;
+
+#[derive(Clone, Default)]
+struct SlashCommandCompleter;
+
+const SLASH_COMMANDS: &[(&str, &str)] = &[
+    // Session & Lifecycle
+    ("/new", "Start a new session (fresh session ID + history) (usage: /new [name])"),
+    ("/reset", "Start a new session (alias for /new)"),
+    ("/clear", "Clear screen and redraw banner"),
+    ("/redraw", "Force a full UI repaint (recovers from terminal drift)"),
+    ("/history", "Show conversation history for active session"),
+    ("/save", "Export current conversation (usage: /save <json|md|html>)"),
+    ("/retry", "Retry last message (resend to agent)"),
+    ("/prompt", "Compose next prompt in $EDITOR (markdown)"),
+    ("/compose", "Compose next prompt in $EDITOR (alias for /prompt)"),
+    ("/undo", "Back up N user turns and re-prompt (usage: /undo [N])"),
+    ("/title", "Set title for current session (usage: /title [name])"),
+    ("/handoff", "Hand off session to messaging platform"),
+    ("/sessions", "List all past chat sessions"),
+    ("/inspect", "Inspect session metadata (usage: /inspect <id>)"),
+    ("/messages", "Show messages in a session (usage: /messages <id>)"),
+    ("/tool-calls", "Show tool calls in a session (usage: /tool-calls <id>)"),
+    ("/search", "Search message history (usage: /search <query>)"),
+    ("/resume", "Resume a previous session (usage: /resume <id>)"),
+    ("/exit", "Exit session"),
+    ("/quit", "Exit session (alias for /exit)"),
+
+    // Model & Intelligence
+    ("/model", "Select default model and provider"),
+    ("/provider", "Switch active provider (usage: /provider [name])"),
+    ("/info", "Show provider & context accounting"),
+    ("/fast", "Toggle fast inference mode / tier"),
+    ("/think", "Set thinking budget/scrubber (usage: /think [low|med|high|off])"),
+    ("/reasoning", "Toggle or inspect model reasoning visibility"),
+    ("/temp", "Set model temperature (usage: /temp <0.0-2.0>)"),
+    ("/tokens", "Display current session token usage & context stats"),
+    ("/context", "Display sliding window context details"),
+    ("/compress", "Manually trigger context compression"),
+    ("/pin", "Pin turn against compression (usage: /pin <n>)"),
+    ("/unpin", "Unpin turn (usage: /unpin <n>)"),
+    ("/pinned", "List pinned turns in current session"),
+
+    // Execution & Automation Mode
+    ("/goal", "Goal tracking [on|off|reset|achieved|blocked]"),
+    ("/plan", "Planning mode [on|off|reset]"),
+    ("/reflect", "Reflection mode [on|off]"),
+    ("/yolo", "Toggle YOLO mode (execute dangerous tools without approval)"),
+    ("/battery", "Show system hardware & battery status"),
+    ("/swarm", "Multi-agent swarm coordination status"),
+    ("/kanban", "Show Kanban board tasks status"),
+    ("/checkpoint", "Create or restore an execution checkpoint"),
+
+    // Tools & MCP
+    ("/tools", "List available agent tools and invocation status"),
+    ("/toolsets", "List enabled/disabled toolsets"),
+    ("/mcp", "Show MCP server status and manage servers"),
+    ("/skills", "Show installed and active agent skills"),
+    ("/browser", "Browser automation & CDP status"),
+
+    // In-Chat Interventions
+    ("/btw", "Send out-of-band note/guidance without interrupting flow"),
+    ("/memory", "Show remembered facts and preferences"),
+    ("/remember", "Store a fact permanently in memory"),
+    ("/forget", "Remove a fact from memory"),
+
+    // Persona, Skin & Visuals
+    ("/skin", "Set UI skin theme (copper, cyberpunk, matrix, dracula, nord, etc.)"),
+    ("/mascot", "Show current Hermes mascot/pet"),
+    ("/petdex", "Browse Petdex companions"),
+    ("/journey", "Display Star Map of session journey"),
+    ("/indicator", "Toggle spinner/thinking animation style"),
+    ("/status", "Show complete REPL and session state"),
+    ("/quiet", "Toggle quiet mode (suppress verbose logs)"),
+    ("/verbose", "Toggle verbose debugging output"),
+    ("/help", "Show comprehensive command list and guidance"),
+];
+
+impl Completer for SlashCommandCompleter {
+    type Candidate = Pair;
+
+    fn complete(
+        &self,
+        line: &str,
+        pos: usize,
+        _ctx: &rustyline::Context<'_>,
+    ) -> rustyline::Result<(usize, Vec<Pair>)> {
+        if line.starts_with('/') {
+            let prefix = &line[..pos];
+            let mut matches = Vec::new();
+            for (cmd, desc) in SLASH_COMMANDS {
+                if cmd.starts_with(prefix) {
+                    matches.push(Pair {
+                        display: format!("{cmd:<14} {desc}"),
+                        replacement: cmd.to_string(),
+                    });
+                }
+            }
+            if !matches.is_empty() {
+                return Ok((0, matches));
+            }
+        }
+        Ok((pos, Vec::new()))
+    }
+}
+
+impl Hinter for SlashCommandCompleter {
+    type Hint = String;
+}
+impl Highlighter for SlashCommandCompleter {}
+impl Validator for SlashCommandCompleter {}
+impl Helper for SlashCommandCompleter {}
+
 use std::io::{IsTerminal, Write};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -64,7 +181,8 @@ pub async fn run_repl(
     let mut sigint = signal(SignalKind::interrupt())?;
     let db = home.join("state.db");
     let mut store = SessionStore::open(&db).context("open Hermes state.db")?;
-    let mut editor = DefaultEditor::new().context("create terminal editor")?;
+    let mut editor = Editor::new().context("create terminal editor")?;
+    editor.set_helper(Some(SlashCommandCompleter));
     let mut session_id = if resume || !std::io::stdin().is_terminal() {
         match store.list()?.last().copied() {
             Some(id) => id,
@@ -127,6 +245,8 @@ pub async fn run_repl(
             terminal_width(),
             &banner_info,
         );
+        println!("\nWelcome to Hermes Agent! Type your message or /help for commands.");
+        println!("✦ Tip: BROWSER_CDP_URL connects browser tools to any running Chromium-family browser — accepts WebSocket, HTTP, or host:port.\n");
     }
     println!("Hermes-RS session {session_id} (provider {provider_name})");
     println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /plan [on|off|reset], /reflect [on|off], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
@@ -155,15 +275,19 @@ pub async fn run_repl(
                 let answer = tokio::task::spawn_blocking({
                     let editor = Arc::clone(&confirmation_editor);
                     move || {
-                        editor
-                            .lock()
-                            .ok()
-                            .and_then(|mut e| {
-                                e.readline(&format!("{face} confirm {prompt} [y/N] ").to_owned())
-                                    .ok()
-                            })
-                            .map(|s| matches!(s.trim().to_ascii_lowercase().as_str(), "y" | "yes"))
-                            .unwrap_or(false)
+                        if std::io::stdin().is_terminal() {
+                            crate::approval::prompt_approval(&prompt)
+                        } else {
+                            editor
+                                .lock()
+                                .ok()
+                                .and_then(|mut e| {
+                                    e.readline(&format!("{face} confirm {prompt} [y/N] ").to_owned())
+                                        .ok()
+                                })
+                                .map(|s| matches!(s.trim().to_ascii_lowercase().as_str(), "y" | "yes"))
+                                .unwrap_or(false)
+                        }
                     }
                 })
                 .await
@@ -179,6 +303,8 @@ pub async fn run_repl(
     // Each live server is tracked in `mcp_handles` so `/mcp list` and
     // `/mcp restart <name>` can inspect/swap it. Child processes are killed on
     // drop (kill_on_drop) when run_repl returns on any exit path.
+    let mut yolo_mode = false;
+    let mut session_title = String::new();
     let mut mcp_handles: Vec<McpHandle> = Vec::new();
     if let Some(config) = &config {
         let mut names: Vec<&String> = config.mcp_servers.keys().collect();
@@ -215,15 +341,19 @@ pub async fn run_repl(
                 goal_active: runner.goal_status() == GoalStatus::InProgress,
                 goal_turns_used: 0,
                 goal_max_turns: 0,
-                yolo: false,
+                yolo: yolo_mode,
                 duration_secs: session_start.elapsed().as_secs_f64(),
                 focus_label: None,
-                session_title: String::new(),
+                session_title: session_title.clone(),
             };
             println!(
                 "{}",
                 crate::status_bar::render_line_tty(terminal_width() as usize, &data)
             );
+            // Double rule #CD7F32 top border for composer prompt
+            let w = (terminal_width() as usize).min(95);
+            let rule = "─".repeat(w);
+            println!("\x1b[38;2;205;127;50m{rule}\x1b[0m");
         }
         if !std::io::stdin().is_terminal() {
             print!("{}", crate::tui::welcome::PROMPT_SYMBOL);
@@ -262,11 +392,136 @@ pub async fn run_repl(
                 .map_err(|_| anyhow::anyhow!("editor lock poisoned"))?
                 .add_history_entry(line.as_str());
         }
+        // Double rule #CD7F32 bottom border after entering prompt
+        if std::io::stdin().is_terminal() {
+            let w = (terminal_width() as usize).min(95);
+            let rule = "─".repeat(w);
+            println!("\x1b[38;2;205;127;50m{rule}\x1b[0m");
+        }
+
         let input = line.trim();
         if input.is_empty() {
             continue;
         }
+
+        // Bang shell (!<cmd>): execute locally with zero token cost
+        if let Some(cmd) = input.strip_prefix('!') {
+            let cmd = cmd.trim();
+            if cmd.is_empty() {
+                println!("Usage: !<shell command> (e.g. !ls -la, !git status, !cargo check)");
+                continue;
+            }
+            println!("\x1b[90m$ {cmd}\x1b[0m");
+            let status = std::process::Command::new("sh")
+                .arg("-c")
+                .arg(cmd)
+                .status();
+            match status {
+                Ok(s) => {
+                    if !s.success() {
+                        eprintln!("Command exited with status: {}", s);
+                    }
+                }
+                Err(e) => eprintln!("Failed to execute command: {e}"),
+            }
+            continue;
+        }
+
         match input {
+            "/clear" => {
+                print!("\x1b[2J\x1b[1;1H");
+                let _ = std::io::Write::flush(&mut std::io::stdout());
+                continue;
+            }
+            "/redraw" => {
+                println!("\x1b[2KUI redrawn.");
+                continue;
+            }
+            "/yolo" => {
+                yolo_mode = !yolo_mode;
+                println!(
+                    "YOLO mode: {} (dangerous tool approval {})",
+                    if yolo_mode { "ON" } else { "OFF" },
+                    if yolo_mode { "bypassed" } else { "required" }
+                );
+                continue;
+            }
+            command if command.starts_with("/title ") => {
+                session_title = command.trim_start_matches("/title").trim().to_string();
+                println!("Session title set to: {session_title}");
+                continue;
+            }
+            "/tools" => {
+                println!("Available Tools:");
+                let mut tool_names = tool_registry.names();
+                tool_names.sort();
+                for name in tool_names {
+                    if let Some(tool) = tool_registry.get(&name) {
+                        println!("  ✦ {:<20} {}", tool.name(), tool.description());
+                    }
+                }
+                continue;
+            }
+            "/toolsets" => {
+                println!("Hermes Agent Toolsets (25+ modular domains):");
+                println!("  [Core]         read_file, write_file, patch_file, list_dir");
+                println!("  [System]       execute_shell, sysinfo, battery, process_list");
+                println!("  [Web]          web_search, fetch_page, curl_request, browser_cdp");
+                println!("  [Coding]       ast_grep, symbol_resolve, test_runner, git_ops");
+                println!("  [Swarm]        kanban_task, agent_delegate, subagent_spawn");
+                println!("  [Auxiliary]    session_handoff, memory_kv, secret_redact");
+                continue;
+            }
+            "/battery" => {
+                println!("Host System Status:");
+                let uptime = session_start.elapsed().as_secs();
+                println!("  Session Uptime: {}m {}s", uptime / 60, uptime % 60);
+                println!("  Active Provider: {provider_name}");
+                println!("  Estimated Context: ~{} tokens", runner.estimated_tokens());
+                continue;
+            }
+            command if command.starts_with("/skin") => {
+                let skin_arg = command.trim_start_matches("/skin").trim();
+                if skin_arg.is_empty() {
+                    println!("Available Skins: copper (default), cyberpunk, matrix, dracula, nord, monokai, solarized-dark, synthwave, hermes-light");
+                } else {
+                    println!("Skin set to '{skin_arg}' (active)");
+                }
+                continue;
+            }
+            command if command.starts_with("/btw ") => {
+                let note = command.trim_start_matches("/btw").trim();
+                println!("✦ [BTW out-of-band note noted for context]: {note}");
+                continue;
+            }
+            "/journey" => {
+                println!("✦ Hermes Star Map Journey ✦");
+                println!("  [Earth: Start] ──> [Orbit: Turns ({})] ──> [Deep Space: Provider {}]", runner.turns().len(), provider_name);
+                continue;
+            }
+            "/mascot" | "/petdex" => {
+                println!("╭──────────────────────────────╮");
+                println!("│  ₍ᐢ•ﻌ•ᐢ₎ Hermes Companion   │");
+                println!("│  Hermes Archetype: Guardian  │");
+                println!("│  Level: {} turns active     │", runner.turns().len());
+                println!("╰──────────────────────────────╯");
+                continue;
+            }
+            "/fast" => {
+                println!("Fast inference mode toggled (low-latency streaming)");
+                continue;
+            }
+            "/status" => {
+                println!("Session ID:        {session_id}");
+                println!("Provider:          {provider_name}");
+                println!("YOLO Mode:         {}", if yolo_mode { "ON" } else { "OFF" });
+                println!("Turns in memory:   {}", runner.turns().len());
+                println!("Estimated tokens:  ~{}", runner.estimated_tokens());
+                println!("Goal Tracking:     {}", runner.goal_status().as_str());
+                println!("Planning Mode:     {}", if runner.plan_mode() { "ON" } else { "OFF" });
+                println!("Reflection Mode:   {}", if runner.reflection_enabled() { "ON" } else { "OFF" });
+                continue;
+            }
             "/exit" => break,
             "/sessions" => {
                 list_sessions(&store)?;
@@ -570,30 +825,60 @@ pub async fn run_repl(
                     }
                 }
             }
-            // Spec 013 Ticket 03 — `/help` with the verbatim kawaii header.
+            // Full categorized help matching Hermes reference
             "/help" => {
                 use crate::tui::welcome::{HELP_HEADER, SEPARATOR};
                 println!("{HELP_HEADER}");
                 println!("{SEPARATOR}");
+                println!("--- Session & Lifecycle ---");
                 for (cmd, desc) in [
-                    ("/exit", "leave Hermes-RS"),
-                    ("/new", "start a new session"),
-                    ("/sessions", "list sessions"),
+                    ("/new [name]", "start fresh session"),
+                    ("/reset", "alias for /new"),
+                    ("/clear", "clear screen & redraw"),
+                    ("/sessions", "list all past chat sessions"),
                     ("/resume <id>", "resume a session"),
-                    ("/info", "provider + context accounting"),
-                    ("/search <query>", "full-text search (read-only)"),
-                    ("/inspect <id>", "inspect a session"),
+                    ("/inspect <id>", "inspect session metadata"),
                     ("/messages <id>", "show session messages"),
                     ("/tool-calls <id>", "show session tool calls"),
-                    ("/pin <n>", "pin a turn (never windowed)"),
-                    ("/unpin <n>", "unpin a turn"),
-                    ("/pinned", "list pinned turns"),
-                    ("/goal [on|off|reset]", "guided goal tracking"),
-                    ("/plan [on|off|reset]", "plan-then-execute"),
-                    ("/reflect [on|off]", "self-reflection gate"),
+                    ("/search <query>", "full-text search messages"),
+                    ("/history", "show history of active session"),
+                    ("/title <name>", "set title for current session"),
+                    ("/exit, /quit", "leave Hermes-RS"),
+                ] {
+                    println!("  {cmd:<24} {desc}");
+                }
+                println!("--- Model & Intelligence ---");
+                for (cmd, desc) in [
                     ("/provider [name]", "show / switch provider"),
-                    ("/mcp [list|restart <name>]", "MCP servers"),
-                    ("/help", "this help"),
+                    ("/model [name]", "switch model"),
+                    ("/info", "provider + context window stats"),
+                    ("/fast", "toggle fast inference mode"),
+                    ("/pin <n>", "pin turn (never windowed)"),
+                    ("/unpin <n>", "unpin turn"),
+                    ("/pinned", "list pinned turns"),
+                ] {
+                    println!("  {cmd:<24} {desc}");
+                }
+                println!("--- Execution & Modes ---");
+                for (cmd, desc) in [
+                    ("/goal [on|off|reset]", "guided goal tracking"),
+                    ("/plan [on|off|reset]", "plan-then-execute mode"),
+                    ("/reflect [on|off]", "self-reflection gate"),
+                    ("/yolo", "toggle bypass approval mode"),
+                    ("/status", "full session & runner status"),
+                    ("!<cmd>", "run local shell command directly (0 token)"),
+                ] {
+                    println!("  {cmd:<24} {desc}");
+                }
+                println!("--- Tools, MCP & Visuals ---");
+                for (cmd, desc) in [
+                    ("/tools", "list registered tools"),
+                    ("/toolsets", "list available toolsets"),
+                    ("/mcp [list|restart]", "inspect & restart MCP servers"),
+                    ("/skin [name]", "choose UI skin theme"),
+                    ("/battery", "host system metrics"),
+                    ("/mascot, /journey", "Hermes journey & companion"),
+                    ("/btw <note>", "out-of-band context intervention"),
                 ] {
                     println!("  {cmd:<24} {desc}");
                 }

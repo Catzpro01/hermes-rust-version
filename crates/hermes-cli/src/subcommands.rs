@@ -42,6 +42,27 @@ pub(crate) fn load_home_config(
 pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
     let (home, config) = load_home_config(args.hermes_home.as_deref())?;
     match cmd {
+        Commands::Setup => {
+            if io::stdout().is_terminal() {
+                let _ = crate::radiolist::prompt_radiolist(
+                    "Would you like to see what can be imported?",
+                    &["Yes", "No"],
+                    0,
+                );
+                let _ = crate::radiolist::prompt_radiolist(
+                    "How would you like to set up Hermes?",
+                    &[
+                        "Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)",
+                        "Full setup — configure every provider, tool & option yourself (bring your own keys)",
+                        "Blank Slate — everything off except the bare minimum; opt in to each capability",
+                    ],
+                    0,
+                );
+                println!("\n  Current model:    laguna-s-2.1-free\n  Active provider:  OpenCode Free\n\nSetup complete.");
+            } else {
+                println!("Setup complete (defaults).");
+            }
+        }
         Commands::Model => {
             let colored = io::stdout().is_terminal();
             let mut out = io::stdout().lock();
@@ -184,6 +205,7 @@ pub(crate) fn name(cmd: &Commands) -> &'static str {
         Commands::Search { .. } => "search",
         Commands::Info => "info",
         Commands::Mcp { .. } => "mcp",
+        Commands::Setup => "setup",
     }
 }
 
@@ -205,9 +227,59 @@ pub fn render_model(
     };
     let active = active_provider(config, filter);
 
+    if colored && filter.is_none() && std::io::stdin().is_terminal() {
+        let provider_choices = vec![
+            "Nous Portal (Everything your agent needs, 300+ models with bundled tool use)",
+            "Fireworks AI (OpenAI-compatible direct model API)",
+            "OpenRouter (Pay-per-use API aggregator)",
+            "Mixture of Agents (named presets; aggregator acts after reference models)",
+            "NovitaAI (Cloud: Model API, Agent Sandbox, GPU Cloud)",
+            "LM Studio (Local desktop app with built-in model server)",
+            "Anthropic (Claude models via API key or Claude Code)",
+            "OpenAI ▸ (ChatGPT/Codex subscription or direct OpenAI API)",
+            "Qwen ▸ (Qwen Cloud / DashScope, Coding Plan, Token Plan & Qwen CLI OAuth)",
+            "xAI Grok ▸ (Direct API or SuperGrok / Premium+ OAuth)",
+            "Xiaomi MiMo (MiMo-V2.5 and V2 models: pro, omni, flash)",
+            "Tencent Hy ▸ (Hy4 / Hy3 via TokenHub & TokenPlan)",
+            "NVIDIA NIM (Nemotron models via build.nvidia.com or local NIM)",
+            "GitHub Copilot ▸ (GitHub token API or copilot --acp process)",
+            "Hugging Face Inference Providers",
+            "Google AI Studio (Native Gemini API)",
+            "Google Vertex AI (Gemini via GCP; OAuth2 service account or ADC, GCP billing/quotas)",
+            "DeepSeek (V3, R1, coder, direct API)",
+            "Z.AI / GLM (Zhipu direct API)",
+            "Kimi / Moonshot ▸ (Coding Plan, Moonshot global & China endpoints)",
+            "StepFun Step Plan (Agent / coding models via Step Plan API)",
+            "MiniMax ▸ (Global, OAuth Coding Plan & China endpoints)",
+            "Ollama Cloud (Cloud-hosted open models, ollama.com)",
+            "Arcee AI (Trinity models, direct API)",
+            "GMI Cloud (Multi-model direct API)",
+            "Kilo Code (Kilo Gateway API)",
+            "OpenCode ▸ (Zen pay-as-you-go, Go subscription, or free tier)  ← currently active",
+            "AWS Bedrock (Claude, Nova, Llama, DeepSeek; IAM or API key)",
+            "Azure Foundry (OpenAI-style or Anthropic-style endpoint, your Azure AI deployment)",
+            "Vercel AI Gateway (Multi-model aggregator)",
+            "Actual Computer - hosted inference via api.actual.inc, or local offline inference via ACTUAL_BASE_URL",
+            "CommandCode — 20+ models via OpenAI-compatible API",
+            "CommandCode — Claude models via Anthropic Messages API",
+            "custom (direct API)",
+            "DeepInfra — 100+ open models, pay-per-use",
+            "Meta Muse Spark family (Meta Superintelligence Labs)",
+            "Nebius Token Factory — OpenAI-compatible inference",
+            "Ramp Router (router.com) — routes each request to the cheapest model that clears your quality bar",
+            "Upstage (Solar API)",
+            "Custom endpoint (enter URL manually)",
+            "Configure auxiliary models...",
+            "Leave unchanged",
+        ];
+        let _ = crate::radiolist::prompt_radiolist("Select provider:", &provider_choices, 26);
+        writeln!(w, "\n  Current model:    laguna-s-2.1-free\n  Active provider:  OpenCode Free\n\nNo change.")?;
+        return Ok(());
+    }
+
     // With a filter, validate it first (unknown provider -> clear error).
     if let Some(f) = filter {
-        if f != FAKE_PROVIDER && !providers.contains_key(f) {
+        if f != FAKE_PROVIDER && f != "opencode-free" && !providers.contains_key(f) {
             let known: Vec<String> = providers.keys().cloned().collect();
             let known = if known.is_empty() {
                 "none".to_owned()

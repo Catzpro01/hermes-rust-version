@@ -42,13 +42,24 @@ impl ProviderRegistry {
         for (name, provider) in &config.providers {
             let owned_name = name.clone();
             let owned_provider = provider.clone();
-            // The model-level key is the global fallback when a provider does
-            // not pin its own key_env. It is captured here (not read from the
-            // config later) so construction stays free of any registry state.
             let fallback_key = config.model.api_key.clone();
             factories.insert(
                 name.clone(),
                 Box::new(move || build_configured(&owned_name, &owned_provider, fallback_key.clone())),
+            );
+        }
+        if config.model.provider.as_deref() == Some("opencode-free") || config.model.provider.as_deref() == Some("opencode") {
+            let fallback_key = config.model.api_key.clone();
+            let default_model = config.model.default.clone().unwrap_or_else(|| "laguna-s-2.1-free".into());
+            let base_url = config.model.base_url.clone().unwrap_or_else(|| "https://opencode.ai/zen/v1".into());
+            let p_name = config.model.provider.as_deref().unwrap_or("opencode-free").to_owned();
+            factories.insert(
+                p_name.clone(),
+                Box::new(move || {
+                    let url = Url::parse(&base_url).map_err(|e| fail(&p_name, &format!("invalid base URL: {e}")))?;
+                    let key = fallback_key.clone().unwrap_or_else(|| SecretString::from("anonymous"));
+                    Ok(Box::new(HttpProvider::new(url, key, default_model.clone())))
+                }),
             );
         }
         if !factories.contains_key(FAKE_PROVIDER) {
@@ -62,7 +73,12 @@ impl ProviderRegistry {
 
     /// An empty registry still resolves `fake`.
     pub fn offline() -> Self {
-        Self::from_config(&HermesConfig::default())
+        let mut factories: HashMap<String, Factory> = HashMap::new();
+        factories.insert(
+            FAKE_PROVIDER.to_owned(),
+            Box::new(|| Ok(Box::new(FakeProvider) as Box<dyn Provider>)),
+        );
+        Self { factories }
     }
 
     /// Names of every registered provider, sorted, for use in error messages.
@@ -202,12 +218,14 @@ fn model_level_fallback(
         Url::parse(raw_url).map_err(|e| fail(name, &format!("invalid base URL: {e}")))?;
     let model = config.model.default.clone().unwrap_or_else(|| name.to_owned());
 
-    let key = ["OPENAI_API_KEY", "HERMES_API_KEY"]
+    let mut key = ["OPENAI_API_KEY", "HERMES_API_KEY"]
         .iter()
         .find_map(|var| std::env::var(var).ok().filter(|v| !v.is_empty()))
         .or_else(|| config.model.api_key.as_ref().map(|k| k.expose().to_owned()));
+    if key.is_none() && (name == "opencode-free" || name == "opencode" || raw_url.contains("opencode.ai") || raw_url.contains("localhost") || raw_url.contains("127.0.0.1") || config.model.provider.as_deref() == Some("opencode-free")) {
+        key = Some("anonymous".to_string());
+    }
     let Some(key) = key else {
-        // Nothing usable: no explicit base URL beyond the default and no key.
         return Ok(None);
     };
     Ok(Some(Box::new(HttpProvider::new(
