@@ -1338,17 +1338,27 @@ pub fn is_path_token(token: &str) -> bool {
 }
 
 /// Filesystem candidates for a path-like token. `~` expands to the user's
-/// home directory; directory entries keep a trailing `/`.
-fn path_candidates(token: &str, user_home: &Path) -> Vec<Candidate> {
-    let expanded = token
-        .strip_prefix("~/")
-        .map(|rest| format!("{}{}", user_home.display(), rest))
-        .unwrap_or_else(|| token.to_string());
+/// home directory; a relative base resolves against `cwd`; directory
+/// entries keep a trailing `/`.
+fn path_candidates(token: &str, user_home: &Path, cwd: &Path) -> Vec<Candidate> {
+    let home_rel = token.starts_with("~/");
+    let expanded = if home_rel {
+        format!("{}{}", user_home.display(), &token[2..])
+    } else {
+        token.to_string()
+    };
     let (base, prefix) = match expanded.rsplit_once('/') {
         Some(x) => x,
         None => return Vec::new(),
     };
-    let dir = if base.is_empty() { "/" } else { base };
+    let dir: String = if base.is_empty() {
+        "/".to_string()
+    } else if home_rel || base.starts_with('/') {
+        base.to_string()
+    } else {
+        cwd.join(base).display().to_string()
+    };
+    let dir = dir.as_str();
     // Rebuild the user-visible base: keep `~/` spelling for home-relative
     // paths instead of the expanded absolute directory.
     let display_base = if token.starts_with("~/") {
@@ -1406,6 +1416,7 @@ impl Default for HermesCompleter {
         Self {
             skills: Vec::new(),
             user_home: PathBuf::new(),
+            cwd: PathBuf::new(),
         }
     }
 }
@@ -1415,14 +1426,16 @@ impl HermesCompleter {
     /// own home is resolved from the environment for `~` path expansion.
     pub fn new(hermes_home: &Path) -> Self {
         let user_home = std::env::home_dir().unwrap_or_default();
-        Self::with_home(hermes_home, &user_home)
+        let cwd = std::env::current_dir().unwrap_or_default();
+        Self::with_home(hermes_home, &user_home, &cwd)
     }
 
-    /// Explicit homes (used by tests so no environment is needed).
-    pub fn with_home(hermes_home: &Path, user_home: &Path) -> Self {
+    /// Explicit homes + base dir (used by tests so no environment is needed).
+    pub fn with_home(hermes_home: &Path, user_home: &Path, cwd: &Path) -> Self {
         Self {
             skills: discover_skills(&hermes_home.join("skills")),
             user_home: user_home.to_path_buf(),
+            cwd: cwd.to_path_buf(),
         }
     }
 
@@ -1557,7 +1570,7 @@ impl HermesCompleter {
                 // No command/skill matches: the word may be an absolute path
                 // typed as a message (spec: path rule applies to any word).
                 if is_path_token(token) {
-                    return (0, path_candidates(token, &self.user_home));
+                    return (0, path_candidates(token, &self.user_home, &self.cwd));
                 }
                 return (0, Vec::new());
             }
@@ -1600,7 +1613,7 @@ impl HermesCompleter {
             }
         }
         if is_path_token(token) {
-            return (word_start, path_candidates(token, &self.user_home));
+            return (word_start, path_candidates(token, &self.user_home, &self.cwd));
         }
         (word_start, Vec::new())
     }
@@ -1817,16 +1830,22 @@ mod tests {
 
     fn unquote(s: &str) -> String {
         let s = s.trim();
-        let mut chars = s.chars();
-        let Some(first) = chars.next() else {
-            return String::new();
-        };
-        let last = s.chars().next_back();
-        if (first == '\'' && last == Some('\'')) || (first == '"' && last == Some('"')) {
-            let body: String = chars.collect();
-            body.replace("\\'", "'")
-                .replace("\\\"", "\"")
-                .replace("\\\\", "\\")
+        let b = s.as_bytes();
+        let is_quote = |c: u8| c == 0x27 || c == 0x22; // 0x27 = '  0x22 = "
+        if b.len() >= 2 && is_quote(b[0]) && b[b.len() - 1] == b[0] {
+            let mut out = String::with_capacity(s.len() - 2);
+            let mut chars = s[1..s.len() - 1].chars().peekable();
+            while let Some(c) = chars.next() {
+                if c as u8 == 0x5C {
+                    // 0x5C = backslash: drop it, keep the next char as-is.
+                    if let Some(n) = chars.next() {
+                        out.push(n);
+                    }
+                } else {
+                    out.push(c);
+                }
+            }
+            out
         } else {
             s.to_string()
         }
@@ -1970,7 +1989,7 @@ mod tests {
         assert!(names(&cands).contains(&"/new "), "{:?}", names(&cands));
 
         // alias of /new
-        let (_, cands) = complete(&c, "/rst", 4);
+        let (_, cands) = complete(&c, "/res", 4);
         assert!(names(&cands).contains(&"/reset "));
 
         // name + alias of /compress
@@ -2068,7 +2087,7 @@ mod tests {
         // Non-skill entries must be ignored.
         std::fs::create_dir_all(skills.join(".curator_backups")).expect("mkdir hidden");
         std::fs::write(skills.join("stray.md"), "not a skill dir").expect("stray file");
-        let c = HermesCompleter::with_home(tmp.path(), tmp.path());
+        let c = HermesCompleter::with_home(tmp.path(), tmp.path(), tmp.path());
         (tmp, c)
     }
 
@@ -2133,7 +2152,7 @@ mod tests {
         let ns = names(&cands);
         assert!(ns.contains(&"other_skill "), "{ns:?}");
         assert!(ns.contains(&"third "), "{ns:?}");
-        assert!(!ns.iter().any(|n| *n == "my-skill "), "{ns:?}");
+        assert!(!ns.contains(&"my-skill "), "{ns:?}");
         // With the second skill present, only `third` remains.
         let (_, cands) = complete(&c, "/my-skill other_skill ", 22);
         assert_eq!(names(&cands), vec!["third "]);
@@ -2159,7 +2178,7 @@ mod tests {
         // empty hermes home (no skills)
         let hermes = home.path().join("hermes-home");
         std::fs::create_dir_all(&hermes).expect("hermes home");
-        let c = HermesCompleter::with_home(&hermes, home.path());
+        let c = HermesCompleter::with_home(&hermes, home.path(), home.path());
         (home, c)
     }
 
@@ -2243,8 +2262,11 @@ mod tests {
     #[test]
     fn ghost_text_shared_prefix() {
         let c = cand_completer();
-        // /tools vs /toolsets: shared prefix is "/tools" -> continuation "ols".
-        assert_eq!(hint(&c, "/to", 3), Some("ols".to_string()));
+        // /to matches /tools, /toolsets and /topup — the common prefix ends
+        // right at the typed text, so there is nothing to ghost.
+        assert_eq!(hint(&c, "/to", 3), None);
+        // Subcommand position: "high " vs "hide " share "hi".
+        assert_eq!(hint(&c, "/reasoning h", 12), Some("i".to_string()));
     }
 
     #[test]
@@ -2277,7 +2299,7 @@ mod tests {
             format!("---\ndescription: {}\n---\n", "y".repeat(80)),
         )
         .expect("write");
-        let c = HermesCompleter::with_home(tmp.path(), tmp.path());
+        let c = HermesCompleter::with_home(tmp.path(), tmp.path(), tmp.path());
         let (_, cands) = complete(&c, "/long-des", 9);
         let disp = &cands[0].display;
         assert!(disp.starts_with("⚡ "));
