@@ -233,9 +233,11 @@ async fn run() -> anyhow::Result<()> {
             provider_name,
             registry,
             config,
-            args.api_url,
-            args.resume,
-            args.no_sandbox,
+            repl::ReplOptions {
+                base_url_override: args.api_url,
+                resume: args.resume,
+                no_sandbox: args.no_sandbox,
+            },
         )
         .await
     }

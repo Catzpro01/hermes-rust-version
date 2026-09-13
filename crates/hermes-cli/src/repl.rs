@@ -166,16 +166,30 @@ impl Confirmation for CliConfirmation {
     }
 }
 
+/// Startup switches for [`run_repl`] that come straight from CLI flags.
+#[derive(Debug, Clone, Default)]
+pub struct ReplOptions {
+    /// `--api-url` override for the active provider.
+    pub base_url_override: Option<String>,
+    /// `-c` / `--resume`: reopen the latest session without the picker.
+    pub resume: bool,
+    /// `--no-sandbox` (Spec 007b): shell tools run with the inherit policy.
+    pub no_sandbox: bool,
+}
+
 pub async fn run_repl(
     home: &std::path::Path,
     provider: Box<dyn Provider>,
     provider_name: String,
     registry: ProviderRegistry,
     config: Option<HermesConfig>,
-    base_url_override: Option<String>,
-    resume: bool,
-    no_sandbox: bool,
+    options: ReplOptions,
 ) -> Result<()> {
+    let ReplOptions {
+        base_url_override,
+        resume,
+        no_sandbox,
+    } = options;
     let mut provider_name = provider_name;
     // Spec 013 Ticket 05 — session start for the status-bar duration segment.
     let session_start = std::time::Instant::now();
