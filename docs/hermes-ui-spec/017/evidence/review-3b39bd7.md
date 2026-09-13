@@ -1,8 +1,7 @@
+# Limited direct evidence follow-up at 3b39bd7 (2026-09-14)
 
-## Evidence follow-up at 3b39bd7 (2026-09-14)
-
-The historical review above is unchanged. See
-[48-pair report](docs/hermes-ui-spec/017/evidence/ui-3b39bd7/REPORT.md).
+The [historical review](review-6746037.md) is unchanged. See
+[48-pair report](ui-3b39bd7/REPORT.md).
 Limited direct follow-up, retaining original review base059cd65; not parallel
 independent reviewers. Standards: no new hard violation found in the scoped
 adapter/capture changes reviewed. Spec: the four areas now have real recorded

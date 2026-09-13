@@ -1043,3 +1043,9 @@ checks. Reviewed adapter/harness changes directly along Standards/Spec axes;
 not independent or personal Matt review. Updated docs/PARITY factual Python
 ID/status description without adding any exception. Intermediate ui-1c3c9dd
 preserved alongside rejected ui-1e3abe7, not overwritten or relabeled PASS.
+
+Delivery checkpoint56c3100 pushed (600-file evidence/audit changeset). Corrected
+the new follow-up review's location to evidence/review-3b39bd7.md and linked the
+actual historical review; original review-6746037.md remains unchanged. This
+follow-up is documentation-only. Runtime capture/CI3b39bd7 is GREEN; delivery
+CI now also runs the three retained-packet audit behavior tests.
