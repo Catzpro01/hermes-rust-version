@@ -803,3 +803,16 @@ performed.** The Python installation was not modified.
 - Ask user for review fixed point (all ANSI fixes vs this follow-up) and explicit
   limited direct review vs human-review packet. No independent subagent verdict
   is available. Final paired recapture remains after that review boundary.
+
+## 2026-09-14: User selects all-ANSI baseline; limited direct review performed
+
+- User chose 059cd65 for all ANSI fixes and delegated best review method. Chose
+  direct limited Standards/Spec review, explicitly not independent subagents.
+  Frozen reviewed HEAD e0a52fd; recorded exact diff/log commands and sources.
+- Standards: one possible duplication in geometry test SGR decoders. Proposed
+  test-only reuse of existing public-stream decoder, with expected values and
+  runtime unchanged; remote GREEN/full checks required before applying.
+- Spec: final banner evidence and other §J.7 areas remain incomplete. Report
+  keeps these separate from standards; no invented verdict or closure approval.
+- Candidate capture remains false during review cleanup. No new runtime fix or
+  new RED claimed for this review-stage refactor. See review-059cd65.md.

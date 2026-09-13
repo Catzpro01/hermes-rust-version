@@ -1,8 +1,8 @@
 {
-  "phase": "none",
+  "phase": "green",
   "capture": false,
-  "reason": "tested-candidates-consumed-wait-for-code-review-before-final-capture",
-  "green_run": 34784783352,
-  "tested_patch_sha256": "69584e4065123dcb522cba2cf04be736bd5ed395574825dff0c866f56db9e573",
-  "source_sha256": "baa0ddf2de644c168d55b8d89457014ff656a00fe72a2c4d18b877f66e98ec0d"
+  "test": "banner_ansi_preserves_python_reference_layout",
+  "reason": "review-only-deduplication-of-test-SGR-decoding-no-runtime-change",
+  "source_sha256": "baa0ddf2de644c168d55b8d89457014ff656a00fe72a2c4d18b877f66e98ec0d",
+  "patch_sha256": "59078c102ee6306ebe55cd04d9301cad5698176464bdbb213910246331c832d1"
 }
