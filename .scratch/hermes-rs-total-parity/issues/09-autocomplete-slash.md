@@ -77,18 +77,19 @@ history-forward). Tidak pernah masuk buffer input.
   tilde/URL, ghost text) + TUI (placeholder ter-render saat kosong,
   tetap anggota katalog setelah clear) + e2e TUI diperbarui.
 
-## Keputusan yang perlu konfirmasi Matt
+## Keputusan Matt (verdict /ask-matt, 2026-09-13)
 
-1. **Limit `⚡ {short_desc}` = 60 char** (limit eksak L1741 tidak
-   terdokumentasi di artefak verbatim).
-2. **Skill discovery**: tiap subdirektori non-hidden
-   `<hermes-home>/skills/` = skill; `short_desc` dari frontmatter
-   `SKILL.md`. Loader skill penuh (parity step 4) belum ada di Rust —
-   [BELUM TERVERIFIKASI] vs format skill v0.21.0 persis; discovery ini
-   best-effort agar completion siap saat loader di-port.
-3. **T04 opsi 3 = diimplementasikan** di TUI (bukan REPL rustyline —
+1. **Limit `⚡ {short_desc}` = 60 char — disetujui** (pertahankan).
+2. **Skill discovery — disetujui sebagai best-effort** (subdirektori
+   non-hidden `<hermes-home>/skills/` + `short_desc` dari frontmatter
+   `SKILL.md`); disetel ulang saat skill loader penuh di-port.
+3. **T04 opsi 3 = TUI-only — disetujui** (bukan REPL rustyline —
    di REPL Python v0.21.0 placeholder adalah dead code, parity = tidak
    ditampilkan di sana).
+
+Catatan: fix race display-event yang sempat menyusul di branch ini
+(terdeteksi via e2e flaky di CI PR) **dipindah ke PR terpisah** sesuai
+verdict — lihat `.scratch/hermes-rs-ui-parity/issues/07-race-drain-turn-events.md`.
 
 ## Edge/di luar scope
 
