@@ -816,3 +816,15 @@ performed.** The Python installation was not modified.
   keeps these separate from standards; no invented verdict or closure approval.
 - Candidate capture remains false during review cleanup. No new runtime fix or
   new RED claimed for this review-stage refactor. See review-059cd65.md.
+
+## 2026-09-14: Limited review cleanup green; enable committed-source recapture
+
+- Review GREEN 34785303446/c2aca92 passed fmt/check, selected regression,
+  clippy/full tests. Verified exact 2564-byte patch SHA-256
+  5b8d335cdb45cf9ab24397afce10aa5f06e1a624c6287d8f2221e42ee811ba49;
+  reviewed test-decoder reuse and applied with byte-identical local Rust diff.
+- S1 duplication heuristic resolved. No runtime/expected-value changes. Spec
+  evidence gaps remain; request now none/true after limited direct review.
+- User selected all-ANSI base and delegated mode choice; direct limited review
+  is explicit, not fabricated independent Standards/Spec subagents. Next capture
+  must be verified against this actual source commit and its CI. No closure/merge.

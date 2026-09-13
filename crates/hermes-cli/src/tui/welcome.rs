@@ -1396,20 +1396,10 @@ mod tests {
                 write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
                 // This public writer emits only SGR escapes. Strip colors, not
                 // spaces: the independent Python rows pin terminal geometry.
-                let mut plain = String::new();
-                let mut escape = false;
-                for ch in String::from_utf8(bytes).unwrap().chars() {
-                    if ch == '\x1b' {
-                        escape = true;
-                    } else if escape {
-                        if ch == 'm' {
-                            escape = false;
-                        }
-                    } else {
-                        plain.push(ch);
-                    }
-                }
-                assert!(!escape, "unterminated SGR");
+                let plain: String = observed_banner_cells(&bytes)
+                    .into_iter()
+                    .map(|(ch, _)| ch)
+                    .collect();
                 let actual: Vec<String> = plain
                     .lines()
                     .map(|line| line.trim_end().to_owned())
@@ -1465,20 +1455,10 @@ mod tests {
             for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
                 let mut bytes = Vec::new();
                 write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
-                let mut plain = String::new();
-                let mut escape = false;
-                for ch in String::from_utf8(bytes).unwrap().chars() {
-                    if ch == '\x1b' {
-                        escape = true;
-                    } else if escape {
-                        if ch == 'm' {
-                            escape = false;
-                        }
-                    } else {
-                        plain.push(ch);
-                    }
-                }
-                assert!(!escape, "unterminated SGR");
+                let plain: String = observed_banner_cells(&bytes)
+                    .into_iter()
+                    .map(|(ch, _)| ch)
+                    .collect();
                 for label in ["Available Tools", "Available Skills", "4 tools"] {
                     let row = plain.lines().find(|line| line.contains(label)).unwrap();
                     let prefix = row.split_once(label).unwrap().0;

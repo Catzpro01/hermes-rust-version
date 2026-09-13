@@ -1,8 +1,7 @@
 {
-  "phase": "green",
-  "capture": false,
-  "test": "banner_ansi_preserves_python_reference_layout",
-  "reason": "review-only-deduplication-of-test-SGR-decoding-no-runtime-change",
-  "source_sha256": "baa0ddf2de644c168d55b8d89457014ff656a00fe72a2c4d18b877f66e98ec0d",
-  "patch_sha256": "59078c102ee6306ebe55cd04d9301cad5698176464bdbb213910246331c832d1"
+  "phase": "none",
+  "capture": true,
+  "reason": "limited-review-completed-capture-clean-committed-source",
+  "review_green_run": 34785303446,
+  "source_sha256": "6d66514f014376e29820cd8736d920b38a294f133bef90de6097fda2ae7ad782"
 }

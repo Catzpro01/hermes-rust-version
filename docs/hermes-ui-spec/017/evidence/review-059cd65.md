@@ -31,8 +31,11 @@ sampai `assert!(!escape, "unterminated SGR")`, sementara tes style sudah
 memiliki decoder SGR publik. Risiko pemeliharaan: decoder bisa berbeda
 perilakunya. Sesuai smell baseline “the same logic shape appears in more
 than one hunk”, usulkan memakai `observed_banner_cells` untuk keduanya.
-Koreksi test-only dikirim untuk fmt/check/regresi/clippy/full tests sebelum
-aplikasi; tidak ada perubahan runtime atau nilai expected.
+Koreksi test-only memakai decoder yang sama; GREEN 34785303446 pada c2aca92
+lulus fmt/check, regresi dan clippy/full tests. Delta 2564 byte, SHA-256
+`5b8d335cdb45cf9ab24397afce10aa5f06e1a624c6287d8f2221e42ee811ba49`,
+diverifikasi/diperiksa dan diterapkan persis sebelum commit. Tidak ada
+perubahan runtime atau nilai expected. S1 terselesaikan.
 
 Tidak ditemukan pelanggaran keras tambahan dari pemeriksaan langsung:
 perubahan runtime terbatas pada banner; shared theme/Python tidak diubah;
@@ -50,8 +53,8 @@ ambil capture committed-source yang baru; jangan menimpa atau menyatakan
 PASS untuk gambar lama.
 
 **P2 — cakupan §J.7 masih parsial.** Spec: “side-by-side capture wajib
-mencakup: banner panel ... tiap step wizard, picker screen, completion
-candidates, summary line.” Wizard, picker, completion, dan variasi summary
+mencakup: banner panel (title + grid), setup wizard tiap step (curses frame),
+session picker frame, completion dropdown (string candidates), summary line.” Wizard, picker, completion, dan variasi summary
 belum lengkap; tetap terbuka di T12. Ini bukan izin mengganti bukti dengan tes.
 
 Dalam lingkup runtime yang diperiksa, perubahan sesuai §A (kolom, dim,
@@ -60,6 +63,6 @@ penyimpangan runtime baru pada diff ini. Tidak memperluas allowlist adaptasi.
 Validasi visual berikutnya tetap dapat menemukan hal yang tidak tertangkap
 pemeriksaan kode ini.
 
-**Ringkasan:** Standards: 1 heuristik pemeliharaan (deduplikasi sedang diuji),
+**Ringkasan:** Standards: 1 heuristik pemeliharaan (deduplikasi terverifikasi),
 0 pelanggaran keras ditemukan. Spec: 2 gap bukti; yang terluas adalah cakupan
 §J.7 belum lengkap. Kedua sumbu tidak digabung menjadi satu verdict kelulusan.

@@ -118,3 +118,15 @@ none, capture false to respect review-before-recapture.
 Next: obtain review fixed point and user choice between explicitly limited
 direct review or human-review packet; independent subagents are unavailable.
 Do not invent independent review or silently skip to final capture. No merge.
+
+## Review boundary resolved — 2026-09-14
+
+User chose baseline 059cd65 (all ANSI fixes) and delegated best review mode.
+Selected/performed direct limited Standards/Spec review, NOT independent
+subagents. Report: evidence/review-059cd65.md. One duplication heuristic was
+fixed via exact tested patch: review GREEN 34785303446/c2aca92, 2564 bytes,
+5b8d335cdb45cf9ab24397afce10aa5f06e1a624c6287d8f2221e42ee811ba49.
+Only test decoder reuse; runtime/expected values unchanged. Candidate consumed,
+none/true now requests final committed-source recapture. Verify its CI, source
+hash and empty Rust diff, then compare all four fresh pairs. Other UI evidence
+and explicit user closure acceptance still outstanding. No independent verdict.
