@@ -1,0 +1,16 @@
+No existing configuration found — running first-time setup.
+Configuration Location
+Config file:  /tmp/hermes-ui-rust-mcsiso4o/config.yaml
+Secrets file: /tmp/hermes-ui-rust-mcsiso4o/.env
+Data folder:  /tmp/hermes-ui-rust-mcsiso4o
+Install dir:  /home/runner/work/hermes-rust-version/hermes-rust-version/crates/hermes-cli
+You can edit these files directly or use 'hermes config edit'
+
+Tip: jump straight to a section with 'hermes setup model|terminal|gateway|tools|agent', or fill only missing items with --quick.
+Press Enter to keep it, or type a new value to change it.
+
+[?25l[38;5;10m?[39m How would you like to set up Hermes?  
+[38;5;14m>[39m [38;5;14mQuick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)[39m
+  Full setup — configure every provider, tool & option yourself (bring your own keys)
+  Blank Slate — everything off except the bare minimum; opt in to each capability
+[38;5;14m[[39m[38;5;14m↑↓ to move, enter to select, type to filter[39m[38;5;14m][39m[4A[39C[?25h

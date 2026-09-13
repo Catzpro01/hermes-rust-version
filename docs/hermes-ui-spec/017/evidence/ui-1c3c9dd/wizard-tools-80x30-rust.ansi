@@ -1,0 +1,22 @@
+No existing configuration found — running first-time setup.
+Configuration Location
+Config file:  /tmp/hermes-ui-rust-i9azl2t6/config.yaml
+Secrets file: /tmp/hermes-ui-rust-i9azl2t6/.env
+Data folder:  /tmp/hermes-ui-rust-i9azl2t6
+Install dir:  /home/runner/work/hermes-rust-version/hermes-rust-version/crates/hermes-cli
+You can edit these files directly or use 'hermes config edit'
+
+Tip: jump straight to a section with 'hermes setup model|terminal|gateway|tools|agent', or fill only missing items with --quick.
+Press Enter to keep it, or type a new value to change it.
+
+
+Tools
+[?25l[38;5;10m?[39m Select toolsets to enable:  
+[38;5;14m>[39m [38;5;14m[x][39m [38;5;14m🔍 Web Search & Scraping  (web_search, web_extract)[39m
+  [38;5;10m[x][39m 🌐 Browser Automation  (navigate, click, type, scroll)
+  [38;5;10m[x][39m 💻 Terminal & Processes  (terminal, process)
+  [38;5;10m[x][39m 📁 File Operations  (read, write, patch, search)
+  [38;5;10m[x][39m ⚡ Code Execution  (execute_code)
+  [38;5;10m[x][39m 👁️  Vision / Image Analysis  (vision_analyze)
+v [ ] 🎬 Video Analysis  (video_analyze (requires video-capable model))
+[38;5;14m[[39m[38;5;14m↑↓ to move, space to select one, → to all, ← to none, type to filter[39m[38;5;14m][39m[8A[29C[?25h

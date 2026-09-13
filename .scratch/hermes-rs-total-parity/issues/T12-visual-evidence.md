@@ -1,6 +1,6 @@
 # T12 — Real Python/Rust visual evidence
 
-- Status: IN PROGRESS — banner fixture recapture inspected; wizard/picker/completion/summary evidence pending
+- Status: IN PROGRESS — 48 four-area pairs inspected; visual differences and coverage/acceptance boundaries remain
 - Label: `ready-for-agent`
 - Owner: Arena agent (capture/corrections), user (final acceptance)
 - Basis: [confirmed Q1-Q8 agreement](../grilling.md), user `setuju lanjutkan`
@@ -32,12 +32,12 @@ A successful capture job does not assert visual equality or close §J.7.
 
 - [x] Banner/title/grid: retained fixture pairs inspected at all four widths; branding/deviations recorded in banner-5a8e12c/REPORT.md. Not all-state coverage or user acceptance.
 - [ ] Wizard: each implemented step, normal/cancel/unavailable-feature cases.
-- [ ] Picker: normal/empty/filter/delete-confirmation states.
+- [x] Picker captures: normal/empty/filter/delete-confirmation states; differences remain.
 - [ ] Completion dropdown: normal and representative alternatives.
-- [ ] Summary: zero/nonzero cases (initial banner includes only four-tools/zero-skills).
+- [x] Summary captures: 0/3 tools at 100/80 columns, matched fixture plus documented branding; skills/MCP zero only.
 - [ ] Complete all pairs + raw recordings + reproduction metadata.
 - [ ] Fix in-scope unapproved differences, rerun checks and affected captures.
-- [ ] Relevant CI passes on the actual code checkpoint.
+- [x] Relevant CI passes on actual capture checkpoint 3b39bd7 (34788156828); not visual acceptance.
 - [ ] User explicitly accepts final evidence report; only then close T11/T10.
 
 ## Current limitations
@@ -275,3 +275,24 @@ fixtures only. Eight workflow QA tests and retained-evidence integrity/cell
 checks rerun successfully; historical CI 34786290998 verified SUCCESS at
 6746037. No new implementation/capture or independent approval inferred from
 the interrupted request. Continue T12 wizard capture, not closure/merge.
+
+## Latest — four-area packet inspected (2026-09-14)
+
+[REPORT](../../../docs/hermes-ui-spec/017/evidence/ui-3b39bd7/REPORT.md)
+(correct repo-relative location: docs/hermes-ui-spec/017/evidence/ui-3b39bd7/REPORT.md).
+48/48 paired PNGs directly inspected at both widths; 96 raw/cast roundtrips,
+PNG/driver/reference digests audited. Rust capture34788156824 and CI34788156828
+SUCCESS at3b39bd7. Python capture reused from1c3c9dd with identical driver bytes
+and pinned upstream source. All5128 Python source hashes rechecked.
+
+Section-level wizard inventory covers mode + Model/Terminal/Gateway/Tools,
+normal and representative risks. It does NOT prove every nested prompt.
+Completion is actual upstream SlashCommandCompleter in PromptSession vs actual
+Rust REPL; not full upstream CLI/TextArea/availability wiring. Keep these
+unchecked acceptance boundaries rather than silently redefining Q1.
+
+V1 wizard layout/palette/hints/labels, V2 picker footer/palette/counters and
+V3 inline cycling vs menu are not covered by blanket crate adaptations.
+Summary and empty picker fixtures match. Four-area files are no longer absent,
+but original Spec1 is not closed or relabeled overall PASS.
+See T13 for scoped follow-up evidence/fixes. No merge/user closure acceptance.

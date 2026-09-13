@@ -28,6 +28,29 @@ user's private Python installation.
 
 ## Active handoff
 
+### Latest checkpoint (supersedes older chronological state below)
+
+- Final four-area packet: `docs/hermes-ui-spec/017/evidence/ui-3b39bd7/REPORT.md`.
+  48/48 actual paired PNGs directly inspected, including all narrow images.
+  96 raw/cast checks, 48 PNG hashes, all5128 Python source hashes verified.
+- Runtime checkpoint3b39bd7: capture34788156824 and CI34788156828 GREEN.
+  Python1c3c9dd capture reused explicitly; same driver/pinned reference.
+- Corrected exit-drain recorder via real60003-byte RED/GREEN; service launches
+  now denied alongside networking. Missing gateway deps supplied only in cache.
+  Preserve old ui-1e3abe7 rejected and ui-1c3c9dd intermediate packets unchanged.
+- Summary example caller newline validated34787994035/e40bf5d and applied
+  exactly (755 bytes, SHA639bdad8cd9c6ec12d59a34c60b89f6c45538f73f47f8bef5ed869cac3990728).
+  Production UI unchanged. Final0/3-tool summaries match geometry/styles with
+  branding; skills/MCP stay0. Empty picker matches, other picker/wizard/menu
+  presentations differ. Do not fix production from the rejected summaries.
+- `scripts/audit_ui_evidence.py` read-only audit + three behavior tests; actual
+  tampered-PNG RED then digest-verification GREEN. CI runs them.
+- T12/T13 remain IN PROGRESS. Wizard inventory is section-level, not every
+  nested field; completion Python side is native component-host, not full CLI.
+  Do not waive these boundaries or known V1/V2/V3 differences. No closure,
+  independent/personal Matt approval, Spec018 or merge.
+
+
 - Work: review Spec 017 closure, correct CI gates/evidence, and preserve
   progress on GitHub. No new Spec 018 implementation is authorized by this work.
 - Ticket: `.scratch/hermes-rs-total-parity/issues/T11-closure-review.md`.

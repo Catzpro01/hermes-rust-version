@@ -245,6 +245,14 @@ stdout; Python reference outputs at `/tmp/t06_py_help.txt` and
 
 ## Spec 017 — total v0.21.0 parity
 
+**Visual audit update:** [48-pair report](hermes-ui-spec/017/evidence/ui-3b39bd7/REPORT.md)
+records actual 100/80-column captures and direct inspection. Summary 0/3-tools
+and empty picker fixtures match; wizard, other picker states and completion
+presentation differ. The implementation checkmarks below are NOT whole-screen
+parity passes. Wizard coverage is section-level and Python completion is a native
+component host, not full CLI. No new adaptation or closure approval is implied.
+
+
 Implementation status below is scoped to the ported surface, not proof of
 whole-screen byte identity. Closure review remains open: §J.7 requires
 side-by-side captures, and the existing PTY/unit assertions do not replace
@@ -265,9 +273,11 @@ that requirement without explicit approval. See the
 | Startup/resume | bare = new, `-c` = resume | Same + `--resume-id`; resume-latest (oldest-resume bugfix T09); piped bare resumes latest for scripted stability | ✅ |
 | Session delete | `d` + `[y/N]` in picker | Same, default-deny, cascade delete | ✅ |
 
-Documented picker adaptations (§F): 8-char `sid` (vs 6) for UUIDv7
-collision headroom; `done`/`empty` status words (Python has no status —
-T09 decision, session has no titles); preview shows source/row names;
+Documented picker adaptations (§F): 8-char `sid` for UUIDv7
+collision headroom; `done`/`empty` status words (T09 decision). The historical
+comparison said Python used 6 chars and no status; the pinned UI capture actually
+shows 18 chars and `intr`. This corrects that description, not the adaptation
+allowlist. Other existing adaptations: preview shows source/row names;
 Active shown as relative time; ↑/k wraps below ↓/j (reverse-cursor
 fidelity); `q` = filter key; `TOO_SMALL` floor 60×8. Explicitly not
 ported: §H resume display, `sessions list/stats/prune/export/rename/

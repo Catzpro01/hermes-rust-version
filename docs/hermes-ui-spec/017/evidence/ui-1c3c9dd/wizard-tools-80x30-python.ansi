@@ -1,0 +1,11 @@
+
+[35m┌─────────────────────────────────────────────────────────┐[0m
+[35m│     ⚕ Hermes Setup — Tools                              │[0m
+[35m└─────────────────────────────────────────────────────────┘[0m
+
+[36m[1m⚕ Hermes Tool Configuration[0m
+[2m  Enable or disable tools per platform.[0m
+[2m  Tools that need API keys will be configured when enabled.[0m
+[2m  Guide: https://hermes-agent.nousresearch.com/docs/user-guide/features/tools[0m
+
+[?1049h[22;0;0t[1;30r(B[m[4l[?7h[?1h=[39;49m[?25l[39;49m(B[m[H[2J(B[0;1m[33mSelect an option:[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4d(B[0;1m[32m → (●) Configure 🖥️  CLI  (17/27 enabled)[5;4H[39m(B[m(○) Reconfigure an existing tool's provider or API key[6;4H(○) Configure shared metrics  (off)[7;4H(○) Done

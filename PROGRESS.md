@@ -1020,3 +1020,26 @@ independent approval or parity pass. Final capture enabled on committed adapter.
 Reuse clean Python 1c3c9dd recordings: reference + capture-driver hashes have
 not changed, deps and snapshot boundaries are explicit; do not pretend this
 is a new Python run. Final report must distinguish availability from parity.
+
+### Four-area delivery — all 48 paired PNGs directly inspected
+
+Final ui-3b39bd7 packet: 24 scenarios ×100/80 columns; all48 images opened.
+Rust capture34788156824 + CI34788156828 SUCCESS on3b39bd7. Explicitly reused
+clean Python1c3c9dd capture (identical driver and unmodified pinned reference).
+All5128 Python source hashes,96 raw/cast roundtrips,48 PNG hashes verified.
+Isolated31-distribution inventory, byte boundaries, source/tool/font hashes,
+fixture details, reproduction commands and all48 image links accompany REPORT.
+
+0/3-tools summaries now match positions/styles (branding only), as do empty
+picker fixtures. Wizard and nonempty picker geometry/palette/labels/hints and
+completion menu vs inline-cycle differences remain. Section-level wizard
+inventory is NOT every nested field; Python completion host is NOT full CLI.
+T12 remains open; T13 lists scoped follow-up. No user acceptance or merge.
+
+Read-only audit behavior test observed genuine tampered-PNG RED (accepted by
+raw-only audit), then GREEN after binding renderer input/case/image digests.
+All3 audit +5 recorder +8 workflow tests GREEN locally. CI includes the audit
+checks. Reviewed adapter/harness changes directly along Standards/Spec axes;
+not independent or personal Matt review. Updated docs/PARITY factual Python
+ID/status description without adding any exception. Intermediate ui-1c3c9dd
+preserved alongside rejected ui-1e3abe7, not overwritten or relabeled PASS.

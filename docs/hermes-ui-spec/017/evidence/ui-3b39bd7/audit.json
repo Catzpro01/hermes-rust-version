@@ -1,0 +1,39 @@
+{
+  "status": "AUDITED_NOT_ACCEPTED",
+  "python_files_hash_checked": 5128,
+  "capture_driver_sha256": "96695c3f647a59d2a7e41a43f80d98257273873feaefb837a854e45196e5598e",
+  "renderer_script_sha256": "201091eef5007e9a45889da7b4725b658ce39df1bf977a48677e435df9f9c074",
+  "python_original_capture_checkout": "1c3c9dd05bbe470eeb358f97b28ec7cdc9ff32d7",
+  "rust_capture_checkout": "3b39bd71d674af21e011991627e1eb69bfbce109",
+  "inspected_paired_pngs": 48,
+  "missing_module_or_traceback_in_python_raw": false,
+  "raw_cast_roundtrips": 96,
+  "snapshot_boundaries": [
+    {
+      "id": "wizard-docker-100x30",
+      "snapshot_end_byte": 3072,
+      "full_raw_bytes": 3956,
+      "rule": "before next alternate-screen menu after Docker unavailable notice; full later output retained unchanged"
+    },
+    {
+      "id": "wizard-gateway-empty-100x30",
+      "snapshot_end_byte": 2115,
+      "full_raw_bytes": 3171,
+      "rule": "after empty platform result, before deferred service orchestration; full later output retained unchanged"
+    },
+    {
+      "id": "wizard-docker-80x30",
+      "snapshot_end_byte": 3072,
+      "full_raw_bytes": 3956,
+      "rule": "before next alternate-screen menu after Docker unavailable notice; full later output retained unchanged"
+    },
+    {
+      "id": "wizard-gateway-empty-80x30",
+      "snapshot_end_byte": 2115,
+      "full_raw_bytes": 3171,
+      "rule": "after empty platform result, before deferred service orchestration; full later output retained unchanged"
+    }
+  ],
+  "png_hash_checks": 48,
+  "audit_script_sha256": "078fc0ba866ed239fe4f1b6e56cc635b991a5aa67519238912a084ed480ae1b0"
+}

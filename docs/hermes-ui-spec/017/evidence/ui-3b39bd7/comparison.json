@@ -1,0 +1,1478 @@
+{
+  "status": "AUDITED_NOT_ACCEPTED",
+  "normalization": "none",
+  "raw_cast_roundtrips": 96,
+  "cases": [
+    {
+      "id": "wizard-mode-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 4,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-full-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 6,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-blank-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 8,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-quick-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 34
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 4,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-model-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 7,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-terminal-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 4,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-local-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 8,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-docker-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 17,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-gateway-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 4,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-gateway-empty-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 5,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-gateway-token-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 18,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-tools-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 2,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-tools-toggle-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 4,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-cancel-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 5,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "picker-normal-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        2,
+        3,
+        4,
+        5,
+        30
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 58,
+      "background_inverse_underline_differences": 92
+    },
+    {
+      "id": "picker-empty-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [],
+      "same_coordinate_same_glyph_attribute_differences": 0,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "picker-filter-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        2,
+        3,
+        4,
+        30
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 29,
+      "background_inverse_underline_differences": 92
+    },
+    {
+      "id": "picker-no-match-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        2,
+        3,
+        4,
+        30
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 29,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "picker-delete-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 90,
+      "background_inverse_underline_differences": 92
+    },
+    {
+      "id": "completion-command-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 36
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 0,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "completion-subcommand-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 36
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 0,
+      "background_inverse_underline_differences": 110
+    },
+    {
+      "id": "completion-alternatives-100x30",
+      "rows": {
+        "python": 30,
+        "rust": 36
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 2,
+      "background_inverse_underline_differences": 1500
+    },
+    {
+      "id": "summary-zero-100x30",
+      "rows": {
+        "python": 32,
+        "rust": 32
+      },
+      "non_branding_glyph_difference_rows_1_based": [],
+      "same_coordinate_same_glyph_attribute_differences": 0,
+      "background_inverse_underline_differences": 0,
+      "summary": {
+        "python": [
+          {
+            "row": 17,
+            "column": 36,
+            "text": "0 tools · 0 skills · /help for commands"
+          }
+        ],
+        "rust": [
+          {
+            "row": 17,
+            "column": 36,
+            "text": "0 tools · 0 skills · /help for commands"
+          }
+        ]
+      }
+    },
+    {
+      "id": "summary-nonzero-100x30",
+      "rows": {
+        "python": 32,
+        "rust": 32
+      },
+      "non_branding_glyph_difference_rows_1_based": [],
+      "same_coordinate_same_glyph_attribute_differences": 0,
+      "background_inverse_underline_differences": 0,
+      "summary": {
+        "python": [
+          {
+            "row": 18,
+            "column": 36,
+            "text": "3 tools · 0 skills · /help for commands"
+          }
+        ],
+        "rust": [
+          {
+            "row": 18,
+            "column": 36,
+            "text": "3 tools · 0 skills · /help for commands"
+          }
+        ]
+      }
+    },
+    {
+      "id": "wizard-mode-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 4,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-full-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 11,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-blank-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 7,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-quick-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 35
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 3,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-model-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 9,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-terminal-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 3,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-local-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 7,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-docker-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 11,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-gateway-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 5,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-gateway-empty-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 6,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-gateway-token-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 13,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-tools-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 1,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-tools-toggle-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 4,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "wizard-cancel-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 5,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "picker-normal-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        2,
+        3,
+        4,
+        5,
+        30
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 56,
+      "background_inverse_underline_differences": 80
+    },
+    {
+      "id": "picker-empty-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [],
+      "same_coordinate_same_glyph_attribute_differences": 0,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "picker-filter-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        2,
+        3,
+        4,
+        30
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 29,
+      "background_inverse_underline_differences": 80
+    },
+    {
+      "id": "picker-no-match-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        2,
+        3,
+        4,
+        30
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 29,
+      "background_inverse_underline_differences": 0
+    },
+    {
+      "id": "picker-delete-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 88,
+      "background_inverse_underline_differences": 80
+    },
+    {
+      "id": "completion-command-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 0,
+      "background_inverse_underline_differences": 80
+    },
+    {
+      "id": "completion-subcommand-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 0,
+      "background_inverse_underline_differences": 190
+    },
+    {
+      "id": "completion-alternatives-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28
+      ],
+      "same_coordinate_same_glyph_attribute_differences": 5,
+      "background_inverse_underline_differences": 1280
+    },
+    {
+      "id": "summary-zero-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [],
+      "same_coordinate_same_glyph_attribute_differences": 0,
+      "background_inverse_underline_differences": 0,
+      "summary": {
+        "python": [
+          {
+            "row": 8,
+            "column": 36,
+            "text": "0 tools · 0 skills · /help for commands"
+          }
+        ],
+        "rust": [
+          {
+            "row": 8,
+            "column": 36,
+            "text": "0 tools · 0 skills · /help for commands"
+          }
+        ]
+      }
+    },
+    {
+      "id": "summary-nonzero-80x30",
+      "rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "non_branding_glyph_difference_rows_1_based": [],
+      "same_coordinate_same_glyph_attribute_differences": 0,
+      "background_inverse_underline_differences": 0,
+      "summary": {
+        "python": [
+          {
+            "row": 9,
+            "column": 36,
+            "text": "3 tools · 0 skills · /help for commands"
+          }
+        ],
+        "rust": [
+          {
+            "row": 9,
+            "column": 36,
+            "text": "3 tools · 0 skills · /help for commands"
+          }
+        ]
+      }
+    }
+  ],
+  "boundary": "Glyph comparison excludes space/empty cells and explicit title branding only. Metrics do not decide adaptation acceptance or whole-screen parity."
+}
