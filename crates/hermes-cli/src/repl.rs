@@ -1,7 +1,6 @@
 use crate::output::sanitize_untrusted_output;
 use crate::session_menu::{
-    inspect_session, list_sessions, parse_resume, search_sessions, select_session, show_messages,
-    show_tool_calls,
+    inspect_session, list_sessions, parse_resume, search_sessions, show_messages, show_tool_calls,
 };
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -55,6 +54,8 @@ pub struct ReplOptions {
     pub base_url_override: Option<String>,
     /// `-c` / `--resume`: reopen the latest session without the picker.
     pub resume: bool,
+    /// `--resume-id <id>`: reopen one specific session.
+    pub resume_id: Option<String>,
     /// `--no-sandbox` (Spec 007b): shell tools run with the inherit policy.
     pub no_sandbox: bool,
 }
@@ -70,6 +71,7 @@ pub async fn run_repl(
     let ReplOptions {
         base_url_override,
         resume,
+        resume_id,
         no_sandbox,
     } = options;
     let mut provider_name = provider_name;
@@ -83,13 +85,30 @@ pub async fn run_repl(
     // Spec 017 T08 — slash/subcommand/skill/path completion + ghost
     // text (parity with the upstream prompt_toolkit completer).
     editor.set_helper(Some(crate::completion::HermesCompleter::new(home)));
-    let mut session_id = if resume || !std::io::stdin().is_terminal() {
-        match store.list()?.last().copied() {
+    // Spec 017 T09 — startup session resolution (spec §F [KOREKSI]: the
+    // picker has no "new session" option; a bare launch starts fresh).
+    // `--resume-id` wins, then `--resume` (latest), then: piped stdin keeps
+    // resuming the latest-or-creating (scripted callers must not gain a
+    // surprise session row — Spec 014 E2E pins this), while an interactive
+    // TTY launch always starts a fresh session. Browsing lives in
+    // `/sessions` and `hermes sessions browse`.
+    let mut session_id = if let Some(raw) = resume_id.as_deref() {
+        let id: hermes_core::session::SessionId = raw
+            .parse()
+            .map_err(|_| anyhow::anyhow!("invalid session id '{raw}' (expected a UUID)"))?;
+        store
+            .resume(&id)
+            .map_err(|_| anyhow::anyhow!("session not found: {id}"))?;
+        id
+    } else if resume || !std::io::stdin().is_terminal() {
+        // `store.list()` is newest-first, so the latest session is `first`
+        // (the previous `last()` resumed the OLDEST session).
+        match store.list()?.first().copied() {
             Some(id) => id,
             None => store.create_session("cli")?,
         }
     } else {
-        select_session(&store, &mut editor)?
+        store.create_session("cli")?
     };
     let existing = store.resume(&session_id)?.turns;
     let mut runner = ConversationRunner::from_turns(provider, existing);
@@ -440,7 +459,25 @@ pub async fn run_repl(
             }
             "/exit" => break,
             "/sessions" => {
-                list_sessions(&store)?;
+                // Spec 017 T09: on an interactive terminal `/sessions` opens
+                // the §F browse picker and resumes the selection in place
+                // (Python: "Browse and resume previous sessions"). Piped
+                // output keeps the plain list (byte-stable for scripts and
+                // the Spec 014 shell-vs-REPL parity proof).
+                if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
+                    match crate::session_picker::browse(&store)? {
+                        crate::session_picker::BrowseOutcome::Selected(id) => {
+                            let history = store.resume(&id)?.turns;
+                            session_id = id;
+                            runner.replace_turns(history);
+                            println!("Resumed {id}");
+                        }
+                        crate::session_picker::BrowseOutcome::Cancelled
+                        | crate::session_picker::BrowseOutcome::Empty => {}
+                    }
+                } else {
+                    list_sessions(&store)?;
+                }
                 continue;
             }
             command if command.starts_with("/inspect ") => {

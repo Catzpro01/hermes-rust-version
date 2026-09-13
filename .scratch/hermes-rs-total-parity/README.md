@@ -19,7 +19,7 @@ autocomplete /slash, tips, session picker. Sumber ground truth:
 | 007b | Sandbox default on + `--no-sandbox` | DONE — MERGED (PR #2, `319d719`) |
 | T07 | Toolsets catalog (26 toolset) | DONE — MERGED (PR #2, `319d719`) |
 | T08 | Autocomplete /slash + ghost text (parity perilaku prompt_toolkit) | DONE — MERGED (PR #3, `8d66bbb`); verdict /ask-matt 2026-09-13: cap 60 char, skill discovery best-effort, TUI-only placeholder — disetujui |
-| T09 | Session picker | Not started |
+| T09 | [Session picker](issues/T09-session-picker.md) | DONE — menunggu review Matt + CI (`sessions browse`, `/sessions` picker, startup bare = new, `--resume-id`, bugfix resume-oldest→latest) |
 | T10 | Parity, docs & closure | Not started |
 
 ## Artefak Fase 0

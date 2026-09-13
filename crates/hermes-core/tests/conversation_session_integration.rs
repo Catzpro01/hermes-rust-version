@@ -295,3 +295,48 @@ fn spec008_long_conversation_compresses_send_but_keeps_canonical_and_protects_pi
         "read/resume must not alter state.db"
     );
 }
+
+/// Spec 017 T09: the browse picker's `d` key deletes a session together with
+/// its messages and tool calls; deleting an unknown id reports `false` and
+/// touches nothing else.
+#[test]
+fn delete_session_removes_session_messages_and_tool_calls() {
+    use hermes_core::tools::{ToolCallRecord, ToolExecutionStatus};
+
+    let dir = tempdir().unwrap();
+    let db = dir.path().join("state.db");
+    let mut store = SessionStore::open(&db).unwrap();
+    let doomed = store.create_session("cli").unwrap();
+    let kept = store.create_session("cli").unwrap();
+    for id in [doomed, kept] {
+        store
+            .save_turn(
+                &id,
+                &Turn::User {
+                    content: format!("hello {id}"),
+                },
+            )
+            .unwrap();
+    }
+    store
+        .save_tool_call(&ToolCallRecord {
+            id: "tc-doomed".into(),
+            session_id: doomed.to_string(),
+            turn_index: 0,
+            tool_name: "read_file".into(),
+            arguments: "{}".into(),
+            result: "ok".into(),
+            status: ToolExecutionStatus::Success,
+        })
+        .unwrap();
+
+    assert!(store.delete_session(&doomed).unwrap());
+    assert!(store.resume(&doomed).is_err(), "session row must be gone");
+    assert!(store.list_messages(&doomed).is_err());
+    assert!(store.list_tool_calls(&doomed).is_err());
+    assert_eq!(store.list().unwrap(), vec![kept], "sibling session untouched");
+    assert_eq!(store.resume(&kept).unwrap().turns.len(), 1);
+
+    assert!(!store.delete_session(&doomed).unwrap(), "second delete reports false");
+    assert_eq!(store.list().unwrap(), vec![kept]);
+}

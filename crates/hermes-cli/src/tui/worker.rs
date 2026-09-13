@@ -117,8 +117,11 @@ fn build_runtime(
             return None;
         }
     };
+    // `store.list()` is newest-first: reattach to the latest session (the
+    // previous `last()` reattached to the OLDEST — Spec 017 T09 fix, same
+    // as the REPL's `--resume` path).
     let session_id = match store.list() {
-        Ok(ids) => ids.last().copied(),
+        Ok(ids) => ids.first().copied(),
         Err(_) => None,
     };
     let session_id = match session_id {

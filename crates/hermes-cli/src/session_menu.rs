@@ -1,34 +1,13 @@
 use crate::output::sanitize_untrusted_output;
 use anyhow::{bail, Context, Result};
 use hermes_core::session::{SessionId, SessionStore};
-use rustyline::history::History;
-use rustyline::{error::ReadlineError, Editor, Helper};
+use rustyline::error::ReadlineError;
 
-pub fn select_session<H: Helper, I: History>(store: &SessionStore, editor: &mut Editor<H, I>) -> Result<SessionId> {
-    let sessions = store.list()?;
-    if sessions.is_empty() {
-        return Ok(store.create_session("cli")?);
-    }
-    println!("Sessions:");
-    for (index, id) in sessions.iter().enumerate() {
-        println!("  {}. {}", index + 1, id);
-    }
-    println!("  n. New session");
-    let input = editor
-        .readline("select> ")
-        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
-    if input.trim().eq_ignore_ascii_case("n") || input.trim().is_empty() {
-        return Ok(store.create_session("cli")?);
-    }
-    let index: usize = input
-        .trim()
-        .parse()
-        .context("enter a session number or n")?;
-    sessions
-        .get(index.saturating_sub(1))
-        .copied()
-        .context("session number out of range")
-}
+// Spec 017 T09: the old `select_session` startup menu (numbered list with
+// `n. New session`) is removed. Python v0.21.0 has no such option in the
+// picker (spec §F [KOREKSI]): a bare launch starts a fresh session,
+// `--resume` reopens the latest, and browsing lives in `/sessions` and
+// `hermes sessions browse` (`session_picker`).
 
 pub fn list_sessions(store: &SessionStore) -> Result<()> {
     let sessions = store.list()?;

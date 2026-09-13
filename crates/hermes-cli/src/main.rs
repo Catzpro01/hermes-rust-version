@@ -10,6 +10,8 @@ mod output;
 mod render;
 mod repl;
 mod session_menu;
+// Spec 017 T09 — session browse picker (spec §F verbatim strings).
+mod session_picker;
 mod status_bar;
 mod streaming;
 mod subcommands;
@@ -48,6 +50,10 @@ struct Args {
     /// Resume the most recently updated session.
     #[arg(short = 'r', long, aliases = ["continue", "c"])]
     resume: bool,
+
+    /// Resume a specific session by id (see `hermes sessions browse`).
+    #[arg(long)]
+    resume_id: Option<String>,
 
     /// Override the model name for this invocation.
     #[arg(short = 'm', long)]
@@ -116,8 +122,11 @@ enum Commands {
     Model,
     /// Enable/disable toolsets (interactive checklist) or list them (piped)
     Tools,
-    /// List all chat sessions
-    Sessions,
+    /// List all chat sessions (or `browse` them interactively)
+    Sessions {
+        #[command(subcommand)]
+        action: Option<SessionsAction>,
+    },
     /// Inspect a session's metadata
     Inspect { id: String },
     /// Show messages in a session
@@ -133,6 +142,14 @@ enum Commands {
         #[command(subcommand)]
         action: Option<McpAction>,
     },
+}
+
+/// Nested actions for `hermes sessions` (Spec 017 T09: `browse` is the
+/// interactive picker from spec §F; a bare `sessions` keeps listing).
+#[derive(Debug, Subcommand)]
+enum SessionsAction {
+    /// Browse sessions interactively (↑↓ navigate, type to filter, `d` delete)
+    Browse,
 }
 
 /// Nested actions for `hermes mcp` (parity with the REPL's `/mcp`).
@@ -238,6 +255,7 @@ async fn run() -> anyhow::Result<()> {
             repl::ReplOptions {
                 base_url_override: args.api_url,
                 resume: args.resume,
+                resume_id: args.resume_id,
                 no_sandbox: args.no_sandbox,
             },
         )
@@ -270,8 +288,14 @@ mod tests {
             other => panic!("expected Model, got {other:?}"),
         }
         match parse(&["hermes-rs", "sessions"]).command {
-            Some(Commands::Sessions) => {}
+            Some(Commands::Sessions { action: None }) => {}
             other => panic!("expected Sessions, got {other:?}"),
+        }
+        match parse(&["hermes-rs", "sessions", "browse"]).command {
+            Some(Commands::Sessions {
+                action: Some(SessionsAction::Browse),
+            }) => {}
+            other => panic!("expected Sessions browse, got {other:?}"),
         }
         match parse(&["hermes-rs", "inspect", "abc-123"]).command {
             Some(Commands::Inspect { id }) if id == "abc-123" => {}

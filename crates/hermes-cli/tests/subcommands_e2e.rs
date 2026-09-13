@@ -971,3 +971,125 @@ fn no_sandbox_flag_and_enabled_false_yield_inherit() {
         .stdout(predicate::str::contains("sandbox: on | cwd="))
         .stdout(predicate::str::contains("cpu=2s"));
 }
+
+// Spec 017 T09: `hermes sessions browse` — piped stdin takes the numbered
+// non-curses fallback (spec §F L1639): verbatim header, numbered rows
+// (newest first), `q`/EOF cancels, a number selects.
+#[test]
+fn sessions_browse_fallback_selects_cancels_and_writes_nothing() {
+    let home = TempDir::new().unwrap();
+    let c = seed_state_db(home.path());
+    let before = canonical_rows(&home.path().join("state.db"));
+
+    let out = hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["sessions", "browse"])
+        .write_stdin("1\n")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("\u{1b}").not()) // piped -> ANSI-free
+        .get_output()
+        .stdout
+        .clone();
+    let stdout = String::from_utf8_lossy(&out);
+    assert!(
+        stdout.contains("  Browse sessions  (enter number to resume, q to cancel)"),
+        "verbatim fallback header: {stdout}"
+    );
+    assert!(stdout.contains("Title / Preview"), "column header: {stdout}");
+    assert!(
+        stdout.contains(&format!("Selected session {SEED_ID_B}")),
+        "1 = newest first: {stdout}"
+    );
+    assert!(
+        stdout.contains(&format!("hermes-rs --resume-id {SEED_ID_B}")),
+        "resume hint: {stdout}"
+    );
+
+    // `q` and EOF cancel with exit 0 and no selection.
+    for stdin in ["q\n", ""] {
+        let out = hermes_cmd()
+            .env("HERMES_HOME", home.path())
+            .args(["sessions", "browse"])
+            .write_stdin(stdin)
+            .assert()
+            .success()
+            .get_output()
+            .stdout
+            .clone();
+        let stdout = String::from_utf8_lossy(&out);
+        assert!(!stdout.contains("Selected session"), "cancelled: {stdout:?}");
+    }
+    drop(c);
+    assert_eq!(
+        before,
+        canonical_rows(&home.path().join("state.db")),
+        "browse must not write state"
+    );
+}
+
+#[test]
+fn sessions_browse_without_store_says_no_sessions_found_and_creates_nothing() {
+    let home = TempDir::new().unwrap();
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["sessions", "browse"])
+        .write_stdin("")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("No sessions found.\n"))
+        .stdout(predicate::str::contains("\u{1b}").not());
+    assert!(
+        !home.path().join("state.db").exists(),
+        "browse must never create the canonical store"
+    );
+}
+
+#[test]
+fn sessions_help_lists_browse() {
+    hermes_cmd()
+        .args(["sessions", "--help"])
+        .write_stdin("")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("browse"));
+}
+
+// Spec 017 T09: `--resume-id <id>` reopens one specific session (the shell
+// picker's selection stays actionable without entering the REPL from a
+// subcommand). Unknown/malformed ids are clear errors with exit 1.
+#[test]
+fn resume_id_opens_the_named_session() {
+    let home = TempDir::new().unwrap();
+    let c = seed_state_db(home.path());
+    drop(c);
+    let out = hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["--provider", "fake", "--resume-id", SEED_ID_A])
+        .write_stdin("/exit\n")
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let stdout = String::from_utf8_lossy(&out);
+    assert!(
+        stdout.contains(&format!("Hermes-RS session {SEED_ID_A} (provider fake)")),
+        "piped header names the resumed session: {stdout}"
+    );
+
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["--provider", "fake", "--resume-id", "00000000-0000-4000-8000-000000000000"])
+        .write_stdin("/exit\n")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("session not found"));
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["--provider", "fake", "--resume-id", "not-a-uuid"])
+        .write_stdin("/exit\n")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("invalid session id"));
+}
