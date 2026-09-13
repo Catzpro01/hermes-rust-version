@@ -620,3 +620,13 @@ performed.** The Python installation was not modified.
 - The earlier named RED is real execution but is superseded as the trusted
   baseline because its fixture was wrong. Re-submit TEST ONLY on the unchanged
   buggy writer in RED phase; then revalidate the minimal fix separately.
+
+## 2026-09-14: Correct-fixture RED verified; resubmit minimal space-preserving fix
+
+- Run 34782931817 on 209d04e: successful expected-RED mode, candidate fmt/check
+  passed and the named assertion FAILED on the unchanged writer with the
+  correct independent Python fixtures. This replaces the flawed early baseline.
+- Retrieved formatted test-only patch: 2850 bytes, SHA-256
+  b19953c39138a7f17d04210985f85842ff0e6239956f3e24209fe1adae92935e.
+  Submitted this exact test plus the minimal unstyled-space correction for
+  GREEN. No production Rust source changed yet; no parity claim or merge.
