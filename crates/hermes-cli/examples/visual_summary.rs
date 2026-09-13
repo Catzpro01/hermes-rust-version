@@ -9,6 +9,8 @@ mod theme;
 #[path = "../src/tui/welcome.rs"]
 mod welcome;
 
+use std::io::Write;
+
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let count: usize = args[1].parse().expect("tool count");
@@ -29,5 +31,7 @@ fn main() -> std::io::Result<()> {
         width,
         &info,
         theme::ColorDepth::Truecolor,
-    )
+    )?;
+    // Match Console.print and the real REPL caller, which terminate the panel line.
+    writeln!(std::io::stdout())
 }

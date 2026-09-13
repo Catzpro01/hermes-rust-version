@@ -1007,3 +1007,16 @@ by the actual Rust REPL caller. At width100 buffers are 32 vs31 rows, moving
 bottom viewport by one row. Submit adapter-only correction for remote checks;
 do not "fix" banner production code or normalize images. The untracked
 ui-1c3c9dd packet is retained, not accepted or overwritten.
+
+### Caller alignment GREEN applied exactly; final Rust matrix
+
+Adapter-only GREEN 34787994035/e40bf5d passed fmt/check/clippy/full workspace.
+Exact exported patch verified and applied byte-identically; proposal removed.
+Actual CLI/wizard/picker/completion/banner implementation remains unchanged.
+Limited direct review: adapter calls real banner with explicit fixture data,
+no reconstructed UI strings; shared renderer default was byte-regression
+checked; capture safety/EOF/repaint fixes have observed PTY tests. No
+independent approval or parity pass. Final capture enabled on committed adapter.
+Reuse clean Python 1c3c9dd recordings: reference + capture-driver hashes have
+not changed, deps and snapshot boundaries are explicit; do not pretend this
+is a new Python run. Final report must distinguish availability from parity.
