@@ -696,3 +696,13 @@ performed.** The Python installation was not modified.
   seven passed; this is infrastructure QA, not Rust RED. Other-test failures and
   zero matches are rejected. Existing digest/path/read-only guards preserved.
 - Await actual named RED before any layout correction; style work remains next.
+
+## 2026-09-14: Long-session RED verified; minimal allocation correction proposed
+
+- Run 34783950104 / cc458e9 completed expected-RED successfully: fmt/check
+  passed and exact banner_ansi_long_session_columns_match_python FAILED.
+- Verified formatted test delta: 3218 bytes, SHA-256
+  4d227be4a52cca7721824b583bf65781a71d861f522332f423640e3fc84f5a08.
+- GREEN candidate retains the allocated left-column width after wrapping,
+  instead of shrinking it again to the longest resulting line. No style change.
+  Actual Rust source remains untouched until GREEN fmt/check/clippy/tests.
