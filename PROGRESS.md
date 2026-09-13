@@ -841,3 +841,13 @@ performed.** The Python installation was not modified.
 - Saved b56c9a3 packet as FAIL_SESSION_CENTER_94, with full raw/cast/hash audit.
   Submitted test-only public-writer RED using exact fresh Python fixtures and
   Session label positions at all four widths/two depths. Runtime untouched.
+
+## 2026-09-14: Residual centering RED verified; ignore trailing wrap separator in alignment
+
+- RED 34785680910 / 5a2207d observed exact new public-writer regression fail
+  after successful fmt/check. Verified 2446-byte test patch SHA-256
+  451a17de2cf23492231bf66dc9ee2b1f342ec594be1cf6700c3a4165b878dd22.
+- Minimal GREEN candidate measures visible left text for centering, rather
+  than the trailing separator retained by wrap (`Session: `). This changes
+  runtime alignment, NOT evidence/expected normalization. All old references
+  must still pass. Actual source unchanged until verified GREEN.

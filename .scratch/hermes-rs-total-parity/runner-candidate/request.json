@@ -1,7 +1,8 @@
 {
-  "phase": "red",
+  "phase": "green",
   "capture": false,
   "test": "banner_ansi_wrapped_session_label_is_centered",
   "source_sha256": "6d66514f014376e29820cd8736d920b38a294f133bef90de6097fda2ae7ad782",
-  "patch_sha256": "6bb4e693582a2c93aa57dd9e40adf92ea05a568550d51cd8c9f123ec340a1014"
+  "patch_sha256": "931262644280be3f7949ead943174e0b6f4e0361a435ce38ee5edf22aee00029",
+  "red_run": 34785680910
 }
