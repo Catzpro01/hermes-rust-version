@@ -1,6 +1,61 @@
 --- a/crates/hermes-cli/src/tui/welcome.rs
 +++ b/crates/hermes-cli/src/tui/welcome.rs
-@@ -1650,6 +1650,44 @@
+@@ -467,34 +467,35 @@
+         // Python truncation rule: joined > 45 cells -> accumulate names while
+         // `length + len(name) + 2 <= 42`, then append "..." and stop.
+         let joined = names.join(", ");
+-        let tools_str = if joined.chars().count() > 45 {
+-            let mut short: Vec<&str> = Vec::new();
++        let displayed: Vec<(&str, Style)> = if joined.chars().count() > 45 {
++            let mut short = Vec::new();
+             let mut length = 0usize;
+             for name in &names {
+                 if length + name.chars().count() + 2 > 42 {
+-                    short.push("...");
++                    short.push(("...", Style::default().add_modifier(Modifier::DIM)));
+                     break;
+                 }
+-                short.push(name);
++                short.push((*name, body));
+                 length += name.chars().count() + 2;
+             }
+-            short.join(", ")
++            short
+         } else {
+-            joined
++            names.into_iter().map(|name| (name, body)).collect()
+         };
+-        right.push(SLine {
+-            runs: vec![
+-                Run {
+-                    text: "other:".to_owned(),
+-                    style: dim,
+-                },
+-                Run {
+-                    text: format!(" {tools_str}"),
+-                    style: body,
+-                },
+-            ],
+-        });
+-    }
++        let mut runs = vec![
++            Run { text: "other:".to_owned(), style: dim },
++            Run { text: " ".to_owned(), style: Style::default() },
++        ];
++        for (index, (name, style)) in displayed.into_iter().enumerate() {
++            if index > 0 {
++                // Rich joins individually styled names with plain punctuation.
++                runs.push(Run { text: ", ".to_owned(), style: Style::default() });
++            }
++            runs.push(Run { text: name.to_owned(), style });
++        }
++        right.push(SLine { runs });
++    }
++
+     if !info.mcp_servers.is_empty() {
+         right.push(SLine::blank());
+         right.push(header("MCP Servers"));
+@@ -1650,6 +1651,60 @@
      }
  
      #[test]
@@ -8,9 +63,13 @@
 +        // Independent Python capture: names use banner_text, commas use the
 +        // terminal foreground, and the truncation marker is default + dim.
 +        let theme = HermesTheme::dark_canonical();
-+        let info = banner_info(Some("parity-fixture"), None,
-+            &["list_dir", "read_file", "shell_readonly", "write_file"], &[],
-+            Some("01a09c9f-9e5e-7a23-a26b-3671192efa10"));
++        let info = banner_info(
++            Some("parity-fixture"),
++            None,
++            &["list_dir", "read_file", "shell_readonly", "write_file"],
++            &[],
++            Some("01a09c9f-9e5e-7a23-a26b-3671192efa10"),
++        );
 +        for width in [100, 80, 94, 95] {
 +            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
 +                let mut bytes = Vec::new();
@@ -26,16 +85,28 @@
 +                    }
 +                    let (comma, style) = cells[start + name.chars().count()];
 +                    assert_eq!(comma, ',');
-+                    assert_eq!(style, ObservedAnsiStyle {
-+                        foreground: Color::Reset, bold: false, dim: false,
-+                    }, "comma after {name}, width={width}, depth={depth:?}");
++                    assert_eq!(
++                        style,
++                        ObservedAnsiStyle {
++                            foreground: Color::Reset,
++                            bold: false,
++                            dim: false,
++                        },
++                        "comma after {name}, width={width}, depth={depth:?}"
++                    );
 +                }
 +                let start = plain[..plain.find("...").unwrap()].chars().count();
 +                for (ch, style) in &cells[start..start + 3] {
 +                    assert_eq!(*ch, '.');
-+                    assert_eq!(*style, ObservedAnsiStyle {
-+                        foreground: Color::Reset, bold: false, dim: true,
-+                    }, "tool truncation marker, width={width}, depth={depth:?}");
++                    assert_eq!(
++                        *style,
++                        ObservedAnsiStyle {
++                            foreground: Color::Reset,
++                            bold: false,
++                            dim: true,
++                        },
++                        "tool truncation marker, width={width}, depth={depth:?}"
++                    );
 +                }
 +            }
 +        }

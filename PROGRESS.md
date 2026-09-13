@@ -766,3 +766,13 @@ performed.** The Python installation was not modified.
   dots use default foreground + dim. Four widths × both color depths.
 - No punctuation implementation change before named RED. Review before final
   committed-source recapture remains the next boundary after these TDD slices.
+
+## 2026-09-14: Tool-punctuation RED observed; preserve per-token styles
+
+- RED 34784685139 / 98793df passed fmt/check and observed the exact punctuation
+  regression fail. Verified 2867-byte test delta SHA-256
+  4dd78f0480aedbfc377c397c58d9ddc6a21d2b136e95caf2f57c260b1d529760.
+- GREEN candidate preserves the existing sorting/truncation budgets while
+  emitting individually styled names, plain comma/space separators, and a
+  default-foreground dim truncation marker. No change to labels or counters.
+- Exact test and full workspace gates must pass before this source is applied.

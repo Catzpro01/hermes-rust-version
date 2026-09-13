@@ -1,6 +1,7 @@
 {
-  "phase": "red",
+  "phase": "green",
   "test": "banner_ansi_tool_punctuation_matches_python",
   "source_sha256": "61d7c1326e499508eb531630f475f3426d40a03170efda3dadccdfd436ccfc34",
-  "patch_sha256": "706815f4941bbb24b14286ebcf3905dbf23e2d24c91c06a3f477fac02e7a6308"
+  "patch_sha256": "eabd016f54ee79f7df34695bd5657ae8965414a6d16aec61d35dbc25f355cf15",
+  "red_run": 34784685139
 }
