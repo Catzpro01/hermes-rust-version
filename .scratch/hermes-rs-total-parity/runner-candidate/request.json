@@ -1,6 +1,7 @@
 {
-  "phase": "red",
+  "phase": "green",
   "test": "banner_ansi_border_does_not_inherit_title_bold",
   "source_sha256": "46cc9619555074ebcca83c19d3ec1d6c159aed44dd32acdb5c45fffcdce5cf2e",
-  "patch_sha256": "c4116f082f97607c1d62d77ecb0cc5312ea57864df8ea5592ef986148b610785"
+  "patch_sha256": "ab094450b63e7a4c357c839a678801f114670c6d5483679d76530c1aac8e9912",
+  "red_run": 34784219747
 }

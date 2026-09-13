@@ -721,3 +721,13 @@ performed.** The Python installation was not modified.
   mistaken for modifier codes. Await real named RED, not a speculative verdict.
 - Seven workflow QA tests pass. Patch transport context spaces are validated
   with git apply --check; non-patch files pass git diff --check. No gate disabled.
+
+## 2026-09-14: Border-bold RED observed; reset active SGR before style change
+
+- RED 34784219747 / 9aef403 passed fmt/check and observed the exact border
+  regression fail. Verified test export: 4956 bytes, SHA-256
+  a9089dc17bbfc3b27eec00b2638e9cc59828d7fb54c5b991a85e1bad00f34bba.
+- GREEN candidate clears the previous active SGR before writing a changed
+  style, preserving the new style's own bold/color. No dim/theme/tool changes.
+  This fixes attribute carry-over rather than changing border composition.
+- Production source is still the verified layout-only correction; pending GREEN.
