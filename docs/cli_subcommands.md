@@ -12,6 +12,7 @@ Dispatch happens after `load_config` but before provider resolution and session 
 |------------|------|--------|-------|
 | `model` | `subcommands.rs:render_model()` | **Done** (T02) | Lists configured providers and models, active marker `*`, `--provider <name>` filter, unknown provider error. Colors: gold provider names, dim brown secondary. |
 | `sessions` | `subcommands.rs` + `session_menu.rs:list_sessions()` | **Done** (T03) | Identical rendering to REPL `/sessions`. Missing store → "No sessions." Read-only, never creates store. |
+| `sessions browse` | `subcommands.rs` + `session_picker.rs` | **Done** (Spec 017 T09) | Interactive §F picker (alternate screen; numbered fallback when piped). Selection prints `Selected session <id>` + the `--resume-id` hint; `d` + `[y/N]` deletes (the only write; explicit). Missing store → "No sessions found.", never created. |
 | `inspect <id>` | `subcommands.rs` + `session_menu.rs:inspect_session()` | **Done** (T03) | Identical to REPL `/inspect`. Malformed UUID → clear error, non-zero exit. Missing store or unknown id → error. |
 | `messages <id>` | `subcommands.rs` + `session_menu.rs:show_messages()` | **Done** (T04) | `[N] role: content`, identical to REPL `/messages`; sanitized at the stdout boundary. Same id/error contract as `inspect`. |
 | `tool-calls <id>` | `subcommands.rs` + `session_menu.rs:show_tool_calls()` | **Done** (T04) | `<id> [status] <tool> args=… result=…`, identical to REPL `/tool-calls`; empty output for a session without calls. |
@@ -36,7 +37,8 @@ Global flags: `--hermes-home`, `--provider`, `--api-url`, `--tui`, `--version`, 
   match cmd {
     Model => render_model(..),
     Tools => render_tools(..) piped | wizard::setup Tools section on a TTY  // Spec 017 T07
-    Sessions => list_sessions(&store),
+    Sessions { action: None } => list_sessions(&store),
+    Sessions { action: Browse } => session_picker::browse TTY | browse_numbered piped  // Spec 017 T09
     Inspect { id } => inspect_session(&store, id),
     Messages { id } => show_messages(&store, id),
     ToolCalls { id } => show_tool_calls(&store, id),
@@ -50,7 +52,7 @@ Global flags: `--hermes-home`, `--provider`, `--api-url`, `--tui`, `--version`, 
 
 ## Invariants (docs/ROADMAP.md)
 
-- **state.db canonical:** Subcommands never create store, only open existing read-only (`open_existing_store()` checks `path.exists()`).
+- **state.db canonical:** Subcommands never create store, only open existing read-only (`open_existing_store()` checks `path.exists()`). Sole exception: `sessions browse` deletes the picked session on an explicit `d` + `y` (spec §F, `[y/N]` default-deny); browsing and selecting never write.
 - **SIGINT exit 130:** REPL path, not subcommands (subcommands are non-interactive).
 - **Credential redacted:** `render_model()` never prints API keys, only provider names and model names. `load_home_config()` loads config but redaction in Debug.
 - **Python Hermes untouched:** `smoke_python_hermes_untouched` test.
@@ -62,7 +64,8 @@ Global flags: `--hermes-home`, `--provider`, `--api-url`, `--tui`, `--version`, 
 
 - `crates/hermes-cli/src/main.rs` (unit): parser pins — every subcommand parses, `mcp` actions, global flags before/after the subcommand, `--version`/`-V`/`version`.
 - `crates/hermes-cli/src/subcommands.rs` (unit): `render_model` (plain + SGR), `active_provider` precedence, `name()` pinned for all 12 variants, `render_version`, `render_info` (with/without config), `render_mcp` (sorted rows, empty, restart).
-- `crates/hermes-cli/tests/subcommands_e2e.rs` (26 E2E against the real binary): every subcommand exits 0 without the REPL prompt and ANSI-free when piped; `sessions`, `inspect`, `messages`, `tool-calls`, `search` and `info` (line 1) are compared against the **live REPL output on the same store**; credentials never leak (`API_KEY=…` in messages, `sk-proj-…` in MCP `env`); read-only subcommands never create `state.db` and canonical rows are unchanged; a bare invocation still enters the REPL; `--version` works without a home / with a broken config; `--help` lists every subcommand and global flag.
+- `crates/hermes-cli/tests/subcommands_e2e.rs` (30 E2E against the real binary): every subcommand exits 0 without the REPL prompt and ANSI-free when piped; `sessions`, `inspect`, `messages`, `tool-calls`, `search` and `info` (line 1) are compared against the **live REPL output on the same store**; credentials never leak (`API_KEY=…` in messages, `sk-proj-…` in MCP `env`); read-only subcommands never create `state.db` and canonical rows are unchanged; a bare invocation still enters the REPL; `--version` works without a home / with a broken config; `--help` lists every subcommand and global flag. Spec 017 T09 adds: `sessions browse` fallback select/cancel/empty (piped), `sessions --help` lists `browse`, `--resume-id` opens the named session (unknown/malformed → clear exit-1 errors).
+- `crates/hermes-cli/tests/session_picker_e2e.rs` (7 PTY E2E, Spec 017 T09): verbatim §F frame + Enter-selects-newest, ↓-selects-second, live filter + filtered footer counts, `d`+`y` deletes (ground truth via rusqlite: sibling untouched), Esc cancels, empty store, and the REPL's `/sessions` opening the picker and resuming in place.
 
 ## Limits and constants (cross-ref)
 
@@ -75,4 +78,4 @@ See `tools_summary.md` and `provider_architecture.md` for:
 - `DEFAULT_COOLDOWN = 60s`
 
 ---
-*Audit 2026-09-06 - verified against source: subcommands.rs, main.rs, ROADMAP.md, provider/mod.rs. Updated 2026-09-13 for Spec 014 closure (T04–T08).*
+*Audit 2026-09-06 - verified against source: subcommands.rs, main.rs, ROADMAP.md, provider/mod.rs. Updated 2026-09-13 for Spec 014 closure (T04–T08) and Spec 017 T09 (`sessions browse`, `--resume-id`).*

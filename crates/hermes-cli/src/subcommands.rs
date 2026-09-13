@@ -134,13 +134,38 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
                 .with_context(|| "render model list")?;
             out.flush()?;
         }
-        Commands::Sessions => {
+        Commands::Sessions { action: None } => {
             // Identical rendering to the REPL's `/sessions` (same function).
             // A missing store means "no sessions" — subcommands never create
             // the canonical store (the REPL/TUI own creation at startup).
             match open_existing_store(&home)? {
                 Some(store) => list_sessions(&store)?,
                 None => println!("No sessions."),
+            }
+        }
+        Commands::Sessions {
+            action: Some(crate::SessionsAction::Browse),
+        } => {
+            // Spec 017 T09: `hermes sessions browse` is the interactive §F
+            // picker. Fully interactive (alternate screen) when both stdio
+            // streams are terminals, otherwise the numbered fallback (which
+            // also makes `echo 1 | hermes sessions browse` scriptable).
+            // Read-only apart from the picker's explicit `d` delete; never
+            // creates the store and never enters the REPL (Spec 014).
+            let Some(store) = open_existing_store(&home)? else {
+                println!("No sessions found.");
+                return Ok(());
+            };
+            let outcome = if io::stdin().is_terminal() && io::stdout().is_terminal() {
+                crate::session_picker::browse(&store)?
+            } else {
+                let stdin = io::stdin().lock();
+                let mut stdout = io::stdout().lock();
+                crate::session_picker::browse_numbered(&store, stdin, &mut stdout, fallback_width())?
+            };
+            if let crate::session_picker::BrowseOutcome::Selected(id) = outcome {
+                println!("Selected session {id}");
+                println!("Run 'hermes-rs --resume-id {id}' to resume it.");
             }
         }
         Commands::Inspect { id } => {
@@ -229,6 +254,14 @@ fn open_existing_store(home: &Path) -> anyhow::Result<Option<SessionStore>> {
     Ok(Some(store))
 }
 
+/// Terminal width for the numbered session-picker fallback (Spec 017 T09).
+/// Piped stdout has no width; 80 keeps the columns within a classic pipe.
+fn fallback_width() -> u16 {
+    crossterm::terminal::size()
+        .map(|(cols, _)| cols.max(60))
+        .unwrap_or(80)
+}
+
 /// Parse a session id from the shell. A malformed (non-UUID) id is a clear
 /// error; `main` maps any subcommand error to a non-zero exit.
 fn parse_session_id(raw: &str) -> anyhow::Result<SessionId> {
@@ -243,7 +276,7 @@ pub(crate) fn name(cmd: &Commands) -> &'static str {
     match cmd {
         Commands::Model => "model",
         Commands::Tools => "tools",
-        Commands::Sessions => "sessions",
+        Commands::Sessions { .. } => "sessions",
         Commands::Inspect { .. } => "inspect",
         Commands::Messages { .. } => "messages",
         Commands::ToolCalls { .. } => "tool-calls",
@@ -632,7 +665,13 @@ mod tests {
     fn subcommand_names_are_pinned() {
         let cases: Vec<(Commands, &str)> = vec![
             (Commands::Model, "model"),
-            (Commands::Sessions, "sessions"),
+            (Commands::Sessions { action: None }, "sessions"),
+            (
+                Commands::Sessions {
+                    action: Some(crate::SessionsAction::Browse),
+                },
+                "sessions",
+            ),
             (Commands::Inspect { id: "x".into() }, "inspect"),
             (Commands::Messages { id: "x".into() }, "messages"),
             (Commands::ToolCalls { id: "x".into() }, "tool-calls"),
