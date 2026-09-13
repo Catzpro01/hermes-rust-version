@@ -1343,7 +1343,8 @@ pub fn is_path_token(token: &str) -> bool {
 fn path_candidates(token: &str, user_home: &Path, cwd: &Path) -> Vec<Candidate> {
     let home_rel = token.starts_with("~/");
     let expanded = if home_rel {
-        format!("{}{}", user_home.display(), &token[2..])
+        // `~/x` -> `{user_home}/x` (drop only the `~`, keep the `/`).
+        format!("{}/{}", user_home.display(), &token[2..])
     } else {
         token.to_string()
     };
