@@ -20,7 +20,8 @@ autocomplete /slash, tips, session picker. Sumber ground truth:
 | T07 | Toolsets catalog (26 toolset) | DONE — MERGED (PR #2, `319d719`) |
 | T08 | Autocomplete /slash + ghost text (parity perilaku prompt_toolkit) | DONE — MERGED (PR #3, `8d66bbb`); verdict /ask-matt 2026-09-13: cap 60 char, skill discovery best-effort, TUI-only placeholder — disetujui |
 | T09 | [Session picker](issues/T09-session-picker.md) | DONE — MERGED (PR #6) |
-| T10 | [Parity, docs & closure](issues/T10-parity-closure.md) | DONE — menunggu review Matt + CI |
+| T10 | [Parity, docs & closure](issues/T10-parity-closure.md) | Dokumen tersedia; closure belum disetujui — temuan review T11 |
+| T11 | [Closure review + CI gate](issues/T11-closure-review.md) | IN REVIEW — gate fmt diperbaiki; verifikasi dan keputusan §J.7 masih terbuka |
 
 ## Artefak Fase 0
 

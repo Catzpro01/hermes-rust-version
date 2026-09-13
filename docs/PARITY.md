@@ -233,7 +233,7 @@ stdout; Python reference outputs at `/tmp/t06_py_help.txt` and
 | Python `hermes …` | Rust `hermes-rs …` | Rendering | Status |
 |---|---|---|---|
 | `model` | `model [--provider <name>]` | providers + models, `*` active marker, TTY-only colors | ✅ |
-| `sessions list` | `sessions` | `session_menu::list_sessions` (== REPL `/sessions`) | ✅ |
+| `sessions list` | `sessions` | `session_menu::list_sessions`; REPL `/sessions` opens picker on TTY, lists when piped | ✅ |
 | `sessions show <id>` | `inspect <id>` / `messages <id>` / `tool-calls <id>` | `session_menu::{inspect_session, show_messages, show_tool_calls}` (== REPL) | ✅ |
 | `sessions search <q>` | `search <query>` | `session_menu::search_sessions` (FTS5 + redaction, == REPL `/search`) | ✅ |
 | `status` / `config` | `info` | line 1 == REPL `/info`; then home, provider, counts | ✅ (subset) |
@@ -245,15 +245,21 @@ stdout; Python reference outputs at `/tmp/t06_py_help.txt` and
 
 ## Spec 017 — total v0.21.0 parity
 
+Implementation status below is scoped to the ported surface, not proof of
+whole-screen byte identity. Closure review remains open: §J.7 requires
+side-by-side captures, and the existing PTY/unit assertions do not replace
+that requirement without explicit approval. See the
+[closure review](../.scratch/hermes-rs-total-parity/issues/T11-closure-review.md).
+
 | Area | Python v0.21.0 | Hermes-RS | Status |
 |---|---|---|---|
-| Banner panel | Rich Panel: title `HERMES AGENT v0.21.0`, version line, grid (cwd/auth/sandbox/memory/model) | Same title/version/grid, ratatui buffer + raw ANSI; byte-verified by `banner_e2e` PTY | ✅ |
+| Banner panel | Rich Panel with version title, caduceus, and info grid (§A) | Ratatui buffer + raw ANSI; nine normalized plain-text reference cases in `welcome.rs`, selected color/string checks in `banner_e2e` PTY | ✅ (intentional Rust branding; not whole ANSI-stream identity) |
 | Version label | `Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301` | `Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301` (T02) | ✅ (brand intentional) |
 | Info line | model line + summary line in banner; nothing after banner (`●`/`provider:`/`✦ Tip:` gone) | Same (T03) | ✅ |
 | Setup wizard | curses multi-step (terminal/backend/provider/model) | `inquire` wizard, verbatim strings, atomic write + timestamped backup, ESC rollback (`wizard_e2e` PTY) | ✅ (terminal backends ≠ local/docker + egress = explicit "not wired" notices) |
 | Provider catalog | 39 providers (§G) | Verbatim static catalog; `hermes model` picker; unit cross-check vs verbatim file | ✅ (live per-provider model list = manual entry; follow-up) |
 | Toolset catalog | 26 toolsets + 8 default-off (§G.5) | Verbatim static catalog; `hermes tools`; `tools.enabled_toolsets` stored | ✅ (registry wiring = follow-up) |
-| Autocomplete | prompt_toolkit completer + AutoSuggest ghost | rustyline completer + hinter, 101-entry registry (87 verbatim + 14 marked RS extensions) | ✅ (behavior parity; RS extensions labeled) |
+| Autocomplete | prompt_toolkit completer + AutoSuggest ghost | rustyline completer + hinter, 101 verbatim registry entries + 14 separately marked RS extensions (gateway-only entries filtered in CLI) | ✅ (behavior parity; RS extensions labeled) |
 | Tips | 380 startup strings (dead code) + 11 composer placeholders | Ported verbatim as data + selectors; startup shows nothing (parity-faithful); placeholder shown TUI-only | ✅ |
 | Session picker | curses browser (§F) | crossterm browser, §F frame verbatim (`session_picker_e2e` PTY: 7 tests) | ✅ (documented adaptations below) |
 | Startup/resume | bare = new, `-c` = resume | Same + `--resume-id`; resume-latest (oldest-resume bugfix T09); piped bare resumes latest for scripted stability | ✅ |
@@ -273,15 +279,13 @@ implementation not found), TUI picker.
 | Feature | Python | Rust | Impact |
 |---|---|---|---|
 | Session ID format | UUID v4 | UUID v7 | Low — schema-compatible and time-sortable |
-| FTS index | Enabled | Not yet | Low — search is not implemented |
-| Provider catalog | Many built-ins + plugins | Config-declared + built-in `fake` | Medium — Rust has no dynamic plugin loading |
-| Tool execution | Docker sandbox + egress proxy | Native shell; opt-in process-level sandbox (env allowlist, cwd jail, output cap, `ulimit`, `unshare --net`) — Spec 007 | Medium — no container isolation; see ADR 0006 |
+| FTS index | Enabled | FTS5 message search (`search` / `/search`), Spec 004 | Implemented; render-boundary credential redaction |
+| Provider catalog | Many built-ins + plugins | 39-entry static picker catalog + config-declared adapters + built-in `fake` | Medium — catalog is not a claim of 39 working adapters; no dynamic plugin loading |
+| Tool execution | Docker sandbox + egress proxy | Native shell; CLI-default-on process-level sandbox (env allowlist, cwd jail, output cap, `ulimit`, `unshare --net`) — Spec 007 | Medium — no container isolation; explicit `--no-sandbox` / `sandbox.enabled: false` opt-out; see ADR 0006 amendment |
 | TUI dashboard | Rich/curses terminal output only (no dedicated dashboard) | Opt-in Ratatui `--tui` dashboard + readline REPL | Rust-only capability (Spec 012) |
 
 ## Known Gaps 🚧
 
-- Function calling / tool use (planned Spec 002)
-- FTS5 search on message content
 - Dynamic plugin/provider loading
 - Conversation branching and edit
 

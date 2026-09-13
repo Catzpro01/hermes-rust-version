@@ -20,7 +20,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 5 — Ecosystem | 012 | TUI dashboard (ratatui) | Done |
 | 5 — Ecosystem | 013 | Hermes Python UI parity (visual) | Done |
 | 6 — CLI surface | 014 | CLI subcommands parity (shell access) | Done |
-| 7 — Total parity | 017 | Hermes Python v0.21.0 total byte-level parity (wizard, katalog, UX) | Done |
+| 7 — Total parity | 017 | Hermes Python v0.21.0 total byte-level parity (wizard, katalog, UX) | Implementation done; closure review open |
 
 ## Spec 004 closure
 
@@ -332,13 +332,13 @@ load-time rejection of `network: dney`.
 
 ## Spec 017 — total v0.21.0 parity closure
 
-Spec 017 ports the entire Hermes Python v0.21.0 interactive surface
+Spec 017 ports the scoped Hermes Python v0.21.0 interactive surface
 (wizard, banner, tips, provider/toolset catalogs, autocomplete, session
 picker) to Rust with byte-level fidelity where it matters and documented
 adaptations where the stacks diverge (curses→inquire/crossterm,
 prompt_toolkit→rustyline, Rich→ratatui/ANSI). Ground truth:
 `docs/HERMES_UI_SPEC.md` §A–§K and the 11 verbatim files under
-`.scratch/hermes-rs-total-parity/reference/`.
+`docs/hermes-ui-spec/017/verbatim/`.
 
 | Ticket | Scope | Landed |
 |---|---|---|
@@ -356,11 +356,18 @@ prompt_toolkit→rustyline, Rich→ratatui/ANSI). Ground truth:
 | T09 | Session picker `sessions browse` + `/sessions` (§F verbatim frame), startup bare = new, `--resume-id`, resume-latest bugfix | PR #6 |
 | T10 | This closure (docs only) | this PR |
 
-Closure proof: CI `fmt + clippy + test` on PR #6 —
+Historical verification: CI `fmt + clippy + test` on PR #6 —
 `clippy --workspace --all-targets -D warnings` clean, `cargo test
 --workspace` 576 passed / 0 failed (incl. PTY E2E suites
-`banner_e2e`, `wizard_e2e`, `session_picker_e2e`, which assert real
-terminal bytes element-by-element per §J.7). Non-negotiables held:
+`banner_e2e`, `wizard_e2e`, `session_picker_e2e`, which assert
+selected terminal strings and behavior, not full §J.7 side-by-side
+captures). The 2026-09-14 review confirmed the 576-test total from GitHub
+check annotations; the old CI masked rustfmt failures with `|| true`, so
+a green run alone does not prove formatting passed. §J.7 evidence or
+explicit approval of an alternative, and a run with the corrected format
+gate, remain closure requirements. See the
+[closure review](../.scratch/hermes-rs-total-parity/issues/T11-closure-review.md).
+Recorded invariants:
 Python install untouched, `state.db` canonical, SIGINT exit 130,
 redaction on every output path, sanitizer at render boundary only,
 TTY-only ANSI, explicit `[y/N]`, atomic config writes with backup.
@@ -383,7 +390,10 @@ annotations.
 Last full run (2026-09-13, Spec 017 closure, GitHub Actions `fmt + clippy +
 test` workflow on `ubuntu-latest`, stable toolchain, PR #6): `cargo test
 --workspace` — 576 passed, 0 failed; `clippy --workspace --all-targets -D
-warnings` clean; `cargo fmt --check` clean. CI runs on every push to `main`
+warnings` clean; format status **not established by the green check** (the then-current
+workflow swallowed fmt failures). The 576-test total and clippy success
+were rechecked through job `103764353101` annotations on 2026-09-14; this
+is historical evidence, not a new local run. CI runs on every push to `main`
 and `arena/**` and on pull requests; diagnostics are published as check-run
 annotations.
 

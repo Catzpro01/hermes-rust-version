@@ -11,6 +11,20 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  workflow-regression:
+    name: CI gate regression tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install QA dependency
+        run: python3 -m pip install PyYAML==6.0.3
+      - name: Test workflow gates
+        run: python3 scripts/test_ci_workflow.py
+
   test:
     name: fmt + clippy + test
     runs-on: ubuntu-latest
@@ -27,7 +41,11 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: cargo fmt --check
-        run: cargo fmt --all -- --check 2>&1 | tee fmt.log || true
+        id: fmt
+        run: |
+          set -o pipefail
+          cargo fmt --all -- --check 2>&1 | tee fmt.log
+        continue-on-error: true
 
       - name: cargo clippy
         id: clippy
@@ -69,6 +87,10 @@ jobs:
           def emit(kind, title, lines, limit=40):
               body = "\n".join(lines[:limit]).replace('%','%25').replace('\r','%0D').replace('\n','%0A')
               print(f"::{kind} title={title}::{body}")
+          try: fmt = open('fmt.log').read()
+          except FileNotFoundError: fmt = ''
+          if os.environ.get('FMT') != 'success':
+              emit('error', 'rustfmt', fmt.splitlines() or ['Formatting check did not succeed.'])
           n = 0
           for b in blocks('clippy.log', r'^(error|warning)(\[|:)'):
               if n >= 45: break
@@ -83,11 +105,12 @@ jobs:
               emit('error', f'test failed: {m.group(1)}', m.group(2).splitlines(), 25); n += 1
           results = re.findall(r'^test result: .*$', t, re.M)
           fails = re.findall(r'^    (\S+)$', t.split('failures:')[-1], re.M) if 'failures:' in t else []
-          emit('notice', 'summary', [f"clippy={os.environ.get('CLIPPY')} test={os.environ.get('TEST')}"] + results + (["FAILED: " + ", ".join(fails)] if fails else []), 60)
+          emit('notice', 'summary', [f"fmt={os.environ.get('FMT')} clippy={os.environ.get('CLIPPY')} test={os.environ.get('TEST')}"] + results + (["FAILED: " + ", ".join(fails)] if fails else []), 60)
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
               f.write("```\n" + "\n".join(results) + "\n" + "\n".join(fails) + "\n```\n")
           PY
         env:
+          FMT: ${{ steps.fmt.outcome }}
           CLIPPY: ${{ steps.clippy.outcome }}
           TEST: ${{ steps.test.outcome }}
 
@@ -102,5 +125,5 @@ jobs:
             test.log
 
       - name: Fail if any step failed
-        if: steps.clippy.outcome != 'success' || steps.test.outcome != 'success'
+        if: always() && (steps.fmt.outcome != 'success' || steps.clippy.outcome != 'success' || steps.test.outcome != 'success')
         run: exit 1

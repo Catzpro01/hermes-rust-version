@@ -1,6 +1,9 @@
 # T10 — Parity, docs & closure (Spec 017)
 
-Status: DONE — menunggu review Matt (+ CI hijau sebagai gate).
+Status: IN REVIEW — dokumen tersedia, closure belum disetujui.
+
+Review 2026-09-14: lihat [T11](T11-closure-review.md) untuk koreksi bukti,
+gate format CI, dan persyaratan §J.7 yang masih terbuka.
 
 ## Cakupan (tiket penutup, tanpa perubahan kode)
 
@@ -8,7 +11,7 @@ Sinkronisasi dokumen dengan kode yang sudah mendarat (Fase 0–T09),
 reconcile status T04, dan bukti closure. Constraint penerimaan seperti
 013-06/014-08: dokumen + bukti saja.
 
-## Perubahan dokumen
+## Perubahan dokumen pada T10 awal (sebelum review T11)
 
 - `docs/ROADMAP.md`: baris fase 017 → `Done`; seksi baru "Spec 017 —
   total v0.21.0 parity closure" (tabel tiket + komit/PR, closure proof,
@@ -35,16 +38,19 @@ Keputusan display sudah mendarat semuanya:
 
 T04 = DONE, tidak ada keputusan display yang menggantung.
 
-## Bukti parity (§J.7) — verifikasi mesin, bukan screenshot manual
+## Bukti parity yang tersedia — verifikasi mesin (belum menutup §J.7)
 
 Side-by-side capture manual (§J.7: banner panel, wizard steps, picker
-frame, completion dropdown, summary line) digantikan bukti otomatis
-yang lebih kuat — PTY E2E yang menjalankan binary nyata di terminal
-semu dan menegaskan byte output:
+frame, completion dropdown, summary line) belum tersedia sebagai satu set
+lengkap di repo. Ada sembilan referensi banner ternormalisasi di
+`welcome.rs`; PTY E2E menjalankan binary nyata di terminal semu dan menegaskan string/perilaku terpilih, tetapi tidak membuktikan
+seluruh frame byte-identik dengan Python. Penggantian bukti wajib §J.7
+memerlukan persetujuan eksplisit; review ini tidak memberikan sign-off.
+Bukti otomatis yang tersedia:
 
 | Artefak §J.7 | Bukti otomatis |
 |---|---|
-| Banner panel (title + grid) | `banner_e2e.rs` (PTY): title gold bold, border bronze, logo ≥95, welcome-only setelah banner |
+| Banner panel (title + grid) | `welcome.rs`: 9 referensi plain-text ternormalisasi; `banner_e2e.rs` (PTY): title gold bold, border bronze, logo ≥95, welcome-only setelah banner |
 | Setup wizard tiap step | `wizard_e2e.rs` (PTY): first-time, not-wired, tulis atomik, ESC rollback, backup + merge |
 | Session picker frame | `session_picker_e2e.rs` (7 PTY): frame verbatim, Enter/↓/filter/`d`+`y`/Esc |
 | Completion dropdown (candidates) | unit `completion.rs` (101 entri vs verbatim, alias, subcommand, stacked skills, path, ghost) |
@@ -62,8 +68,14 @@ clippy `--workspace --all-targets -D warnings` bersih; `cargo test
 picker, 1 core delete, 4 piped E2E, 7 PTY E2E; suite `subcommands_e2e`
 33/33, `session_picker_e2e` 7/7).
 
-Non-negotiables yang terjaga sepanjang slice: instalasi Python tak
-disentuh (`smoke_python_hermes_untouched`); `state.db` kanonik (browse
+Catatan review: angka 576 dan clippy success dikonfirmasi dari anotasi
+check GitHub `103764353101`; status fmt tidak terbukti oleh CI hijau
+karena `|| true` pada langkah format lama. Belum ada run lokal baru.
+
+Non-negotiables yang dicatat sepanjang slice: instalasi Python tidak
+boleh disentuh. `smoke_python_hermes_untouched` hanya membandingkan mtime
+`~/.hermes/state.db` bila home ada (skip bila tidak), bukan audit seluruh
+instalasi Python; `state.db` kanonik (browse
 read-only kecuali `d`+`y` eksplisit); SIGINT exit 130 (termasuk di
 dalam picker); kredensial terredaksi di semua path output; sanitasi
 hanya di boundary render; ANSI hanya di TTY (piped byte-stable);
@@ -85,7 +97,7 @@ tulis config atomik + backup; konfirmasi `[y/N]` default-deny.
 
 - `docs/PARITY.md` § "Known Gaps" dan baris "FTS index | Not yet" di
   "Differences" adalah keusangan pre-existing (function calling +
-  FTS5 sudah mendarat di Spec 002/004) — sengaja tidak disentuh di
-  T10 agar diff closure tetap fokus; pembersihan = tiket lanjutan.
+  FTS5 sudah mendarat di Spec 002/004) — awalnya tidak disentuh di
+  T10; diperbaiki dalam review T11 bersama default sandbox dan jumlah katalog.
 - `crates/hermes-cli/src/tui/main.rs` adalah file yatim (tidak
   dikompilasi; signature kedaluwarsa) — kandidat hapus di tiket hygiene.
