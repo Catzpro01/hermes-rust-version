@@ -250,3 +250,17 @@ performed.** The Python installation was not modified.
 - Continue in this session: the current reasoning remains relevant. No clear,
   compact, new user-only flow, independent review, or merge was performed.
 - Routing/progress documentation only; no code change or new Rust test run.
+
+## 2026-09-14: `/grill-with-docs` started, first decision pending
+
+- Read original grilling/domain-modeling instructions and their glossary/ADR
+  formats; inspected §J.7, T11, documented adaptations, and local tools.
+  CI `34778089793` is SUCCESS on `37d10f1`; no new local Rust run.
+- Recorded the design tree in `.scratch/hermes-rs-total-parity/grilling.md`.
+  Current frontier: retain real side-by-side capture plus tests (recommended),
+  or explicitly amend the evidence requirement. Later matrix/comparison/gate
+  questions depend on that answer and are not assumed.
+- No user answer yet: no glossary definition, ADR, waiver, implementation,
+  or closure approval written as settled. Facts were inspected directly;
+  no native Skill invocation or independent subagent execution is claimed.
+- Documentation only; commit/push this interview state. No merge authorized.

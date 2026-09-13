@@ -32,6 +32,9 @@ user's private Python installation.
   progress on GitHub. No new Spec 018 implementation is authorized by this work.
 - Ticket: `.scratch/hermes-rs-total-parity/issues/T11-closure-review.md`.
 - Evidence and chronological updates: `PROGRESS.md`.
+- Active `/grill-with-docs` interview: `.scratch/hermes-rs-total-parity/grilling.md`.
+  Round 1 evidence-policy decision is pending; do not assume agreement or
+  begin implementation before the final shared-understanding confirmation.
 - The missing `/ask-matt` skill blocker is resolved. On the user's download
   request, all 37 official Matt Pocock skills were installed project-locally
   from pinned upstream `3cca18b368ae95cdbdebbff572ccafa662551015`.
