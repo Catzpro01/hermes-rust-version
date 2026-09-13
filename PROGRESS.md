@@ -919,3 +919,16 @@ Preserve Python data; no new features, independent verdict, closure or merge.
   known at writing. No runtime changes or new independent approval.
 - Next: `/implement` T12 wizard evidence first; full evidence and explicit
   final user acceptance still required. No closure, merge or auto-merge.
+
+## 2026-09-14: Implement remaining UI evidence, first executable adapter gate
+
+User prioritizes resolving the four-area evidence gap. Inventory confirms four
+implemented wizard sections (Model, Terminal, Gateway, Tools); completion is
+commands.py SlashCommandCompleter, not shell completion. Use real CLI/PTY for
+Rust wizard/picker/completion and unmodified Python components. Summary zero
+vs nonzero needs explicit component fixtures: REPL always registers four tools.
+Submitted unapplied, UI-free summary example for remote fmt/check/clippy/tests
+before applying Rust. New branch-only/read-only workflow, pinned actions; no
+production source changed yet. Local official Rust download still fails TLS.
+Python isolated reference has evolved details relative to prose spec; preserve
+real outputs and record discrepancies, never silently synthesize expected UI.
