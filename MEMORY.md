@@ -33,11 +33,14 @@ user's private Python installation.
 - Ticket: `.scratch/hermes-rs-total-parity/issues/T11-closure-review.md`.
 - Evidence and chronological updates: `PROGRESS.md`.
 - Active `/grill-with-docs` interview: `.scratch/hermes-rs-total-parity/grilling.md`.
-  Q1-Q6 are settled (all A): real captures + recordings + metadata, normal
+  Q1-Q8 are settled (all A): real captures + recordings + metadata, normal
   and risky-state coverage, only existing documented adaptations, unchanged
   originals with separately logged dynamic normalization, and the agreed
-  100/80/94/95-column terminal matrix. Q7 scope and Q8 sign-off are pending;
-  no implementation, closure, or merge is approved yet.
+  100/80/94/95-column terminal matrix. Q7 confines fixes to the five UI areas
+  and related regressions; Q8 requires explicit user acceptance of the final
+  report for closure. Await final confirmation of the consolidated agreement
+  before execution; no new implementation, closure, or merge is approved yet.
+  Known runtime/reference availability blockers remain, not waived evidence.
 - The missing `/ask-matt` skill blocker is resolved. On the user's download
   request, all 37 official Matt Pocock skills were installed project-locally
   from pinned upstream `3cca18b368ae95cdbdebbff572ccafa662551015`.

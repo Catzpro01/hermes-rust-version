@@ -66,8 +66,10 @@ User kemudian mengonfirmasi `2A, 3A`: gambar berdampingan + rekaman terminal
 mentah + metadata; jalur normal dan kondisi berisiko yang representatif.
 User juga mengonfirmasi `4A, 5A, 6A`: hanya adaptasi terdokumentasi,
 normalisasi dinamis di tampilan pembanding terpisah dengan bukti asli utuh,
-dan matriks terminal yang disepakati. Cakupan perbaikan dan pihak sign-off
-masih dibahas di `../grilling.md`; belum ada persetujuan closure atau implementasi.
+dan matriks terminal yang disepakati. Jawaban `7a 8a` menetapkan perbaikan
+hanya pada lima area UI dan regresi terkait, serta sign-off laporan akhir
+oleh user. Q1-Q8 selesai; rangkuman di `../grilling.md` menunggu konfirmasi
+akhir sebelum eksekusi. Belum ada capture baru atau persetujuan closure.
 
 ### P2 — Laporan parity memuat informasi yang bertentangan (diperbaiki)
 
@@ -136,6 +138,6 @@ historis tidak dinyatakan bersih karena workflow lama menelan kegagalannya.
 - [x] Jalankan fmt/check/clippy/test workspace dengan Rust stable; tangani
   kegagalan yang ditemukan, lalu dapatkan hasil gate CI baru (runner fmt/check
   sebelum commit; run `34776992554` pada commit formatting sukses).
-- [ ] Lengkapi §J.7 atau dapatkan persetujuan eksplisit atas bukti alternatif.
-- [ ] Human review/sign-off closure T10.
+- [ ] Lengkapi capture nyata §J.7 sesuai keputusan Q1-Q8; tes bukan pengganti.
+- [ ] User meninjau dan memberi sign-off eksplisit atas laporan akhir closure T10.
 - [ ] Merge hanya jika diperintahkan user; bukan tindakan otomatis tiket ini.

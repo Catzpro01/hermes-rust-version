@@ -313,3 +313,20 @@ performed.** The Python installation was not modified.
   execution, captures, runtime changes, independent subagents, or merge.
 - Documentation only; commit/push the settled choices and pending questions.
   Implementation still waits for final shared-understanding confirmation.
+
+## 2026-09-14: Grilling Q7/Q8 settled; final agreement awaiting confirmation
+
+- User answered `7a 8a`: fixes stay in the five UI areas plus related
+  regressions, with affected captures regenerated; explicit user acceptance
+  of the final report is required for closure. Deferred features remain out
+  of scope. Added the resolved Spec 017 closure glossary distinction.
+- Q1-Q8 are settled. Consolidated their agreement at the top of the interview
+  document and updated MEMORY/T11. Only final shared-understanding confirmation
+  remains before scoped execution. No closure sign-off is inferred.
+- Corrected T11's active checklist to the selected real-capture route rather
+  than continuing to offer the unselected alternative-evidence policy.
+- Rechecked CI `34778717119`: both jobs succeeded on exact `9fcca93`.
+  This is a prior checkpoint, not verification of the new documentation commit.
+- Documentation only; no Rust changes/tests, captures, runtime installation,
+  or merge. Reference/runtime availability still needs verification before
+  actual captures. Run diff hygiene, commit/push, and inspect the new CI state.

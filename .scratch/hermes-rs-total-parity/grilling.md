@@ -1,10 +1,41 @@
 # Spec 017: visual-evidence decision interview
 
-Status: Q1-Q6 settled; awaiting round 4 answers (`needs-info`)
+Status: Q1-Q8 settled; awaiting final shared-understanding confirmation (`needs-info`)
 Owner: user (decisions), Arena agent (fact-finding and documentation)
 Started: 2026-09-14
 Origin: explicit user invocation of `/grill-with-docs`
 Related: `issues/T11-closure-review.md`
+
+## Consolidated agreement — awaiting confirmation to proceed
+
+All eight policy choices were answered A. This summary records those choices;
+it is not proof that any new capture has been produced or accepted.
+
+| Decision | Agreement |
+|---|---|
+| Q1: Evidence | Real paired Python/Rust captures for banner, every implemented wizard step, session picker, completion dropdown, and summary line. Automated tests support, not replace, them. |
+| Q2: Artifacts | Paired screen images, retained raw terminal recordings, and source/version, fixture, terminal, and reproduction metadata. |
+| Q3: Scenarios | Normal paths plus representative risky states, using isolated dummy fixtures; not every provider/platform combination. |
+| Q4: Adaptations | Only the existing explicit adaptations in the Spec 017 table/picker notes of `docs/PARITY.md` at `b38d09e`, identified per case. No silent expansion. |
+| Q5: Normalization | Keep originals unchanged. Log unavoidable dynamic-value normalization in a separate comparison view; never hide layout, color, static-label, or meaningful-counter defects. |
+| Q6: Terminal | 100x30 baseline; 80x30 narrow layouts; 94x30 and 95x30 banner threshold. Match font, renderer, locale and color/TERM conditions within each pair. |
+| Q7: Corrections | Fix deviations in the five agreed UI areas and directly related regressions; regenerate affected evidence. Deferred features remain separate. |
+| Q8: Closure | Required evidence complete, comparison rules satisfied, relevant CI green, then explicit user acceptance of the final report. |
+
+Representative cases include wide/narrow banner, wizard cancellation and
+unavailable-feature notice, picker empty/filter/delete confirmation,
+completion alternatives, and summary zero/nonzero counts. Missing required
+captures remain BLOCKED; undocumented deviations cannot silently pass.
+
+Preserve Python Hermes and its data. Use isolated dummy fixtures, never
+secrets or real account data. Commit/push progress on the assigned branch.
+No merge without a separate explicit instruction.
+
+Execution prerequisites still need to be established: the inspected sandbox
+lacks the previously referenced Python installation and a local Rust toolchain.
+A usable isolated reference/runtime and their provenance must be verified
+before capture; inability to do so is a blocker, not permission to fabricate
+or substitute evidence. No new capture execution occurred during this interview.
 
 ## Method and constraints
 
@@ -45,10 +76,10 @@ understanding. Commit/push notes; merge remains unauthorized.
 3. **Comparison rules** (settled, Q4 = A, Q5 = A, Q6 = A)
    - Terminal conditions, dynamic-value normalization, intentional adaptations,
      and concrete examples of acceptable versus unacceptable differences.
-4. **Failure handling and acceptance** (current frontier, Q7-Q8)
+4. **Failure handling and acceptance** (settled, Q7 = A, Q8 = A)
    - Which mismatches block closure; permitted corrective-work scope.
    - Review/sign-off requirements and handling unavailable evidence.
-5. **Shared-understanding confirmation**, blocked by all remaining decisions
+5. **Shared-understanding confirmation** (current frontier; pending)
    - Summarize the agreed policy; obtain explicit confirmation before action.
 
 ## Round 1
@@ -179,7 +210,22 @@ and relevant CI must pass. Green CI alone is not sign-off.
 - B: a reviewer explicitly designated by the user gives sign-off instead;
   establish their identity and review channel before relying on that approval.
 
-**User answers:** Q7 pending; Q8 pending. Once these and any branches they
-open are settled, present the complete agreement for confirmation. No
-implementation begins and no closure is declared merely from a round answer.
-Merge remains a separate explicit user instruction in either option.
+**User answers:** explicit `7a 8a` (2026-09-14). Q7 = A and Q8 = A are
+settled. Corrective work stays within the five agreed UI areas and directly
+related regressions; affected evidence must be regenerated. Deferred features
+stay separately tracked. The user, not an assumed external reviewer, must
+explicitly accept the final evidence report before closure.
+
+No alternative branch was opened. All policy choices Q1-Q8 are settled;
+only confirmation of the complete agreement remains. This round answer is
+not that final confirmation, capture execution, or closure sign-off.
+
+## Final shared-understanding confirmation
+
+Present the consolidated agreement near the top of this document to the user.
+Ask whether it is accurate and whether to proceed within these bounds. A
+confirmation to proceed authorizes the scoped evidence/corrective work, not
+acceptance of as-yet-unproduced evidence or a merge. Keep T11 open until its
+actual evidence and user sign-off criteria are satisfied.
+
+**User confirmation:** pending. No execution or closure approval recorded.

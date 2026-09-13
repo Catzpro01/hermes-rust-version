@@ -15,6 +15,7 @@ Hermes-RS is a Rust rewrite of Hermes Agent, developed compatibility-first again
 - **Compatibility-first**: preserve existing data and behavior through adapters; do not modify or delete the Python Hermes installation during the rewrite.
 - **Hermes visual parity evidence**: paired images of the real Python and Rust Hermes UI, retained terminal recordings, and reproduction metadata. Automated tests support this evidence rather than replace it.
 - **Hermes comparison view**: a derived view of visual parity evidence with only explicitly recorded dynamic-value normalization. The original captures and recordings remain unchanged.
+- **Spec 017 closure**: user-accepted completion of the agreed visual evidence and verification requirements. Implementation completion alone is not closure, and closure is not permission to merge.
 
 ## Current boundary
 
