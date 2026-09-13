@@ -30,6 +30,9 @@ user's private Python installation.
   progress on GitHub. No new Spec 018 implementation is authorized by this work.
 - Ticket: `.scratch/hermes-rs-total-parity/issues/T11-closure-review.md`.
 - Evidence and chronological updates: `PROGRESS.md`.
+- Latest request `/ask-matt`: user chose the **existing Matt skill**, not an
+  agent-written substitute. Await the skill's path/attachment; no callable
+  definition was found in the available checkout. No Matt verdict received.
 - Verified source checkpoint `3e0e8d9`: CI run `34776992554` succeeded with
   fmt/clippy success, 576 Rust tests, and five CI regression tests. Formatting
   and false error annotations are fixed. Later documentation checkpoints

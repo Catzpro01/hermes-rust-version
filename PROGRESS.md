@@ -167,3 +167,19 @@ that requirement complete based solely on green CI. Use the assigned branch
 of your own session; never switch to another branch based on an old handoff.
 Always commit/push progress. **No merge or auto-merge has been authorized or
 performed.** The Python installation was not modified.
+
+## 2026-09-14 — `/ask-matt` awaiting the existing skill definition
+
+- Restored context from AGENTS, CONTEXT, MEMORY, progress-handoff, local
+  issue/triage/domain guides, and T11. Rechecked CI `34777096070`: both jobs
+  succeeded on exact checkpoint `3794df36ccde3481c210fa1e23d153a41568d0f9`.
+- Repository references prior `/ask-matt` decisions but no callable command,
+  skill definition, or reviewer connector was found in the available checkout
+  and inspected workspace paths. This does not establish that the skill is
+  absent from the user's external environment.
+- User selected **use the existing Matt skill**, not substitute agent review.
+  Status: `needs-info` — await its path/attachment and any required resources.
+- Next action: read that actual skill and follow its procedure. Do not invent
+  a Matt verdict, recreate a substitute skill, or close §J.7 while waiting.
+- Documentation-only checkpoint; no new Rust test run, external reviewer
+  contact, PR, merge, or auto-merge performed. Save this blocker to GitHub.
