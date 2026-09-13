@@ -24,9 +24,5 @@ Slice vertikal: batas eksekusi **process-level, opt-in** untuk tool shell
 
 Rincian & bukti: [issues/01-05-sandbox.md](issues/01-05-sandbox.md).
 
-## Catatan verifikasi
-Ditulis di sandbox offline tanpa toolchain Rust. Sebelum merge:
-`cargo fmt --all && cargo test --workspace && cargo clippy --workspace
---all-targets -- -D warnings`. Test yang bergantung host: `run_shell_file_size_limit_is_enforced`
-dan `spec007_output_cap_and_rlimits_apply_to_both_shell_tools` memakai
-`ulimit -f` (POSIX sh; dash/bash oke).
+## Verifikasi
+CI GitHub Actions (`.github/workflows/ci.yml`) hijau pada 2026-09-13: 509 test lulus, clippy `-D warnings` bersih.

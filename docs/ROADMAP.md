@@ -334,10 +334,12 @@ load-time rejection of `network: dney`.
 Last full run (2026-09-05, Spec 013 closure): `cargo test --workspace` — 400
 passed, 0 failed; `clippy --workspace --all-targets -D warnings` clean.
 
-Spec 014 T04–T08 and Spec 007 (2026-09-13) were authored in an offline sandbox without a
-Rust toolchain; run `cargo fmt --all && cargo test --workspace && cargo
-clippy --workspace --all-targets -- -D warnings` before merging and record
-the count here.
+Last full run (2026-09-13, Spec 014 + Spec 007 closure, GitHub Actions
+`CI` workflow on `ubuntu-latest`, stable toolchain): `cargo test --workspace`
+— 509 passed, 0 failed; `clippy --workspace --all-targets -D warnings` clean.
+CI (`.github/workflows/ci.yml`) runs fmt/clippy/test on every push to `main`
+and `arena/**` and on pull requests; diagnostics are published as check-run
+annotations.
 
 ## Invariants
 

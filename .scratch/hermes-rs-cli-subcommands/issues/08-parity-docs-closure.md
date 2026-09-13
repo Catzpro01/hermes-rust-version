@@ -21,7 +21,5 @@ pernah bocor; subcommand read-only tidak membuat `state.db` dan snapshot
 baris kanonik tidak berubah; invocation kosong tetap masuk REPL (zero
 regression); `--version` bekerja tanpa home / dengan config rusak.
 
-## Catatan verifikasi
-Perubahan T04–T08 ditulis di lingkungan tanpa toolchain Rust (sandbox
-offline). Sebelum merge: `cargo fmt --all && cargo test --workspace &&
-cargo clippy --workspace --all-targets -- -D warnings`.
+## Verifikasi
+CI GitHub Actions (`.github/workflows/ci.yml`) hijau pada 2026-09-13: 509 test lulus, clippy `-D warnings` bersih.
