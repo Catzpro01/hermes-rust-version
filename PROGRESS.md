@@ -352,3 +352,24 @@ performed.** The Python installation was not modified.
   regular-file/directory path validation before extraction.
 - Next: run the capture workflow, verify/retrieve raw data, render/inspect
   paired banner images, record deviations, then expand to remaining areas.
+
+## 2026-09-14: First real captures exposed an ANSI geometry defect
+
+- CI `34779200438` and capture run `34779200470` succeeded on `814c235`.
+  Retrieved 60,632-byte raw Rust bundle from three annotations; SHA-256
+  `311964327069028ef542075a8b9ca76d6b5e9e4f6c43dd90cc637aa86d0204d4` verified.
+- Python public-renderer captures ran locally. Initial renderer inspection
+  found dependency warnings on Python and collapsed Rust column geometry.
+  Confirmed writer skips every unstyled space, moving headers/borders despite
+  matching buffer-level references. This is an in-scope defect, not an allowed
+  branding difference. Initial images are diagnostic, not passing evidence.
+- Added missing requests/httpx dependencies only in the isolated Python cache.
+  Chromium from npm plus its bundled shared libraries now runs locally; common
+  xterm/DejaVu rendering preserves dim/color/geometry and original byte streams.
+- Prepared a test-only candidate outside Git for the public ANSI writer against
+  existing independent Python references at all four widths and both color
+  depths. Added bounded manual pre-commit validation: runner fmt/check, explicit
+  expected-red assertion, green full workspace checks, tested-delta digest.
+  Rust source is not committed before required remote fmt/check verification.
+- Next: observe RED, test the minimal whitespace fix GREEN, apply the exact
+  verified delta locally, regenerate paired captures, inspect before any pass.

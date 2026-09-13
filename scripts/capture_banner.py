@@ -112,6 +112,10 @@ def rust_capture(binary):
     return {"schema": 1, "status": "CAPTURED_NOT_REVIEWED", "scope": "banner first slice",
             "rust_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
             "rust_binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+            "rust_worktree_diff_sha256": hashlib.sha256(subprocess.check_output(
+                ["git", "diff", "--binary", "--", "*.rs"])).hexdigest(),
+            "rust_banner_source_sha256": hashlib.sha256(Path(
+                "crates/hermes-cli/src/tui/welcome.rs").read_bytes()).hexdigest(),
             "python_reference": UPSTREAM, "cases": cases}
 
 
@@ -160,16 +164,16 @@ def pair_with_python(bundle, reference):
     return bundle
 
 
-def export_annotations(path, group):
+def export_annotations(path, group, label):
     raw = path.read_bytes()
     encoded = base64.b64encode(gzip.compress(raw, mtime=0)).decode()
     chunks = [encoded[i:i + 3000] for i in range(0, len(encoded), 3000)]
     if len(chunks) > 16:
         raise RuntimeError("Bundle exceeds annotation budget; use artifact, do not truncate")
     if group == 0:
-        print(f"::notice title=visual bundle digest::sha256={hashlib.sha256(raw).hexdigest()}; bytes={len(raw)}")
+        print(f"::notice title={label} digest::sha256={hashlib.sha256(raw).hexdigest()}; bytes={len(raw)}")
     for i in range(group * 8, min((group + 1) * 8, len(chunks))):
-        print(f"::notice title=visual bundle {i + 1}/{len(chunks)}::{chunks[i]}")
+        print(f"::notice title={label} {i + 1}/{len(chunks)}::{chunks[i]}")
 
 
 def main():
@@ -188,11 +192,12 @@ def main():
     export = sub.add_parser("export")
     export.add_argument("bundle", type=Path)
     export.add_argument("--group", type=int, choices=(0, 1), default=0)
+    export.add_argument("--label", choices=("visual bundle", "candidate patch"), default="visual bundle")
     args = parser.parse_args()
     if args.mode == "python-child":
         python_child(args.reference.resolve(), args.fixture.resolve())
     elif args.mode == "export":
-        export_annotations(args.bundle, args.group)
+        export_annotations(args.bundle, args.group, args.label)
     else:
         if args.output.exists():
             parser.error("Refusing to overwrite existing evidence")

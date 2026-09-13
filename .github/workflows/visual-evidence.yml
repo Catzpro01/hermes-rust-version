@@ -1,13 +1,18 @@
 name: Visual evidence (banner slice)
 
 on:
-  push:
-    branches: ["arena/01a09c1e-hermes-rust-version"]
-    paths:
-      - '.github/workflows/visual-evidence.yml'
-      - 'scripts/capture_banner.py'
-      - 'docs/hermes-ui-spec/017/evidence/reference.json'
   workflow_dispatch:
+    inputs:
+      candidate_patch_base64:
+        description: 'Optional pre-commit welcome.rs patch, tested before local application'
+        required: false
+        type: string
+      regression_phase:
+        description: 'Expected regression result; red requires the named test to fail'
+        type: choice
+        options: [none, red, green]
+        default: none
+
 
 permissions:
   contents: read
@@ -23,19 +28,74 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      - name: Apply bounded pre-commit candidate
+        if: inputs.candidate_patch_base64 != ''
+        env:
+          CANDIDATE: ${{ inputs.candidate_patch_base64 }}
+        run: |
+          python3 - <<'PYCODE'
+          import os, base64, pathlib, subprocess
+          patch = base64.b64decode(os.environ['CANDIDATE'], validate=True)
+          if len(patch) > 40000:
+              raise SystemExit('Candidate too large')
+          p = pathlib.Path('/tmp/visual-candidate.patch')
+          p.write_bytes(patch)
+          names = subprocess.check_output(['git', 'apply', '--numstat', str(p)], text=True)
+          if not names.strip() or any(line.split('\t')[-1] != 'crates/hermes-cli/src/tui/welcome.rs' for line in names.splitlines()):
+              raise SystemExit('Candidate touches a non-allowlisted path')
+          subprocess.run(['git', 'apply', '--check', str(p)], check=True)
+          subprocess.run(['git', 'apply', str(p)], check=True)
+          PYCODE
+          cargo fmt --all
+          cargo fmt --all -- --check
+          cargo check --workspace --locked
+      - name: Exercise ANSI geometry regression
+        if: inputs.regression_phase != 'none'
+        env:
+          PHASE: ${{ inputs.regression_phase }}
+        run: |
+          set +e
+          cargo test --locked -p hermes-rs banner_ansi_preserves_python_reference_layout > regression.log 2>&1
+          status=$?
+          set -e
+          cat regression.log
+          if [ "$PHASE" = red ]; then
+            test "$status" -ne 0
+            grep -F 'test tui::welcome::tests::banner_ansi_preserves_python_reference_layout ... FAILED' regression.log
+            echo '::notice title=ANSI regression::RED: named geometry assertion failed as expected; not a parity pass.'
+          else
+            test "$status" -eq 0
+            grep -F 'test tui::welcome::tests::banner_ansi_preserves_python_reference_layout ... ok' regression.log
+            echo '::notice title=ANSI regression::GREEN: named geometry regression passed.'
+          fi
+      - name: Check complete corrected workspace
+        if: inputs.regression_phase == 'green'
+        run: |
+          cargo clippy --workspace --all-targets -- -D warnings
+          cargo test --workspace --no-fail-fast
+      - name: Export exactly tested Rust delta
+        if: inputs.candidate_patch_base64 != ''
+        run: |
+          mkdir -p evidence
+          git diff --binary -- '*.rs' > evidence/tested.patch
+          python3 scripts/capture_banner.py export evidence/tested.patch --label 'candidate patch'
       - name: Build real CLI
+        if: inputs.regression_phase != 'red'
         run: cargo build --locked -p hermes-rs
       - name: Capture offline startup at four terminal sizes
+        if: inputs.regression_phase != 'red'
         run: python3 scripts/capture_banner.py rust target/debug/hermes-rs evidence/banner-rust.json
       - name: Export verifiable raw capture group 1
+        if: inputs.regression_phase != 'red'
         run: python3 scripts/capture_banner.py export evidence/banner-rust.json
       - name: Export verifiable raw capture group 2
+        if: inputs.regression_phase != 'red'
         run: python3 scripts/capture_banner.py export evidence/banner-rust.json --group 1
       - uses: actions/upload-artifact@v4
         with:
           name: banner-raw-${{ github.sha }}
-          path: evidence/banner-rust.json
+          path: evidence/
           if-no-files-found: error
       - name: State evidence boundary
         run: |
-          echo 'Captured Rust banner only; no parity pass, Python CLI proof, or closure sign-off.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Diagnostic/capture slice only; no parity pass, full Python CLI proof, or closure sign-off.' >> "$GITHUB_STEP_SUMMARY"
