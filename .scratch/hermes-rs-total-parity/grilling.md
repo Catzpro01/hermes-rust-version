@@ -1,6 +1,6 @@
 # Spec 017: visual-evidence decision interview
 
-Status: awaiting round 1 answer (`needs-info`)
+Status: Q1 settled; awaiting round 2 answers (`needs-info`)
 Owner: user (decisions), Arena agent (fact-finding and documentation)
 Started: 2026-09-14
 Origin: explicit user invocation of `/grill-with-docs`
@@ -33,14 +33,15 @@ understanding. Commit/push notes; merge remains unauthorized.
 
 ## Design tree
 
-1. **Evidence policy** (current frontier, Q1)
+1. **Evidence policy** (settled, Q1 = A)
    - A: retain §J.7, complete real Python/Rust side-by-side captures and keep
-     automated tests as complementary regression evidence. Recommended.
+     automated tests as complementary regression evidence. Selected by user.
    - B: explicitly amend §J.7 to an alternative evidence policy; its exact
      coverage and limitations must be decided in subsequent rounds.
-2. **Evidence matrix**, blocked by Q1
+2. **Evidence matrix** (current frontier, Q2 and Q3)
    - Applicable runtime reference/provenance and scenarios for all five areas.
-   - What must be captured versus asserted automatically.
+   - Q2: review artifact format and raw capture provenance.
+   - Q3: scenario coverage across all five required areas.
 3. **Comparison rules**, blocked by the evidence matrix
    - Terminal conditions, dynamic-value normalization, intentional adaptations,
      and concrete examples of acceptable versus unacceptable differences.
@@ -58,5 +59,41 @@ or explicitly change the requirement to an alternative evidence policy?
 **Recommendation:** A. It closes the known evidence gap without weakening
 the specification merely because CI is already green.
 
-**User answer:** pending. No policy, glossary change, ADR, or acceptance
-waiver has been approved.
+**User answer:** `a` (2026-09-14). Decision A is settled: keep the real
+side-by-side captures for all five §J.7 areas and supporting automated tests.
+Updated the shared term "Hermes visual parity evidence" in `CONTEXT.md`.
+No ADR is needed merely to retain an existing requirement. This answer is
+not approval of the remaining matrix, implementation, closure, or a merge.
+
+## Round 2: two independent decisions unlocked by Q1
+
+Fact-finding: `wizard/setup.rs` implements Model, Terminal, Gateway, and Tools
+sections and Quick/Full/Blank modes. Existing PTY suites already exercise
+wide/narrow banners, cancellation, picker filtering/deletion/empty state,
+and explicit unavailable-feature notices. Their test assertions are not
+already a complete paired visual evidence set.
+
+**Q2: Evidence format.**
+- A (recommended): paired Python/Rust images of actual captured screens,
+  retained raw terminal recordings, and provenance (source commits, terminal
+  conditions, fixture identity, and reproduction steps).
+- B: paired images of actual screens plus provenance/reproduction metadata,
+  without requiring the underlying terminal recording to be retained.
+
+Both preserve Q1's real-capture requirement; neither permits AI-generated
+mockups or a raw unit-test result to masquerade as captured UI evidence.
+
+**Q3: Scenario coverage.**
+- A (recommended): each implemented wizard step and the other four §J.7
+  areas, covering normal paths plus representative risky states: wide/narrow
+  banner; wizard cancellation and an unavailable-feature notice; picker
+  empty/filter/delete-confirmation states; completion alternatives and summary
+  zero/nonzero counts. Use isolated dummy fixtures, not real account data.
+  This is not the Cartesian product of all providers/platforms or new features.
+- B: real captures of the normal paths for all five areas, including each
+  implemented wizard step; edge-state evidence stays in automated tests only.
+
+**User answers:** Q2 pending; Q3 pending. The detailed capture matrix,
+normalization rules, permitted corrective scope, and acceptance/sign-off
+remain unresolved. Do not produce artifacts or change code before the final
+shared-understanding confirmation.

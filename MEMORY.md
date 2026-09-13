@@ -33,8 +33,9 @@ user's private Python installation.
 - Ticket: `.scratch/hermes-rs-total-parity/issues/T11-closure-review.md`.
 - Evidence and chronological updates: `PROGRESS.md`.
 - Active `/grill-with-docs` interview: `.scratch/hermes-rs-total-parity/grilling.md`.
-  Round 1 evidence-policy decision is pending; do not assume agreement or
-  begin implementation before the final shared-understanding confirmation.
+  Q1 is settled: user chose A, keeping real captures for all five §J.7 areas
+  with tests as supporting evidence. Q2 artifact format and Q3 scenario
+  coverage are pending. No implementation or closure is approved yet.
 - The missing `/ask-matt` skill blocker is resolved. On the user's download
   request, all 37 official Matt Pocock skills were installed project-locally
   from pinned upstream `3cca18b368ae95cdbdebbff572ccafa662551015`.

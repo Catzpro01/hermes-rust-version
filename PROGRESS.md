@@ -264,3 +264,19 @@ performed.** The Python installation was not modified.
   or closure approval written as settled. Facts were inspected directly;
   no native Skill invocation or independent subagent execution is claimed.
 - Documentation only; commit/push this interview state. No merge authorized.
+
+## 2026-09-14: Grilling Q1 settled; evidence format and coverage pending
+
+- User answered `a`: retain the existing §J.7 real Python/Rust capture
+  requirement for all five areas, with automated tests as complementary
+  evidence. Recorded the settled project term in CONTEXT and updated T11,
+  MEMORY, and the interview tree immediately. No new ADR for retaining an
+  existing requirement; no implementation/closure permission inferred.
+- Inspected implemented wizard sections/modes and existing banner, wizard,
+  and session-picker PTY scenarios rather than asking the user for code facts.
+- Next frontier: Q2 artifact format (paired images + raw terminal trace
+  recommended) and Q3 scenario breadth (normal paths + representative risky
+  states recommended). Both are proposals, not assumed approvals.
+- Rechecked CI `34778224770`: both jobs succeeded on `0a31e65`. This turn
+  changes documentation only; no Rust test/capture run is claimed.
+- Commit/push this decision record. No merge, branch switch, or UI change.
