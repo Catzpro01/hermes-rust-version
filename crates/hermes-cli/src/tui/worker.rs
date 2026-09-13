@@ -26,7 +26,7 @@ use hermes_core::conversation::{AgentEvent, AgenticResult, ConversationRunner};
 use hermes_core::provider::{Provider, ProviderError};
 use hermes_core::session::{SessionId, SessionStore};
 use hermes_core::tools::{
-    Confirmation, ListDirTool, ReadFileTool, SandboxPolicy, ShellReadonlyTool, ToolRegistry,
+    Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, ToolRegistry,
     WriteFileTool,
 };
 use tokio_util::sync::CancellationToken;
@@ -107,6 +107,7 @@ fn build_runtime(
     provider: Box<dyn Provider>,
     provider_name: String,
     config: Option<HermesConfig>,
+    no_sandbox: bool,
 ) -> Option<AgentRuntime> {
     let db = home.join("state.db");
     let store = match SessionStore::open(&db) {
@@ -141,10 +142,12 @@ fn build_runtime(
     let mut registry = ToolRegistry::new();
     registry.register(ReadFileTool::new(&root));
     registry.register(ListDirTool::new(&root));
-    // Spec 007: same sandbox policy as the REPL (inherit when unconfigured).
-    let sandbox = SandboxPolicy::from_config(
+    // Spec 007/007b: same sandbox policy as the REPL (strict by default,
+    // `--no-sandbox` / `enabled: false` -> inherit).
+    let sandbox = hermes_core::tools::sandbox::resolve(
         config.as_ref().and_then(|c| c.sandbox.as_ref()),
         &root,
+        no_sandbox,
     );
     registry.register(
         ShellReadonlyTool::new(confirm.clone(), Duration::from_secs(30)).with_sandbox(sandbox),
@@ -170,8 +173,9 @@ pub async fn run_agent(
     provider: Box<dyn Provider>,
     provider_name: String,
     config: Option<HermesConfig>,
+    no_sandbox: bool,
 ) {
-    match build_runtime(&queue, &home, provider, provider_name, config) {
+    match build_runtime(&queue, &home, provider, provider_name, config, no_sandbox) {
         Some(mut rt) => run_loop(&queue, &mut cmds, &mut rt).await,
         None => {
             while cmds.recv().await.is_some() {

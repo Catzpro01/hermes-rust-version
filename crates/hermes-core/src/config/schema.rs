@@ -102,16 +102,31 @@ pub struct HermesConfig {
     /// process environment exactly as before Spec 007 (zero regression).
     #[serde(default)]
     pub sandbox: Option<SandboxConfig>,
+    /// Toolset switches written by `hermes setup tools` / `hermes tools`
+    /// (Spec 017 T07). Absent -> catalog defaults; the Rust tool registry
+    /// does not consult it yet (display/config parity only).
+    #[serde(default)]
+    pub tools: Option<ToolsConfig>,
 }
 
-/// `sandbox:` section (Spec 007). Every field is optional; `enabled: true`
-/// turns on the strict defaults (cleared env + allowlist, cwd jail, 64 KiB
-/// output cap) and the remaining fields opt into rlimits / network denial.
-/// See `tools::sandbox::SandboxPolicy::from_config` for the mapping.
+/// `tools:` section (Spec 017 T07) — mirrors Python `tools.enabled_toolsets`.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+pub struct ToolsConfig {
+    #[serde(default)]
+    pub enabled_toolsets: Vec<String>,
+}
+
+/// `sandbox:` section (Spec 007; default-on since Spec 007b). Every field is
+/// optional. The strict defaults (cleared env + allowlist, cwd jail, 64 KiB
+/// output cap) apply unless `enabled: false` is written explicitly (or the
+/// CLI runs with `--no-sandbox`); the remaining fields opt into rlimits /
+/// network denial. See `tools::sandbox::SandboxPolicy::from_config`.
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct SandboxConfig {
+    /// `None` (absent) and `Some(true)` both mean on; only `Some(false)`
+    /// turns the sandbox off.
     #[serde(default)]
-    pub enabled: bool,
+    pub enabled: Option<bool>,
     /// `inherit` (default) or `deny` (loopback-only network namespace).
     #[serde(default)]
     pub network: Option<String>,
@@ -325,7 +340,7 @@ mod tests {
         )
         .unwrap();
         let sb = c.sandbox.expect("parsed");
-        assert!(sb.enabled);
+        assert_eq!(sb.enabled, Some(true));
         assert_eq!(sb.network.as_deref(), Some("deny"));
         assert_eq!(sb.cpu_seconds, Some(10));
         assert_eq!(sb.max_output_kb, Some(8));
@@ -336,7 +351,7 @@ mod tests {
     #[test]
     fn sandbox_validate_reports_bad_values() {
         let sb = SandboxConfig {
-            enabled: true,
+            enabled: Some(true),
             network: Some("firewall".into()),
             cpu_seconds: Some(0),
             env_allowlist: vec!["A=B".into(), "".into()],

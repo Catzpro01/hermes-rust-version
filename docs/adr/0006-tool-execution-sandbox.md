@@ -77,3 +77,22 @@ shell spawn (`shell`, `shell_readonly`) through one function, `run_shell`.
   the fail-closed rule makes that visible instead of dangerous.
 - Should stronger isolation be needed later, `run_shell` is the single seam
   where a container or Landlock backend would plug in.
+
+## Amendment 2026-09-13 — default on (Spec 007b, per /ask-matt)
+
+The original decision shipped the sandbox **opt-in** so that Spec 007 was a
+zero-regression change. The follow-up ticket flips the default:
+
+- `SandboxPolicy::from_config(None, root)` → `strict(root)` (was `inherit`).
+- `SandboxConfig.enabled` is `Option<bool>`; only an explicit `false` opts
+  out. A `sandbox:` section without `enabled` is on.
+- New global CLI flag `--no-sandbox` → `inherit`, overriding config. All
+  three frontends (REPL, TUI worker, `hermes info`) resolve through one
+  helper, `tools::sandbox::resolve(cfg, root, no_sandbox)`.
+- Legacy constructors (`ShellTool::new`, `ShellReadonlyTool::new`) still
+  default to `inherit`; the *CLI* default changed, not the library type
+  default, so embedders are unaffected.
+
+Rationale: a sandbox nobody turns on protects nobody; the longer `off`
+stays the default, the more surprising the flip becomes. Users who need the
+parent environment inside shell tools have two explicit escape hatches.

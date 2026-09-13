@@ -38,6 +38,22 @@ pub(crate) fn load_home_config(
     Ok((home, config))
 }
 
+/// `hermes tools` (piped): `  [x] key  label — tools` per catalog entry.
+pub fn render_tools(config: Option<&HermesConfig>, w: &mut impl Write) -> anyhow::Result<()> {
+    use crate::wizard::catalog::{DEFAULT_OFF_TOOLSETS, TOOLSETS};
+    let enabled = config.and_then(|c| c.tools.as_ref()).map(|t| t.enabled_toolsets.clone());
+    writeln!(w, "Toolsets:")?;
+    for t in TOOLSETS {
+        let on = match &enabled {
+            Some(list) => list.iter().any(|k| k == t.key),
+            None => !DEFAULT_OFF_TOOLSETS.contains(&t.key),
+        };
+        let mark = if on { "[x]" } else { "[ ]" };
+        writeln!(w, "  {mark} {}  {} — {}", t.key, t.label, t.tools)?;
+    }
+    Ok(())
+}
+
 /// Hermes home for `setup`: explicit flag → `HERMES_HOME` → `~/.hermes`,
 /// without requiring the directory to exist yet.
 fn setup_home(explicit: Option<&Path>) -> PathBuf {
@@ -85,6 +101,32 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
     match cmd {
         Commands::Version => unreachable!("handled above"),
         Commands::Setup { .. } => unreachable!("handled above"),
+        Commands::Model if args.provider.is_none() && io::stdin().is_terminal() && io::stdout().is_terminal() => {
+            // Spec 017 T06 — interactive `hermes model` IS the wizard's
+            // `Model & Provider` section (setup.py delegates to `cmd_model`:
+            // one code path, spec §C.3). 39-entry verbatim catalog picker,
+            // then URL / key_env / model, atomic write + backup.
+            match crate::wizard::setup::run_setup(&home, Some(crate::wizard::setup::Section::Model)) {
+                Ok(_) => {}
+                Err(e) => anyhow::bail!("{e}"),
+            }
+        }
+        Commands::Tools if io::stdin().is_terminal() && io::stdout().is_terminal() => {
+            // Spec 017 T07 — interactive `hermes tools` IS the wizard's
+            // `Tools` section (26-toolset checklist, spec §C.6).
+            match crate::wizard::setup::run_setup(&home, Some(crate::wizard::setup::Section::Tools)) {
+                Ok(_) => {}
+                Err(e) => anyhow::bail!("{e}"),
+            }
+        }
+        Commands::Tools => {
+            // Piped: plain, ANSI-free listing of the toolset catalog with the
+            // effective on/off state (config `tools.enabled_toolsets`, else
+            // catalog minus `_DEFAULT_OFF_TOOLSETS`).
+            let mut out = io::stdout().lock();
+            render_tools(config.as_ref(), &mut out)?;
+            out.flush()?;
+        }
         Commands::Model => {
             let colored = io::stdout().is_terminal();
             let mut out = io::stdout().lock();
@@ -155,6 +197,7 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
                 &active,
                 &ctx,
                 sessions,
+                args.no_sandbox,
                 &mut out,
             )?;
             out.flush()?;
@@ -199,6 +242,7 @@ fn parse_session_id(raw: &str) -> anyhow::Result<SessionId> {
 pub(crate) fn name(cmd: &Commands) -> &'static str {
     match cmd {
         Commands::Model => "model",
+        Commands::Tools => "tools",
         Commands::Sessions => "sessions",
         Commands::Inspect { .. } => "inspect",
         Commands::Messages { .. } => "messages",
@@ -243,6 +287,7 @@ pub(crate) fn render_info(
     active: &str,
     ctx: &crate::repl::ResolvedContext,
     sessions: Option<usize>,
+    no_sandbox: bool,
     w: &mut impl Write,
 ) -> anyhow::Result<()> {
     let limit = ctx
@@ -279,9 +324,10 @@ pub(crate) fn render_info(
     // Spec 007: the boundary shell tools would run inside from this cwd
     // (same resolution as the REPL; names/numbers only, never env values).
     let root = std::env::current_dir().unwrap_or_default();
-    let sandbox = hermes_core::tools::SandboxPolicy::from_config(
+    let sandbox = hermes_core::tools::sandbox::resolve(
         config.and_then(|c| c.sandbox.as_ref()),
         &root,
+        no_sandbox,
     );
     writeln!(w, "{}", sandbox.summary())?;
     match sessions {
@@ -349,56 +395,6 @@ pub fn render_model(
         None => &empty,
     };
     let active = active_provider(config, filter);
-
-    if colored && filter.is_none() && std::io::stdin().is_terminal() {
-        let provider_choices = vec![
-            "Nous Portal (Everything your agent needs, 300+ models with bundled tool use)",
-            "Fireworks AI (OpenAI-compatible direct model API)",
-            "OpenRouter (Pay-per-use API aggregator)",
-            "Mixture of Agents (named presets; aggregator acts after reference models)",
-            "NovitaAI (Cloud: Model API, Agent Sandbox, GPU Cloud)",
-            "LM Studio (Local desktop app with built-in model server)",
-            "Anthropic (Claude models via API key or Claude Code)",
-            "OpenAI ▸ (ChatGPT/Codex subscription or direct OpenAI API)",
-            "Qwen ▸ (Qwen Cloud / DashScope, Coding Plan, Token Plan & Qwen CLI OAuth)",
-            "xAI Grok ▸ (Direct API or SuperGrok / Premium+ OAuth)",
-            "Xiaomi MiMo (MiMo-V2.5 and V2 models: pro, omni, flash)",
-            "Tencent Hy ▸ (Hy4 / Hy3 via TokenHub & TokenPlan)",
-            "NVIDIA NIM (Nemotron models via build.nvidia.com or local NIM)",
-            "GitHub Copilot ▸ (GitHub token API or copilot --acp process)",
-            "Hugging Face Inference Providers",
-            "Google AI Studio (Native Gemini API)",
-            "Google Vertex AI (Gemini via GCP; OAuth2 service account or ADC, GCP billing/quotas)",
-            "DeepSeek (V3, R1, coder, direct API)",
-            "Z.AI / GLM (Zhipu direct API)",
-            "Kimi / Moonshot ▸ (Coding Plan, Moonshot global & China endpoints)",
-            "StepFun Step Plan (Agent / coding models via Step Plan API)",
-            "MiniMax ▸ (Global, OAuth Coding Plan & China endpoints)",
-            "Ollama Cloud (Cloud-hosted open models, ollama.com)",
-            "Arcee AI (Trinity models, direct API)",
-            "GMI Cloud (Multi-model direct API)",
-            "Kilo Code (Kilo Gateway API)",
-            "OpenCode ▸ (Zen pay-as-you-go, Go subscription, or free tier)  ← currently active",
-            "AWS Bedrock (Claude, Nova, Llama, DeepSeek; IAM or API key)",
-            "Azure Foundry (OpenAI-style or Anthropic-style endpoint, your Azure AI deployment)",
-            "Vercel AI Gateway (Multi-model aggregator)",
-            "Actual Computer - hosted inference via api.actual.inc, or local offline inference via ACTUAL_BASE_URL",
-            "CommandCode — 20+ models via OpenAI-compatible API",
-            "CommandCode — Claude models via Anthropic Messages API",
-            "custom (direct API)",
-            "DeepInfra — 100+ open models, pay-per-use",
-            "Meta Muse Spark family (Meta Superintelligence Labs)",
-            "Nebius Token Factory — OpenAI-compatible inference",
-            "Ramp Router (router.com) — routes each request to the cheapest model that clears your quality bar",
-            "Upstage (Solar API)",
-            "Custom endpoint (enter URL manually)",
-            "Configure auxiliary models...",
-            "Leave unchanged",
-        ];
-        let _ = crate::radiolist::prompt_radiolist("Select provider:", &provider_choices, 26);
-        writeln!(w, "\n  Current model:    laguna-s-2.1-free\n  Active provider:  OpenCode Free\n\nNo change.")?;
-        return Ok(());
-    }
 
     // With a filter, validate it first (unknown provider -> clear error).
     if let Some(f) = filter {
@@ -664,6 +660,28 @@ mod tests {
     }
 
     #[test]
+    fn tools_listing_follows_defaults_then_config() {
+        let mut out = Vec::new();
+        render_tools(None, &mut out).unwrap();
+        let s = String::from_utf8(out).unwrap();
+        assert!(s.starts_with("Toolsets:\n"), "{s}");
+        assert!(s.contains("  [x] web  🔍 Web Search & Scraping — web_search, web_extract\n"), "{s}");
+        assert!(s.contains("  [ ] spotify  "), "{s}");
+        assert_eq!(s.lines().count(), 27, "{s}");
+
+        let c = HermesConfig {
+            tools: Some(hermes_core::config::ToolsConfig {
+                enabled_toolsets: vec!["spotify".into()],
+            }),
+            ..HermesConfig::default()
+        };
+        let mut out = Vec::new();
+        render_tools(Some(&c), &mut out).unwrap();
+        let s = String::from_utf8(out).unwrap();
+        assert!(s.contains("  [x] spotify  ") && s.contains("  [ ] web  "), "{s}");
+    }
+
+    #[test]
     fn version_renders_label_and_never_touches_home() {
         let dir = tempfile::TempDir::new().unwrap();
         let home = dir.path().join("does-not-exist");
@@ -682,7 +700,7 @@ mod tests {
         let c = config_with(&[("a", None, &["m1"])]);
         let ctx = crate::repl::resolve_context(Some(&c), "a");
         let mut out = Vec::new();
-        render_info(Path::new("/tmp/h"), Some(&c), "a", &ctx, Some(2), &mut out).expect("render");
+        render_info(Path::new("/tmp/h"), Some(&c), "a", &ctx, Some(2), false, &mut out).expect("render");
         let s = String::from_utf8(out).unwrap();
         let first = s.lines().next().unwrap();
         assert_eq!(
@@ -692,22 +710,28 @@ mod tests {
         assert!(s.contains("Hermes Home: /tmp/h\n"), "{s}");
         assert!(s.contains("Providers configured: 1\n"), "{s}");
         assert!(s.contains("MCP servers configured: 0\n"), "{s}");
-        assert!(s.contains("sandbox: off (inherit)\n"), "{s}");
         assert!(s.contains("Sessions: 2\n"), "{s}");
+        // Spec 007b: default-on — no `sandbox:` section still reports `on`.
+        assert!(s.contains("sandbox: on | cwd="), "{s}");
+        let mut out = Vec::new();
+        render_info(Path::new("/tmp/h"), None, FAKE_PROVIDER, &ctx, Some(0), true, &mut out)
+            .expect("render");
+        let s = String::from_utf8(out).unwrap();
+        assert!(s.contains("sandbox: off (inherit)\n"), "--no-sandbox: {s}");
     }
 
     #[test]
     fn info_reports_sandbox_policy_without_env_values() {
         let mut c = config_with(&[]);
         c.sandbox = Some(hermes_core::config::SandboxConfig {
-            enabled: true,
+            enabled: Some(true),
             network: Some("deny".into()),
             cpu_seconds: Some(5),
             ..Default::default()
         });
         let ctx = crate::repl::resolve_context(Some(&c), FAKE_PROVIDER);
         let mut out = Vec::new();
-        render_info(Path::new("/tmp/h"), Some(&c), FAKE_PROVIDER, &ctx, Some(0), &mut out)
+        render_info(Path::new("/tmp/h"), Some(&c), FAKE_PROVIDER, &ctx, Some(0), false, &mut out)
             .expect("render");
         let s = String::from_utf8(out).unwrap();
         let line = s.lines().find(|l| l.starts_with("sandbox: on")).expect("sandbox line");
@@ -723,7 +747,7 @@ mod tests {
     fn info_without_config_reports_builtin_fake() {
         let ctx = crate::repl::resolve_context(None, FAKE_PROVIDER);
         let mut out = Vec::new();
-        render_info(Path::new("/tmp/h"), None, FAKE_PROVIDER, &ctx, Some(0), &mut out)
+        render_info(Path::new("/tmp/h"), None, FAKE_PROVIDER, &ctx, Some(0), false, &mut out)
             .expect("render");
         let s = String::from_utf8(out).unwrap();
         assert!(s.contains("Active provider: fake (built-in)\n"), "{s}");

@@ -35,6 +35,7 @@ Global flags: `--hermes-home`, `--provider`, `--api-url`, `--tui`, `--version`, 
   let (home, config) = load_home_config(..)?;
   match cmd {
     Model => render_model(..),
+    Tools => render_tools(..) piped | wizard::setup Tools section on a TTY  // Spec 017 T07
     Sessions => list_sessions(&store),
     Inspect { id } => inspect_session(&store, id),
     Messages { id } => show_messages(&store, id),

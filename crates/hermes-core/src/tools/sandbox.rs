@@ -127,6 +127,21 @@ pub struct SandboxPolicy {
     pub network: NetworkPolicy,
 }
 
+/// CLI resolution (Spec 007b): `--no-sandbox` wins over config, otherwise
+/// [`SandboxPolicy::from_config`] (default strict). One call site per
+/// frontend (REPL, TUI worker, `hermes info`) so they can never disagree.
+pub fn resolve(
+    cfg: Option<&crate::config::SandboxConfig>,
+    root: &Path,
+    no_sandbox: bool,
+) -> SandboxPolicy {
+    if no_sandbox {
+        SandboxPolicy::inherit()
+    } else {
+        SandboxPolicy::from_config(cfg, root)
+    }
+}
+
 impl Default for SandboxPolicy {
     fn default() -> Self {
         Self::inherit()
@@ -161,16 +176,19 @@ impl SandboxPolicy {
         }
     }
 
-    /// Build from the optional `sandbox:` config section. `None` (or
-    /// `enabled: false`) yields [`SandboxPolicy::inherit`]. Fields the user
+    /// Build from the optional `sandbox:` config section. `None` yields
+    /// [`SandboxPolicy::strict`] (default-on); `enabled: false` yields
+    /// [`SandboxPolicy::inherit`]. Fields the user
     /// omits fall back to [`SandboxPolicy::strict`] defaults; `env_allowlist`
     /// in config **extends** the default allowlist rather than replacing it,
     /// so a user cannot accidentally lose `PATH`.
     pub fn from_config(cfg: Option<&crate::config::SandboxConfig>, root: &Path) -> Self {
+        // Spec 007b (per /ask-matt): default ON. No section -> strict
+        // defaults; only an explicit `enabled: false` opts out.
         let Some(cfg) = cfg else {
-            return Self::inherit();
+            return Self::strict(root);
         };
-        if !cfg.enabled {
+        if cfg.enabled == Some(false) {
             return Self::inherit();
         }
         let mut policy = Self::strict(root);
@@ -454,11 +472,15 @@ mod tests {
     }
 
     #[test]
-    fn from_config_none_or_disabled_is_inherit() {
+    fn from_config_default_is_strict_and_explicit_false_is_inherit() {
         let root = Path::new("/tmp");
-        assert_eq!(SandboxPolicy::from_config(None, root), SandboxPolicy::inherit());
+        // Spec 007b: no section -> strict defaults rooted at `root`.
+        assert_eq!(SandboxPolicy::from_config(None, root), SandboxPolicy::strict(root));
+        // A section without `enabled` is also on.
+        let bare = crate::config::SandboxConfig::default();
+        assert!(SandboxPolicy::from_config(Some(&bare), root).enabled);
         let off = crate::config::SandboxConfig {
-            enabled: false,
+            enabled: Some(false),
             cpu_seconds: Some(1),
             ..Default::default()
         };
@@ -466,9 +488,21 @@ mod tests {
     }
 
     #[test]
+    fn resolve_flag_overrides_config() {
+        let root = Path::new("/tmp");
+        assert_eq!(resolve(None, root, true), SandboxPolicy::inherit());
+        assert!(resolve(None, root, false).enabled);
+        let on = crate::config::SandboxConfig {
+            enabled: Some(true),
+            ..Default::default()
+        };
+        assert_eq!(resolve(Some(&on), root, true), SandboxPolicy::inherit());
+    }
+
+    #[test]
     fn from_config_extends_allowlist_and_maps_fields() {
         let cfg = crate::config::SandboxConfig {
-            enabled: true,
+            enabled: Some(true),
             network: Some("deny".into()),
             cpu_seconds: Some(3),
             max_file_size_kb: Some(10),

@@ -4,7 +4,6 @@ use hermes_core::config::resolve_hermes_home;
 use hermes_core::provider::{Provider, ProviderRegistry, FAKE_PROVIDER};
 
 pub(crate) mod approval;
-pub(crate) mod radiolist;
 mod output;
 mod render;
 mod repl;
@@ -27,7 +26,7 @@ mod wizard;
 
 Usage: hermes-rs [OPTIONS] [COMMAND]
 
-Commands: model, sessions, inspect, messages, tool-calls, search, info, mcp, setup, help, version
+Commands: model, tools, sessions, inspect, messages, tool-calls, search, info, mcp, setup, help, version
 Mirrors Python Hermes Agent where implemented."
 )]
 struct Args {
@@ -80,6 +79,11 @@ struct Args {
     #[arg(long, global = true)]
     api_url: Option<String>,
 
+    /// Run shell tools unconfined (Spec 007b: the process-level sandbox is
+    /// on by default). Overrides `sandbox:` in config.yaml.
+    #[arg(long, global = true)]
+    no_sandbox: bool,
+
     /// Launch the Ratatui TUI dashboard instead of the readline REPL
     /// (Spec 012). Requires an interactive terminal.
     #[arg(long, global = true)]
@@ -106,8 +110,10 @@ enum Commands {
     /// Show Hermes version and install information
     Version,
 
-    /// List available models for the active provider
+    /// Pick provider + model (interactive) or list configured providers (piped / --provider)
     Model,
+    /// Enable/disable toolsets (interactive checklist) or list them (piped)
+    Tools,
     /// List all chat sessions
     Sessions,
     /// Inspect a session's metadata
@@ -219,7 +225,7 @@ async fn run() -> anyhow::Result<()> {
         .or_else(|| config_provider.clone())
         .unwrap_or_else(|| FAKE_PROVIDER.to_owned());
     if args.tui {
-        tui::run_tui(&home, provider, provider_name, config).await
+        tui::run_tui(&home, provider, provider_name, config, args.no_sandbox).await
     } else {
         repl::run_repl(
             &home,
@@ -227,8 +233,11 @@ async fn run() -> anyhow::Result<()> {
             provider_name,
             registry,
             config,
-            args.api_url,
-            args.resume,
+            repl::ReplOptions {
+                base_url_override: args.api_url,
+                resume: args.resume,
+                no_sandbox: args.no_sandbox,
+            },
         )
         .await
     }

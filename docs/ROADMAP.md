@@ -317,6 +317,7 @@ byte-for-byte Spec 002 (zero regression, legacy constructors unchanged).
 | 03 | POSIX `ulimit` wrapper with positional command (no interpolation); `unshare --net` fail-closed |
 | 04 | `sandbox:` config section + load-time validation (`ConfigError::SandboxInvalid`) |
 | 05 | REPL/TUI wiring, `/sandbox`, `hermes info` line, docs/ADR/STRIDE, E2E closure |
+| 007b | **Default on** (ADR 0006 amendment): no section → `strict`; `enabled: false` or `--no-sandbox` → `inherit` |
 
 Closure proof (Spec 007): `crates/hermes-core/tests/sandbox_e2e.rs` drives a
 scripted provider through `chat_agentic` with a sandboxed `shell_readonly`:
