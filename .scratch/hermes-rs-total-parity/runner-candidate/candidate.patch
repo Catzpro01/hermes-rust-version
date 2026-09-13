@@ -1,0 +1,33 @@
+--- a/crates/hermes-cli/src/tui/welcome.rs
++++ b/crates/hermes-cli/src/tui/welcome.rs
+@@ -1697,6 +1697,30 @@
+     }
+ 
+     #[test]
++    fn banner_ansi_wrapped_session_label_is_centered() {
++        // Exact Python PTY fixtures and Session: columns from banner-b56c9a3.
++        let theme = HermesTheme::dark_canonical();
++        for (width, cwd, session, column) in [
++            (100, "/tmp/hermes-visual-7v7sd2i3/demo", "01a09cc9-4734-7761-9629-9302353cdef6", 4),
++            (80, "/tmp/hermes-visual-jmji_nyd/demo", "01a09cc9-477f-7922-9e60-7709cd1d8581", 17),
++            (94, "/tmp/hermes-visual-uu8p3j_0/demo", "01a09cc9-4790-7f63-84db-2460bc0feb14", 21),
++            (95, "/tmp/hermes-visual-3lspbw7u/demo", "01a09cc9-479e-7811-80e8-5a35021f8ba8", 21),
++        ] {
++            let mut info = banner_info(Some("parity-fixture"), None,
++                &["list_dir", "read_file", "shell_readonly", "write_file"], &[], Some(session));
++            info.cwd = cwd.to_owned();
++            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
++                let mut bytes = Vec::new();
++                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
++                let plain: String = observed_banner_cells(&bytes).into_iter().map(|(ch, _)| ch).collect();
++                let row = plain.lines().find(|line| line.contains("Session:")).unwrap();
++                assert_eq!(row.split_once("Session:").unwrap().0.chars().count() + 1,
++                    column, "Session label, width={width}, depth={depth:?}");
++            }
++        }
++    }
++
++    #[test]
+     fn banner_respects_min_width_60() {
+         let theme = HermesTheme::dark_canonical();
+         let buf = compose_banner(40, &BannerInfo::default(), &theme);

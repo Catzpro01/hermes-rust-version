@@ -828,3 +828,16 @@ performed.** The Python installation was not modified.
 - User selected all-ANSI base and delegated mode choice; direct limited review
   is explicit, not fabricated independent Standards/Spec subagents. Next capture
   must be verified against this actual source commit and its CI. No closure/merge.
+
+## 2026-09-14: Real recapture finds residual one-column centering defect
+
+- b56c9a3 CI 34785436436 and clean-source capture 34785436440 succeeded.
+  Verified raw transport 81120 bytes SHA-256
+  3403b3fb188a7bd55a91c2eeb59850c51aa63f351148f4f8978a7008de8b71ba;
+  paired/replayed all four cases and inspected eight PNGs, retained unchanged.
+- Tools columns now all match (51/41/48/49); matched non-whitespace glyph
+  attributes have zero differences. But 94-column Session: label remains
+  one column left (Rust20/Python21). Do NOT hide that under normalization.
+- Saved b56c9a3 packet as FAIL_SESSION_CENTER_94, with full raw/cast/hash audit.
+  Submitted test-only public-writer RED using exact fresh Python fixtures and
+  Session label positions at all four widths/two depths. Runtime untouched.
