@@ -851,3 +851,14 @@ performed.** The Python installation was not modified.
   than the trailing separator retained by wrap (`Session: `). This changes
   runtime alignment, NOT evidence/expected normalization. All old references
   must still pass. Actual source unchanged until verified GREEN.
+
+## 2026-09-14: Residual centering GREEN; reviewed correction applied exactly
+
+- GREEN 34785789939 / 97ce7b4 passed named centering test, fmt/check,
+  clippy/full tests including all older Python references. Verified/applied
+  3644-byte delta d306f7bb2d8861e1c1a50dc6cc1e2f2871f5b4a9c11539058e4c6119652095c8;
+  git apply --check and byte-identical local Rust diff passed.
+- Limited direct review addendum covers the small offset change and new test;
+  no runtime text normalization, expected edits, or unrelated feature changes.
+- Candidate consumed; next push recaptures actual committed source. b56c9a3
+  FAIL evidence remains immutable. No independent approval or closure/merge.

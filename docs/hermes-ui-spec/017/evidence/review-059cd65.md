@@ -66,3 +66,18 @@ pemeriksaan kode ini.
 **Ringkasan:** Standards: 1 heuristik pemeliharaan (deduplikasi terverifikasi),
 0 pelanggaran keras ditemukan. Spec: 2 gap bukti; yang terluas adalah cakupan
 §J.7 belum lengkap. Kedua sumbu tidak digabung menjadi satu verdict kelulusan.
+
+## Addendum setelah recapture b56c9a3
+
+Pemeriksaan langsung menemukan sisa label Session bergeser satu kolom pada
+94×30; bukti b56c9a3 disimpan FAIL, tidak dinormalisasi. Regresi baru public
+writer: RED 34785680910/5a2207d, GREEN 34785789939/97ce7b4. Seluruh referensi
+lama, fmt/check, clippy dan tes workspace tetap lulus.
+
+Delta terbatas yang diperiksa: lebar teks terlihat (tanpa separator whitespace
+akhir hasil wrap) dipakai untuk offset centering; teks/bukti tidak diubah.
+Tes memakai decoder bersama dan fixture Python nyata. Tidak ditemukan tambahan
+pelanggaran keras Standards atau scope creep Spec pada delta ini. Patch 3644
+byte SHA-256 d306f7bb2d8861e1c1a50dc6cc1e2f2871f5b4a9c11539058e4c6119652095c8
+terverifikasi dan diterapkan persis. Recapture aktual berikutnya tetap wajib.
+Ini masih pemeriksaan langsung terbatas, bukan reviewer independen.

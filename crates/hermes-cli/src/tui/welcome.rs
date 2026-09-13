@@ -717,7 +717,7 @@ fn draw_panel(area: Rect, buf: &mut Buffer, theme: &HermesTheme, layout: &Banner
             border_style,
         );
     }
-    // Content rows: left column centered in its measured width, right column
+    // Content rows: left column centered in its allocated width, right column
     // left-aligned at `left_w + 2` (the Rich grid gap), both top-aligned.
     for i in 0..h {
         let y = area.y + 1 + i as u16;
@@ -726,7 +726,10 @@ fn draw_panel(area: Rect, buf: &mut Buffer, theme: &HermesTheme, layout: &Banner
         // Panel content origin = border (1) + panel padding (2) = x + 3.
         if let Some(l) = layout.left.get(i) {
             if !l.is_blank() {
-                let offset = layout.left_w.saturating_sub(l.width()) / 2;
+                // Wrapping may retain a separator space (e.g. "Session: ").
+                // Rich centers the visible text, not that trailing whitespace.
+                let visible_width = l.plain().trim_end().chars().count();
+                let offset = layout.left_w.saturating_sub(visible_width) / 2;
                 draw_line_at(buf, area.x, width, area.x + 3 + offset as u16, y, l);
             }
         }
@@ -1692,6 +1695,64 @@ mod tests {
                         "tool truncation marker, width={width}, depth={depth:?}"
                     );
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn banner_ansi_wrapped_session_label_is_centered() {
+        // Exact Python PTY fixtures and Session: columns from banner-b56c9a3.
+        let theme = HermesTheme::dark_canonical();
+        for (width, cwd, session, column) in [
+            (
+                100,
+                "/tmp/hermes-visual-7v7sd2i3/demo",
+                "01a09cc9-4734-7761-9629-9302353cdef6",
+                4,
+            ),
+            (
+                80,
+                "/tmp/hermes-visual-jmji_nyd/demo",
+                "01a09cc9-477f-7922-9e60-7709cd1d8581",
+                17,
+            ),
+            (
+                94,
+                "/tmp/hermes-visual-uu8p3j_0/demo",
+                "01a09cc9-4790-7f63-84db-2460bc0feb14",
+                21,
+            ),
+            (
+                95,
+                "/tmp/hermes-visual-3lspbw7u/demo",
+                "01a09cc9-479e-7811-80e8-5a35021f8ba8",
+                21,
+            ),
+        ] {
+            let mut info = banner_info(
+                Some("parity-fixture"),
+                None,
+                &["list_dir", "read_file", "shell_readonly", "write_file"],
+                &[],
+                Some(session),
+            );
+            info.cwd = cwd.to_owned();
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
+                let plain: String = observed_banner_cells(&bytes)
+                    .into_iter()
+                    .map(|(ch, _)| ch)
+                    .collect();
+                let row = plain
+                    .lines()
+                    .find(|line| line.contains("Session:"))
+                    .unwrap();
+                assert_eq!(
+                    row.split_once("Session:").unwrap().0.chars().count() + 1,
+                    column,
+                    "Session label, width={width}, depth={depth:?}"
+                );
             }
         }
     }

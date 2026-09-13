@@ -1,8 +1,7 @@
 {
-  "phase": "green",
-  "capture": false,
-  "test": "banner_ansi_wrapped_session_label_is_centered",
-  "source_sha256": "6d66514f014376e29820cd8736d920b38a294f133bef90de6097fda2ae7ad782",
-  "patch_sha256": "931262644280be3f7949ead943174e0b6f4e0361a435ce38ee5edf22aee00029",
-  "red_run": 34785680910
+  "phase": "none",
+  "capture": true,
+  "reason": "centering-followup-reviewed-capture-committed-source",
+  "green_run": 34785789939,
+  "source_sha256": "3d0e27089738a606f145af83a9c67547b05f10fb074132a08c29be9a10611e75"
 }
