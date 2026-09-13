@@ -265,3 +265,13 @@ configuration wall requires that detour.
 
 This invocation records routing only: no new implementation, capture, test
 execution, personal Matt Pocock review, or user acceptance is claimed.
+
+## Latest direct code review — checkpoint 6746037
+
+See `docs/hermes-ui-spec/017/evidence/review-6746037.md`, baseline 059cd65.
+Standards: zero newly confirmed findings; Spec: one high closure gap for the
+four remaining areas above. Banner recapture gap resolved for retained
+fixtures only. Eight workflow QA tests and retained-evidence integrity/cell
+checks rerun successfully; historical CI 34786290998 verified SUCCESS at
+6746037. No new implementation/capture or independent approval inferred from
+the interrupted request. Continue T12 wizard capture, not closure/merge.

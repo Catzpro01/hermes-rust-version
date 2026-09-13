@@ -902,3 +902,20 @@ Preserve Python data; no new features, independent verdict, closure or merge.
   all-state coverage, other four areas, final user acceptance remain open.
 - Routing/documentation only this invocation. No runtime changes, new tests or
   captures, independent/personal Matt review, closure, or merge.
+
+## 2026-09-14: Latest `/code-review`, frozen checkpoint 6746037
+
+- Honored latest review request; no interrupted implementation assumed done.
+  Reused user-approved all-ANSI base 059cd65 and explicitly limited direct
+  Standards/Spec mode; report evidence/review-6746037.md (117 paths/24 commits).
+- Standards: zero newly confirmed findings. Spec: one high closure gap,
+  remaining wizard/picker/REPL completion/summary paired visual evidence.
+  Previous banner recapture gap is resolved for retained fixtures only.
+- Fresh local QA: eight workflow tests PASS; 99 retained file checksums pass;
+  latest eight raw/event/cast checks and stored-cell comparisons pass. No
+  image normalization, fresh capture, or local Rust test claimed.
+- GitHub CI 34786290998 SUCCESS verified at exact 6746037; source/scripts/CI
+  unchanged from tested capture source 5a8e12c. Report commit's CI is not yet
+  known at writing. No runtime changes or new independent approval.
+- Next: `/implement` T12 wizard evidence first; full evidence and explicit
+  final user acceptance still required. No closure, merge or auto-merge.
