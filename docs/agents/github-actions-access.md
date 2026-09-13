@@ -135,5 +135,5 @@ Setelah inspeksi awal, run `34780902412` pada `ec78897` ditemukan gagal saat
 menyebut seluruh action harus dipin ke full-length commit SHA. Karena itu,
 rekomendasi awal untuk menunda checkbox tersebut digantikan dengan migrasi
 workflow, bukan mematikan aturan. Lima tag diresolusikan lewat API repository
-upstream pada 2026-09-14; seluruh sembilan `uses:` sekarang berupa SHA 40 digit.
+upstream pada 2026-09-14; seluruh sepuluh `uses:` sekarang berupa SHA 40 digit.
 CI baru tetap perlu diperiksa; ini tidak memperbaiki otorisasi dispatch Arena.

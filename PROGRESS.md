@@ -494,7 +494,7 @@ performed.** The Python installation was not modified.
   because full-length commit SHA pinning is already required. No Rust tests
   ran in that CI. This is a new, separate blocker from API dispatch permission.
 - Resolved the five existing action tags through their upstream GitHub commit
-  endpoints and pinned all nine uses across ci.yml and visual-evidence.yml.
+  endpoints and pinned all ten uses across ci.yml and visual-evidence.yml.
   Kept the original tags as comments; did not disable the security requirement
   or change GITHUB_TOKEN permissions. No Rust source changed.
 - Revised settings guidance: retain full-SHA enforcement and allow the five
@@ -503,3 +503,8 @@ performed.** The Python installation was not modified.
   advice to postpone enforcement is superseded now that migration is done.
 - Verify local workflow parsing, full-SHA coverage, and existing QA tests,
   then push and inspect the actual new CI. No dispatch restoration or merge.
+- Local validation correction: the first one-shot count assertion expected
+  nine uses, but there are ten (checkout appears twice in ci.yml). Corrected
+  this documentation/count expectation and reran with fail-fast shell gating:
+  both workflows parse and all ten uses match the five upstream-verified SHAs.
+  The five existing QA tests also passed. No failed check is reported as passed.

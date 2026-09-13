@@ -66,7 +66,7 @@ user's private Python installation.
   local-user gh success does not prove this session's integration access.
 - User's Actions-settings question exposed a separate CI configuration issue:
   run 34780902412 on ec78897 failed setup because full-SHA pinning is required.
-  Migrated both workflows' nine uses to verified full upstream commit SHAs;
+  Migrated both workflows' ten uses to verified full upstream commit SHAs;
   keep Require full-length SHA enabled and allow the five action repositories
   listed in docs/agents/github-actions-access.md. This is NOT restoration of
   Arena's manual dispatch permission. Verify the new commit CI independently.
