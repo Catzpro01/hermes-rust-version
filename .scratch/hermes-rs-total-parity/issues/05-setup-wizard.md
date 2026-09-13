@@ -1,6 +1,6 @@
 # T05 — Setup wizard multi-step `hermes setup` (Spec 017)
 
-Status: IN REVIEW (CI-verified)
+Status: DONE — MERGED (PR #1, `07093dc`)
 
 ## Ruang lingkup
 

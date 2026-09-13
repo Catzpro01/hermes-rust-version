@@ -1,6 +1,6 @@
 # T03 — Info line (Spec 017)
 
-Status: IN REVIEW (CI-verified)
+Status: DONE — MERGED (PR #1, `07093dc`)
 
 ## Keputusan (per /ask-matt, "jalankan")
 

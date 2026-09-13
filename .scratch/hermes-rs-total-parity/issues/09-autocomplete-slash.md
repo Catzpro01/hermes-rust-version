@@ -1,6 +1,7 @@
 # T08 — Autocomplete /slash + ghost text (parity perilaku prompt_toolkit, Spec 017)
 
-Status: IN REVIEW (CI-verified)
+Status: DONE — MERGED (PR #3, `8d66bbb`) — verdict /ask-matt 2026-09-13:
+cap 60 char, skill discovery best-effort, TUI-only placeholder — disetujui
 
 ## Scope (spec §D.2 / §J.5 — "paritas = perilaku, bukan crate")
 

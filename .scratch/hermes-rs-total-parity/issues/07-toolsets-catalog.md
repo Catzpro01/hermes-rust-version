@@ -1,6 +1,6 @@
 # T07 — Toolsets catalog (26) / `hermes tools` (Spec 017)
 
-Status: IN REVIEW (CI-verified)
+Status: DONE — MERGED (PR #2, `319d719`)
 
 - Katalog `CONFIGURABLE_TOOLSETS` (26) + `_DEFAULT_OFF_TOOLSETS` (8)
   verbatim di `wizard/catalog.rs`.

@@ -1,6 +1,6 @@
 # Spec 007b — Sandbox default `strict` + `--no-sandbox` (per /ask-matt)
 
-Status: IN REVIEW (CI-verified)
+Status: DONE — MERGED (PR #2, `319d719`)
 
 ## Keputusan
 Matt (via "jalankan semuanya", 2026-09-13): sandbox proses (Spec 007)

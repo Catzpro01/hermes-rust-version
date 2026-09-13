@@ -1,6 +1,6 @@
 # T06 — Provider catalog (39) / `hermes model` picker (Spec 017)
 
-Status: IN REVIEW (CI-verified)
+Status: DONE — MERGED (PR #2, `319d719`)
 
 - Katalog `CANONICAL_PROVIDERS` (39 `ProviderEntry{id,label,description}`)
   sudah verbatim di `wizard/catalog.rs` (T05), diuji ulang vs
