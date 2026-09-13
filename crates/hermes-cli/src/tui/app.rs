@@ -76,7 +76,6 @@ impl InputBuffer {
 }
 
 /// Display state for the dashboard.
-#[derive(Default)]
 pub struct App {
     // Header / status.
     pub session_id: String,
@@ -101,6 +100,64 @@ pub struct App {
     history: Vec<String>,
     history_pos: Option<usize>,
     pub should_quit: bool,
+    // Spec 017 T08 (T04 option 3) — composer placeholder ghost text shown
+    // while the input line is empty (parity of v0.21.0
+    // `COMPOSER_PLACEHOLDERS`, tips.py L495). Re-rolled each time the line
+    // is cleared, mirroring `get_random_composer_placeholder()` (a fresh
+    // `random.choice` per call).
+    placeholder: String,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl App {
+    /// Builds dashboard state with a freshly-rolled composer placeholder.
+    pub fn new() -> Self {
+        Self {
+            placeholder: crate::tui::tips::random_composer_placeholder().to_owned(),
+            ..App::fields_default()
+        }
+    }
+
+    /// All-default field values (everything but the placeholder).
+    fn fields_default() -> Self {
+        Self {
+            session_id: String::new(),
+            provider: String::new(),
+            estimate: 0,
+            limit: None,
+            iteration: 0,
+            goal_status: String::new(),
+            plan_active: false,
+            reflection_on: false,
+            messages: VecDeque::new(),
+            streaming: String::new(),
+            awaiting: false,
+            tool_log: VecDeque::new(),
+            transcript_scroll: 0,
+            tool_scroll: 0,
+            input: InputBuffer::default(),
+            history: Vec::new(),
+            history_pos: None,
+            should_quit: false,
+            placeholder: String::new(),
+        }
+    }
+
+    /// Rolls a fresh composer placeholder for the next empty input line.
+    fn roll_placeholder(&mut self) {
+        self.placeholder = crate::tui::tips::random_composer_placeholder().to_owned();
+    }
+
+    /// The current composer placeholder (for tests / renderers).
+    #[cfg(test)]
+    pub(crate) fn placeholder(&self) -> &str {
+        &self.placeholder
+    }
 }
 
 impl App {
@@ -235,15 +292,20 @@ impl App {
                 } else {
                     self.record_user_message(line.clone());
                     self.input.clear();
+                    self.roll_placeholder();
                     KeyAction::Submit(line)
                 }
             }
             KeyCode::Backspace => {
                 self.input.backspace();
+                if self.input.chars.is_empty() {
+                    self.roll_placeholder();
+                }
                 KeyAction::None
             }
             KeyCode::Esc => {
                 self.input.clear();
+                self.roll_placeholder();
                 KeyAction::None
             }
             KeyCode::Left => {
@@ -319,6 +381,7 @@ impl App {
             _ => {
                 self.history_pos = None;
                 self.load_input("");
+                self.roll_placeholder();
             }
         }
     }
@@ -420,13 +483,27 @@ impl App {
 
     fn render_input(&self, frame: &mut Frame, area: Rect) {
         let input: String = self.input.text();
-        let body = if input.is_empty() {
-            "Type a message (Enter to send, ↑/↓ history, PgUp/PgDn scroll, q quit)".to_owned()
+        // Spec 017 T08 (T04 option 3): an empty composer shows a random
+        // v0.21.0 `COMPOSER_PLACEHOLDERS` string as ghost text — the theme's
+        // `placeholder` style (TUI §8: #888888 italic). It never enters the
+        // input buffer and is re-rolled on every clear.
+        let line = if input.is_empty() {
+            let theme = crate::tui::theme::HermesTheme::dark_canonical();
+            ratatui::text::Line::from(vec![
+                ratatui::text::Span::styled(
+                    crate::tui::welcome::PROMPT_SYMBOL.to_string(),
+                    theme.input_text(),
+                ),
+                ratatui::text::Span::styled(self.placeholder.clone(), theme.placeholder()),
+            ])
         } else {
-            format!("{}{input}", crate::tui::welcome::PROMPT_SYMBOL)
+            ratatui::text::Line::from(format!(
+                "{}{input}",
+                crate::tui::welcome::PROMPT_SYMBOL
+            ))
         };
         let block = Block::default().borders(Borders::ALL).title("Input");
-        let paragraph = Paragraph::new(body).block(block);
+        let paragraph = Paragraph::new(line).block(block);
         frame.render_widget(paragraph, area);
     }
 }
@@ -613,5 +690,55 @@ mod tests {
     fn render_narrow_no_panic() {
         render_at(4, 20);
         render_at(8, 30);
+    }
+
+    /// Spec 017 T08 (T04 option 3): an empty composer renders the current
+    /// composer placeholder (a verbatim v0.21.0 catalog member) as ghost
+    /// text in the input bar.
+    #[test]
+    fn composer_placeholder_rendered_when_input_empty() {
+        let backend = TestBackend::new(120, 40);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let app = App::new();
+        let placeholder = app.placeholder().to_owned();
+        assert!(
+            crate::tui::tips::COMPOSER_PLACEHOLDERS.contains(&placeholder.as_str()),
+            "placeholder must be a catalog member, got {placeholder:?}"
+        );
+        terminal.draw(|frame| app.render(frame)).unwrap();
+        let text: String = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(ratatui::buffer::Cell::symbol)
+            .collect();
+        assert!(
+            text.contains(&placeholder),
+            "ghost placeholder missing from input bar:\n{text}"
+        );
+    }
+
+    /// The placeholder is re-rolled (submit / Esc / backspace-to-empty /
+    /// history-forward past the top) and is always a catalog member.
+    #[test]
+    fn placeholder_rolls_and_stays_in_catalog() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+        let mut app = App::new();
+        let in_catalog = |app: &App| {
+            crate::tui::tips::COMPOSER_PLACEHOLDERS.contains(&app.placeholder())
+        };
+        assert!(in_catalog(&app));
+        app.handle_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE));
+        let action = app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+        assert_eq!(action, KeyAction::Submit("x".to_owned()));
+        assert!(app.input.text().is_empty());
+        assert!(in_catalog(&app));
+        app.handle_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+        app.handle_key(KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE));
+        assert!(in_catalog(&app));
+        app.handle_key(KeyEvent::new(KeyCode::Char('z'), KeyModifiers::NONE));
+        app.handle_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+        assert!(in_catalog(&app));
     }
 }

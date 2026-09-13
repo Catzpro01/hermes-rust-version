@@ -97,8 +97,14 @@ fn full_agentic_session_populates_every_panel() {
     assert!(text.contains("read_file"), "tool log missing:\n{text}");
     // Transcript carries the authoritative final answer.
     assert!(text.contains("final answer"), "transcript missing:\n{text}");
-    // Input bar placeholder present.
-    assert!(text.contains("Type a message"), "input bar missing:\n{text}");
+    // Input bar shows a composer placeholder (Spec 017 T08, T04 option 3):
+    // one of the verbatim v0.21.0 COMPOSER_PLACEHOLDERS as ghost text.
+    assert!(
+        crate::tui::tips::COMPOSER_PLACEHOLDERS
+            .iter()
+            .any(|p| text.contains(p)),
+        "composer placeholder missing:\n{text}"
+    );
     // State: exactly one finalized assistant message (tool text was transient).
     assert_eq!(app.messages_len(), 1);
     assert!(app.streaming().is_empty());

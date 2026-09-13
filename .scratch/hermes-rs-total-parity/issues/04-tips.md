@@ -31,3 +31,6 @@ ghost text dipertimbangkan ulang di T08).
    setup.py/update_cmd.py) — perlu flag `display.tips: true` agar opt-in.
 3. **Composer placeholder**: pakai `random_composer_placeholder()` sebagai
    ghost text prompt kosong di TUI (T08 wilayah autocomplete).
+   → **Diputuskan di T08**: diimplementasikan (lihat
+   `issues/09-autocomplete-slash.md` — ghost dim italic saat input
+   kosong, di-roll ulang tiap kali input dikosongkan).
