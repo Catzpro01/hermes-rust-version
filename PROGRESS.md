@@ -1049,3 +1049,26 @@ the new follow-up review's location to evidence/review-3b39bd7.md and linked the
 actual historical review; original review-6746037.md remains unchanged. This
 follow-up is documentation-only. Runtime capture/CI3b39bd7 is GREEN; delivery
 CI now also runs the three retained-packet audit behavior tests.
+
+### `/ask-matt` — routing after four-area delivery (2026-09-14)
+
+Read the installed upstream ask-matt skill and its phase-boundary reference,
+tracked memory, latest evidence state and T13. This is skill routing, not
+personal Matt Pocock review or implementation. Confirmed delivery CI34788653636
+SUCCESS at c441699ad68313ff471e4a9a5b0d33d7b961aa9f.
+
+Recommended next invocation: `/implement` scoped to T13, retaining T12's evidence
+requirements. First enumerate and fill required wizard field/completion-host
+coverage gaps against settled Q1–Q8; section-level/native-host captures must not
+be silently promoted to exhaustive/full-CLI proof. Then use one `/tdd` RED/GREEN
+slice per demonstrated UI discrepancy. Picker footer/filter hints/counters are
+a concrete first correction slice, followed by wizard and completion presentation.
+Validate Rust on the official runner before applying exact tested patches;
+recapture affected committed-source frames, then `/code-review` Standards/Spec.
+Use `/diagnosing-bugs` only if a symptom resists a tight reproducible loop.
+
+No new grilling, triage of our own ticket, Actions provisioning, broad rewrite,
+new adaptation, deferred feature or merge is needed for this routing. Continue
+in this repo/session for the scoped next slice; no portable handoff needed.
+Explicit final user acceptance remains required. No runtime/evidence changed
+by this `/ask-matt` invocation.

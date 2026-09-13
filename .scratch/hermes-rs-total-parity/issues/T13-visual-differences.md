@@ -20,3 +20,12 @@
    source captures → direct Standards/Spec review. No local Rust available.
 5. Only request explicit user closure acceptance after evidence/remaining
    differences actually satisfy the agreed scope. Do not merge.
+
+## `/ask-matt` routing after delivery
+
+Next skill: `/implement` on this ticket, using `/tdd` internally. First resolve
+T12's required coverage gaps without reopening settled Q1–Q8; then correct one
+captured discrepancy at a time (picker footer/filter hints/counters provide a
+small concrete first slice). Official remote Rust checks precede patch application;
+affected captures and Standards/Spec review precede any closure request.
+This recommendation is not a personal review, acceptance, or a runtime change.
