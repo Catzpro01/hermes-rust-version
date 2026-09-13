@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  CARGO_TERM_COLOR: always
+  CARGO_TERM_COLOR: never
   RUST_BACKTRACE: 1
 
 jobs:
@@ -27,11 +27,49 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: cargo fmt --check
-        run: cargo fmt --all -- --check
-        continue-on-error: true
+        run: cargo fmt --all -- --check 2>&1 | tee fmt.log || true
 
       - name: cargo clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        id: clippy
+        run: |
+          set -o pipefail
+          cargo clippy --workspace --all-targets -- -D warnings 2>&1 | tee clippy.log
+        continue-on-error: true
 
       - name: cargo test
-        run: cargo test --workspace --no-fail-fast
+        id: test
+        run: |
+          set -o pipefail
+          cargo test --workspace --no-fail-fast 2>&1 | tee test.log
+        continue-on-error: true
+
+      # Compiler diagnostics are written to the job summary so they are
+      # readable through the API even when raw logs are not reachable.
+      - name: Summarize diagnostics
+        if: always()
+        run: |
+          {
+            echo "## clippy: ${{ steps.clippy.outcome }}"
+            echo '```'
+            grep -E "^(error|warning)" -A 12 clippy.log | grep -v "^ *Compiling\|^ *Checking" | head -400
+            echo '```'
+            echo "## test: ${{ steps.test.outcome }}"
+            echo '```'
+            grep -E "^(error|warning)(\[|:)" -A 12 test.log | head -300
+            grep -E "^test result|^failures:|^---- .* stdout ----|panicked at|FAILED|^test .* FAILED" -A 6 test.log | head -400
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-logs
+          path: |
+            fmt.log
+            clippy.log
+            test.log
+
+      - name: Fail if any step failed
+        if: steps.clippy.outcome != 'success' || steps.test.outcome != 'success'
+        run: exit 1
