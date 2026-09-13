@@ -1,6 +1,11 @@
 # Bukti visual Spec 017 — capture awal dan temuan
 
-**Status: FAIL pada geometri banner; perbaikan belum tervalidasi. Closure tetap terbuka.**
+**Terbaru: perbaikan spasi ANSI terverifikasi pada `a2a3d08`; parity masih FAIL.**
+
+Lihat [laporan capture ulang](banner-a2a3d08/REPORT.md): RED/GREEN dan CI kode
+lulus; kolom 100/80 cocok, tetapi 94/95 dan style masih berbeda. Capture dari
+sumber committed sudah menyertakan compiler/Cargo. Bukti lama di bawah tetap
+menjadi catatan diagnosis awal, bukan status validasi terbaru.
 
 Kesepakatan Q1–Q8 dan izin eksekusi sudah dikonfirmasi user. Ini hasil tahap
 pertama, bukan bukti lengkap kelima area dan bukan persetujuan closure.
@@ -82,20 +87,14 @@ Signed artifact ZIP gagal di sandbox; tidak ada bagian hilang yang diabaikan.
 
 ## Hambatan dan pekerjaan tersisa
 
-- **BLOCKED — validasi perbaikan:** dispatch workflow ditolak HTTP 403
-  `Resource not accessible by integration`. Commit/push dan pembacaan CI
-  bekerja, tetapi izin dispatch Actions tidak tersedia pada koneksi ini.
-  Koneksi GitHub di Arena perlu diperiksa/disambungkan ulang.
-- Kandidat regresi disiapkan untuk output ANSI publik dibandingkan referensi
-  Python pada empat lebar dan dua color depth. **RED/GREEN belum dijalankan.**
-  Belum ada perubahan runtime Rust yang diterapkan atau dinyatakan teruji.
-- Setelah akses pulih: jalankan RED, koreksi penulisan spasi, jalankan
-  fmt/check/clippy/test di runner, verifikasi delta yang diuji, baru terapkan
-  ke sumber Rust dan ulang capture. Jangan menonaktifkan gate.
+- Validasi kini memakai push yang diizinkan dan rustup resmi; dispatch manual
+  403 bukan lagi prasyarat. RED/GREEN serta CI sumber `a2a3d08` sudah berhasil.
+- Capture ulang masih menemukan layout session panjang dan style yang tidak
+  cocok. Rincian/posisi sel ada di [laporan terbaru](banner-a2a3d08/REPORT.md).
 - Wizard, picker, completion, serta variasi summary nol/non-nol belum lengkap.
   Ringkasan awal hanya empat tools / nol skills, tanpa MCP.
 - Versi compiler Rust persis belum direkam pada capture awal (workflow memakai
-  stable); tambahkan pada capture ulang. Referensi upstream tidak membuktikan
+  stable); sudah dicatat pada capture ulang `a2a3d08`. Referensi upstream tidak membuktikan
   tidak adanya modifikasi lokal historis pada VM.
 - Semua bukti akhir harus ditinjau user sebelum closure. Tidak ada izin merge.
 

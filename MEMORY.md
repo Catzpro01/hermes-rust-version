@@ -60,9 +60,14 @@ user's private Python installation.
   clippy/full tests and candidate capture. Verified and applied the exact
   3469-byte Rust delta (SHA-256 5ae5e9b3430ad1a32e44cded4cd25b55cf6d6a81800edc613a6f82df4216a79e).
   It removes only the unstyled-space skip and adds the public-writer test.
-  Candidate consumed/disabled (phase none); next push captures the final
-  committed source, including compiler/Cargo versions. Verify its own CI
-  and real rendered pairs. Never substitute candidate capture/CI for images.
+  Candidate consumed/disabled (phase none). Actual source a2a3d08 has green
+  CI 34783196808 and clean-source capture 34783196812. Eight paired PNGs,
+  raw/cast recordings and checked metadata are in evidence/banner-a2a3d08/.
+  rustc/Cargo 1.98.1 recorded. Space-collapse fixed, NOT full visual parity:
+  columns 100/80 match (51/41), but 94/95 Rust=42 vs Python=48/49.
+  Bold leaks onto right title border; dim and separator colors also differ.
+  Next: public-writer RED/GREEN on long-session layout and style transitions,
+  then recapture. See REPORT.md/comparison.json; no original was normalized.
 - User requested `/wizard` → `/tdd` → `/code-review` → recapture. Wizard
   was delivered/static checked, not run interactively; no need repeat it.
   `/code-review` still needs a user-supplied fixed point and unavailable

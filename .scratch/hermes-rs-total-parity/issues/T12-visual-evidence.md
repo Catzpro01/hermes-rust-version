@@ -1,6 +1,6 @@
 # T12 — Real Python/Rust visual evidence
 
-- Status: IN PROGRESS — ANSI correction under remote RED/GREEN validation
+- Status: IN PROGRESS — space-collapse fixed; layout/style parity still FAIL
 - Label: `ready-for-agent`
 - Owner: Arena agent (capture/corrections), user (final acceptance)
 - Basis: [confirmed Q1-Q8 agreement](../grilling.md), user `setuju lanjutkan`
@@ -42,8 +42,8 @@ A successful capture job does not assert visual equality or close §J.7.
 
 ## Current limitations
 
-First slice is partial and unreviewed until images are inspected. Keep
-component and full-CLI coverage distinct. Do not extrapolate banner evidence
+First slice has direct image/cell inspection, but remains partial and is not
+independent review or user acceptance. Keep component and full-CLI coverage distinct. Do not extrapolate banner evidence
 to other areas or label missing cases passed. No new deferred features.
 
 ## Observed result and immediate next action
@@ -70,9 +70,10 @@ GREEN run 34783039592 on 3f3d996 passed fmt/check, the named regression,
 clippy and full tests. Exact tested delta verified (3469 bytes, SHA-256
 5ae5e9b3430ad1a32e44cded4cd25b55cf6d6a81800edc613a6f82df4216a79e) and applied
 locally, with byte-for-byte diff equality. Candidate consumed/disabled.
-Next push captures the final committed source with compiler/Cargo provenance;
-verify actual-commit CI and compare new real pairs. Candidate capture alone
-is not final source evidence. Review and five-area coverage remain open.
+Source a2a3d08 subsequently passed CI and clean-source capture; the new pairs
+still reveal layout/style defects, detailed in the latest section below.
+Candidate capture alone is not final source evidence. Review and five-area
+coverage remain open.
 
 Prior checks: CI `34779396792` on `d7727e5` passed. Capture `34779200470`
 and CI `34779200438` on `814c235` passed; these are infrastructure/code checks,
@@ -150,3 +151,23 @@ The persisted candidate patch is a transparent, unapplied test proposal, not
 production Rust. `request.json` selects RED and binds source and patch hashes.
 Once settings are corrected, update a retry marker there and push; require
 actual named RED evidence, then propose/test GREEN before applying Rust.
+
+## Verified source and new real capture — 2026-09-14
+
+- Actual Rust source `a2a3d083bf7e79c91aee31fa7e7b1cec7be0ef96`: CI
+  34783196808 and clean-source capture 34783196812 both SUCCESS.
+- New immutable originals + paired PNGs in
+  `docs/hermes-ui-spec/017/evidence/banner-a2a3d08/`; REPORT.md and
+  comparison.json record direct inspection, not independent review/acceptance.
+- rustc 1.98.1 (48a229cea), Cargo 1.98.1, empty Rust worktree diff checked.
+  All eight raw/event/cast round trips and original evidence hashes verified.
+- Space-collapse fixed; Tools columns at 100/80 now 51/41 (match Python).
+  At 94/95 Rust remains 42 vs Python 48/49 with long session UUID + four tools.
+- Open style defects: bold leaks into border after title; missing dim on
+  labels/summary/cwd/session; comma/ellipsis foreground differs. No blanket
+  adaptation or normalization permitted. All cases remain visually unclosed.
+- Next small slices at agreed public `write_banner` seam: long-session
+  allocation-after-wrap regression; then SGR modifier-reset and dim/separator
+  regressions. Run actual RED/GREEN before source commits and retain recaptures.
+  Investigate `layout_banner` post-wrap `left_w` vs allocated width; the simple
+  reference fixtures do not cover this case. No extra feature or merge.

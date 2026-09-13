@@ -648,3 +648,23 @@ performed.** The Python installation was not modified.
   validation work; repetitive dispatch/settings recovery is not a prerequisite.
   Independent code-review needs the user's fixed point and unavailable
   subagents; no review verdict, evidence acceptance, closure or merge claimed.
+
+## 2026-09-14: Committed-source CI/capture pass; remaining real visual defects recorded
+
+- Source a2a3d083bf7e79c91aee31fa7e7b1cec7be0ef96: CI 34783196808 and capture
+  34783196812 SUCCESS. Candidate application was skipped, source hash matched
+  locally, and Rust worktree diff was empty. rustc/Cargo 1.98.1 recorded.
+- Retrieved all four annotation parts: 80336 bytes, SHA-256
+  86a500e02af9352d4c15b70af8a3126de650ff1ea43a81d243d44f03f0b9a363.
+  Paired with isolated verified Python, replayed under the existing pinned
+  renderer, inspected all eight PNGs and cell dumps; all 8 raw/event/cast
+  round trips verified. Originals and old evidence were not normalized.
+- Actual progress: Tools columns 100/80 now match at 51/41, no longer column 2.
+  However 94/95 Rust=42 vs Python=48/49 with full UUID+four tools. Bold leaks
+  onto title border; dim and separator/ellipsis colors also differ. These
+  remain FAIL, not approved adaptations. Tests/CI do not override real evidence.
+- Saved new evidence and a precise partial-fix report under banner-a2a3d08;
+  refreshed report index, tooling, MEMORY and T12. Next are narrow public-writer
+  regressions for long-session column allocation and ANSI style transitions.
+  Independent review, other UI areas and explicit final acceptance remain open.
+  No merge and no Python user installation/data changes.

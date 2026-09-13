@@ -90,8 +90,11 @@ an optional pre-commit patch restricted to `welcome.rs`. RED mode requires
 the named geometry assertion to fail (a compiler error or zero matched tests
 is not accepted); GREEN requires the named test and full workspace checks.
 Do not apply a candidate locally as a verified fix until these checks pass.
-Dispatch currently requires the GitHub connection's Actions permission to be
-restored; the observed HTTP 403 is not a successful run.
+Manual dispatch still lacks permission, but authorized branch-scoped push
+requests in `.scratch/hermes-rs-total-parity/runner-candidate/` now work.
+After applying the verified delta, consume/remove the proposal and set phase
+`none` to capture clean committed source. Check its source hash and empty
+Rust-worktree diff, plus compiler/Cargo versions; verify that commit's CI too.
 
 ## Transport and audit
 

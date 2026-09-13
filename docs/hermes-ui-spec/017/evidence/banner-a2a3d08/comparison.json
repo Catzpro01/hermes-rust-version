@@ -1,0 +1,4699 @@
+{
+  "status": "PARTIAL_FIX_REMAINING_LAYOUT_AND_STYLE_FAIL",
+  "normalization": "none",
+  "notes": [
+    "Column match is a narrow geometry check, not whole-banner parity.",
+    "All raw text differences are retained, including padding and intentional brand text.",
+    "Attribute list compares only equal glyphs at equal coordinates; it is incomplete where geometry differs.",
+    "U+2800 braille blank is not classified as whitespace by Python; counts are cell records, not necessarily visible-ink pixels."
+  ],
+  "cases": [
+    {
+      "width": 100,
+      "available_tools_columns_1_based": {
+        "python": 51,
+        "rust": 51
+      },
+      "tools_column_match": true,
+      "emulator_rows": {
+        "python": 33,
+        "rust": 33
+      },
+      "raw_row_text_differences": [
+        {
+          "row_1_based": 1,
+          "python": "",
+          "rust": "                                                                                                    "
+        },
+        {
+          "row_1_based": 2,
+          "python": "██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ",
+          "rust": "██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗              "
+        },
+        {
+          "row_1_based": 3,
+          "python": "██╗████████╗",
+          "rust": "██╗████████╗                                                                                        "
+        },
+        {
+          "row_1_based": 4,
+          "python": "██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ",
+          "rust": "██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗             "
+        },
+        {
+          "row_1_based": 5,
+          "python": "██║╚══██╔══╝",
+          "rust": "██║╚══██╔══╝                                                                                        "
+        },
+        {
+          "row_1_based": 6,
+          "python": "███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║",
+          "rust": "███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║  "
+        },
+        {
+          "row_1_based": 7,
+          "python": "██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║",
+          "rust": "██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║  "
+        },
+        {
+          "row_1_based": 8,
+          "python": "██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║",
+          "rust": "██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║  "
+        },
+        {
+          "row_1_based": 9,
+          "python": "╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝",
+          "rust": "╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝  "
+        },
+        {
+          "row_1_based": 10,
+          "python": "",
+          "rust": "                                                                                                    "
+        },
+        {
+          "row_1_based": 11,
+          "python": "╭────────────────────── Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301 ──────────────────────╮",
+          "rust": "╭─────────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ────────────────────────╮"
+        }
+      ],
+      "same_glyph_non_whitespace_attribute_differences": [
+        {
+          "row": 11,
+          "column": 78,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 79,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 80,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 81,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 82,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 83,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 84,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 85,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 86,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 87,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 88,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 89,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 90,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 91,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 92,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 93,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 94,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 95,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 96,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 97,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 98,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 99,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 100,
+          "glyph": "╮",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 51,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 52,
+          "glyph": "t",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 53,
+          "glyph": "h",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 54,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 55,
+          "glyph": "r",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 56,
+          "glyph": ":",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 66,
+          "glyph": ",",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 77,
+          "glyph": ",",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 93,
+          "glyph": ",",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 95,
+          "glyph": ".",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            },
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 96,
+          "glyph": ".",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            },
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 13,
+          "column": 97,
+          "glyph": ".",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            },
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 51,
+          "glyph": "N",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 52,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 54,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 55,
+          "glyph": "k",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 56,
+          "glyph": "i",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 57,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 58,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 59,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 61,
+          "glyph": "i",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 62,
+          "glyph": "n",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 63,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 64,
+          "glyph": "t",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 65,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 66,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 67,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 68,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 16,
+          "column": 69,
+          "glyph": "d",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 51,
+          "glyph": "4",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 53,
+          "glyph": "t",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 54,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 55,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 56,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 57,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 59,
+          "glyph": "·",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 61,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 63,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 64,
+          "glyph": "k",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 65,
+          "glyph": "i",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 66,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 67,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 68,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 70,
+          "glyph": "·",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 72,
+          "glyph": "/",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 73,
+          "glyph": "h",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 74,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 75,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 76,
+          "glyph": "p",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 78,
+          "glyph": "f",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 79,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 80,
+          "glyph": "r",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 82,
+          "glyph": "c",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 83,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 84,
+          "glyph": "m",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 85,
+          "glyph": "m",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 86,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 87,
+          "glyph": "n",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 88,
+          "glyph": "d",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 18,
+          "column": 89,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 26,
+          "glyph": "·",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 28,
+          "glyph": "N",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 29,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 30,
+          "glyph": "u",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 31,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 33,
+          "glyph": "R",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 34,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 35,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 36,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 37,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 38,
+          "glyph": "r",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 39,
+          "glyph": "c",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 29,
+          "column": 40,
+          "glyph": "h",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 10,
+          "glyph": "/",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 11,
+          "glyph": "t",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 12,
+          "glyph": "m",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 13,
+          "glyph": "p",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 14,
+          "glyph": "/",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 15,
+          "glyph": "h",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 16,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 17,
+          "glyph": "r",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 18,
+          "glyph": "m",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 19,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 20,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 21,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 22,
+          "glyph": "v",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 23,
+          "glyph": "i",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 24,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 25,
+          "glyph": "u",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 26,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 27,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 28,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 29,
+          "glyph": "w",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 30,
+          "glyph": "k",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 31,
+          "glyph": "q",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 32,
+          "glyph": "p",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 33,
+          "glyph": "p",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 34,
+          "glyph": "9",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 35,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 36,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 37,
+          "glyph": "/",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 38,
+          "glyph": "d",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 39,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 40,
+          "glyph": "m",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 30,
+          "column": 41,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 4,
+          "glyph": "S",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 5,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 6,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 7,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 8,
+          "glyph": "i",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 9,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 10,
+          "glyph": "n",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 11,
+          "glyph": ":",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 13,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 14,
+          "glyph": "1",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 15,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 16,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 17,
+          "glyph": "9",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 18,
+          "glyph": "c",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 19,
+          "glyph": "9",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 20,
+          "glyph": "f",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 21,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 22,
+          "glyph": "9",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 23,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 24,
+          "glyph": "4",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 25,
+          "glyph": "c",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 26,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 27,
+          "glyph": "7",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 28,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 29,
+          "glyph": "6",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 30,
+          "glyph": "2",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 31,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 32,
+          "glyph": "9",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 33,
+          "glyph": "d",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 34,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 35,
+          "glyph": "3",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 36,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 37,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 38,
+          "glyph": "4",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 39,
+          "glyph": "3",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 40,
+          "glyph": "f",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 41,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 42,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 43,
+          "glyph": "1",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 44,
+          "glyph": "4",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 45,
+          "glyph": "2",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 46,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 47,
+          "glyph": "5",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 31,
+          "column": 48,
+          "glyph": "f",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "width": 80,
+      "available_tools_columns_1_based": {
+        "python": 41,
+        "rust": 41
+      },
+      "tools_column_match": true,
+      "emulator_rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "raw_row_text_differences": [
+        {
+          "row_1_based": 1,
+          "python": "",
+          "rust": "                                                                                "
+        },
+        {
+          "row_1_based": 2,
+          "python": "╭──────────── Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301 ────────────╮",
+          "rust": "╭───────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ──────────────╮"
+        }
+      ],
+      "same_glyph_non_whitespace_attribute_differences": [
+        {
+          "row": 2,
+          "column": 68,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 69,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 70,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 71,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 72,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 73,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 74,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 75,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 76,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 77,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 78,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 79,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 80,
+          "glyph": "╮",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 4,
+          "column": 41,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 4,
+          "column": 42,
+          "glyph": "t",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 4,
+          "column": 43,
+          "glyph": "h",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 4,
+          "column": 44,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 4,
+          "column": 45,
+          "glyph": "r",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 4,
+          "column": 46,
+          "glyph": ":",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 4,
+          "column": 56,
+          "glyph": ",",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            }
+          }
+        },
+        {
+          "row": 4,
+          "column": 67,
+          "glyph": ",",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            }
+          }
+        },
+        {
+          "row": 5,
+          "column": 55,
+          "glyph": ",",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            }
+          }
+        },
+        {
+          "row": 5,
+          "column": 57,
+          "glyph": ".",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            },
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 5,
+          "column": 58,
+          "glyph": ".",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            },
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 5,
+          "column": 59,
+          "glyph": ".",
+          "different_attributes": {
+            "fg": {
+              "python": -1,
+              "rust": 16775388
+            },
+            "fm": {
+              "python": 0,
+              "rust": 50331648
+            },
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 41,
+          "glyph": "N",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 42,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 44,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 45,
+          "glyph": "k",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 46,
+          "glyph": "i",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 47,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 48,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 49,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 51,
+          "glyph": "i",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 52,
+          "glyph": "n",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 53,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 54,
+          "glyph": "t",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 55,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 56,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 57,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 58,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 8,
+          "column": 59,
+          "glyph": "d",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 41,
+          "glyph": "4",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 43,
+          "glyph": "t",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 44,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 45,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 46,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 47,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 49,
+          "glyph": "·",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 51,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 53,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 54,
+          "glyph": "k",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 55,
+          "glyph": "i",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 56,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 57,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 58,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 60,
+          "glyph": "·",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 62,
+          "glyph": "/",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 63,
+          "glyph": "h",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 64,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 65,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 66,
+          "glyph": "p",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 68,
+          "glyph": "f",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 69,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 70,
+          "glyph": "r",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 41,
+          "glyph": "c",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 42,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 43,
+          "glyph": "m",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 44,
+          "glyph": "m",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 45,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 46,
+          "glyph": "n",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 47,
+          "glyph": "d",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 11,
+          "column": 48,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 21,
+          "glyph": "·",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 23,
+          "glyph": "N",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 24,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 25,
+          "glyph": "u",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 26,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 28,
+          "glyph": "R",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 29,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 30,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 31,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 32,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 33,
+          "glyph": "r",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 34,
+          "glyph": "c",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 20,
+          "column": 35,
+          "glyph": "h",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 5,
+          "glyph": "/",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 6,
+          "glyph": "t",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 7,
+          "glyph": "m",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 8,
+          "glyph": "p",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 9,
+          "glyph": "/",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 10,
+          "glyph": "h",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 11,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 12,
+          "glyph": "r",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 13,
+          "glyph": "m",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 14,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 15,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 16,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 17,
+          "glyph": "v",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 18,
+          "glyph": "i",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 19,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 20,
+          "glyph": "u",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 21,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 22,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 23,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 24,
+          "glyph": "m",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 25,
+          "glyph": "l",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 26,
+          "glyph": "z",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 27,
+          "glyph": "i",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 28,
+          "glyph": "2",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 29,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 30,
+          "glyph": "6",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 31,
+          "glyph": "7",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 32,
+          "glyph": "/",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 33,
+          "glyph": "d",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 34,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 35,
+          "glyph": "m",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 36,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 22,
+          "column": 17,
+          "glyph": "S",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 22,
+          "column": 18,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 22,
+          "column": 19,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 22,
+          "column": 20,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 22,
+          "column": 21,
+          "glyph": "i",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 22,
+          "column": 22,
+          "glyph": "o",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 22,
+          "column": 23,
+          "glyph": "n",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 22,
+          "column": 24,
+          "glyph": ":",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 4,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 5,
+          "glyph": "1",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 6,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 7,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 8,
+          "glyph": "9",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 9,
+          "glyph": "c",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 10,
+          "glyph": "9",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 11,
+          "glyph": "f",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 12,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 13,
+          "glyph": "9",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 14,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 15,
+          "glyph": "5",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 16,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 17,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 18,
+          "glyph": "7",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 19,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 20,
+          "glyph": "2",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 21,
+          "glyph": "3",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 22,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 23,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 24,
+          "glyph": "2",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 25,
+          "glyph": "6",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 26,
+          "glyph": "b",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 27,
+          "glyph": "-",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 28,
+          "glyph": "3",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 29,
+          "glyph": "6",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 30,
+          "glyph": "7",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 31,
+          "glyph": "1",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 32,
+          "glyph": "1",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 33,
+          "glyph": "9",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 34,
+          "glyph": "2",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 35,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 36,
+          "glyph": "f",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 37,
+          "glyph": "a",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 38,
+          "glyph": "…",
+          "different_attributes": {
+            "fg": {
+              "python": 9143938,
+              "rust": -1
+            },
+            "fm": {
+              "python": 50331648,
+              "rust": 0
+            },
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "width": 94,
+      "available_tools_columns_1_based": {
+        "python": 48,
+        "rust": 42
+      },
+      "tools_column_match": false,
+      "emulator_rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "raw_row_text_differences": [
+        {
+          "row_1_based": 1,
+          "python": "",
+          "rust": "                                                                                              "
+        },
+        {
+          "row_1_based": 2,
+          "python": "╭─────────────────── Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301 ───────────────────╮",
+          "rust": "╭──────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ─────────────────────╮"
+        },
+        {
+          "row_1_based": 3,
+          "python": "│                                              Available Tools                               │",
+          "rust": "│                                        Available Tools                                     │"
+        },
+        {
+          "row_1_based": 4,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀        other: list_dir, read_file, shell_readonly,   │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     other: list_dir, read_file, shell_readonly,         │"
+        },
+        {
+          "row_1_based": 5,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀        ...                                           │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀     ...                                                 │"
+        },
+        {
+          "row_1_based": 6,
+          "python": "│        ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀                                                      │",
+          "rust": "│     ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀                                                         │"
+        },
+        {
+          "row_1_based": 7,
+          "python": "│        ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀        Available Skills                              │",
+          "rust": "│     ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀     Available Skills                                    │"
+        },
+        {
+          "row_1_based": 8,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀        No skills installed                           │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     No skills installed                                 │"
+        },
+        {
+          "row_1_based": 9,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                      │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │"
+        },
+        {
+          "row_1_based": 10,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀        4 tools · 0 skills · /help for commands       │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     4 tools · 0 skills · /help for commands             │"
+        },
+        {
+          "row_1_based": 11,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                      │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │"
+        },
+        {
+          "row_1_based": 12,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                      │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │"
+        },
+        {
+          "row_1_based": 13,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                      │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │"
+        },
+        {
+          "row_1_based": 14,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                      │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │"
+        },
+        {
+          "row_1_based": 15,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                      │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │"
+        },
+        {
+          "row_1_based": 16,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                      │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │"
+        },
+        {
+          "row_1_based": 17,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                      │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │"
+        },
+        {
+          "row_1_based": 18,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                      │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │"
+        },
+        {
+          "row_1_based": 20,
+          "python": "│        parity-fixture · Nous Research                                                      │",
+          "rust": "│     parity-fixture · Nous Research                                                         │"
+        },
+        {
+          "row_1_based": 21,
+          "python": "│       /tmp/hermes-visual-o2epp6b2/demo                                                     │",
+          "rust": "│    /tmp/hermes-visual-o2epp6b2/demo                                                        │"
+        },
+        {
+          "row_1_based": 22,
+          "python": "│                   Session:                                                                 │",
+          "rust": "│               Session:                                                                     │"
+        },
+        {
+          "row_1_based": 23,
+          "python": "│     01a09c9f-9e70-7600-8bdd-fa8f1c2edb20                                                   │",
+          "rust": "│  01a09c9f-9e70-7600-8bdd-fa8f1c2edb20                                                      │"
+        }
+      ],
+      "same_glyph_non_whitespace_attribute_differences": [
+        {
+          "row": 2,
+          "column": 75,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 76,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 77,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 78,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 79,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 80,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 81,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 82,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 83,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 84,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 85,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 86,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 87,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 88,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 89,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 90,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 91,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 92,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 93,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 2,
+          "column": 94,
+          "glyph": "╮",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 10,
+          "column": 54,
+          "glyph": "s",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 21,
+          "column": 15,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 7,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 13,
+          "glyph": "9",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 18,
+          "glyph": "7",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 23,
+          "column": 31,
+          "glyph": "f",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "width": 95,
+      "available_tools_columns_1_based": {
+        "python": 49,
+        "rust": 42
+      },
+      "tools_column_match": false,
+      "emulator_rows": {
+        "python": 38,
+        "rust": 38
+      },
+      "raw_row_text_differences": [
+        {
+          "row_1_based": 1,
+          "python": "",
+          "rust": "                                                                                               "
+        },
+        {
+          "row_1_based": 2,
+          "python": "██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ",
+          "rust": "██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗         "
+        },
+        {
+          "row_1_based": 3,
+          "python": "██╗████████╗",
+          "rust": "██╗████████╗                                                                                   "
+        },
+        {
+          "row_1_based": 4,
+          "python": "██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ",
+          "rust": "██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗        "
+        },
+        {
+          "row_1_based": 5,
+          "python": "██║╚══██╔══╝",
+          "rust": "██║╚══██╔══╝                                                                                   "
+        },
+        {
+          "row_1_based": 7,
+          "python": "██║",
+          "rust": "██║                                                                                            "
+        },
+        {
+          "row_1_based": 9,
+          "python": "██║",
+          "rust": "██║                                                                                            "
+        },
+        {
+          "row_1_based": 11,
+          "python": "██║",
+          "rust": "██║                                                                                            "
+        },
+        {
+          "row_1_based": 13,
+          "python": "╚═╝",
+          "rust": "╚═╝                                                                                            "
+        },
+        {
+          "row_1_based": 14,
+          "python": "",
+          "rust": "                                                                                               "
+        },
+        {
+          "row_1_based": 15,
+          "python": "╭─────────────────── Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301 ────────────────────╮",
+          "rust": "╭───────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ─────────────────────╮"
+        },
+        {
+          "row_1_based": 16,
+          "python": "│                                               Available Tools                               │",
+          "rust": "│                                        Available Tools                                      │"
+        },
+        {
+          "row_1_based": 17,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀         other: list_dir, read_file, shell_readonly,   │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     other: list_dir, read_file, shell_readonly,          │"
+        },
+        {
+          "row_1_based": 18,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀         ...                                           │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀     ...                                                  │"
+        },
+        {
+          "row_1_based": 19,
+          "python": "│        ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀                                                       │",
+          "rust": "│     ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀                                                          │"
+        },
+        {
+          "row_1_based": 20,
+          "python": "│        ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀         Available Skills                              │",
+          "rust": "│     ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀     Available Skills                                     │"
+        },
+        {
+          "row_1_based": 21,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀         No skills installed                           │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     No skills installed                                  │"
+        },
+        {
+          "row_1_based": 22,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                       │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │"
+        },
+        {
+          "row_1_based": 23,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀         4 tools · 0 skills · /help for commands       │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     4 tools · 0 skills · /help for commands              │"
+        },
+        {
+          "row_1_based": 24,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                       │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │"
+        },
+        {
+          "row_1_based": 25,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                       │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │"
+        },
+        {
+          "row_1_based": 26,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                       │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │"
+        },
+        {
+          "row_1_based": 27,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                       │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │"
+        },
+        {
+          "row_1_based": 28,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                       │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │"
+        },
+        {
+          "row_1_based": 29,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                       │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │"
+        },
+        {
+          "row_1_based": 30,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                       │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │"
+        },
+        {
+          "row_1_based": 31,
+          "python": "│        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                       │",
+          "rust": "│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │"
+        },
+        {
+          "row_1_based": 33,
+          "python": "│        parity-fixture · Nous Research                                                       │",
+          "rust": "│     parity-fixture · Nous Research                                                          │"
+        },
+        {
+          "row_1_based": 34,
+          "python": "│       /tmp/hermes-visual-3jg1uo86/demo                                                      │",
+          "rust": "│    /tmp/hermes-visual-3jg1uo86/demo                                                         │"
+        },
+        {
+          "row_1_based": 35,
+          "python": "│                   Session:                                                                  │",
+          "rust": "│               Session:                                                                      │"
+        },
+        {
+          "row_1_based": 36,
+          "python": "│     01a09c9f-9e82-7390-8e0a-c738202a5bca                                                    │",
+          "rust": "│  01a09c9f-9e82-7390-8e0a-c738202a5bca                                                       │"
+        }
+      ],
+      "same_glyph_non_whitespace_attribute_differences": [
+        {
+          "row": 15,
+          "column": 75,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 76,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 77,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 78,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 79,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 80,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 81,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 82,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 83,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 84,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 85,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 86,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 87,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 88,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 89,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 90,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 91,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 92,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 93,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 94,
+          "glyph": "─",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 15,
+          "column": 95,
+          "glyph": "╮",
+          "different_attributes": {
+            "bold": {
+              "python": false,
+              "rust": true
+            }
+          }
+        },
+        {
+          "row": 34,
+          "column": 15,
+          "glyph": "e",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 36,
+          "column": 7,
+          "glyph": "0",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        },
+        {
+          "row": 36,
+          "column": 13,
+          "glyph": "9",
+          "different_attributes": {
+            "dim": {
+              "python": true,
+              "rust": false
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
