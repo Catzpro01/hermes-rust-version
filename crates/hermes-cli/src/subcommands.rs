@@ -197,6 +197,7 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
                 &active,
                 &ctx,
                 sessions,
+                args.no_sandbox,
                 &mut out,
             )?;
             out.flush()?;
@@ -286,6 +287,7 @@ pub(crate) fn render_info(
     active: &str,
     ctx: &crate::repl::ResolvedContext,
     sessions: Option<usize>,
+    no_sandbox: bool,
     w: &mut impl Write,
 ) -> anyhow::Result<()> {
     let limit = ctx
@@ -322,9 +324,10 @@ pub(crate) fn render_info(
     // Spec 007: the boundary shell tools would run inside from this cwd
     // (same resolution as the REPL; names/numbers only, never env values).
     let root = std::env::current_dir().unwrap_or_default();
-    let sandbox = hermes_core::tools::SandboxPolicy::from_config(
+    let sandbox = hermes_core::tools::sandbox::resolve(
         config.and_then(|c| c.sandbox.as_ref()),
         &root,
+        no_sandbox,
     );
     writeln!(w, "{}", sandbox.summary())?;
     match sessions {
@@ -697,7 +700,7 @@ mod tests {
         let c = config_with(&[("a", None, &["m1"])]);
         let ctx = crate::repl::resolve_context(Some(&c), "a");
         let mut out = Vec::new();
-        render_info(Path::new("/tmp/h"), Some(&c), "a", &ctx, Some(2), &mut out).expect("render");
+        render_info(Path::new("/tmp/h"), Some(&c), "a", &ctx, Some(2), false, &mut out).expect("render");
         let s = String::from_utf8(out).unwrap();
         let first = s.lines().next().unwrap();
         assert_eq!(
@@ -707,22 +710,28 @@ mod tests {
         assert!(s.contains("Hermes Home: /tmp/h\n"), "{s}");
         assert!(s.contains("Providers configured: 1\n"), "{s}");
         assert!(s.contains("MCP servers configured: 0\n"), "{s}");
-        assert!(s.contains("sandbox: off (inherit)\n"), "{s}");
         assert!(s.contains("Sessions: 2\n"), "{s}");
+        // Spec 007b: default-on — no `sandbox:` section still reports `on`.
+        assert!(s.contains("sandbox: on | cwd="), "{s}");
+        let mut out = Vec::new();
+        render_info(Path::new("/tmp/h"), None, FAKE_PROVIDER, &ctx, Some(0), true, &mut out)
+            .expect("render");
+        let s = String::from_utf8(out).unwrap();
+        assert!(s.contains("sandbox: off (inherit)\n"), "--no-sandbox: {s}");
     }
 
     #[test]
     fn info_reports_sandbox_policy_without_env_values() {
         let mut c = config_with(&[]);
         c.sandbox = Some(hermes_core::config::SandboxConfig {
-            enabled: true,
+            enabled: Some(true),
             network: Some("deny".into()),
             cpu_seconds: Some(5),
             ..Default::default()
         });
         let ctx = crate::repl::resolve_context(Some(&c), FAKE_PROVIDER);
         let mut out = Vec::new();
-        render_info(Path::new("/tmp/h"), Some(&c), FAKE_PROVIDER, &ctx, Some(0), &mut out)
+        render_info(Path::new("/tmp/h"), Some(&c), FAKE_PROVIDER, &ctx, Some(0), false, &mut out)
             .expect("render");
         let s = String::from_utf8(out).unwrap();
         let line = s.lines().find(|l| l.starts_with("sandbox: on")).expect("sandbox line");
@@ -738,7 +747,7 @@ mod tests {
     fn info_without_config_reports_builtin_fake() {
         let ctx = crate::repl::resolve_context(None, FAKE_PROVIDER);
         let mut out = Vec::new();
-        render_info(Path::new("/tmp/h"), None, FAKE_PROVIDER, &ctx, Some(0), &mut out)
+        render_info(Path::new("/tmp/h"), None, FAKE_PROVIDER, &ctx, Some(0), false, &mut out)
             .expect("render");
         let s = String::from_utf8(out).unwrap();
         assert!(s.contains("Active provider: fake (built-in)\n"), "{s}");

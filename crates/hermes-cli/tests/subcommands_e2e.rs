@@ -182,7 +182,8 @@ fn info_subcommand_shows_home_and_provider() {
         )))
         .stdout(predicate::str::contains("Active provider: fake (built-in)\n"))
         .stdout(predicate::str::contains("No config.yaml found\n"))
-        .stdout(predicate::str::contains("sandbox: off (inherit)\n"))
+        // Spec 007b: sandbox is on by default (no config needed).
+        .stdout(predicate::str::contains("sandbox: on | cwd="))
         .stdout(predicate::str::contains("Sessions: 0\n"))
         .stdout(predicate::str::contains("❯ ").not())
         .stdout(predicate::str::contains("\u{1b}").not());
@@ -916,4 +917,57 @@ fn invalid_sandbox_config_fails_at_load_time() {
         .write_stdin("")
         .assert()
         .success();
+}
+
+/// Spec 007b — `--no-sandbox` (global flag) and `sandbox.enabled: false`
+/// both switch the boundary shell tools to the inherit policy; the REPL's
+/// `/sandbox` agrees with `hermes info` in every combination.
+#[test]
+fn no_sandbox_flag_and_enabled_false_yield_inherit() {
+    let home = TempDir::new().unwrap();
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["info", "--no-sandbox"])
+        .write_stdin("")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("sandbox: off (inherit)\n"));
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["--no-sandbox", "info"])
+        .write_stdin("")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("sandbox: off (inherit)\n"));
+    let repl = hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["--provider", "fake", "--no-sandbox"])
+        .write_stdin("/sandbox\n/exit\n")
+        .output()
+        .unwrap();
+    assert!(repl.status.success());
+    let stdout = String::from_utf8_lossy(&repl.stdout);
+    assert!(
+        stdout.lines().map(strip_prompt).any(|l| l == "sandbox: off (inherit)"),
+        "{stdout}"
+    );
+
+    std::fs::write(home.path().join("config.yaml"), "sandbox:\n  enabled: false\n").unwrap();
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["info"])
+        .write_stdin("")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("sandbox: off (inherit)\n"));
+    // A `sandbox:` section without `enabled` is still on.
+    std::fs::write(home.path().join("config.yaml"), "sandbox:\n  cpu_seconds: 2\n").unwrap();
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["info"])
+        .write_stdin("")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("sandbox: on | cwd="))
+        .stdout(predicate::str::contains("cpu=2s"));
 }

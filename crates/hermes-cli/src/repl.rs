@@ -14,7 +14,7 @@ use hermes_core::{
     provider::{Provider, ProviderError, ProviderRegistry, RegistryError},
     session::SessionStore,
     tools::{
-        Confirmation, ListDirTool, ReadFileTool, SandboxPolicy, ShellReadonlyTool, Tool,
+        Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, Tool,
         ToolRegistry, WriteFileTool,
     },
 };
@@ -174,6 +174,7 @@ pub async fn run_repl(
     config: Option<HermesConfig>,
     base_url_override: Option<String>,
     resume: bool,
+    no_sandbox: bool,
 ) -> Result<()> {
     let mut provider_name = provider_name;
     // Spec 013 Ticket 05 — session start for the status-bar duration segment.
@@ -213,12 +214,13 @@ pub async fn run_repl(
     };
     tool_registry.register(ReadFileTool::new(&tool_root));
     tool_registry.register(ListDirTool::new(&tool_root));
-    // Spec 007: shell tools run inside the configured sandbox. Without a
-    // `sandbox:` section this is `SandboxPolicy::inherit()` — byte-for-byte
-    // the pre-007 behaviour (zero regression).
-    let sandbox = SandboxPolicy::from_config(
+    // Spec 007/007b: shell tools run inside the sandbox — strict defaults
+    // unless `sandbox.enabled: false` or `--no-sandbox` (inherit = the
+    // pre-007 behaviour).
+    let sandbox = hermes_core::tools::sandbox::resolve(
         config.as_ref().and_then(|c| c.sandbox.as_ref()),
         &tool_root,
+        no_sandbox,
     );
     tool_registry.register(
         ShellReadonlyTool::new(confirmation.clone(), Duration::from_secs(30))

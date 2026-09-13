@@ -79,6 +79,11 @@ struct Args {
     #[arg(long, global = true)]
     api_url: Option<String>,
 
+    /// Run shell tools unconfined (Spec 007b: the process-level sandbox is
+    /// on by default). Overrides `sandbox:` in config.yaml.
+    #[arg(long, global = true)]
+    no_sandbox: bool,
+
     /// Launch the Ratatui TUI dashboard instead of the readline REPL
     /// (Spec 012). Requires an interactive terminal.
     #[arg(long, global = true)]
@@ -220,7 +225,7 @@ async fn run() -> anyhow::Result<()> {
         .or_else(|| config_provider.clone())
         .unwrap_or_else(|| FAKE_PROVIDER.to_owned());
     if args.tui {
-        tui::run_tui(&home, provider, provider_name, config).await
+        tui::run_tui(&home, provider, provider_name, config, args.no_sandbox).await
     } else {
         repl::run_repl(
             &home,
@@ -230,6 +235,7 @@ async fn run() -> anyhow::Result<()> {
             config,
             args.api_url,
             args.resume,
+            args.no_sandbox,
         )
         .await
     }

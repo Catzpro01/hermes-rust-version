@@ -41,12 +41,16 @@ Any new tool must define its root, input validation, output limits, timeout/canc
 
 `SandboxPolicy` (`crates/hermes-core/src/tools/sandbox.rs`, ADR 0006) is the
 boundary every `shell` / `shell_readonly` spawn goes through (`run_shell` is
-the single spawn site). **Off by default**: without a `sandbox:` section the
-policy is `inherit` and behaviour is byte-for-byte Spec 002.
+the single spawn site). **On by default since Spec 007b** (ADR 0006
+amendment): without a `sandbox:` section the policy is `strict` — cleared
+environment (allowlisted names only), cwd jail, 64 KiB output cap, network
+inherited. Opt out with `sandbox.enabled: false` in `config.yaml` or the
+global CLI flag `--no-sandbox` (flag wins); both yield the `inherit` policy,
+byte-for-byte Spec 002 behaviour.
 
 ```yaml
 sandbox:
-  enabled: true          # strict defaults below
+  enabled: true          # default; `false` = inherit (or run with --no-sandbox)
   network: deny          # inherit (default) | deny  (needs unshare + user namespaces)
   cpu_seconds: 30        # ulimit -t
   max_file_size_kb: 10240

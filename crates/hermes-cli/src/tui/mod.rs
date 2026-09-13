@@ -90,6 +90,7 @@ pub async fn run_tui(
     provider: Box<dyn hermes_core::provider::Provider>,
     provider_name: String,
     config: Option<hermes_core::config::HermesConfig>,
+    no_sandbox: bool,
 ) -> anyhow::Result<()> {
     let queue = Arc::new(EventQueue::new(DEFAULT_QUEUE_CAPACITY));
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel::<TuiCommand>();
@@ -112,7 +113,7 @@ pub async fn run_tui(
             let inner = res.with_context(|| "TUI renderer task panicked")?;
             inner?
         }
-        _ = worker::run_agent(worker_queue, cmd_rx, home_buf, provider, provider_name, config) => {
+        _ = worker::run_agent(worker_queue, cmd_rx, home_buf, provider, provider_name, config, no_sandbox) => {
             anyhow::bail!("TUI worker ended unexpectedly")
         }
     };
