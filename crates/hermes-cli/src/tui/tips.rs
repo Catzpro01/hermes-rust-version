@@ -500,13 +500,21 @@ mod tests {
             "../../../../docs/hermes-ui-spec/017/verbatim/composer_placeholders.txt"
         ));
         assert_eq!(ph.len(), 11, "spec §E: COMPOSER_PLACEHOLDERS = 11 strings");
-        assert_eq!(ph, COMPOSER_PLACEHOLDERS.iter().map(|s| s.to_string()).collect::<Vec<_>>());
+        assert_eq!(
+            ph,
+            COMPOSER_PLACEHOLDERS
+                .iter()
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>()
+        );
     }
 
     #[test]
     fn no_display_prefix_in_catalog() {
         // Spec §E [KOREKSI]: the `✦ Tip:` prefix does not exist upstream.
-        assert!(TIPS.iter().all(|t| !t.starts_with("✦") && !t.starts_with("Tip:")));
+        assert!(TIPS
+            .iter()
+            .all(|t| !t.starts_with("✦") && !t.starts_with("Tip:")));
         assert!(TIPS.iter().all(|t| !t.is_empty()));
     }
 

@@ -71,8 +71,14 @@ async fn falls_back_to_b_when_a_is_persistently_down() {
         .await;
 
     let chain = FallbackProvider::new(vec![
-        ("a".into(), Box::new(http_provider(&server_a.uri(), "a-key"))),
-        ("b".into(), Box::new(http_provider(&server_b.uri(), "b-key"))),
+        (
+            "a".into(),
+            Box::new(http_provider(&server_a.uri(), "a-key")),
+        ),
+        (
+            "b".into(),
+            Box::new(http_provider(&server_b.uri(), "b-key")),
+        ),
     ]);
 
     let stream = chain
@@ -91,7 +97,10 @@ async fn falls_back_to_b_when_a_is_persistently_down() {
 
     // Credential isolation: A saw only A's key; B saw only B's key.
     let requests_a = server_a.received_requests().await.unwrap();
-    assert!(!requests_a.is_empty(), "fallback must have actually tried A");
+    assert!(
+        !requests_a.is_empty(),
+        "fallback must have actually tried A"
+    );
     for req in &requests_a {
         let auth = req
             .headers
@@ -137,8 +146,14 @@ async fn b_response_is_what_gets_stored_in_state_db() {
         .await;
 
     let chain = FallbackProvider::new(vec![
-        ("a".into(), Box::new(http_provider(&server_a.uri(), "a-key"))),
-        ("b".into(), Box::new(http_provider(&server_b.uri(), "b-key"))),
+        (
+            "a".into(),
+            Box::new(http_provider(&server_a.uri(), "a-key")),
+        ),
+        (
+            "b".into(),
+            Box::new(http_provider(&server_b.uri(), "b-key")),
+        ),
     ]);
 
     let dir = tempfile::tempdir().unwrap();
@@ -177,7 +192,11 @@ async fn b_response_is_what_gets_stored_in_state_db() {
             _ => None,
         })
         .collect();
-    assert_eq!(assistant, vec!["stored-from-b"], "B's answer must be in state.db");
+    assert_eq!(
+        assistant,
+        vec!["stored-from-b"],
+        "B's answer must be in state.db"
+    );
 
     // And confirm the persisted session never surfaced A's text.
     assert!(
@@ -205,8 +224,14 @@ async fn all_hops_down_yields_aggregate_error_naming_each_provider() {
         .await;
 
     let chain = FallbackProvider::new(vec![
-        ("a".into(), Box::new(http_provider(&server_a.uri(), "a-key"))),
-        ("b".into(), Box::new(http_provider(&server_b.uri(), "b-key"))),
+        (
+            "a".into(),
+            Box::new(http_provider(&server_a.uri(), "a-key")),
+        ),
+        (
+            "b".into(),
+            Box::new(http_provider(&server_b.uri(), "b-key")),
+        ),
     ]);
 
     let err = match chain
@@ -283,8 +308,14 @@ async fn cooldown_skips_a_down_then_recovers_it_after_the_window() {
     let health = Arc::new(HealthTracker::new(cooldown));
     let chain = FallbackProvider::with_health(
         vec![
-            ("a".into(), Box::new(http_provider(&server_a.uri(), "a-key"))),
-            ("b".into(), Box::new(http_provider(&server_b.uri(), "b-key"))),
+            (
+                "a".into(),
+                Box::new(http_provider(&server_a.uri(), "a-key")),
+            ),
+            (
+                "b".into(),
+                Box::new(http_provider(&server_b.uri(), "b-key")),
+            ),
         ],
         Arc::clone(&health),
     );
@@ -306,7 +337,10 @@ async fn cooldown_skips_a_down_then_recovers_it_after_the_window() {
     // Turn 1: A is down -> retries then fails, A recorded cooling, B serves.
     let t1 = drain_events(chain.chat(&turns).await.unwrap()).await;
     assert_eq!(t1, "from-b");
-    assert!(health.is_cooling_down("a"), "A must be cooling after failing");
+    assert!(
+        health.is_cooling_down("a"),
+        "A must be cooling after failing"
+    );
     let a_calls_after_t1 = a_calls.load(Ordering::SeqCst);
 
     // Let A "recover" immediately, but it is still inside the cooldown window:
@@ -324,7 +358,10 @@ async fn cooldown_skips_a_down_then_recovers_it_after_the_window() {
     tokio::time::sleep(cooldown + std::time::Duration::from_millis(60)).await;
     assert!(!health.is_cooling_down("a"), "cooldown must have elapsed");
     let t3 = drain_events(chain.chat(&turns).await.unwrap()).await;
-    assert_eq!(t3, "hello-from-a", "A recovers and serves after the cooldown");
+    assert_eq!(
+        t3, "hello-from-a",
+        "A recovers and serves after the cooldown"
+    );
 
     // Sanity: DEFAULT_COOLDOWN is documented as 60s (bounded, in-memory only).
     assert_eq!(DEFAULT_COOLDOWN, std::time::Duration::from_secs(60));
@@ -349,7 +386,10 @@ async fn config_driven_fallback_chain_serves_via_b_and_isolates_keys() {
     let server_b = MockServer::start().await;
     Mock::given(wiremock::matchers::method("POST"))
         .and(path("/v1/chat/completions"))
-        .and(wiremock::matchers::header("authorization", "Bearer t07-b-key"))
+        .and(wiremock::matchers::header(
+            "authorization",
+            "Bearer t07-b-key",
+        ))
         .respond_with(
             ResponseTemplate::new(200)
                 .insert_header("content-type", "text/event-stream")
@@ -388,12 +428,20 @@ async fn config_driven_fallback_chain_serves_via_b_and_isolates_keys() {
 
     // Credential isolation at the config level.
     for req in server_a.received_requests().await.unwrap() {
-        let auth = req.headers.get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("");
+        let auth = req
+            .headers
+            .get("authorization")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("");
         assert_eq!(auth, "Bearer t07-a-key", "A only sees its own key");
         assert_ne!(auth, "Bearer t07-b-key", "B's key never reaches A");
     }
     for req in server_b.received_requests().await.unwrap() {
-        let auth = req.headers.get("authorization").and_then(|v| v.to_str().ok()).unwrap_or("");
+        let auth = req
+            .headers
+            .get("authorization")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("");
         assert_eq!(auth, "Bearer t07-b-key", "B only sees its own key");
         assert_ne!(auth, "Bearer t07-a-key", "A's key never reaches B");
     }

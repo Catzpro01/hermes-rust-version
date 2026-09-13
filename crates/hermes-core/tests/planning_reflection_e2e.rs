@@ -56,11 +56,7 @@ impl Tool for Fetch {
     fn description(&self) -> &str {
         "test fetch that fails on 'bad', denies on 'deny', else succeeds"
     }
-    async fn execute(
-        &self,
-        c: &ToolCall,
-        _: CancellationToken,
-    ) -> Result<ToolResponse, ToolError> {
+    async fn execute(&self, c: &ToolCall, _: CancellationToken) -> Result<ToolResponse, ToolError> {
         self.log.lock().unwrap().push(c.arguments.clone());
         match c.arguments.as_str() {
             "bad" | "fail" => Err(ToolError::Timeout(Duration::from_secs(1))),
@@ -87,11 +83,7 @@ impl Tool for Note {
     fn description(&self) -> &str {
         "test note that always succeeds"
     }
-    async fn execute(
-        &self,
-        c: &ToolCall,
-        _: CancellationToken,
-    ) -> Result<ToolResponse, ToolError> {
+    async fn execute(&self, c: &ToolCall, _: CancellationToken) -> Result<ToolResponse, ToolError> {
         self.log.lock().unwrap().push(c.arguments.clone());
         Ok(ToolResponse {
             id: c.id.clone(),
@@ -106,8 +98,12 @@ fn guided_registry() -> (ToolRegistry, SharedLog, SharedLog) {
     let fetch_log = Arc::new(Mutex::new(Vec::new()));
     let note_log = Arc::new(Mutex::new(Vec::new()));
     let mut reg = ToolRegistry::new();
-    reg.register(Fetch { log: fetch_log.clone() });
-    reg.register(Note { log: note_log.clone() });
+    reg.register(Fetch {
+        log: fetch_log.clone(),
+    });
+    reg.register(Note {
+        log: note_log.clone(),
+    });
     (reg, fetch_log, note_log)
 }
 
@@ -154,7 +150,10 @@ async fn full_pipeline_plans_reflects_recovers_and_marks_goal_achieved() {
     }
     // Goal lifecycle closed as Achieved.
     assert_eq!(r.goal(), Some("task"));
-    assert_eq!(r.goal_status(), hermes_core::conversation::goal::GoalStatus::Achieved);
+    assert_eq!(
+        r.goal_status(),
+        hermes_core::conversation::goal::GoalStatus::Achieved
+    );
     // A plan was generated and retained in memory.
     let plan = r.plan().expect("plan must exist");
     assert_eq!(plan.steps().len(), 2);
@@ -167,7 +166,11 @@ async fn full_pipeline_plans_reflects_recovers_and_marks_goal_achieved() {
     // second tool step executed once.
     assert_eq!(*note_log.lock().unwrap(), vec!["stored".to_string()]);
     // No fabricated user turn: only the single initiating user turn exists.
-    assert_eq!(count_user_turns(&r), 1, "plan/reflection must not add a User turn");
+    assert_eq!(
+        count_user_turns(&r),
+        1,
+        "plan/reflection must not add a User turn"
+    );
 }
 
 /// Negative: in a planned, reflective session a `Denied` tool immediately
@@ -193,7 +196,10 @@ async fn denied_in_planned_session_blocks_and_is_never_retried() {
         matches!(out, AgenticResult::Blocked { .. }),
         "a denied tool must Block, got {out:?}"
     );
-    assert_eq!(r.goal_status(), hermes_core::conversation::goal::GoalStatus::Blocked);
+    assert_eq!(
+        r.goal_status(),
+        hermes_core::conversation::goal::GoalStatus::Blocked
+    );
     // The denied call was attempted exactly once and never retried.
     assert_eq!(*fetch_log.lock().unwrap(), vec!["deny".to_string()]);
     // No fabricated user turn (plan/reflection add none).
@@ -221,6 +227,9 @@ async fn reactive_mode_is_zero_regression_spec002() {
     assert!(matches!(out, AgenticResult::Done { .. }), "got {out:?}");
     assert!(r.plan().is_none(), "reactive mode must not plan");
     assert_eq!(r.goal(), None, "reactive mode must not track a goal");
-    assert_eq!(r.goal_status(), hermes_core::conversation::goal::GoalStatus::NotStarted);
+    assert_eq!(
+        r.goal_status(),
+        hermes_core::conversation::goal::GoalStatus::NotStarted
+    );
     assert_eq!(*fetch_log.lock().unwrap(), vec!["good".to_string()]);
 }

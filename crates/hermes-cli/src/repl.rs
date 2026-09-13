@@ -13,8 +13,8 @@ use hermes_core::{
     provider::{Provider, ProviderError, ProviderRegistry, RegistryError},
     session::SessionStore,
     tools::{
-        Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, Tool,
-        ToolRegistry, WriteFileTool,
+        Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, Tool, ToolRegistry,
+        WriteFileTool,
     },
 };
 use rustyline::{error::ReadlineError, Editor};
@@ -217,10 +217,14 @@ pub async fn run_repl(
                                 .lock()
                                 .ok()
                                 .and_then(|mut e| {
-                                    e.readline(&format!("{face} confirm {prompt} [y/N] ").to_owned())
-                                        .ok()
+                                    e.readline(
+                                        &format!("{face} confirm {prompt} [y/N] ").to_owned(),
+                                    )
+                                    .ok()
                                 })
-                                .map(|s| matches!(s.trim().to_ascii_lowercase().as_str(), "y" | "yes"))
+                                .map(|s| {
+                                    matches!(s.trim().to_ascii_lowercase().as_str(), "y" | "yes")
+                                })
                                 .unwrap_or(false)
                         }
                     }
@@ -246,7 +250,9 @@ pub async fn run_repl(
         names.sort();
         for name in names {
             let cfg = &config.mcp_servers[name];
-            let handle = McpHandle::connect(name, cfg.clone(), confirmation.clone(), &mut tool_registry).await;
+            let handle =
+                McpHandle::connect(name, cfg.clone(), confirmation.clone(), &mut tool_registry)
+                    .await;
             if handle.server.is_some() {
                 eprintln!(
                     "mcp[{name}]: connected, registered {} tool(s)",
@@ -347,10 +353,7 @@ pub async fn run_repl(
                 continue;
             }
             println!("\x1b[90m$ {cmd}\x1b[0m");
-            let status = std::process::Command::new("sh")
-                .arg("-c")
-                .arg(cmd)
-                .status();
+            let status = std::process::Command::new("sh").arg("-c").arg(cmd).status();
             match status {
                 Ok(s) => {
                     if !s.success() {
@@ -431,7 +434,11 @@ pub async fn run_repl(
             }
             "/journey" => {
                 println!("✦ Hermes Star Map Journey ✦");
-                println!("  [Earth: Start] ──> [Orbit: Turns ({})] ──> [Deep Space: Provider {}]", runner.turns().len(), provider_name);
+                println!(
+                    "  [Earth: Start] ──> [Orbit: Turns ({})] ──> [Deep Space: Provider {}]",
+                    runner.turns().len(),
+                    provider_name
+                );
                 continue;
             }
             "/mascot" | "/petdex" => {
@@ -449,12 +456,25 @@ pub async fn run_repl(
             "/status" => {
                 println!("Session ID:        {session_id}");
                 println!("Provider:          {provider_name}");
-                println!("YOLO Mode:         {}", if yolo_mode { "ON" } else { "OFF" });
+                println!(
+                    "YOLO Mode:         {}",
+                    if yolo_mode { "ON" } else { "OFF" }
+                );
                 println!("Turns in memory:   {}", runner.turns().len());
                 println!("Estimated tokens:  ~{}", runner.estimated_tokens());
                 println!("Goal Tracking:     {}", runner.goal_status().as_str());
-                println!("Planning Mode:     {}", if runner.plan_mode() { "ON" } else { "OFF" });
-                println!("Reflection Mode:   {}", if runner.reflection_enabled() { "ON" } else { "OFF" });
+                println!(
+                    "Planning Mode:     {}",
+                    if runner.plan_mode() { "ON" } else { "OFF" }
+                );
+                println!(
+                    "Reflection Mode:   {}",
+                    if runner.reflection_enabled() {
+                        "ON"
+                    } else {
+                        "OFF"
+                    }
+                );
                 continue;
             }
             "/exit" => break,
@@ -522,7 +542,10 @@ pub async fn run_repl(
                     .limit
                     .map(|l| l.to_string())
                     .unwrap_or_else(|| "none".to_owned());
-                let sent = runner.turns().len().saturating_sub(runner.dropped_turns().len());
+                let sent = runner
+                    .turns()
+                    .len()
+                    .saturating_sub(runner.dropped_turns().len());
                 println!(
                     "provider: {provider_name} | estimated context: ~{} tokens | limit: {limit} | window: {sent}/{} turns sent | pinned: {} | compression: {}",
                     runner.estimated_tokens(),
@@ -540,10 +563,9 @@ pub async fn run_repl(
                 let dropped = runner.dropped_turns();
                 if !dropped.is_empty() {
                     let summary = summarize_dropped(&dropped);
-                    let safe =
-                        hermes_core::search::redact::redact_credentials(&sanitize_untrusted_output(
-                            &summary,
-                        ));
+                    let safe = hermes_core::search::redact::redact_credentials(
+                        &sanitize_untrusted_output(&summary),
+                    );
                     println!("  {safe}");
                 }
                 continue;
@@ -598,10 +620,9 @@ pub async fn run_repl(
             "/goal" => match runner.goal() {
                 None => println!("no active goal (run `/goal on` to auto-track)"),
                 Some(text) => {
-                    let safe =
-                        hermes_core::search::redact::redact_credentials(&sanitize_untrusted_output(
-                            text,
-                        ));
+                    let safe = hermes_core::search::redact::redact_credentials(
+                        &sanitize_untrusted_output(text),
+                    );
                     println!("goal [{}]: {safe}", runner.goal_status().as_str());
                 }
             },
@@ -645,10 +666,9 @@ pub async fn run_repl(
                         for (i, step) in plan.steps().iter().enumerate() {
                             body.push_str(&format!("  {}. {step}\n", i + 1));
                         }
-                        let safe =
-                            hermes_core::search::redact::redact_credentials(
-                                &sanitize_untrusted_output(&body),
-                            );
+                        let safe = hermes_core::search::redact::redact_credentials(
+                            &sanitize_untrusted_output(&body),
+                        );
                         print!("{safe}");
                     }
                 }
@@ -677,7 +697,11 @@ pub async fn run_repl(
             "/reflect" => {
                 println!(
                     "reflection: {} (reflections used this step: {})",
-                    if runner.reflection_enabled() { "on" } else { "off" },
+                    if runner.reflection_enabled() {
+                        "on"
+                    } else {
+                        "off"
+                    },
                     runner.reflections_used()
                 );
                 continue;
@@ -710,8 +734,12 @@ pub async fn run_repl(
                 if target.is_empty() {
                     list_providers(&registry, &provider_name);
                 } else {
-                    match resolve_provider(&registry, config.as_ref(), target, base_url_override.as_deref())
-                    {
+                    match resolve_provider(
+                        &registry,
+                        config.as_ref(),
+                        target,
+                        base_url_override.as_deref(),
+                    ) {
                         Ok(new_provider) => {
                             runner.replace_provider(new_provider);
                             provider_name = target.to_owned();
@@ -724,9 +752,7 @@ pub async fn run_repl(
                         Err(err) => {
                             // Failed init leaves the active provider untouched
                             // (rollback, not a half-finished switch).
-                            eprintln!(
-                                "error: {err}; keeping provider {provider_name}"
-                            );
+                            eprintln!("error: {err}; keeping provider {provider_name}");
                         }
                     }
                 }
@@ -746,7 +772,11 @@ pub async fn run_repl(
                 } else {
                     println!("MCP servers:");
                     for h in &mcp_handles {
-                        let status = if h.server.is_some() { "connected" } else { "down" };
+                        let status = if h.server.is_some() {
+                            "connected"
+                        } else {
+                            "down"
+                        };
                         let mode = if h.config.confirm { "confirm" } else { "auto" };
                         println!(
                             "  {:<12} {:<10} {} tool(s) ({} mode)",
@@ -765,13 +795,12 @@ pub async fn run_repl(
                     eprintln!("usage: /mcp restart <name>");
                     continue;
                 }
-                match mcp_handles
-                    .iter_mut()
-                    .find(|h| h.name == target)
-                {
+                match mcp_handles.iter_mut().find(|h| h.name == target) {
                     None => eprintln!("error: no MCP server named '{target}'"),
                     Some(handle) => {
-                        handle.restart(confirmation.clone(), &mut tool_registry).await;
+                        handle
+                            .restart(confirmation.clone(), &mut tool_registry)
+                            .await;
                         if handle.server.is_some() {
                             eprintln!(
                                 "mcp[{target}]: restarted, registered {} tool(s)",
@@ -1069,7 +1098,9 @@ pub(crate) fn resolve_context(config: Option<&HermesConfig>, active: &str) -> Re
     let compression = config.and_then(|c| c.compression.as_ref());
     // Compression is OFF by default (backward compatible): it only contributes
     // a limit when the user explicitly set `enabled: true`.
-    let compression_enabled = compression.map(|c| c.enabled == Some(true)).unwrap_or(false);
+    let compression_enabled = compression
+        .map(|c| c.enabled == Some(true))
+        .unwrap_or(false);
     let compression_target = compression.and_then(|c| c.target_max_tokens);
     let provider_limit = config
         .and_then(|c| c.providers.get(active))
@@ -1077,7 +1108,11 @@ pub(crate) fn resolve_context(config: Option<&HermesConfig>, active: &str) -> Re
     let model_limit = config.and_then(|c| c.model.context_length);
     // Compression contributes a target only while enabled; otherwise the
     // window stays unset even if a target is present.
-    let compression_limit = if compression_enabled { compression_target } else { None };
+    let compression_limit = if compression_enabled {
+        compression_target
+    } else {
+        None
+    };
     let limit = provider_limit.or(model_limit).or(compression_limit);
     ResolvedContext {
         limit,
@@ -1228,7 +1263,7 @@ fn list_providers(registry: &ProviderRegistry, active: &str) {
 mod tests {
     use super::*;
     use hermes_core::config::CompressionConfig;
-    use hermes_core::provider::{FAKE_PROVIDER, ProviderRegistry};
+    use hermes_core::provider::{ProviderRegistry, FAKE_PROVIDER};
 
     /// Convenience: limit-only view of the resolved window for assertions.
     fn lim(config: Option<&HermesConfig>, active: &str) -> Option<u64> {
@@ -1325,7 +1360,11 @@ mod tests {
         assert!(!resolve_context(Some(&config), "fake").compression_enabled);
         config.compression = Some(compression(false, Some(5000)));
         assert!(!resolve_context(Some(&config), "fake").compression_enabled);
-        assert_eq!(lim(Some(&config), "fake"), None, "disabled compression must not trim");
+        assert_eq!(
+            lim(Some(&config), "fake"),
+            None,
+            "disabled compression must not trim"
+        );
     }
 
     #[test]
@@ -1351,8 +1390,16 @@ mod tests {
         config
             .providers
             .insert("b".to_owned(), provider_config(Some(4000)));
-        assert_eq!(lim(Some(&config), "b"), Some(4000), "provider wins over compression");
-        assert_eq!(lim(Some(&config), "fake"), Some(2000), "model wins over compression");
+        assert_eq!(
+            lim(Some(&config), "b"),
+            Some(4000),
+            "provider wins over compression"
+        );
+        assert_eq!(
+            lim(Some(&config), "fake"),
+            Some(2000),
+            "model wins over compression"
+        );
     }
 
     #[test]

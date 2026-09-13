@@ -37,12 +37,17 @@ pub enum Turn {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AgenticResult {
-    Done { text: String, iterations: usize },
+    Done {
+        text: String,
+        iterations: usize,
+    },
     MaxIterations(usize),
     /// Execution was stopped because it is blocked (e.g. a user denial, or
     /// retries exhausted for a failing step) — semantically distinct from
     /// merely running out of iterations.
-    Blocked { reason: String },
+    Blocked {
+        reason: String,
+    },
     Cancelled,
 }
 
@@ -290,7 +295,12 @@ impl<P: Provider> ConversationRunner<P> {
         status: ToolExecutionStatus,
         retries_remaining: bool,
     ) -> reflection::Verdict {
-        reflection::apply_verdict(&mut self.reflection, status, retries_remaining, &mut self.goal)
+        reflection::apply_verdict(
+            &mut self.reflection,
+            status,
+            retries_remaining,
+            &mut self.goal,
+        )
     }
 
     // -- Spec 009 recovery / parameter mutation (Ticket 04) -----------------
@@ -330,11 +340,7 @@ impl<P: Provider> ConversationRunner<P> {
             return Ok(self.plan.clone());
         }
         // A plan needs a task; with no user turn there is nothing to plan.
-        if !self
-            .turns
-            .iter()
-            .any(|t| matches!(t, Turn::User { .. }))
-        {
+        if !self.turns.iter().any(|t| matches!(t, Turn::User { .. })) {
             return Ok(None);
         }
         let to_send = self.turns_to_send();
@@ -374,15 +380,11 @@ impl<P: Provider> ConversationRunner<P> {
             None => return (0..n).collect(),
             Some(limit) => limit,
         };
-        let turn_tokens = |i: usize| crate::conversation::context::turn_tokens(&self.turns[i]) as u64;
+        let turn_tokens =
+            |i: usize| crate::conversation::context::turn_tokens(&self.turns[i]) as u64;
 
         // Must-keep: every pinned turn + the newest (active) turn.
-        let mut keep: Vec<usize> = self
-            .pinned
-            .iter()
-            .copied()
-            .filter(|&i| i < n)
-            .collect();
+        let mut keep: Vec<usize> = self.pinned.iter().copied().filter(|&i| i < n).collect();
         if !keep.contains(&(n - 1)) {
             keep.push(n - 1);
         }
@@ -642,9 +644,8 @@ impl<P: Provider> ConversationRunner<P> {
                 // Feed an "already tried" note so the model mutates parameters.
                 if self.recovery_enabled() && self.is_attempted(&call.name, &call.arguments) {
                     let note = self.already_tried_note(&call.name).unwrap_or_default();
-                    let dup = format!(
-                        "duplicate of an earlier failed call — adjust parameters. {note}"
-                    );
+                    let dup =
+                        format!("duplicate of an earlier failed call — adjust parameters. {note}");
                     self.turns.push(Turn::Tool {
                         name: call.name.clone(),
                         content: dup.clone(),
@@ -769,10 +770,9 @@ mod tests {
         }]);
         assert_eq!(r.estimated_tokens(), 10);
         // Adding another 40-char user turn raises the count.
-        r.turns
-            .push(Turn::User {
-                content: "b".repeat(40),
-            });
+        r.turns.push(Turn::User {
+            content: "b".repeat(40),
+        });
         assert_eq!(r.estimated_tokens(), 20);
     }
 
@@ -823,7 +823,10 @@ mod tests {
         use futures::StreamExt;
         stream.collect::<Vec<_>>().await;
         assert_eq!(r.turns().len(), 1);
-        assert_eq!(r.estimated_tokens(), crate::conversation::context::estimate_tokens(&content));
+        assert_eq!(
+            r.estimated_tokens(),
+            crate::conversation::context::estimate_tokens(&content)
+        );
     }
 
     fn many_turns(n: usize, len: usize) -> Vec<Turn> {
@@ -931,7 +934,8 @@ mod tests {
         r.pin(0).unwrap();
         let sent = r.turns_to_send();
         assert!(
-            sent.iter().any(|t| matches!(t, Turn::User { content } if content.starts_with("PINNED-"))),
+            sent.iter()
+                .any(|t| matches!(t, Turn::User { content } if content.starts_with("PINNED-"))),
             "pinned oldest turn must be sent"
         );
         // And it must not appear in dropped.
@@ -954,7 +958,10 @@ mod tests {
         assert!(!r.is_pinned(2));
         // Replacing the history clears pins (no dangling indices).
         r.replace_turns(many_turns(3, 40));
-        assert!(r.pinned().is_empty(), "pins must clear when history is replaced");
+        assert!(
+            r.pinned().is_empty(),
+            "pins must clear when history is replaced"
+        );
     }
 
     #[test]
@@ -964,7 +971,10 @@ mod tests {
         assert!(r.pin(0).is_ok());
         assert!(r.pin(0).is_err(), "double pin must error");
         assert!(r.unpin(0).is_ok());
-        assert!(r.unpin(0).is_err(), "unpinning a non-pinned turn must error");
+        assert!(
+            r.unpin(0).is_err(),
+            "unpinning a non-pinned turn must error"
+        );
         assert!(r.unpin(9).is_err(), "out-of-range unpin must error");
     }
 
@@ -974,12 +984,13 @@ mod tests {
         // old turn so they alone exceed; they are still sent (warn, not drop).
         let mut r = runner_with(many_turns(5, 40));
         r.set_context_limit(Some(20)); // newest(10)+nothing else fits
-        // newest is index 4 (always kept). Pin it plus index 3 -> 20, fits.
+                                       // newest is index 4 (always kept). Pin it plus index 3 -> 20, fits.
         r.pin(4).unwrap();
         r.pin(3).unwrap();
         let sent = r.turns_to_send();
         assert!(
-            sent.iter().any(|t| matches!(t, Turn::User { content } if content.starts_with("4-"))),
+            sent.iter()
+                .any(|t| matches!(t, Turn::User { content } if content.starts_with("4-"))),
             "newest pinned kept"
         );
         // self.turns not mutated.
@@ -1005,7 +1016,13 @@ mod tests {
         r.set_goal_tracking(true);
         let reg = ToolRegistry::new();
         let _ = r
-            .chat_agentic("fetch the monthly report", &reg, None, 10, CancellationToken::new())
+            .chat_agentic(
+                "fetch the monthly report",
+                &reg,
+                None,
+                10,
+                CancellationToken::new(),
+            )
             .await;
         assert_eq!(r.goal(), Some("fetch the monthly report"));
         assert_eq!(r.goal_status(), GoalStatus::InProgress);
@@ -1037,13 +1054,17 @@ mod tests {
         while let Ok(ev) = rx.try_recv() {
             seen.push(ev);
         }
-        assert!(seen.iter().any(|e| matches!(e, AgentEvent::StatusChanged { .. })));
-        assert!(seen.iter().any(|e| matches!(e, AgentEvent::TokenTick { .. })));
-        assert!(seen.iter().any(|e| matches!(e, AgentEvent::Iteration { .. })));
-        assert!(seen.iter().any(|e| matches!(e, AgentEvent::Chunk { .. })));
         assert!(seen
             .iter()
-            .any(|e| matches!(e, AgentEvent::Done { .. })));
+            .any(|e| matches!(e, AgentEvent::StatusChanged { .. })));
+        assert!(seen
+            .iter()
+            .any(|e| matches!(e, AgentEvent::TokenTick { .. })));
+        assert!(seen
+            .iter()
+            .any(|e| matches!(e, AgentEvent::Iteration { .. })));
+        assert!(seen.iter().any(|e| matches!(e, AgentEvent::Chunk { .. })));
+        assert!(seen.iter().any(|e| matches!(e, AgentEvent::Done { .. })));
     }
 
     #[tokio::test]
@@ -1067,7 +1088,9 @@ mod tests {
         r.set_goal_status(GoalStatus::Achieved);
         assert_eq!(r.goal_status(), GoalStatus::Achieved);
         // replace_turns (e.g. /new, /resume) clears goal + pins together.
-        r.replace_turns(vec![Turn::User { content: "y".into() }]);
+        r.replace_turns(vec![Turn::User {
+            content: "y".into(),
+        }]);
         assert_eq!(r.goal(), None);
         assert_eq!(r.goal_status(), GoalStatus::NotStarted);
     }
@@ -1106,17 +1129,20 @@ mod tests {
 
     #[tokio::test]
     async fn ensure_plan_generates_and_stores_a_plan_in_planned_mode() {
-        let mut r = ConversationRunner::new(Reply(
-            "[[plan]]\n1. list files\n2. read config\n[[/plan]]",
-        ));
-        r.turns
-            .push(Turn::User { content: "inspect the repo".into() });
+        let mut r =
+            ConversationRunner::new(Reply("[[plan]]\n1. list files\n2. read config\n[[/plan]]"));
+        r.turns.push(Turn::User {
+            content: "inspect the repo".into(),
+        });
         r.set_plan_mode(true);
         assert!(r.plan().is_none());
         let plan = r.ensure_plan(CancellationToken::new()).await.unwrap();
         let plan = plan.expect("plan must be generated");
         assert_eq!(plan.steps(), &["1. list files", "2. read config"]);
-        assert_eq!(r.plan().unwrap().steps(), &["1. list files", "2. read config"]);
+        assert_eq!(
+            r.plan().unwrap().steps(),
+            &["1. list files", "2. read config"]
+        );
         // estimated tokens now include the plan's token contribution.
         assert_eq!(
             r.estimated_tokens(),
@@ -1126,10 +1152,10 @@ mod tests {
 
     #[tokio::test]
     async fn ensure_plan_is_a_noop_outside_planned_mode() {
-        let mut r = ConversationRunner::new(Reply(
-            "[[plan]]\n1. x\n[[/plan]]",
-        ));
-        r.turns.push(Turn::User { content: "task".into() });
+        let mut r = ConversationRunner::new(Reply("[[plan]]\n1. x\n[[/plan]]"));
+        r.turns.push(Turn::User {
+            content: "task".into(),
+        });
         // Reactive (plan_mode off): no plan is produced.
         let plan = r.ensure_plan(CancellationToken::new()).await.unwrap();
         assert!(plan.is_none());
@@ -1143,7 +1169,9 @@ mod tests {
         let mut r = ConversationRunner::new(Reply(
             "[[plan]]\nnote: do not run <tool_call> yet\n[[/plan]]",
         ));
-        r.turns.push(Turn::User { content: "task".into() });
+        r.turns.push(Turn::User {
+            content: "task".into(),
+        });
         r.set_plan_mode(true);
         let plan = r.ensure_plan(CancellationToken::new()).await.unwrap();
         let plan = plan.expect("plan must be generated");
@@ -1156,11 +1184,15 @@ mod tests {
     #[tokio::test]
     async fn replace_turns_clears_the_plan() {
         let mut r = ConversationRunner::new(Reply("[[plan]]\n1. a\n[[/plan]]"));
-        r.turns.push(Turn::User { content: "task".into() });
+        r.turns.push(Turn::User {
+            content: "task".into(),
+        });
         r.set_plan_mode(true);
         let _ = r.ensure_plan(CancellationToken::new()).await.unwrap();
         assert!(r.plan().is_some(), "plan should be generated");
-        r.replace_turns(vec![Turn::User { content: "x".into() }]);
+        r.replace_turns(vec![Turn::User {
+            content: "x".into(),
+        }]);
         assert!(r.plan().is_none(), "replace_turns must clear the plan");
     }
 
@@ -1233,7 +1265,9 @@ mod tests {
     #[test]
     fn blocked_result_is_distinct_from_max_iterations() {
         assert_ne!(
-            AgenticResult::Blocked { reason: "denied".into() },
+            AgenticResult::Blocked {
+                reason: "denied".into()
+            },
             AgenticResult::MaxIterations(10)
         );
     }

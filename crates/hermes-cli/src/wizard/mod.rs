@@ -200,7 +200,10 @@ mod tests {
         let err = confirm(IMPORT_QUESTION, false).expect_err("piped stdin must not prompt");
         assert_eq!(err, WizardError::NotTty);
         assert!(err.to_string().contains("interactive terminal"), "{}", err);
-        assert_eq!(select_at("q", vec!["a"], 5).unwrap_err(), WizardError::NotTty);
+        assert_eq!(
+            select_at("q", vec!["a"], 5).unwrap_err(),
+            WizardError::NotTty
+        );
         assert_eq!(password("q").unwrap_err(), WizardError::NotTty);
     }
 

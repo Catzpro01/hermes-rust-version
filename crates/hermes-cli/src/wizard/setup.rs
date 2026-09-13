@@ -28,7 +28,9 @@ use std::path::{Path, PathBuf};
 
 use serde_yaml::{Mapping, Value};
 
-use super::catalog::{PlatformEntry, ProviderEntry, DEFAULT_OFF_TOOLSETS, PLATFORMS, PROVIDERS, TOOLSETS};
+use super::catalog::{
+    PlatformEntry, ProviderEntry, DEFAULT_OFF_TOOLSETS, PLATFORMS, PROVIDERS, TOOLSETS,
+};
 use super::{
     multiselect_with_defaults, password, require_tty, select, text_input, WizardError,
     CANCELED_MESSAGE, MODE_BLANK, MODE_FULL, MODE_QUESTION, MODE_QUICK, SECTIONS,
@@ -263,9 +265,7 @@ pub fn run_setup(home: &Path, section: Option<Section>) -> Result<Outcome, Wizar
         let step = match s {
             Section::Model => step_model(&current).map(|a| answers.model = Some(a)),
             Section::Terminal => step_terminal(&current).map(|a| answers.terminal = Some(a)),
-            Section::Gateway => {
-                step_platforms(&existing_env).map(|p| answers.platforms = p)
-            }
+            Section::Gateway => step_platforms(&existing_env).map(|p| answers.platforms = p),
             Section::Tools => {
                 let blank = mode == Some(Mode::Blank);
                 step_tools(&current, blank).map(|t| answers.toolsets = Some(t))
@@ -295,8 +295,8 @@ pub fn run_setup(home: &Path, section: Option<Section>) -> Result<Outcome, Wizar
         }
     }
 
-    let backup = apply(home, &config_path, &env_path, existing, &answers)
-        .map_err(|_| WizardError::Other)?;
+    let backup =
+        apply(home, &config_path, &env_path, existing, &answers).map_err(|_| WizardError::Other)?;
     if let Some(b) = &backup {
         println!("{BACKUP_NOTICE}{}", b.display());
         println!("{BACKUP_RESTORE}");
@@ -425,7 +425,11 @@ pub fn platform_row(p: &PlatformEntry, env: &BTreeMap<String, String>) -> String
 pub fn platform_status(p: &PlatformEntry, env: &BTreeMap<String, String>) -> &'static str {
     let has = |k: &str| env.get(k).map(|v| !v.is_empty()).unwrap_or(false);
     if p.vars.is_empty() {
-        return if has(p.token_var) { "configured" } else { "not configured" };
+        return if has(p.token_var) {
+            "configured"
+        } else {
+            "not configured"
+        };
     }
     let n = p.vars.iter().filter(|v| has(v.name)).count();
     if n == 0 {
@@ -455,7 +459,10 @@ fn step_platforms(env: &BTreeMap<String, String>) -> Result<PlatformAnswers, Wiz
         }
         let mut vars = Vec::new();
         if p.vars.is_empty() {
-            let v = text_input(p.token_var, env.get(p.token_var).map(String::as_str).unwrap_or(""))?;
+            let v = text_input(
+                p.token_var,
+                env.get(p.token_var).map(String::as_str).unwrap_or(""),
+            )?;
             vars.push((p.token_var.to_owned(), v.trim().to_owned()));
         } else {
             for var in p.vars {
@@ -510,7 +517,11 @@ fn step_tools(current: &Mapping, blank: bool) -> Result<Vec<String>, WizardError
         .iter()
         .map(|t| format!("{}  ({})", t.label, t.tools))
         .collect();
-    let defaults = if blank { Vec::new() } else { toolset_defaults(current) };
+    let defaults = if blank {
+        Vec::new()
+    } else {
+        toolset_defaults(current)
+    };
     let picked = multiselect_with_defaults(TOOLS_QUESTION, rows.clone(), &defaults)?;
     Ok(TOOLSETS
         .iter()
@@ -546,7 +557,10 @@ pub fn merge_answers(existing: Option<Mapping>, answers: &Answers) -> Mapping {
         if !m.model.is_empty() {
             let models = mapping_at(entry, "models");
             if !models.contains_key(Value::from(m.model.as_str())) {
-                models.insert(Value::from(m.model.as_str()), Value::Mapping(Mapping::new()));
+                models.insert(
+                    Value::from(m.model.as_str()),
+                    Value::Mapping(Mapping::new()),
+                );
             }
         }
     }
@@ -609,7 +623,8 @@ fn apply(
     }
     fs::create_dir_all(home)?;
     let mut backup = None;
-    let needs_config = answers.model.is_some() || answers.terminal.is_some() || answers.toolsets.is_some();
+    let needs_config =
+        answers.model.is_some() || answers.terminal.is_some() || answers.toolsets.is_some();
     if needs_config {
         if config_path.is_file() {
             let b = backup_path(config_path);
@@ -756,8 +771,14 @@ mod tests {
 
     #[test]
     fn verbatim_setup_strings_are_pinned() {
-        assert_eq!(FIRST_TIME, "No existing configuration found — running first-time setup.");
-        assert_eq!(KEEP_HINT, "Press Enter to keep it, or type a new value to change it.");
+        assert_eq!(
+            FIRST_TIME,
+            "No existing configuration found — running first-time setup."
+        );
+        assert_eq!(
+            KEEP_HINT,
+            "Press Enter to keep it, or type a new value to change it."
+        );
         assert_eq!(TERMINAL_QUESTION, "Select terminal backend:");
         assert_eq!(
             TERMINAL_NOT_WIRED,
@@ -771,7 +792,10 @@ mod tests {
         );
         assert_eq!(PLATFORMS_DONE, "Messaging platforms configured!");
         assert_eq!(SETUP_COMPLETE, "Setup complete! You're ready to go.");
-        assert_eq!(MODEL_INTRO, "Choose how to connect to your main chat model.");
+        assert_eq!(
+            MODEL_INTRO,
+            "Choose how to connect to your main chat model."
+        );
         assert_eq!(DOCKER_MISSING, "Docker not found in PATH!");
         // Rust-only notice must be clearly marked as such (not `✦`, not
         // pretending to be a Python string) and mention the fallback.
@@ -809,13 +833,22 @@ mod tests {
         let text = serde_yaml::to_string(&Value::Mapping(merged.clone())).unwrap();
         assert!(text.contains("custom_key: keep-me"), "{text}");
         assert!(text.contains("enabled: true"), "{text}");
-        assert_eq!(yaml_str(&merged, &["model", "provider"]).as_deref(), Some("lmstudio"));
-        assert_eq!(yaml_str(&merged, &["model", "name"]).as_deref(), Some("qwen3"));
+        assert_eq!(
+            yaml_str(&merged, &["model", "provider"]).as_deref(),
+            Some("lmstudio")
+        );
+        assert_eq!(
+            yaml_str(&merged, &["model", "name"]).as_deref(),
+            Some("qwen3")
+        );
         assert_eq!(
             yaml_str(&merged, &["providers", "lmstudio", "api"]).as_deref(),
             Some("http://localhost:1234/v1")
         );
-        assert_eq!(yaml_str(&merged, &["terminal", "backend"]).as_deref(), Some("docker"));
+        assert_eq!(
+            yaml_str(&merged, &["terminal", "backend"]).as_deref(),
+            Some("docker")
+        );
         // fallback_chain preserved inside `model`.
         assert!(text.contains("fallback_chain"), "{text}");
         // The result must still load through the strict HermesConfig schema.
@@ -871,7 +904,10 @@ mod tests {
         assert!(keys.contains(&"web") && !keys.contains(&"spotify"));
         let cfg = yaml("tools:\n  enabled_toolsets: [spotify]\n");
         let d = toolset_defaults(&cfg);
-        assert_eq!(d.iter().map(|&i| TOOLSETS[i].key).collect::<Vec<_>>(), vec!["spotify"]);
+        assert_eq!(
+            d.iter().map(|&i| TOOLSETS[i].key).collect::<Vec<_>>(),
+            vec!["spotify"]
+        );
     }
 
     #[test]
@@ -879,7 +915,10 @@ mod tests {
         assert_eq!(default_key_env("openai-api"), "OPENAI_API_KEY");
         assert_eq!(default_key_env("deepseek"), "DEEPSEEK_API_KEY");
         assert_eq!(default_key_env("openai-codex"), "OPENAI_API_KEY");
-        assert_eq!(default_key_env("tencent-tokenhub"), "TENCENT_TOKENHUB_API_KEY");
+        assert_eq!(
+            default_key_env("tencent-tokenhub"),
+            "TENCENT_TOKENHUB_API_KEY"
+        );
     }
 
     #[test]
@@ -896,13 +935,20 @@ mod tests {
             .collect();
         assert!(leftovers.is_empty());
         let b = backup_path(&p);
-        assert!(b.file_name().unwrap().to_string_lossy().starts_with("config.yaml.bak."));
+        assert!(b
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .starts_with("config.yaml.bak."));
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let e = dir.path().join(".env");
             write_atomic(&e, b"K=v\n", 0o600).unwrap();
-            assert_eq!(fs::metadata(&e).unwrap().permissions().mode() & 0o777, 0o600);
+            assert_eq!(
+                fs::metadata(&e).unwrap().permissions().mode() & 0o777,
+                0o600
+            );
         }
     }
 
@@ -919,20 +965,48 @@ mod tests {
                 key_env: "FIREWORKS_API_KEY".into(),
                 model: "llama".into(),
             }),
-            platforms: vec![("signal".into(), vec![("SIGNAL_HTTP_URL".into(), "http://s".into())])],
+            platforms: vec![(
+                "signal".into(),
+                vec![("SIGNAL_HTTP_URL".into(), "http://s".into())],
+            )],
             ..Default::default()
         };
-        let backup = apply(home, &cfg, &home.join(".env"), read_yaml_mapping(&cfg), &answers)
-            .unwrap()
-            .expect("backup made");
-        assert_eq!(fs::read_to_string(&backup).unwrap(), "model:\n  provider: auto\nkeep: yes\n");
+        let backup = apply(
+            home,
+            &cfg,
+            &home.join(".env"),
+            read_yaml_mapping(&cfg),
+            &answers,
+        )
+        .unwrap()
+        .expect("backup made");
+        assert_eq!(
+            fs::read_to_string(&backup).unwrap(),
+            "model:\n  provider: auto\nkeep: yes\n"
+        );
         let text = fs::read_to_string(&cfg).unwrap();
-        assert!(text.contains("keep: yes") && text.contains("provider: fireworks"), "{text}");
-        assert_eq!(fs::read_to_string(home.join(".env")).unwrap(), "SIGNAL_HTTP_URL=http://s\n");
+        assert!(
+            text.contains("keep: yes") && text.contains("provider: fireworks"),
+            "{text}"
+        );
+        assert_eq!(
+            fs::read_to_string(home.join(".env")).unwrap(),
+            "SIGNAL_HTTP_URL=http://s\n"
+        );
         // Empty answers never write anything.
         let dir2 = tempfile::TempDir::new().unwrap();
         let c2 = dir2.path().join("config.yaml");
-        assert_eq!(apply(dir2.path(), &c2, &dir2.path().join(".env"), None, &Answers::default()).unwrap(), None);
+        assert_eq!(
+            apply(
+                dir2.path(),
+                &c2,
+                &dir2.path().join(".env"),
+                None,
+                &Answers::default()
+            )
+            .unwrap(),
+            None
+        );
         assert!(!c2.exists());
     }
 

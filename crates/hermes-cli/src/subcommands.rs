@@ -21,7 +21,9 @@ use hermes_core::session::{SessionId, SessionStore};
 
 use crate::session_menu::{inspect_session, list_sessions};
 use crate::tui::theme::detect_color_depth;
-use crate::tui::welcome::{sgr_banner_text, sgr_bold_gold, sgr_dim_brown, SGR_RESET, VERSION_LABEL};
+use crate::tui::welcome::{
+    sgr_banner_text, sgr_bold_gold, sgr_dim_brown, SGR_RESET, VERSION_LABEL,
+};
 use crate::{Args, Commands};
 
 /// Resolve the Hermes home and load `config.yaml` (missing = `None`, same
@@ -41,7 +43,9 @@ pub(crate) fn load_home_config(
 /// `hermes tools` (piped): `  [x] key  label — tools` per catalog entry.
 pub fn render_tools(config: Option<&HermesConfig>, w: &mut impl Write) -> anyhow::Result<()> {
     use crate::wizard::catalog::{DEFAULT_OFF_TOOLSETS, TOOLSETS};
-    let enabled = config.and_then(|c| c.tools.as_ref()).map(|t| t.enabled_toolsets.clone());
+    let enabled = config
+        .and_then(|c| c.tools.as_ref())
+        .map(|t| t.enabled_toolsets.clone());
     writeln!(w, "Toolsets:")?;
     for t in TOOLSETS {
         let on = match &enabled {
@@ -101,12 +105,17 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
     match cmd {
         Commands::Version => unreachable!("handled above"),
         Commands::Setup { .. } => unreachable!("handled above"),
-        Commands::Model if args.provider.is_none() && io::stdin().is_terminal() && io::stdout().is_terminal() => {
+        Commands::Model
+            if args.provider.is_none()
+                && io::stdin().is_terminal()
+                && io::stdout().is_terminal() =>
+        {
             // Spec 017 T06 — interactive `hermes model` IS the wizard's
             // `Model & Provider` section (setup.py delegates to `cmd_model`:
             // one code path, spec §C.3). 39-entry verbatim catalog picker,
             // then URL / key_env / model, atomic write + backup.
-            match crate::wizard::setup::run_setup(&home, Some(crate::wizard::setup::Section::Model)) {
+            match crate::wizard::setup::run_setup(&home, Some(crate::wizard::setup::Section::Model))
+            {
                 Ok(_) => {}
                 Err(e) => anyhow::bail!("{e}"),
             }
@@ -114,7 +123,8 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
         Commands::Tools if io::stdin().is_terminal() && io::stdout().is_terminal() => {
             // Spec 017 T07 — interactive `hermes tools` IS the wizard's
             // `Tools` section (26-toolset checklist, spec §C.6).
-            match crate::wizard::setup::run_setup(&home, Some(crate::wizard::setup::Section::Tools)) {
+            match crate::wizard::setup::run_setup(&home, Some(crate::wizard::setup::Section::Tools))
+            {
                 Ok(_) => {}
                 Err(e) => anyhow::bail!("{e}"),
             }
@@ -161,7 +171,12 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
             } else {
                 let stdin = io::stdin().lock();
                 let mut stdout = io::stdout().lock();
-                crate::session_picker::browse_numbered(&store, stdin, &mut stdout, fallback_width())?
+                crate::session_picker::browse_numbered(
+                    &store,
+                    stdin,
+                    &mut stdout,
+                    fallback_width(),
+                )?
             };
             if let crate::session_picker::BrowseOutcome::Selected(id) = outcome {
                 println!("Selected session {id}");
@@ -385,7 +400,10 @@ pub(crate) fn render_mcp(
     match action {
         None | Some(crate::McpAction::List) => {
             if none {
-                writeln!(w, "no MCP servers connected (add `mcp_servers:` to config.yaml)")?;
+                writeln!(
+                    w,
+                    "no MCP servers connected (add `mcp_servers:` to config.yaml)"
+                )?;
                 return Ok(());
             }
             let servers = servers.expect("non-empty");
@@ -393,8 +411,16 @@ pub(crate) fn render_mcp(
             names.sort();
             writeln!(w, "MCP servers:")?;
             for name in names {
-                let mode = if servers[name].confirm { "confirm" } else { "auto" };
-                writeln!(w, "  {:<12} {:<10} ? tool(s) ({} mode)", name, "configured", mode)?;
+                let mode = if servers[name].confirm {
+                    "confirm"
+                } else {
+                    "auto"
+                };
+                writeln!(
+                    w,
+                    "  {:<12} {:<10} ? tool(s) ({} mode)",
+                    name, "configured", mode
+                )?;
             }
         }
         Some(crate::McpAction::Restart { name }) => {
@@ -704,7 +730,10 @@ mod tests {
         render_tools(None, &mut out).unwrap();
         let s = String::from_utf8(out).unwrap();
         assert!(s.starts_with("Toolsets:\n"), "{s}");
-        assert!(s.contains("  [x] web  🔍 Web Search & Scraping — web_search, web_extract\n"), "{s}");
+        assert!(
+            s.contains("  [x] web  🔍 Web Search & Scraping — web_search, web_extract\n"),
+            "{s}"
+        );
         assert!(s.contains("  [ ] spotify  "), "{s}");
         assert_eq!(s.lines().count(), 27, "{s}");
 
@@ -717,7 +746,10 @@ mod tests {
         let mut out = Vec::new();
         render_tools(Some(&c), &mut out).unwrap();
         let s = String::from_utf8(out).unwrap();
-        assert!(s.contains("  [x] spotify  ") && s.contains("  [ ] web  "), "{s}");
+        assert!(
+            s.contains("  [x] spotify  ") && s.contains("  [ ] web  "),
+            "{s}"
+        );
     }
 
     #[test]
@@ -739,7 +771,16 @@ mod tests {
         let c = config_with(&[("a", None, &["m1"])]);
         let ctx = crate::repl::resolve_context(Some(&c), "a");
         let mut out = Vec::new();
-        render_info(Path::new("/tmp/h"), Some(&c), "a", &ctx, Some(2), false, &mut out).expect("render");
+        render_info(
+            Path::new("/tmp/h"),
+            Some(&c),
+            "a",
+            &ctx,
+            Some(2),
+            false,
+            &mut out,
+        )
+        .expect("render");
         let s = String::from_utf8(out).unwrap();
         let first = s.lines().next().unwrap();
         assert_eq!(
@@ -753,8 +794,16 @@ mod tests {
         // Spec 007b: default-on — no `sandbox:` section still reports `on`.
         assert!(s.contains("sandbox: on | cwd="), "{s}");
         let mut out = Vec::new();
-        render_info(Path::new("/tmp/h"), None, FAKE_PROVIDER, &ctx, Some(0), true, &mut out)
-            .expect("render");
+        render_info(
+            Path::new("/tmp/h"),
+            None,
+            FAKE_PROVIDER,
+            &ctx,
+            Some(0),
+            true,
+            &mut out,
+        )
+        .expect("render");
         let s = String::from_utf8(out).unwrap();
         assert!(s.contains("sandbox: off (inherit)\n"), "--no-sandbox: {s}");
     }
@@ -770,11 +819,25 @@ mod tests {
         });
         let ctx = crate::repl::resolve_context(Some(&c), FAKE_PROVIDER);
         let mut out = Vec::new();
-        render_info(Path::new("/tmp/h"), Some(&c), FAKE_PROVIDER, &ctx, Some(0), false, &mut out)
-            .expect("render");
+        render_info(
+            Path::new("/tmp/h"),
+            Some(&c),
+            FAKE_PROVIDER,
+            &ctx,
+            Some(0),
+            false,
+            &mut out,
+        )
+        .expect("render");
         let s = String::from_utf8(out).unwrap();
-        let line = s.lines().find(|l| l.starts_with("sandbox: on")).expect("sandbox line");
-        assert!(line.contains("cpu=5s") && line.contains("network=deny"), "{line}");
+        let line = s
+            .lines()
+            .find(|l| l.starts_with("sandbox: on"))
+            .expect("sandbox line");
+        assert!(
+            line.contains("cpu=5s") && line.contains("network=deny"),
+            "{line}"
+        );
         assert!(line.contains("env=PATH,HOME"), "{line}");
         // Names only: the actual PATH value must not be printed.
         if let Ok(path) = std::env::var("PATH") {
@@ -786,8 +849,16 @@ mod tests {
     fn info_without_config_reports_builtin_fake() {
         let ctx = crate::repl::resolve_context(None, FAKE_PROVIDER);
         let mut out = Vec::new();
-        render_info(Path::new("/tmp/h"), None, FAKE_PROVIDER, &ctx, Some(0), false, &mut out)
-            .expect("render");
+        render_info(
+            Path::new("/tmp/h"),
+            None,
+            FAKE_PROVIDER,
+            &ctx,
+            Some(0),
+            false,
+            &mut out,
+        )
+        .expect("render");
         let s = String::from_utf8(out).unwrap();
         assert!(s.contains("Active provider: fake (built-in)\n"), "{s}");
         assert!(s.contains("No config.yaml found\n"), "{s}");
@@ -820,7 +891,11 @@ mod tests {
         );
         let mut out = Vec::new();
         render_mcp(Some(&c), Some(&McpAction::List), &mut out).expect("render");
-        assert_eq!(String::from_utf8(out).unwrap(), s, "`mcp` and `mcp list` are identical");
+        assert_eq!(
+            String::from_utf8(out).unwrap(),
+            s,
+            "`mcp` and `mcp list` are identical"
+        );
     }
 
     #[test]
@@ -841,14 +916,15 @@ mod tests {
         let mut out = Vec::new();
         render_mcp(
             Some(&c),
-            Some(&McpAction::Restart {
-                name: "srv".into(),
-            }),
+            Some(&McpAction::Restart { name: "srv".into() }),
             &mut out,
         )
         .expect("render");
         let s = String::from_utf8(out).unwrap();
-        assert!(s.contains("mcp[srv]: restart is only available inside the REPL"), "{s}");
+        assert!(
+            s.contains("mcp[srv]: restart is only available inside the REPL"),
+            "{s}"
+        );
         let err = render_mcp(
             Some(&c),
             Some(&McpAction::Restart {

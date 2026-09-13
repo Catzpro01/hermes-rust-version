@@ -77,13 +77,14 @@ mod tests {
 
     #[test]
     fn parses_a_numbered_plan_into_steps() {
-        let plan = parse_plan(
-            "Sure. [[plan]]\n1. list files\n2. read config\n[[/plan]] done",
-        )
-        .unwrap();
+        let plan =
+            parse_plan("Sure. [[plan]]\n1. list files\n2. read config\n[[/plan]] done").unwrap();
         assert_eq!(plan.raw(), "1. list files\n2. read config");
         assert_eq!(plan.steps(), &["1. list files", "2. read config"]);
-        assert_eq!(plan.tokens(), estimate_tokens("1. list files\n2. read config"));
+        assert_eq!(
+            plan.tokens(),
+            estimate_tokens("1. list files\n2. read config")
+        );
     }
 
     #[test]
@@ -120,10 +121,7 @@ mod tests {
     fn literal_tool_tag_inside_plan_does_not_break_parsing() {
         // A plan that mentions a tool name is still a plan; parsing only looks
         // for the bracket delimiters, never XML.
-        let plan = parse_plan(
-            "[[plan]]\ncall read_file on the path\n[[/plan]]",
-        )
-        .unwrap();
+        let plan = parse_plan("[[plan]]\ncall read_file on the path\n[[/plan]]").unwrap();
         assert_eq!(plan.steps(), &["call read_file on the path"]);
     }
 

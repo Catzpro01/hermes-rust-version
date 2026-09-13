@@ -130,7 +130,11 @@ mod tests {
         let goal = extract_goal(&long);
         assert!(goal.contains('…'), "must truncate: {goal}");
         assert!(goal.contains('你'), "must keep valid chars: {goal}");
-        assert!(goal.chars().count() <= GOAL_MAX_CHARS + 1, "over budget: {}", goal.chars().count());
+        assert!(
+            goal.chars().count() <= GOAL_MAX_CHARS + 1,
+            "over budget: {}",
+            goal.chars().count()
+        );
     }
 
     #[test]

@@ -58,7 +58,10 @@ impl RetryTracker {
             return false;
         }
         entry.push(fp);
-        self.raw.entry(tool.to_owned()).or_default().push(arguments.trim().to_owned());
+        self.raw
+            .entry(tool.to_owned())
+            .or_default()
+            .push(arguments.trim().to_owned());
         true
     }
     /// Number of attempts recorded for `tool`.
@@ -88,7 +91,10 @@ impl RetryTracker {
             })
             .collect::<Vec<_>>()
             .join(" | ");
-        Some(format!("[already tried {count} parameter set(s): {joined}]", count = args.len()))
+        Some(format!(
+            "[already tried {count} parameter set(s): {joined}]",
+            count = args.len()
+        ))
     }
     /// Resets per-step recovery state (a new task / step).
     pub fn reset(&mut self) {
@@ -104,7 +110,10 @@ mod tests {
     #[test]
     fn fingerprint_is_deterministic_and_whitespace_insensitive() {
         assert_eq!(arg_fingerprint("a"), arg_fingerprint(" a \n"));
-        assert_eq!(arg_fingerprint("{\"path\":\"x\"}"), arg_fingerprint("{\"path\":\"x\"}"));
+        assert_eq!(
+            arg_fingerprint("{\"path\":\"x\"}"),
+            arg_fingerprint("{\"path\":\"x\"}")
+        );
     }
 
     #[test]
@@ -129,7 +138,10 @@ mod tests {
         for i in 0..MAX_RETRIES {
             t.record("tool", &format!("args-{i}"));
         }
-        assert!(!t.can_retry("tool"), "exhausted after MAX_RETRIES distinct attempts");
+        assert!(
+            !t.can_retry("tool"),
+            "exhausted after MAX_RETRIES distinct attempts"
+        );
     }
 
     #[test]
@@ -139,7 +151,10 @@ mod tests {
         t.record("tool", "{\"path\":\"/x\"}");
         t.record("tool", "{\"path\":\"/y\"}");
         let note = t.already_tried_note("tool").unwrap();
-        assert!(note.contains("already tried 2 parameter set(s)"), "got: {note}");
+        assert!(
+            note.contains("already tried 2 parameter set(s)"),
+            "got: {note}"
+        );
         assert!(note.contains("/x"));
         assert!(note.contains("/y"));
     }

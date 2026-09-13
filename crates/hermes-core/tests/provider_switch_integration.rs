@@ -71,9 +71,8 @@ async fn replacing_provider_preserves_history_and_applies_to_next_turn() {
 
 #[tokio::test]
 async fn replacing_provider_does_not_lose_prior_assistant_history() {
-    let mut runner: ConversationRunner<Box<dyn Provider>> = ConversationRunner::new(Box::new(
-        TaggedProvider("alpha"),
-    ));
+    let mut runner: ConversationRunner<Box<dyn Provider>> =
+        ConversationRunner::new(Box::new(TaggedProvider("alpha")));
     let first = collect_chunks(runner.chat("msg1").await.unwrap()).await;
     assert!(first.contains("alpha"));
     runner.push_assistant(first);

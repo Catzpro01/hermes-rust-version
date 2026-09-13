@@ -69,19 +69,13 @@ impl<T: McpTransport> McpClient<T> {
         let req = jsonrpc::request(id, method, params);
         let line = serde_json::to_string(&req)
             .map_err(|e| McpError::Protocol(format!("serialize request: {e}")))?;
-        self.transport
-            .write_line(line.as_bytes())
-            .await?;
+        self.transport.write_line(line.as_bytes()).await?;
         self.transport.flush().await?;
         self.await_response(id).await
     }
 
     /// Sends a fire-and-forget notification (no id, no response expected).
-    pub async fn notify(
-        &mut self,
-        method: &str,
-        params: Option<Value>,
-    ) -> Result<(), McpError> {
+    pub async fn notify(&mut self, method: &str, params: Option<Value>) -> Result<(), McpError> {
         let note = jsonrpc::notification(method, params);
         let line = serde_json::to_string(&note)
             .map_err(|e| McpError::Protocol(format!("serialize notification: {e}")))?;
@@ -108,7 +102,9 @@ impl<T: McpTransport> McpClient<T> {
             }
             match jsonrpc::parse_inbound(&line) {
                 None => {
-                    return Err(McpError::Protocol(format!("malformed inbound line: {line}")));
+                    return Err(McpError::Protocol(format!(
+                        "malformed inbound line: {line}"
+                    )));
                 }
                 Some(Inbound::PeerMessage { .. }) => {
                     // Server → client notification/request; ignore for now.
@@ -124,7 +120,10 @@ impl<T: McpTransport> McpClient<T> {
                     }
                     return match reply {
                         Reply::Result(v) => Ok(v),
-                        Reply::Error(e) => Err(McpError::Remote { code: e.code, message: e.message }),
+                        Reply::Error(e) => Err(McpError::Remote {
+                            code: e.code,
+                            message: e.message,
+                        }),
                     };
                 }
             }
@@ -165,7 +164,8 @@ mod tests {
     #[async_trait::async_trait]
     impl McpTransport for FakeTransport {
         async fn write_line(&mut self, buf: &[u8]) -> Result<(), McpError> {
-            self.outbound.push(String::from_utf8_lossy(buf).into_owned());
+            self.outbound
+                .push(String::from_utf8_lossy(buf).into_owned());
             Ok(())
         }
         async fn flush(&mut self) -> Result<(), McpError> {
@@ -196,11 +196,18 @@ mod tests {
         let result = c.initialize().await.unwrap();
         assert_eq!(result["serverInfo"]["name"], "fake");
         assert!(c.initialized());
-        assert_eq!(c.transport.outbound.len(), 2, "initialize request + initialized notification");
+        assert_eq!(
+            c.transport.outbound.len(),
+            2,
+            "initialize request + initialized notification"
+        );
         let req: Value = serde_json::from_str(&c.transport.outbound[0]).unwrap();
         assert_eq!(req["method"], "initialize");
         assert_eq!(req["id"], 1);
-        assert_eq!(req["params"]["protocolVersion"], jsonrpc::MCP_PROTOCOL_VERSION);
+        assert_eq!(
+            req["params"]["protocolVersion"],
+            jsonrpc::MCP_PROTOCOL_VERSION
+        );
         assert_eq!(req["params"]["clientInfo"]["name"], CLIENT_NAME);
         let note: Value = serde_json::from_str(&c.transport.outbound[1]).unwrap();
         assert_eq!(note["method"], "notifications/initialized");
@@ -260,7 +267,10 @@ mod tests {
         .unwrap();
         let mut c = McpClient::new(FakeTransport::new(vec![resp]));
         c.initialized = true;
-        assert!(matches!(c.request("x", None).await, Err(McpError::IdMismatch { .. })));
+        assert!(matches!(
+            c.request("x", None).await,
+            Err(McpError::IdMismatch { .. })
+        ));
     }
 
     #[tokio::test]
@@ -285,9 +295,7 @@ mod tests {
     async fn near_limit_message_is_accepted() {
         // A response that stays under the limit (but is still valid JSON) works.
         let body = "y".repeat(MAX_MESSAGE_BYTES - 200);
-        let resp = format!(
-            "{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"{body}\"}}"
-        );
+        let resp = format!("{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"{body}\"}}");
         assert!(
             resp.len() <= MAX_MESSAGE_BYTES,
             "resp {} > limit {}",

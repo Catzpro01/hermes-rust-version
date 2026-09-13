@@ -28,6 +28,9 @@ pub enum McpError {
 impl McpError {
     /// Helper to build [`McpError::Remote`] from a JSON-RPC error.
     pub fn remote(code: i64, message: impl Into<String>) -> Self {
-        Self::Remote { code, message: message.into() }
+        Self::Remote {
+            code,
+            message: message.into(),
+        }
     }
 }

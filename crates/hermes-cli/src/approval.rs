@@ -1,12 +1,12 @@
 //! Interactive Command Approval Card matching Python Hermes UI dialog.
 
-use std::io::{self, Write, IsTerminal};
 use crossterm::{
     cursor::{Hide, Show},
     event::{self, Event, KeyCode, KeyModifiers},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, size},
 };
+use std::io::{self, IsTerminal, Write};
 
 /// Choices presented to the user
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,7 +32,10 @@ pub fn prompt_approval(command: &str) -> bool {
 
     let options = [
         ("Yes, allow once", ApprovalChoice::AllowOnce),
-        ("Yes, allow all for this session", ApprovalChoice::AllowSession),
+        (
+            "Yes, allow all for this session",
+            ApprovalChoice::AllowSession,
+        ),
         ("No, deny command", ApprovalChoice::Deny),
     ];
     let mut cursor = 0;
@@ -44,38 +47,57 @@ pub fn prompt_approval(command: &str) -> bool {
             let inner_width = box_width.saturating_sub(4);
 
             let mut out = String::new();
-            out.push_str("
-[1;33m┌─ ⚠ Command Approval Required ");
+            out.push_str(
+                "
+[1;33m┌─ ⚠ Command Approval Required ",
+            );
             let title_prefix = "┌─ ⚠ Command Approval Required ";
             let title_len = title_prefix.chars().count();
             if box_width > title_len {
                 out.push_str(&"─".repeat(box_width - title_len - 1));
             }
-            out.push_str("┐[0m
-");
+            out.push_str(
+                "┐[0m
+",
+            );
 
             // Info row
             let info_txt = "The agent wants to run:";
             let pad_info = box_width.saturating_sub(info_txt.len() + 4);
-            out.push_str(&format!("│  [2m{}[0m{}│
-", info_txt, " ".repeat(pad_info)));
+            out.push_str(&format!(
+                "│  [2m{}[0m{}│
+",
+                info_txt,
+                " ".repeat(pad_info)
+            ));
 
             // Command snippet
             let cmd_display = if command.chars().count() > inner_width.saturating_sub(2) {
-                let mut s: String = command.chars().take(inner_width.saturating_sub(5)).collect();
+                let mut s: String = command
+                    .chars()
+                    .take(inner_width.saturating_sub(5))
+                    .collect();
                 s.push_str("...");
                 s
             } else {
                 command.to_string()
             };
             let pad_cmd = box_width.saturating_sub(cmd_display.len() + 6);
-            out.push_str(&format!("│    [1;36m{}[0m{}│
-", cmd_display, " ".repeat(pad_cmd)));
+            out.push_str(&format!(
+                "│    [1;36m{}[0m{}│
+",
+                cmd_display,
+                " ".repeat(pad_cmd)
+            ));
 
             let ask_txt = "Allow this command?";
             let pad_ask = box_width.saturating_sub(ask_txt.len() + 4);
-            out.push_str(&format!("│  [2m{}[0m{}│
-", ask_txt, " ".repeat(pad_ask)));
+            out.push_str(&format!(
+                "│  [2m{}[0m{}│
+",
+                ask_txt,
+                " ".repeat(pad_ask)
+            ));
 
             // Options
             for (idx, (label, _)) in options.iter().enumerate() {
@@ -84,23 +106,36 @@ pub fn prompt_approval(command: &str) -> bool {
                 let line_str = format!("    {} {}", radio, label);
                 let pad_opt = box_width.saturating_sub(line_str.len() + 4);
                 if is_cursor {
-                    out.push_str(&format!("│  [1;32m{}[0m{}│
-", line_str, " ".repeat(pad_opt)));
+                    out.push_str(&format!(
+                        "│  [1;32m{}[0m{}│
+",
+                        line_str,
+                        " ".repeat(pad_opt)
+                    ));
                 } else {
-                    out.push_str(&format!("│  {}{}│
-", line_str, " ".repeat(pad_opt)));
+                    out.push_str(&format!(
+                        "│  {}{}│
+",
+                        line_str,
+                        " ".repeat(pad_opt)
+                    ));
                 }
             }
 
-            out.push_str(&format!("[1;33m└{}┘[0m
-", "─".repeat(box_width.saturating_sub(2))));
+            out.push_str(&format!(
+                "[1;33m└{}┘[0m
+",
+                "─".repeat(box_width.saturating_sub(2))
+            ));
 
             let _ = write!(stdout, "{}", out);
             let _ = stdout.flush();
 
             // Read keyboard input
             if let Ok(Event::Key(key_event)) = event::read() {
-                if key_event.modifiers.contains(KeyModifiers::CONTROL) && key_event.code == KeyCode::Char('c') {
+                if key_event.modifiers.contains(KeyModifiers::CONTROL)
+                    && key_event.code == KeyCode::Char('c')
+                {
                     return false;
                 }
                 match key_event.code {

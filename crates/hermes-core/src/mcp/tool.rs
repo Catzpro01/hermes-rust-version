@@ -115,7 +115,11 @@ fn map_mcp_err(e: McpError) -> ToolError {
 ///   a human-readable summary of content types is produced.
 /// - `result.isError == true` → [`ToolError::Failed`] (an execution failure).
 fn parse_call_result(name: &str, result: Value) -> Result<ToolResponse, ToolError> {
-    if result.get("isError").and_then(Value::as_bool).unwrap_or(false) {
+    if result
+        .get("isError")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+    {
         let msg = flatten_text(&result);
         return Err(ToolError::Failed(if msg.is_empty() {
             format!("MCP tool '{name}' reported an error")
@@ -192,9 +196,8 @@ fn parse_arguments(arguments: &str) -> Result<Value, ToolError> {
     if trimmed.is_empty() {
         return Ok(json!({}));
     }
-    let v: Value = serde_json::from_str(trimmed).map_err(|e| {
-        ToolError::Failed(format!("MCP tool arguments are not valid JSON: {e}"))
-    })?;
+    let v: Value = serde_json::from_str(trimmed)
+        .map_err(|e| ToolError::Failed(format!("MCP tool arguments are not valid JSON: {e}")))?;
     match v {
         Value::Object(_) => Ok(v),
         _ => Err(ToolError::Failed(
@@ -221,7 +224,10 @@ mod tests {
     fn parse_arguments_accepts_empty_and_object() {
         assert_eq!(parse_arguments("").unwrap(), json!({}));
         assert_eq!(parse_arguments("  ").unwrap(), json!({}));
-        assert_eq!(parse_arguments(r#"{"path":"/a"}"#).unwrap(), json!({"path":"/a"}));
+        assert_eq!(
+            parse_arguments(r#"{"path":"/a"}"#).unwrap(),
+            json!({"path":"/a"})
+        );
     }
 
     #[test]
@@ -252,7 +258,10 @@ mod tests {
             "isError": true,
             "content": [{"type":"text","text":"boom"}]
         });
-        assert!(matches!(parse_call_result("t", result), Err(ToolError::Failed(_))));
+        assert!(matches!(
+            parse_call_result("t", result),
+            Err(ToolError::Failed(_))
+        ));
     }
 
     #[test]

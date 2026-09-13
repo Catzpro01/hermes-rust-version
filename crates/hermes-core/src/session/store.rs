@@ -275,18 +275,13 @@ impl SessionStore {
     /// Returns `false` when the session did not exist (nothing was deleted).
     pub fn delete_session(&self, id: &SessionId) -> Result<bool, SessionStoreError> {
         let raw = id.to_string();
-        self.conn.execute(
-            "DELETE FROM tool_calls WHERE session_id=?1",
-            params![raw],
-        )?;
-        self.conn.execute(
-            "DELETE FROM messages WHERE session_id=?1",
-            params![raw],
-        )?;
-        let removed = self.conn.execute(
-            "DELETE FROM sessions WHERE id=?1",
-            params![raw],
-        )?;
+        self.conn
+            .execute("DELETE FROM tool_calls WHERE session_id=?1", params![raw])?;
+        self.conn
+            .execute("DELETE FROM messages WHERE session_id=?1", params![raw])?;
+        let removed = self
+            .conn
+            .execute("DELETE FROM sessions WHERE id=?1", params![raw])?;
         Ok(removed > 0)
     }
 }

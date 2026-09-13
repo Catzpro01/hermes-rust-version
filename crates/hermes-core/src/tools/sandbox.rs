@@ -169,7 +169,10 @@ impl SandboxPolicy {
         Self {
             enabled: true,
             working_dir: Some(root.into()),
-            env_allowlist: DEFAULT_ENV_ALLOWLIST.iter().map(|s| (*s).to_owned()).collect(),
+            env_allowlist: DEFAULT_ENV_ALLOWLIST
+                .iter()
+                .map(|s| (*s).to_owned())
+                .collect(),
             max_output_bytes: DEFAULT_MAX_OUTPUT_BYTES,
             limits: ResourceLimits::default(),
             network: NetworkPolicy::Inherit,
@@ -393,7 +396,10 @@ mod tests {
         assert!(!p.enabled);
         assert_eq!(
             p.build_argv("printf ok"),
-            ("sh".to_owned(), vec!["-c".to_owned(), "printf ok".to_owned()])
+            (
+                "sh".to_owned(),
+                vec!["-c".to_owned(), "printf ok".to_owned()]
+            )
         );
         assert!(p.resolve_env([("A".to_owned(), "b".to_owned())]).is_empty());
         assert_eq!(p.summary(), "sandbox: off (inherit)");
@@ -408,7 +414,9 @@ mod tests {
         p.network = NetworkPolicy::Deny;
         assert_eq!(p.build_argv("x").0, "sh");
         assert_eq!(p.build_argv("x").1.len(), 2);
-        assert!(p.resolve_env([("PATH".to_owned(), "/bin".to_owned())]).is_empty());
+        assert!(p
+            .resolve_env([("PATH".to_owned(), "/bin".to_owned())])
+            .is_empty());
     }
 
     #[test]
@@ -475,7 +483,10 @@ mod tests {
     fn from_config_default_is_strict_and_explicit_false_is_inherit() {
         let root = Path::new("/tmp");
         // Spec 007b: no section -> strict defaults rooted at `root`.
-        assert_eq!(SandboxPolicy::from_config(None, root), SandboxPolicy::strict(root));
+        assert_eq!(
+            SandboxPolicy::from_config(None, root),
+            SandboxPolicy::strict(root)
+        );
         // A section without `enabled` is also on.
         let bare = crate::config::SandboxConfig::default();
         assert!(SandboxPolicy::from_config(Some(&bare), root).enabled);
@@ -484,7 +495,10 @@ mod tests {
             cpu_seconds: Some(1),
             ..Default::default()
         };
-        assert_eq!(SandboxPolicy::from_config(Some(&off), root), SandboxPolicy::inherit());
+        assert_eq!(
+            SandboxPolicy::from_config(Some(&off), root),
+            SandboxPolicy::inherit()
+        );
     }
 
     #[test]
@@ -524,7 +538,10 @@ mod tests {
             1,
             "no duplicate"
         );
-        assert!(p.env_allowlist.contains(&"HOME".to_owned()), "defaults kept");
+        assert!(
+            p.env_allowlist.contains(&"HOME".to_owned()),
+            "defaults kept"
+        );
     }
 
     #[tokio::test]
@@ -598,9 +615,14 @@ mod tests {
     #[tokio::test]
     async fn run_shell_timeout_and_cancel_still_apply_under_sandbox() {
         let p = SandboxPolicy::strict(std::env::temp_dir());
-        let e = run_shell(&p, "sleep 5", Duration::from_millis(50), CancellationToken::new())
-            .await
-            .unwrap_err();
+        let e = run_shell(
+            &p,
+            "sleep 5",
+            Duration::from_millis(50),
+            CancellationToken::new(),
+        )
+        .await
+        .unwrap_err();
         assert!(matches!(e, ToolError::Timeout(_)));
         let cancel = CancellationToken::new();
         cancel.cancel();

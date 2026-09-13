@@ -15,8 +15,7 @@ use wiremock::{
 fn chat_sse(tokens: &[&str]) -> String {
     let mut out = String::new();
     for t in tokens {
-        let payload =
-            serde_json::json!({ "choices": [{ "delta": { "content": t } }] }).to_string();
+        let payload = serde_json::json!({ "choices": [{ "delta": { "content": t } }] }).to_string();
         out.push_str(&format!("data: {payload}\n\n"));
     }
     out.push_str("data: [DONE]\n\n");
@@ -116,7 +115,10 @@ async fn completions_mode_targets_v1_completions_with_a_prompt_body() {
     assert!(body.contains("\"model\":\"test-model\""), "body: {body}");
     assert!(body.contains("\"stream\":true"), "body: {body}");
     assert!(body.contains("User: hi\\nAssistant:"), "body: {body}");
-    assert!(!body.contains("\"messages\""), "no role messages expected: {body}");
+    assert!(
+        !body.contains("\"messages\""),
+        "no role messages expected: {body}"
+    );
 }
 
 #[tokio::test]
@@ -129,9 +131,7 @@ async fn both_modes_normalize_to_identical_event_streams() {
     let chat_server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/v1/chat/completions"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_string(chat_sse(tokens)),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_string(chat_sse(tokens)))
         .mount(&chat_server)
         .await;
     let chat_provider = HttpProvider::new(
@@ -143,9 +143,7 @@ async fn both_modes_normalize_to_identical_event_streams() {
     let completions_server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/v1/completions"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_string(completions_sse(tokens)),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_string(completions_sse(tokens)))
         .mount(&completions_server)
         .await;
     let completions_provider = HttpProvider::new(
@@ -197,12 +195,11 @@ async fn tool_calls_are_parsed_in_completions_mode() {
     Mock::given(method("POST"))
         .and(path("/v1/completions"))
         .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_string(completions_sse(&[
-                    "Let me check ",
-                    "<tool_call id=\"7\">echo: x</tool_call>",
-                    " done",
-                ])),
+            ResponseTemplate::new(200).set_body_string(completions_sse(&[
+                "Let me check ",
+                "<tool_call id=\"7\">echo: x</tool_call>",
+                " done",
+            ])),
         )
         .mount(&server)
         .await;
@@ -275,7 +272,10 @@ async fn transient_http_errors_are_retryable() {
             err,
             hermes_core::provider::ProviderError::Http { status: s, .. } if s == status
         ));
-        assert!(err.is_retryable(), "{status} error must be retryable: {err}");
+        assert!(
+            err.is_retryable(),
+            "{status} error must be retryable: {err}"
+        );
     }
 }
 
@@ -286,7 +286,9 @@ async fn permanent_http_errors_are_not_retryable() {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/v1/chat/completions"))
-            .respond_with(ResponseTemplate::new(reqwest::StatusCode::from_u16(status).unwrap()))
+            .respond_with(ResponseTemplate::new(
+                reqwest::StatusCode::from_u16(status).unwrap(),
+            ))
             .mount(&server)
             .await;
         let provider = HttpProvider::new(
@@ -312,9 +314,7 @@ async fn transport_timeout_yields_a_retryable_timeout() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/v1/chat/completions"))
-        .respond_with(
-            ResponseTemplate::new(200).set_delay(std::time::Duration::from_millis(800)),
-        )
+        .respond_with(ResponseTemplate::new(200).set_delay(std::time::Duration::from_millis(800)))
         .mount(&server)
         .await;
     let client = reqwest::Client::builder()
@@ -344,9 +344,7 @@ struct FailOnceThenOk {
 }
 impl wiremock::Respond for FailOnceThenOk {
     fn respond(&self, _request: &wiremock::Request) -> ResponseTemplate {
-        let n = self
-            .count
-            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let n = self.count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         if n == 0 {
             ResponseTemplate::new(reqwest::StatusCode::from_u16(self.fail_status).unwrap())
                 .set_body_string("busy")
@@ -398,7 +396,10 @@ async fn retry_recovers_after_a_transient_503() {
         .into_iter()
         .map(Result::unwrap)
         .collect();
-    assert!(events.contains(&Event::Chunk("recovered".into())), "{events:?}");
+    assert!(
+        events.contains(&Event::Chunk("recovered".into())),
+        "{events:?}"
+    );
 
     let received = server.received_requests().await.unwrap();
     assert_eq!(received.len(), 2, "one retry after the 503");
@@ -430,7 +431,10 @@ async fn retry_exhausts_after_max_attempts_on_persistent_500() {
 
     let err = chat_error(&provider, "hi").await;
     assert!(
-        matches!(err, hermes_core::provider::ProviderError::Http { status: 500, .. }),
+        matches!(
+            err,
+            hermes_core::provider::ProviderError::Http { status: 500, .. }
+        ),
         "expected final Http 500, got {err}"
     );
 

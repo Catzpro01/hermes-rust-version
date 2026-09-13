@@ -24,22 +24,13 @@ pub enum TuiEvent {
         reflection_on: bool,
     },
     /// Advisory token accounting changed (estimate / configured limit).
-    TokenTick {
-        estimate: usize,
-        limit: Option<u64>,
-    },
+    TokenTick { estimate: usize, limit: Option<u64> },
     /// A chunk of assistant text streamed (pre-sanitized).
     Chunk(String),
     /// A tool call was issued (arguments pre-sanitized/redacted/trimmed).
-    ToolStarted {
-        name: String,
-        arguments: String,
-    },
+    ToolStarted { name: String, arguments: String },
     /// A tool call finished with the given status string.
-    ToolDone {
-        name: String,
-        status: String,
-    },
+    ToolDone { name: String, status: String },
     /// Iteration counter advanced within an agentic turn.
     Iteration(usize),
     /// The turn produced a final (tool-free) assistant answer.
@@ -110,16 +101,28 @@ mod tests {
         assert_eq!(a, b);
         assert_ne!(a, TuiEvent::Iteration(3));
         let _ = [
-            TuiEvent::StatusChanged { session_id: "s".into(), provider: "p".into() },
+            TuiEvent::StatusChanged {
+                session_id: "s".into(),
+                provider: "p".into(),
+            },
             TuiEvent::StatusMeta {
                 goal_status: "NotStarted".into(),
                 plan_active: false,
                 reflection_on: false,
             },
-            TuiEvent::TokenTick { estimate: 10, limit: Some(100) },
+            TuiEvent::TokenTick {
+                estimate: 10,
+                limit: Some(100),
+            },
             TuiEvent::Chunk("c".into()),
-            TuiEvent::ToolStarted { name: "t".into(), arguments: "".into() },
-            TuiEvent::ToolDone { name: "t".into(), status: "success".into() },
+            TuiEvent::ToolStarted {
+                name: "t".into(),
+                arguments: "".into(),
+            },
+            TuiEvent::ToolDone {
+                name: "t".into(),
+                status: "success".into(),
+            },
             TuiEvent::Iteration(1),
             TuiEvent::Done("d".into()),
             TuiEvent::Notice("n".into()),

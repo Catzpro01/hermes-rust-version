@@ -93,7 +93,12 @@ async fn two_providers_switch_mid_session_and_both_are_recorded() {
         .unwrap()
         .env(ALPHA_ENV, ALPHA_SECRET)
         .env(BETA_ENV, BETA_SECRET)
-        .args(["--provider", "alpha", "--hermes-home", home.path().to_str().unwrap()])
+        .args([
+            "--provider",
+            "alpha",
+            "--hermes-home",
+            home.path().to_str().unwrap(),
+        ])
         .write_stdin("first\n/provider beta\nsecond\n/exit\n")
         .output()
         .unwrap();
@@ -142,7 +147,10 @@ async fn two_providers_switch_mid_session_and_both_are_recorded() {
     let a_pos = joined.find("hello-from-alpha").unwrap();
     let b_pos = joined.find("hello-from-beta").unwrap();
     let second_pos = joined.find("user|second").unwrap();
-    assert!(a_pos < second_pos && second_pos < b_pos, "msgs={messages:?}");
+    assert!(
+        a_pos < second_pos && second_pos < b_pos,
+        "msgs={messages:?}"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
@@ -172,7 +180,12 @@ async fn switching_to_unavailable_provider_keeps_active_one_and_its_credential()
         .unwrap()
         .env(ALPHA_ENV, ALPHA_SECRET)
         .env_remove(BETA_ENV) // beta key deliberately missing
-        .args(["--provider", "alpha", "--hermes-home", home.path().to_str().unwrap()])
+        .args([
+            "--provider",
+            "alpha",
+            "--hermes-home",
+            home.path().to_str().unwrap(),
+        ])
         .write_stdin("/provider beta\nafter-rollback\n/exit\n")
         .output()
         .unwrap();

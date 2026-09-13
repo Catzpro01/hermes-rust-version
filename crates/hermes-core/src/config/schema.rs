@@ -358,7 +358,10 @@ mod tests {
             ..Default::default()
         };
         let fields: Vec<String> = sb.validate().into_iter().map(|(f, _)| f).collect();
-        assert_eq!(fields, vec!["network", "cpu_seconds", "env_allowlist", "env_allowlist"]);
+        assert_eq!(
+            fields,
+            vec!["network", "cpu_seconds", "env_allowlist", "env_allowlist"]
+        );
     }
 
     #[test]
@@ -404,13 +407,22 @@ mcp_servers:
     fn mcp_server_confirm_defaults_to_true() {
         // Programmatic default confirms; explicit false opts out.
         assert!(McpServerConfig::default().confirm);
-        assert!(!McpServerConfig { confirm: false, ..McpServerConfig::default() }.confirm);
+        assert!(
+            !McpServerConfig {
+                confirm: false,
+                ..McpServerConfig::default()
+            }
+            .confirm
+        );
     }
 
     #[test]
     fn debug_redacts_env_values_but_shows_keys_and_command() {
         let mut env = HashMap::new();
-        env.insert("GITHUB_PERSONAL_ACCESS_TOKEN".to_owned(), "super-secret".to_owned());
+        env.insert(
+            "GITHUB_PERSONAL_ACCESS_TOKEN".to_owned(),
+            "super-secret".to_owned(),
+        );
         env.insert("B".to_owned(), "other".to_owned());
         let c = McpServerConfig {
             command: "npx".into(),
@@ -420,9 +432,15 @@ mcp_servers:
         };
         let dbg = format!("{c:?}");
         assert!(dbg.contains("npx"), "command must be visible: {dbg}");
-        assert!(dbg.contains("GITHUB_PERSONAL_ACCESS_TOKEN"), "env key visible: {dbg}");
+        assert!(
+            dbg.contains("GITHUB_PERSONAL_ACCESS_TOKEN"),
+            "env key visible: {dbg}"
+        );
         assert!(dbg.contains("B"), "other env key visible: {dbg}");
-        assert!(!dbg.contains("super-secret"), "value must be redacted: {dbg}");
+        assert!(
+            !dbg.contains("super-secret"),
+            "value must be redacted: {dbg}"
+        );
         assert!(!dbg.contains("other"), "value must be redacted: {dbg}");
         assert!(dbg.contains("REDACTED"));
     }
@@ -430,8 +448,20 @@ mcp_servers:
     #[test]
     fn validation_reports_empty_command_per_server() {
         let mut c = HermesConfig::default();
-        c.mcp_servers.insert("ok".into(), McpServerConfig { command: "npx".into(), ..Default::default() });
-        c.mcp_servers.insert("bad".into(), McpServerConfig { command: "  ".into(), ..Default::default() });
+        c.mcp_servers.insert(
+            "ok".into(),
+            McpServerConfig {
+                command: "npx".into(),
+                ..Default::default()
+            },
+        );
+        c.mcp_servers.insert(
+            "bad".into(),
+            McpServerConfig {
+                command: "  ".into(),
+                ..Default::default()
+            },
+        );
         let problems = c.validate_mcp_servers();
         assert_eq!(problems.len(), 1);
         assert_eq!(problems[0].0, "bad");
@@ -443,9 +473,19 @@ mcp_servers:
         let mut c = HermesConfig::default();
         let mut env = HashMap::new();
         env.insert("K".to_owned(), "hidden".to_owned());
-        c.mcp_servers.insert("srv".into(), McpServerConfig { command: "run".into(), env, ..Default::default() });
+        c.mcp_servers.insert(
+            "srv".into(),
+            McpServerConfig {
+                command: "run".into(),
+                env,
+                ..Default::default()
+            },
+        );
         let dbg = format!("{c:?}");
-        assert!(!dbg.contains("hidden"), "server env value leaked in HermesConfig debug: {dbg}");
+        assert!(
+            !dbg.contains("hidden"),
+            "server env value leaked in HermesConfig debug: {dbg}"
+        );
         assert!(dbg.contains("REDACTED"));
     }
 }

@@ -1279,9 +1279,7 @@ fn skill_description(skill_md: &Path) -> String {
     for line in rest[..end].lines() {
         if let Some(value) = line.trim().strip_prefix("description:") {
             let value = value.trim();
-            return value
-                .trim_matches(|c| c == '"' || c == '\'')
-                .to_string();
+            return value.trim_matches(|c| c == '"' || c == '\'').to_string();
         }
     }
     String::new()
@@ -1398,7 +1396,10 @@ fn path_candidates(token: &str, user_home: &Path, cwd: &Path) -> Vec<Candidate> 
                 replacement.push('/');
             }
             let display = replacement.clone();
-            Candidate { replacement, display }
+            Candidate {
+                replacement,
+                display,
+            }
         })
         .collect()
 }
@@ -1583,10 +1584,7 @@ impl HermesCompleter {
             return (0, Vec::new());
         }
 
-        let first_word = upto[..word_start]
-            .split_whitespace()
-            .next()
-            .unwrap_or("");
+        let first_word = upto[..word_start].split_whitespace().next().unwrap_or("");
         if let Some(cmd_token) = first_word.strip_prefix('/') {
             if let Some(cmd) = self.command_by_token(cmd_token) {
                 if !cmd.subcommands.is_empty() {
@@ -1599,10 +1597,7 @@ impl HermesCompleter {
                 // Stacked skills (commands.py L1741): every completed token
                 // between the first word and the cursor must itself be a
                 // skill; then offer the remaining skills.
-                let middle: Vec<&str> = upto[..word_start]
-                    .split_whitespace()
-                    .skip(1)
-                    .collect();
+                let middle: Vec<&str> = upto[..word_start].split_whitespace().skip(1).collect();
                 if middle.iter().all(|t| self.is_skill_token(t)) {
                     let used: HashSet<String> = std::iter::once(cmd_token)
                         .chain(middle.iter().copied())
@@ -1616,7 +1611,10 @@ impl HermesCompleter {
             }
         }
         if is_path_token(token) {
-            return (word_start, path_candidates(token, &self.user_home, &self.cwd));
+            return (
+                word_start,
+                path_candidates(token, &self.user_home, &self.cwd),
+            );
         }
         (word_start, Vec::new())
     }
@@ -1672,12 +1670,7 @@ impl HermesCompleter {
 impl Hinter for HermesCompleter {
     type Hint = String;
 
-    fn hint(
-        &self,
-        line: &str,
-        pos: usize,
-        _ctx: &rustyline::Context<'_>,
-    ) -> Option<String> {
+    fn hint(&self, line: &str, pos: usize, _ctx: &rustyline::Context<'_>) -> Option<String> {
         self.ghost_suffix(line, pos)
     }
 }
@@ -1929,11 +1922,7 @@ mod tests {
             );
             assert_eq!(v.category, r.category, "category at {i} ({})", r.name);
             let aliases: Vec<&str> = v.aliases.iter().map(String::as_str).collect();
-            assert_eq!(
-                aliases, r.aliases,
-                "aliases at {i} ({})",
-                r.name
-            );
+            assert_eq!(aliases, r.aliases, "aliases at {i} ({})", r.name);
             assert_eq!(v.cli_only, r.cli_only, "cli_only at {i} ({})", r.name);
             assert_eq!(
                 v.gateway_only, r.gateway_only,
@@ -1942,7 +1931,8 @@ mod tests {
             );
             if let Some(h) = &v.args_hint {
                 assert_eq!(
-                    r.args_hint, Some(h.as_str()),
+                    r.args_hint,
+                    Some(h.as_str()),
                     "args_hint at {i} ({})",
                     r.name
                 );
@@ -1950,11 +1940,7 @@ mod tests {
             match &v.subcommands {
                 Some(s) => {
                     let subs: Vec<&str> = s.iter().map(String::as_str).collect();
-                    assert_eq!(
-                        subs, r.subcommands,
-                        "subcommands at {i} ({})",
-                        r.name
-                    );
+                    assert_eq!(subs, r.subcommands, "subcommands at {i} ({})", r.name);
                 }
                 None => {
                     assert!(
@@ -2037,9 +2023,18 @@ mod tests {
         assert!(ns.contains(&"/new "));
         assert!(ns.contains(&"/quit "));
         // ...gateway_only commands are not (they cannot run in the CLI).
-        assert!(!ns.iter().any(|n| matches!(*n, "/start" | "/start ")), "{ns:?}");
-        assert!(!ns.iter().any(|n| matches!(*n, "/pause" | "/pause ")), "{ns:?}");
-        assert!(!ns.iter().any(|n| matches!(*n, "/approve" | "/approve ")), "{ns:?}");
+        assert!(
+            !ns.iter().any(|n| matches!(*n, "/start" | "/start ")),
+            "{ns:?}"
+        );
+        assert!(
+            !ns.iter().any(|n| matches!(*n, "/pause" | "/pause ")),
+            "{ns:?}"
+        );
+        assert!(
+            !ns.iter().any(|n| matches!(*n, "/approve" | "/approve ")),
+            "{ns:?}"
+        );
         // extensions are offered.
         assert!(ns.contains(&"/sandbox "));
         assert!(ns.contains(&"/tool-calls "));
@@ -2098,8 +2093,10 @@ mod tests {
     fn discover_skills_reads_dir_and_frontmatter() {
         let (tmp, _) = skill_home();
         let skills = discover_skills(&tmp.path().join("skills"));
-        let got: Vec<(&str, &str)> =
-            skills.iter().map(|s| (s.name.as_str(), s.description.as_str())).collect();
+        let got: Vec<(&str, &str)> = skills
+            .iter()
+            .map(|s| (s.name.as_str(), s.description.as_str()))
+            .collect();
         assert_eq!(
             got,
             vec![

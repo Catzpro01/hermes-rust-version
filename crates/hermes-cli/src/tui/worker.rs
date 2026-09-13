@@ -26,8 +26,7 @@ use hermes_core::conversation::{AgentEvent, AgenticResult, ConversationRunner};
 use hermes_core::provider::{Provider, ProviderError};
 use hermes_core::session::{SessionId, SessionStore};
 use hermes_core::tools::{
-    Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, ToolRegistry,
-    WriteFileTool,
+    Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, ToolRegistry, WriteFileTool,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -134,7 +133,10 @@ fn build_runtime(
             }
         },
     };
-    let existing = store.resume(&session_id).map(|r| r.turns).unwrap_or_default();
+    let existing = store
+        .resume(&session_id)
+        .map(|r| r.turns)
+        .unwrap_or_default();
     let mut runner = ConversationRunner::from_turns(provider, existing);
     let ctx = resolve_context(config.as_ref(), &provider_name);
     runner.set_context_limit(ctx.limit);
@@ -268,7 +270,9 @@ async fn run_loop(
                 queue.push(TuiEvent::MaxIterations(*limit));
             }
             Ok(AgenticResult::Blocked { reason }) => {
-                queue.push(TuiEvent::Blocked(crate::output::sanitize_untrusted_output(reason)));
+                queue.push(TuiEvent::Blocked(crate::output::sanitize_untrusted_output(
+                    reason,
+                )));
             }
             Ok(AgenticResult::Cancelled) => {
                 queue.push(TuiEvent::Notice("interrupted".to_owned()));
@@ -277,7 +281,9 @@ async fn run_loop(
                 queue.push(TuiEvent::Notice("interrupted".to_owned()));
             }
             Err(e) => {
-                queue.push(TuiEvent::Notice(crate::output::sanitize_untrusted_output(&e.to_string())));
+                queue.push(TuiEvent::Notice(crate::output::sanitize_untrusted_output(
+                    &e.to_string(),
+                )));
             }
         }
         // Persist any turns the engine produced this turn.
@@ -311,7 +317,10 @@ mod tests {
         match started {
             TuiEvent::ToolStarted { name, arguments } => {
                 assert_eq!(name, "read_file");
-                assert!(!arguments.contains("abcdefghijklmno"), "secret leaked: {arguments}");
+                assert!(
+                    !arguments.contains("abcdefghijklmno"),
+                    "secret leaked: {arguments}"
+                );
             }
             other => panic!("expected ToolStarted, got {other:?}"),
         }
@@ -359,7 +368,10 @@ mod tests {
 
     #[test]
     fn maps_iteration_and_final() {
-        let it = agent_event_to_tui(AgentEvent::Iteration { current: 3, max: 10 });
+        let it = agent_event_to_tui(AgentEvent::Iteration {
+            current: 3,
+            max: 10,
+        });
         assert_eq!(it, TuiEvent::Iteration(3));
         // Final answer is carried by `Done` (not re-emitted as a streaming chunk).
         let done = agent_event_to_tui(AgentEvent::Done {

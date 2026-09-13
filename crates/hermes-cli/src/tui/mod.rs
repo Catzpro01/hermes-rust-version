@@ -21,15 +21,15 @@
 mod app;
 mod art;
 mod channel;
-pub(crate) mod event;
-mod layout;
-pub(crate) mod kawaii;
-pub(crate) mod theme;
-mod worker;
-pub mod tips;
-pub mod welcome;
 #[cfg(test)]
 mod e2e;
+pub(crate) mod event;
+pub(crate) mod kawaii;
+mod layout;
+pub(crate) mod theme;
+pub mod tips;
+pub mod welcome;
+mod worker;
 
 use std::io::{self, Write};
 use std::sync::Arc;
@@ -125,11 +125,16 @@ pub async fn run_tui(
 }
 
 /// Blocking renderer loop: raw mode, event draining, draw, keyboard handling.
-fn render_loop(queue: Arc<EventQueue>, cmd_tx: tokio::sync::mpsc::UnboundedSender<TuiCommand>) -> anyhow::Result<Exit> {
+fn render_loop(
+    queue: Arc<EventQueue>,
+    cmd_tx: tokio::sync::mpsc::UnboundedSender<TuiCommand>,
+) -> anyhow::Result<Exit> {
     let _guard = RawGuard::enter()?;
     let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))
         .with_context(|| "failed to initialise terminal")?;
-    terminal.clear().with_context(|| "failed to clear terminal")?;
+    terminal
+        .clear()
+        .with_context(|| "failed to clear terminal")?;
 
     let mut app = App::default();
     let mut interrupted = false;
@@ -167,5 +172,9 @@ fn render_loop(queue: Arc<EventQueue>, cmd_tx: tokio::sync::mpsc::UnboundedSende
         }
     }
 
-    Ok(if interrupted { Exit::Interrupted } else { Exit::Clean })
+    Ok(if interrupted {
+        Exit::Interrupted
+    } else {
+        Exit::Clean
+    })
 }

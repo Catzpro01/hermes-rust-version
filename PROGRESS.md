@@ -113,3 +113,26 @@ modification of Python Hermes is claimed.
   and validate part indices plus digest when retrieving the patch.
 - Next action remains checksum-verified patch application, then fresh CI.
   No merge or auto-merge has been performed.
+
+## 2026-09-14 — Verified Rust formatting patch applied
+
+- Checkpoint `815d6ad` pushed. Recovery run
+  [34776913905](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34776913905),
+  job `103776595076`, successfully ran `cargo fmt --all`, then
+  `cargo fmt --all -- --check`, and `cargo check --workspace --locked` on the
+  formatted workspace. The pre-format clippy/576 tests and five QA tests
+  also passed; the run correctly remained red for its original fmt failure.
+- Retrieved **all 26 parts**, decoded the gzip payload, and verified SHA-256:
+  `b13539d24b5567695c7178309d8ddb1582874ca0b19f1be42ad54ccc80af5874`.
+  Verified every patch path is a tracked Rust file under `crates/`, ran
+  `git apply --check`, reviewed representative diffs, and applied the patch.
+- Changes: mechanical rustfmt output in **52 Rust files** (2,816 changed
+  lines), including import ordering, wrapping, trailing commas, and newline
+  normalization. No manual runtime behavior change was introduced.
+- The local Rust diff is byte-identical to the patch that passed fmt/check
+  on the runner. This is remote pre-commit verification, not a local Rust
+  execution; the local toolchain/download blocker still exists.
+- `git diff --check` passed. Commit this formatting checkpoint with progress,
+  push, and verify a fresh CI run on the actual formatted commit before
+  claiming the gate is green. §J.7 visual sign-off remains separate.
+- No merge or auto-merge performed.

@@ -169,12 +169,18 @@ mod tests {
     #[test]
     fn missing_tools_array_is_protocol_error() {
         let result = json!({ "capabilities": {} });
-        assert!(matches!(McpServer::parse_tool_list("s", &result), Err(McpError::Protocol(_))));
+        assert!(matches!(
+            McpServer::parse_tool_list("s", &result),
+            Err(McpError::Protocol(_))
+        ));
     }
 
     #[test]
     fn tool_without_name_is_protocol_error() {
         let result = json!({ "tools": [ { "description": "nameless" } ] });
-        assert!(matches!(McpServer::parse_tool_list("s", &result), Err(McpError::Protocol(_))));
+        assert!(matches!(
+            McpServer::parse_tool_list("s", &result),
+            Err(McpError::Protocol(_))
+        ));
     }
 }

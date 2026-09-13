@@ -138,21 +138,33 @@ mod tests {
     #[test]
     fn success_is_on_plan() {
         assert_eq!(verdict(ToolExecutionStatus::Success, true), Verdict::OnPlan);
-        assert_eq!(verdict(ToolExecutionStatus::Success, false), Verdict::OnPlan);
+        assert_eq!(
+            verdict(ToolExecutionStatus::Success, false),
+            Verdict::OnPlan
+        );
     }
 
     #[test]
     fn denied_is_never_retried() {
         assert_eq!(verdict(ToolExecutionStatus::Denied, true), Verdict::Blocked);
-        assert_eq!(verdict(ToolExecutionStatus::Denied, false), Verdict::Blocked);
+        assert_eq!(
+            verdict(ToolExecutionStatus::Denied, false),
+            Verdict::Blocked
+        );
     }
 
     #[test]
     fn error_timeout_are_off_plan_only_with_retries_left() {
         assert_eq!(verdict(ToolExecutionStatus::Error, true), Verdict::OffPlan);
-        assert_eq!(verdict(ToolExecutionStatus::Timeout, true), Verdict::OffPlan);
+        assert_eq!(
+            verdict(ToolExecutionStatus::Timeout, true),
+            Verdict::OffPlan
+        );
         assert_eq!(verdict(ToolExecutionStatus::Error, false), Verdict::Blocked);
-        assert_eq!(verdict(ToolExecutionStatus::Timeout, false), Verdict::Blocked);
+        assert_eq!(
+            verdict(ToolExecutionStatus::Timeout, false),
+            Verdict::Blocked
+        );
     }
 
     #[test]
@@ -162,7 +174,11 @@ mod tests {
         g(&mut goal, "task");
         let v = apply_verdict(&mut t, ToolExecutionStatus::Denied, true, &mut goal);
         assert_eq!(v, Verdict::OnPlan, "disabled -> no verdict applied");
-        assert_eq!(goal.status(), GoalStatus::InProgress, "goal must not be blocked");
+        assert_eq!(
+            goal.status(),
+            GoalStatus::InProgress,
+            "goal must not be blocked"
+        );
         assert_eq!(t.reflections_used(), 0);
     }
 
@@ -185,14 +201,23 @@ mod tests {
         g(&mut goal, "task");
         // Each OffPlan with retries increments; goal stays in progress until the
         // anti-loop cap is crossed, then it becomes blocked.
-        assert_eq!(apply_verdict(&mut t, ToolExecutionStatus::Error, true, &mut goal), Verdict::OffPlan);
+        assert_eq!(
+            apply_verdict(&mut t, ToolExecutionStatus::Error, true, &mut goal),
+            Verdict::OffPlan
+        );
         assert_eq!(t.reflections_used(), 1);
         assert_eq!(goal.status(), GoalStatus::InProgress);
-        assert_eq!(apply_verdict(&mut t, ToolExecutionStatus::Timeout, true, &mut goal), Verdict::OffPlan);
+        assert_eq!(
+            apply_verdict(&mut t, ToolExecutionStatus::Timeout, true, &mut goal),
+            Verdict::OffPlan
+        );
         assert_eq!(t.reflections_used(), 2);
         assert_eq!(goal.status(), GoalStatus::InProgress);
         // Third reflection on the same step crosses MAX_REFLECTIONS(2) -> blocked.
-        assert_eq!(apply_verdict(&mut t, ToolExecutionStatus::Error, true, &mut goal), Verdict::Blocked);
+        assert_eq!(
+            apply_verdict(&mut t, ToolExecutionStatus::Error, true, &mut goal),
+            Verdict::Blocked
+        );
         assert_eq!(goal.status(), GoalStatus::Blocked);
     }
 
@@ -202,7 +227,10 @@ mod tests {
         t.set_enabled(true);
         let mut goal = GoalTracker::new();
         g(&mut goal, "task");
-        assert_eq!(apply_verdict(&mut t, ToolExecutionStatus::Error, false, &mut goal), Verdict::Blocked);
+        assert_eq!(
+            apply_verdict(&mut t, ToolExecutionStatus::Error, false, &mut goal),
+            Verdict::Blocked
+        );
         assert_eq!(goal.status(), GoalStatus::Blocked);
     }
 }

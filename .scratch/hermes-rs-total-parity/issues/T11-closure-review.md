@@ -13,7 +13,8 @@
 
 **Belum layak sign-off closure.** Implementasi yang sudah selesai tidak
 dibatalkan, tetapi klaim bukti perlu dibatasi. Review ini memperbaiki CI
-serta dokumen; tidak mengubah perilaku runtime Rust atau mengerjakan
+serta dokumen, lalu menerapkan formatting mekanis Rust dari runner; tidak
+mengubah perilaku runtime Rust secara manual atau mengerjakan
 fitur lanjutan T10. Tidak ada persetujuan Matt/human yang diasumsikan.
 
 ## Temuan dan tindakan
@@ -33,9 +34,10 @@ Perbaikan:
 - Anotasi diagnostik melaporkan `fmt` dan pesan bila log format tidak ada.
 - Tes regresi: `scripts/test_ci_workflow.py` (PyYAML, hanya dependensi QA).
 
-**Masih perlu:** run Rust/CI dengan gate baru. Perubahan gate tidak berarti
-format sumber Rust saat ini sudah bersih; bila drift terungkap, format dan
-verifikasi perubahan tersebut sebelum sign-off.
+**Pembaruan:** gate baru memang menemukan drift di 52 file Rust.
+Formatting telah diterapkan dari patch runner yang lolos fmt/check,
+dengan checksum dan byte-diff diverifikasi lokal (rincian di `PROGRESS.md`).
+Run CI pada commit hasil formatting masih diperlukan sebelum sign-off.
 
 ### P2 — Penggantian bukti §J.7 belum punya persetujuan (tetap terbuka)
 

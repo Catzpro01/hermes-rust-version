@@ -44,7 +44,10 @@ impl Default for RetryPolicy {
 fn backoff_delay(policy: &RetryPolicy, failed_attempt: u32) -> Duration {
     let exponent = (failed_attempt.saturating_sub(1)).min(20);
     // Compute in u128 to avoid overflow from the shift, then cap and narrow.
-    let raw_millis = policy.base_delay.as_millis().saturating_mul(1u128 << exponent);
+    let raw_millis = policy
+        .base_delay
+        .as_millis()
+        .saturating_mul(1u128 << exponent);
     let capped = raw_millis.min(policy.max_delay.as_millis());
     Duration::from_millis(u64::try_from(capped).unwrap_or(u64::MAX))
 }
@@ -284,10 +287,7 @@ fn build_chat_messages<'a>(turns: &'a [Turn], instruction: Option<&'a str>) -> V
 
 /// Renders the completions `prompt`, optionally prefixed with an ephemeral
 /// instruction header (there is no per-message role in this mode).
-fn render_completions_prompt_with_instruction(
-    turns: &[Turn],
-    instruction: Option<&str>,
-) -> String {
+fn render_completions_prompt_with_instruction(turns: &[Turn], instruction: Option<&str>) -> String {
     let transcript = render_completions_prompt(turns);
     match instruction {
         Some(instr) => format!("[Instruction] {instr}\n\n{transcript}"),

@@ -29,7 +29,8 @@ use hermes_core::session::{SessionId, SessionStore};
 use crate::output::sanitize_untrusted_output;
 
 /// Hint line while no filter text is typed (spec §F, verbatim).
-pub const HINT_BROWSE: &str = "  Browse sessions — ↑↓ navigate  Enter select  Type to filter  Esc quit";
+pub const HINT_BROWSE: &str =
+    "  Browse sessions — ↑↓ navigate  Enter select  Type to filter  Esc quit";
 /// Empty store, no filter (spec §F, verbatim — no leading spaces).
 pub const NO_SESSIONS: &str = "No sessions found.";
 /// Filter matches nothing (spec §F, verbatim — two leading spaces).
@@ -175,7 +176,9 @@ pub fn collect_rows(store: &SessionStore) -> anyhow::Result<Vec<SessionRow>> {
             })
             .or_else(|| {
                 session.turns.iter().find_map(|t| match t {
-                    hermes_core::conversation::Turn::Assistant { content } => Some(content.as_str()),
+                    hermes_core::conversation::Turn::Assistant { content } => {
+                        Some(content.as_str())
+                    }
                     _ => None,
                 })
             })
@@ -183,7 +186,11 @@ pub fn collect_rows(store: &SessionStore) -> anyhow::Result<Vec<SessionRow>> {
         // Single-line: any whitespace run (incl. newlines) becomes one space.
         let flat: String = name.split_whitespace().collect::<Vec<_>>().join(" ");
         let name = sanitize_untrusted_output(&flat);
-        let name = if name.trim().is_empty() { "(empty)".to_owned() } else { name };
+        let name = if name.trim().is_empty() {
+            "(empty)".to_owned()
+        } else {
+            name
+        };
         let last = store
             .list_messages(&id)?
             .iter()
@@ -193,7 +200,11 @@ pub fn collect_rows(store: &SessionStore) -> anyhow::Result<Vec<SessionRow>> {
         rows.push(SessionRow {
             id,
             name,
-            status: if session.turns.is_empty() { "empty" } else { "done" },
+            status: if session.turns.is_empty() {
+                "empty"
+            } else {
+                "done"
+            },
             msgs: session.turns.len(),
             last_active: relative_active(now, last),
             source: sanitize_untrusted_output(&session.source),
@@ -226,7 +237,8 @@ pub fn apply_filter(rows: &[SessionRow], query: &str) -> Vec<usize> {
 struct ScreenGuard;
 impl ScreenGuard {
     fn enter() -> anyhow::Result<Self> {
-        crossterm::terminal::enable_raw_mode().context("enter raw mode (interactive terminal required)")?;
+        crossterm::terminal::enable_raw_mode()
+            .context("enter raw mode (interactive terminal required)")?;
         {
             let mut out = std::io::stdout();
             crossterm::execute!(out, crossterm::terminal::EnterAlternateScreen)
@@ -275,10 +287,22 @@ pub fn frame_lines(
     if shown.is_empty() {
         lines.push(NO_MATCH.to_owned());
     } else {
-        let start = if cursor >= max_rows { cursor + 1 - max_rows } else { 0 };
+        let start = if cursor >= max_rows {
+            cursor + 1 - max_rows
+        } else {
+            0
+        };
         for &i in shown.iter().skip(start).take(max_rows) {
             let r = &rows[i];
-            lines.push(format_row(&r.name, r.status, r.msgs, &r.last_active, &r.source, &r.sid, name_width));
+            lines.push(format_row(
+                &r.name,
+                r.status,
+                r.msgs,
+                &r.last_active,
+                &r.source,
+                &r.sid,
+                name_width,
+            ));
         }
     }
     let cursor_one_based = if shown.is_empty() { 0 } else { cursor + 1 };
@@ -308,7 +332,15 @@ pub fn browse_numbered<R: BufRead, W: Write>(
     // the columns stay aligned with the numbered rows.
     writeln!(output, "       {}", column_header(nw).trim_start())?;
     for (n, r) in rows.iter().enumerate() {
-        let body = format_row(&r.name, r.status, r.msgs, &r.last_active, &r.source, &r.sid, nw);
+        let body = format_row(
+            &r.name,
+            r.status,
+            r.msgs,
+            &r.last_active,
+            &r.source,
+            &r.sid,
+            nw,
+        );
         writeln!(output, "  [{:>2}] {}", n + 1, body.trim_start())?;
     }
     loop {
@@ -369,7 +401,11 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
             let mut out = std::io::stdout();
             execute!(out, cursor::MoveTo(0, 0), terminal::Clear(ClearType::All))?;
             let frame = frame_lines(&rows, &shown, cursor_idx, &filter, nw, max_rows);
-            let start = if cursor_idx >= max_rows { cursor_idx + 1 - max_rows } else { 0 };
+            let start = if cursor_idx >= max_rows {
+                cursor_idx + 1 - max_rows
+            } else {
+                0
+            };
             for (n, line) in frame.iter().enumerate() {
                 // Row lines sit between header (1) and footer (last); the
                 // cursor row gets reverse video.
@@ -379,7 +415,12 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                     && n < frame.len() - 1;
                 if is_cursor_row {
                     use crossterm::style::{Attribute, Print, SetAttribute};
-                    execute!(out, SetAttribute(Attribute::Reverse), Print(line), SetAttribute(Attribute::Reset))?;
+                    execute!(
+                        out,
+                        SetAttribute(Attribute::Reverse),
+                        Print(line),
+                        SetAttribute(Attribute::Reset)
+                    )?;
                 } else {
                     use crossterm::style::Print;
                     execute!(out, Print(line))?;
@@ -419,9 +460,7 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                         filter.pop();
                         cursor_idx = 0;
                     }
-                    KeyCode::Char('d')
-                        if filter.is_empty() && !shown.is_empty() =>
-                    {
+                    KeyCode::Char('d') if filter.is_empty() && !shown.is_empty() => {
                         let target = &rows[shown[cursor_idx]];
                         // Inline confirm on the bottom row; one raw keystroke.
                         let mut out = std::io::stdout();
@@ -462,7 +501,8 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                     KeyCode::Char(c)
                         if !key.modifiers.contains(KeyModifiers::CONTROL)
                             && !key.modifiers.contains(KeyModifiers::ALT)
-                            && c != '\n' && c != '\r' =>
+                            && c != '\n'
+                            && c != '\r' =>
                     {
                         filter.push(c);
                         cursor_idx = 0;
@@ -512,7 +552,10 @@ mod tests {
 
     #[test]
     fn hint_header_row_footer_are_verbatim_shapes() {
-        assert_eq!(HINT_BROWSE, "  Browse sessions — ↑↓ navigate  Enter select  Type to filter  Esc quit");
+        assert_eq!(
+            HINT_BROWSE,
+            "  Browse sessions — ↑↓ navigate  Enter select  Type to filter  Esc quit"
+        );
         assert_eq!(hint_filter("dep"), "  Browse sessions — filter: dep█");
         assert_eq!(
             column_header(20),
@@ -523,17 +566,31 @@ mod tests {
             "  deploy                done      12  2h ago      cli   550e8400"
         );
         assert_eq!(footer(1, 2, 2), "  1/2 sessions   d delete");
-        assert_eq!(footer(1, 1, 2), "  1/1 sessions (filtered from 2)   d delete");
+        assert_eq!(
+            footer(1, 1, 2),
+            "  1/1 sessions (filtered from 2)   d delete"
+        );
         assert_eq!(delete_prompt("deploy"), "  Delete session 'deploy'? [y/N]");
         assert_eq!(NO_SESSIONS, "No sessions found.");
         assert_eq!(NO_MATCH, "  No sessions match the filter.");
         assert_eq!(TOO_SMALL, "Terminal too small");
-        assert_eq!(FALLBACK_HEADER, "\n  Browse sessions  (enter number to resume, q to cancel)\n");
+        assert_eq!(
+            FALLBACK_HEADER,
+            "\n  Browse sessions  (enter number to resume, q to cancel)\n"
+        );
     }
 
     #[test]
     fn row_truncates_long_names_to_the_column() {
-        let row = format_row("abcdefghijklmnopqrstuvwxyz", "done", 1, "now", "cli", "abcdef01", 10);
+        let row = format_row(
+            "abcdefghijklmnopqrstuvwxyz",
+            "done",
+            1,
+            "now",
+            "cli",
+            "abcdef01",
+            10,
+        );
         assert!(row.contains("abcdefghij"), "{row}");
         assert!(!row.contains("klmnop"), "{row}");
     }
@@ -588,7 +645,10 @@ mod tests {
         let frame = frame_lines(&rows, &shown, 0, "zzz", 20, 10);
         assert_eq!(frame[0], "  Browse sessions — filter: zzz█");
         assert!(frame.contains(&NO_MATCH.to_owned()), "{frame:?}");
-        assert_eq!(*frame.last().unwrap(), "  0/0 sessions (filtered from 2)   d delete");
+        assert_eq!(
+            *frame.last().unwrap(),
+            "  0/0 sessions (filtered from 2)   d delete"
+        );
     }
 
     fn temp_store() -> (tempfile::TempDir, SessionStore) {
@@ -611,7 +671,10 @@ mod tests {
             .unwrap();
         let rows = collect_rows(&store).unwrap();
         assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0].name, "line one line two red", "newlines folded, ANSI stripped");
+        assert_eq!(
+            rows[0].name, "line one line two red",
+            "newlines folded, ANSI stripped"
+        );
         assert_eq!(rows[0].status, "done");
         assert_eq!(rows[0].msgs, 1);
         assert_eq!(rows[0].sid.len(), 8);
@@ -639,14 +702,21 @@ mod tests {
         let outcome = browse_numbered(&store, std::io::Cursor::new(b"1\n"), &mut out, 80).unwrap();
         assert_eq!(outcome, BrowseOutcome::Selected(store.list().unwrap()[0]));
         let text = String::from_utf8(out).unwrap();
-        assert!(text.contains("  Browse sessions  (enter number to resume, q to cancel)"), "{text}");
+        assert!(
+            text.contains("  Browse sessions  (enter number to resume, q to cancel)"),
+            "{text}"
+        );
         assert!(text.contains("Title / Preview"), "{text}");
-        assert!(text.contains('1') && text.contains(&a.to_string()[..8]), "{text}");
+        assert!(
+            text.contains('1') && text.contains(&a.to_string()[..8]),
+            "{text}"
+        );
 
         for quit in ["q\n", "Q\n", "\n", ""] {
             let mut out = Vec::new();
             let outcome =
-                browse_numbered(&store, std::io::Cursor::new(quit.as_bytes()), &mut out, 80).unwrap();
+                browse_numbered(&store, std::io::Cursor::new(quit.as_bytes()), &mut out, 80)
+                    .unwrap();
             assert_eq!(outcome, BrowseOutcome::Cancelled, "quit={quit:?}");
         }
         let mut out = Vec::new();
@@ -654,7 +724,12 @@ mod tests {
             browse_numbered(&store, std::io::Cursor::new(b"99\nxx\n2\n"), &mut out, 80).unwrap();
         assert_eq!(outcome, BrowseOutcome::Selected(a));
         let text = String::from_utf8(out).unwrap();
-        assert_eq!(text.matches("invalid selection (enter a number or q)").count(), 2, "{text}");
+        assert_eq!(
+            text.matches("invalid selection (enter a number or q)")
+                .count(),
+            2,
+            "{text}"
+        );
     }
 
     #[test]
