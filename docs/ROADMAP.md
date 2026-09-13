@@ -364,8 +364,8 @@ selected terminal strings and behavior, not full §J.7 side-by-side
 captures). The 2026-09-14 review confirmed the 576-test total from GitHub
 check annotations; the old CI masked rustfmt failures with `|| true`, so
 a green run alone does not prove formatting passed. §J.7 evidence or
-explicit approval of an alternative, and a run with the corrected format
-gate, remain closure requirements. See the
+explicit approval of an alternative remains a closure requirement. The
+corrected format gate subsequently passed on `3e0e8d9` (see Verification). See the
 [closure review](../.scratch/hermes-rs-total-parity/issues/T11-closure-review.md).
 Recorded invariants:
 Python install untouched, `state.db` canonical, SIGINT exit 130,
@@ -396,6 +396,17 @@ were rechecked through job `103764353101` annotations on 2026-09-14; this
 is historical evidence, not a new local run. CI runs on every push to `main`
 and `arena/**` and on pull requests; diagnostics are published as check-run
 annotations.
+
+Latest review verification (2026-09-14, source checkpoint `3e0e8d9`):
+[CI run 34776992554](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34776992554)
+**passed**. Rust job `103776809106` reports `fmt=success clippy=success
+test=success`, **576 tests passed**, with the corrected hard format gate.
+The separate workflow regression job passed **5 tests**. The formatting
+patch had already passed `cargo fmt --all`, a format check, and
+`cargo check --workspace --locked` on the GitHub runner before being applied
+locally with byte-for-byte/checksum verification. No local Rust execution
+is claimed (toolchain downloads are blocked). Spec 017 visual §J.7 and
+human closure sign-off remain open; see T11 and `PROGRESS.md`.
 
 ## Invariants
 

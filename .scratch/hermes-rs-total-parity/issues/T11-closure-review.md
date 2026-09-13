@@ -1,7 +1,7 @@
 # T11 — Review closure Spec 017 dan gate CI
 
 - Tanggal: 2026-09-14
-- Status: IN REVIEW — perbaikan lokal tersedia; closure belum disetujui
+- Status: IN REVIEW — perbaikan di GitHub, CI hijau; bukti §J.7/sign-off terbuka
 - Label: `ready-for-human`
 - Owner: Arena agent (review/perbaikan); human reviewer (keputusan §J.7)
 - Bergantung pada: T10, akses toolchain Rust untuk verifikasi, bukti §J.7
@@ -37,7 +37,10 @@ Perbaikan:
 **Pembaruan:** gate baru memang menemukan drift di 52 file Rust.
 Formatting telah diterapkan dari patch runner yang lolos fmt/check,
 dengan checksum dan byte-diff diverifikasi lokal (rincian di `PROGRESS.md`).
-Run CI pada commit hasil formatting masih diperlukan sebelum sign-off.
+CI pada commit hasil formatting `3e0e8d9` sudah **SUCCESS**:
+[run 34776992554](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34776992554),
+`fmt=success clippy=success test=success`, 576 tes Rust + 5 tes QA lulus.
+Verifikasi ini remote, bukan eksekusi Rust lokal.
 
 ### P2 — Penggantian bukti §J.7 belum punya persetujuan (tetap terbuka)
 
@@ -124,8 +127,9 @@ historis tidak dinyatakan bersih karena workflow lama menelan kegagalannya.
 - [x] Hilangkan format failure yang tersembunyi dan uji gate lokal.
 - [x] Koreksi klaim dokumen dengan referensi kode/bukti yang tersedia.
 - [x] Pisahkan verifikasi historis dari verifikasi lokal.
-- [ ] Jalankan fmt/check/clippy/test workspace dengan Rust stable; tangani
-  kegagalan yang ditemukan, lalu dapatkan hasil gate CI baru.
+- [x] Jalankan fmt/check/clippy/test workspace dengan Rust stable; tangani
+  kegagalan yang ditemukan, lalu dapatkan hasil gate CI baru (runner fmt/check
+  sebelum commit; run `34776992554` pada commit formatting sukses).
 - [ ] Lengkapi §J.7 atau dapatkan persetujuan eksplisit atas bukti alternatif.
 - [ ] Human review/sign-off closure T10.
 - [ ] Merge hanya jika diperintahkan user; bukan tindakan otomatis tiket ini.

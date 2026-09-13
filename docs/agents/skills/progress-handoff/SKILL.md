@@ -59,3 +59,23 @@ merge permission.
 - Decisions that must remain unchanged (especially permission boundaries).
 - Exact evidence and known blockers; unfinished work must remain open.
 - Next safe command/action, without requiring access to prior chat.
+
+## Remote-formatting fallback learned during T11
+
+When official toolchain downloads are blocked locally, the CI recovery step
+can run formatting and `cargo check` on the GitHub runner, then export
+`scripts/export_format_patch.py` output. This is not a local build and does
+not make the original failed format check pass.
+
+- Prefer the `fmt.patch` artifact; if signed downloads fail, retrieve the
+  `rustfmt patch N/total` check annotations. Some API proxies cap messages
+  at 4,096 characters; exported parts use 3,000 characters. Actions limits
+  notices per step, so groups of eight are emitted in separate steps.
+- Verify the tested commit, successful recovery/check step, complete part
+  indices, gzip integrity, SHA-256 digest, and allowed Rust paths. Run
+  `git apply --check` before applying; reject truncated/partial data.
+- Compare the applied diff byte-for-byte with the runner patch before a
+  formatting commit. Record remote pre-commit checks honestly, then run CI
+  on the actual new commit. Never disable fmt to conceal existing drift.
+- `gh` in some sandboxes lacks `--slurp`; use supported pagination/JSON
+  handling rather than assuming a particular CLI version.

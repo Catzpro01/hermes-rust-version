@@ -136,3 +136,34 @@ modification of Python Hermes is claimed.
   push, and verify a fresh CI run on the actual formatted commit before
   claiming the gate is green. §J.7 visual sign-off remains separate.
 - No merge or auto-merge performed.
+
+## 2026-09-14 — Formatting checkpoint CI green; handoff ready
+
+- Formatting commit `3e0e8d9` was pushed successfully. CI run
+  [34776992554](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34776992554)
+  tested exact SHA `3e0e8d978e9b6047102ef8d6225907cf25e33637` and is **SUCCESS**.
+- Rust job `103776809106` annotations explicitly report
+  **`fmt=success clippy=success test=success`**; all **576 Rust tests passed**.
+  The corrective export steps were skipped because formatting now passes.
+- Workflow-regression job `103776809256` also passed (**5 tests**, including
+  125 gate-status tuples, real versus expected error diagnostics, multi-part
+  patch integrity, and annotation size/quota bounds).
+- No failure annotations remain. There is a pre-existing non-blocking
+  GitHub action Node.js 20 deprecation warning; this is not a Rust/clippy error.
+- Pre-commit `cargo fmt --all` and `cargo check --workspace --locked` were
+  performed on the runner-generated source before applying its byte-identical
+  verified patch. Local Rust remains unavailable; do not claim a local build.
+- This follow-up updates only progress, memory, skill handoff, and closure
+  evidence, then commits/pushes them. The exact final commit/push/check status
+  is reported to the user after it exists, rather than predicted here.
+
+### Next agent
+
+Read `AGENTS.md` → `CONTEXT.md` → `MEMORY.md` → this entry → the
+`progress-handoff` skill and T11. CI/error repair is verified on the source
+checkpoint above. **Remaining closure work is §J.7 visual evidence or an
+explicitly approved alternative, followed by human sign-off.** Do not mark
+that requirement complete based solely on green CI. Use the assigned branch
+of your own session; never switch to another branch based on an old handoff.
+Always commit/push progress. **No merge or auto-merge has been authorized or
+performed.** The Python installation was not modified.

@@ -30,6 +30,12 @@ user's private Python installation.
   progress on GitHub. No new Spec 018 implementation is authorized by this work.
 - Ticket: `.scratch/hermes-rs-total-parity/issues/T11-closure-review.md`.
 - Evidence and chronological updates: `PROGRESS.md`.
+- Verified source checkpoint `3e0e8d9`: CI run `34776992554` succeeded with
+  fmt/clippy success, 576 Rust tests, and five CI regression tests. Formatting
+  and false error annotations are fixed. Later documentation checkpoints
+  must still report their own check status rather than inheriting green.
+- Remaining closure work: §J.7 visual evidence/explicit alternative approval
+  and human sign-off. See T11; code CI success does not close visual parity.
 - Spec 017 implementation and closure sign-off are different: §J.7 still
   needs the complete visual evidence set or explicit approval of an
   alternative. Do not invent reviewer approval.
