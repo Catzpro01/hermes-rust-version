@@ -197,7 +197,7 @@ impl SandboxPolicy {
 
     /// The variables that will reach the child, resolved against `parent`
     /// (sorted for deterministic display/tests). Pure.
-    pub fn resolve_env<'a>(
+    pub fn resolve_env(
         &self,
         parent: impl IntoIterator<Item = (String, String)>,
     ) -> BTreeMap<String, String> {
@@ -206,7 +206,7 @@ impl SandboxPolicy {
             return env; // inherit path: `Command` keeps the parent env itself
         }
         for (k, v) in parent {
-            if self.env_allowlist.iter().any(|a| *a == k) {
+            if self.env_allowlist.contains(&k) {
                 env.insert(k, v);
             }
         }

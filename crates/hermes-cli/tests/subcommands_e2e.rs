@@ -207,7 +207,12 @@ fn info_first_line_matches_live_repl_info_on_a_fresh_session() {
         .write_stdin("/info\n/exit\n")
         .output()
         .unwrap();
-    assert!(repl.status.success());
+    assert!(
+        repl.status.success(),
+        "repl failed: stderr={} stdout={}",
+        String::from_utf8_lossy(&repl.stderr),
+        String::from_utf8_lossy(&repl.stdout)
+    );
     let repl_stdout = String::from_utf8_lossy(&repl.stdout);
     let repl_line = repl_stdout
         .lines()
