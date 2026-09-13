@@ -13,7 +13,7 @@ autocomplete /slash, tips, session picker. Sumber ground truth:
 | T01 | [inquire + wizard skeleton](issues/01-wizard-skeleton.md) | DONE — APPROVED Matt (fa69b80) |
 | T02 | Banner v0.21.0 | APPROVED (per /ask-matt) — banner byte-identik dgn Python v0.21.0 (9 referensi) |
 | T03 | Info line | IN REVIEW — `issues/03-info-line.md`; post-banner hanya `WELCOME` (spec §B/§E koreksi) |
-| T04 | Tips rotating | Not started |
+| T04 | Tips rotating | IN REVIEW — `issues/04-tips.md`; katalog 380+11 verbatim + selector, display menunggu Matt (§J.4) |
 | T05 | Setup wizard multi-step (`hermes setup`) | Not started |
 | T06 | Provider catalog (39 provider) | Not started |
 | T07 | Toolsets catalog (26 toolset) | Not started |
