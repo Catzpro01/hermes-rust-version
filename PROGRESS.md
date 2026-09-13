@@ -486,3 +486,20 @@ performed.** The Python installation was not modified.
   Explained that repository action policy / GITHUB_TOKEN defaults do not
   confer dispatch authority on the Arena integration. No dispatch retried,
   access change, Rust edit, capture, or merge performed this turn.
+
+## 2026-09-14: Observed full-SHA policy failure and migrated both workflows
+
+- Post-push inspection found CI 34780902412 on ec78897 failed both jobs during
+  setup. Read both check annotations: all referenced actions were rejected
+  because full-length commit SHA pinning is already required. No Rust tests
+  ran in that CI. This is a new, separate blocker from API dispatch permission.
+- Resolved the five existing action tags through their upstream GitHub commit
+  endpoints and pinned all nine uses across ci.yml and visual-evidence.yml.
+  Kept the original tags as comments; did not disable the security requirement
+  or change GITHUB_TOKEN permissions. No Rust source changed.
+- Revised settings guidance: retain full-SHA enforcement and allow the five
+  repositories with @* patterns (the separate SHA rule still constrains refs).
+  Retention/approval/read-only/PR recommendations remain unchanged. The earlier
+  advice to postpone enforcement is superseded now that migration is done.
+- Verify local workflow parsing, full-SHA coverage, and existing QA tests,
+  then push and inspect the actual new CI. No dispatch restoration or merge.

@@ -64,6 +64,12 @@ user's private Python installation.
   It is a session deliverable, intentionally not a permanent tracked installer.
   Wait for the user's actual reconnect confirmation, then probe from Arena;
   local-user gh success does not prove this session's integration access.
+- User's Actions-settings question exposed a separate CI configuration issue:
+  run 34780902412 on ec78897 failed setup because full-SHA pinning is required.
+  Migrated both workflows' nine uses to verified full upstream commit SHAs;
+  keep Require full-length SHA enabled and allow the five action repositories
+  listed in docs/agents/github-actions-access.md. This is NOT restoration of
+  Arena's manual dispatch permission. Verify the new commit CI independently.
 - Fresh official toolkit download verified on 2026-09-14: upstream main still
   `3cca18b368ae95cdbdebbff572ccafa662551015`, all 164 files/37 links match.
   Latest is the already-installed version, not a new release. Verification

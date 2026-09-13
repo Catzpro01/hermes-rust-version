@@ -105,16 +105,18 @@ aktif. Rekomendasi berikut belum diterapkan oleh agent:
   workflows**, lalu izinkan lima referensi yang benar-benar dipakai:
 
   ```text
-  actions/checkout@v4,
-  actions/setup-python@v5,
-  actions/upload-artifact@v4,
-  dtolnay/rust-toolchain@stable,
-  Swatinem/rust-cache@v2
+  actions/checkout@*,
+  actions/setup-python@*,
+  actions/upload-artifact@*,
+  dtolnay/rust-toolchain@*,
+  Swatinem/rust-cache@*
   ```
 
-- Jangan aktifkan **Require actions to be pinned to a full-length commit SHA**
-  sebelum semua `uses:` dimigrasikan dari tag ke SHA penuh. Konfigurasi saat
-  ini menggunakan tag, jadi mengaktifkan aturan tanpa migrasi dapat memblokir CI.
+- Aktifkan **Require actions to be pinned to a full-length commit SHA**.
+  Semua `uses:` pada kedua workflow telah dimigrasikan ke SHA penuh yang
+  diverifikasi melalui API upstream. Tag asal dicatat sebagai komentar.
+  Pola `@*` pada allowlist mengizinkan ref dari lima repository itu; aturan
+  full-SHA tetap membatasi workflow agar tidak memakai tag mutable.
 - Retensi artifact/log: **90 hari** untuk investigasi ini. Bukti terpilih juga
   sudah disimpan dalam Git; retensi artifact bukan pengganti paket bukti.
 - Fork PR: **Require approval for all external contributors**.
@@ -125,3 +127,13 @@ Pilihan ini membatasi action yang boleh dipakai dan izin `GITHUB_TOKEN` di
 job. Itu **bukan** izin pemanggil API dari Arena dan tidak menjamin pemulihan
 403 dispatch. Untuk itu koneksi/integrasi tetap memerlukan otorisasi Actions
 write yang sesuai. Jangan memilih izin workflow luas sebagai pengganti.
+
+## Koreksi CI akibat aturan full-SHA yang sudah aktif
+
+Setelah inspeksi awal, run `34780902412` pada `ec78897` ditemukan gagal saat
+**Set up job**, bukan saat tes Rust. Annotation kedua job secara eksplisit
+menyebut seluruh action harus dipin ke full-length commit SHA. Karena itu,
+rekomendasi awal untuk menunda checkbox tersebut digantikan dengan migrasi
+workflow, bukan mematikan aturan. Lima tag diresolusikan lewat API repository
+upstream pada 2026-09-14; seluruh sembilan `uses:` sekarang berupa SHA 40 digit.
+CI baru tetap perlu diperiksa; ini tidak memperbaiki otorisasi dispatch Arena.
