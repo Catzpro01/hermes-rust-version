@@ -742,3 +742,15 @@ performed.** The Python installation was not modified.
   cwd/session and width-80 cropped ellipsis stay dim; primary model/tool names
   do not. Python cropped session ellipsis also retains session foreground.
   No dim implementation changes until observed RED. Review/capture remain pending.
+
+## 2026-09-14: Secondary dim RED; preserve secondary and cropped-span styles
+
+- RED 34784445723 / b4e0ee7 passed fmt/check and observed the exact dim test fail.
+  Test export verified: 2933 bytes, SHA-256
+  a0bb5fd7912037ea8ab3a97ae211ff14074716da78ef8e44e308470fa36f7df1.
+- GREEN proposal adds DIM only to welcome banner secondary runs/session, not
+  the shared theme or unrelated UI. Cropped ellipsis inherits the span at its
+  original position; Python's recorded width-80 session ellipsis has session
+  RGB (139,134,130) plus dim, not the previous unstyled default.
+- Primary names remain non-dim; the earlier SGR reset prevents modifier leakage.
+  Tool punctuation/truncation marker colors remain a separate next slice.
