@@ -32,11 +32,11 @@ masuk REPL chat**. Sumber data sudah ada dan siap dipakai:
 | 01 | [Subcommand parser foundation](issues/01-subcommand-parser-foundation.md) | DONE (commit ini, review Matt pending) |
 | 02 | [hermes model](issues/02-model-subcommand.md) | DONE (commit ini, review Matt pending) |
 | 03 | [hermes sessions + inspect <id>](issues/03-sessions-inspect.md) | DONE (commit ini, review Matt pending) |
-| 04 | `hermes messages <id>` + `tool-calls <id>` | Not started |
-| 05 | `hermes search <query>` | Not started |
-| 06 | `hermes info` + `hermes mcp` | Not started |
-| 07 | `--version` + `--help` parity | Not started |
-| 08 | Parity, docs & closure | Not started |
+| 04 | [`hermes messages <id>` + `tool-calls <id>`](issues/04-messages-tool-calls.md) | DONE (review Matt pending) |
+| 05 | [`hermes search <query>`](issues/05-search.md) | DONE (review Matt pending) |
+| 06 | [`hermes info` + `hermes mcp`](issues/06-info-mcp.md) | DONE (review Matt pending) |
+| 07 | [`--version` + `--help` parity](issues/07-version-help.md) | DONE (review Matt pending) |
+| 08 | [Parity, docs & closure](issues/08-parity-docs-closure.md) | DONE (review Matt pending) |
 
 ## Invariant yang tetap berlaku
 

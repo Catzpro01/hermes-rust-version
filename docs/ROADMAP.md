@@ -19,7 +19,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 5 — Ecosystem | 011 | MCP client | Done |
 | 5 — Ecosystem | 012 | TUI dashboard (ratatui) | Done |
 | 5 — Ecosystem | 013 | Hermes Python UI parity (visual) | Done |
-| 6 — CLI surface | 014 | CLI subcommands parity (shell access) | In progress |
+| 6 — CLI surface | 014 | CLI subcommands parity (shell access) | Done |
 | 7 — Total parity | 017 | Hermes Python v0.21.0 total byte-level parity (wizard, katalog, UX) | Fase 0 re-archaeology — menunggu review Matt |
 
 ## Spec 004 closure
@@ -272,10 +272,45 @@ backlog** per the Spec 011b decision. **Phase 5 (Ecosystem) is therefore 100%
 DONE** for the v1.0 milestone. (Phase-4 Spec 007, tool-execution sandbox,
 remains Not started outside Phase 5.)
 
+## Spec 014 — CLI subcommands parity closure
+
+Spec 014 maps the Hermes Python `hermes <subcommand>` shell surface onto
+clap subcommands so the existing data sources can be queried **without
+entering the REPL**: `model`, `sessions`, `inspect <id>`, `messages <id>`,
+`tool-calls <id>`, `search <query>`, `info`, `mcp [list|restart <name>]`
+and `version` / `-V` / `--version`. Each subcommand reuses the REPL's own
+renderer (`session_menu`, `resolve_context`, `/mcp` row layout) rather than
+copying a format, so shell and REPL output is identical by construction.
+
+| Ticket | Scope |
+|---|---|
+| 01 | Subcommand parser foundation (clap `Commands`, global flags position-independent, dispatch before provider/session) |
+| 02 | `hermes model` (providers + models, active marker, `--provider` filter, TTY-only gold/brown colors) |
+| 03 | `hermes sessions` + `hermes inspect <id>` (read-only `open_existing_store`, UUID validation, clear errors) |
+| 04 | `hermes messages <id>` + `hermes tool-calls <id>` (same renderers as `/messages` and `/tool-calls`) |
+| 05 | `hermes search <query>` (FTS5 + redaction via `search_sessions`) |
+| 06 | `hermes info` (line 1 == `/info` for a fresh session) + `hermes mcp` (config-only, never spawns a child) |
+| 07 | `--version`/`hermes version` print the banner `VERSION_LABEL` + install facts, before config load; `--help` lists every real subcommand |
+| 08 | Placeholder removal, docs (`cli_subcommands.md`, `PARITY.md`, this file), closure proof |
+
+Closure proof (Spec 014): `crates/hermes-cli/tests/subcommands_e2e.rs`
+(26 tests) drives the real binary and asserts, per subcommand: exit 0
+without the REPL prompt, ANSI-free stdout when piped, byte-identity with the
+**live REPL** command on the same `state.db`, no credential on any output
+path, no `state.db` creation and unchanged canonical rows for read-only
+paths, and the pre-014 bare invocation still entering the REPL. Invariants
+held: the shell adds no execution surface (MCP spawn stays REPL-only) and
+the Python installation is untouched.
+
 ## Verification
 
 Last full run (2026-09-05, Spec 013 closure): `cargo test --workspace` — 400
 passed, 0 failed; `clippy --workspace --all-targets -D warnings` clean.
+
+Spec 014 T04–T08 (2026-09-13) were authored in an offline sandbox without a
+Rust toolchain; run `cargo fmt --all && cargo test --workspace && cargo
+clippy --workspace --all-targets -- -D warnings` before merging and record
+the count here.
 
 ## Invariants
 
