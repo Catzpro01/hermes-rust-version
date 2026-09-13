@@ -34,6 +34,15 @@ lokal dibandingkan byte-per-byte sebelum commit. Tidak ada klaim build lokal.
 Tidak ada perubahan pada shared theme atau instalasi/data Python. Perubahan
 runtime dan regresi berada di `crates/hermes-cli/src/tui/welcome.rs`.
 
+## Verifikasi commit aktual
+
+Kode `3e7c89590b22881898b0f0b37e882a5d415d072b` lulus
+[CI 34784967731](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34784967731)
+(format, clippy, tes workspace, QA workflow).
+[Run 34784967746](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34784967746)
+juga memverifikasi bahwa build/capture/export final **skipped**, sesuai
+`capture: false`. Keberhasilan run tersebut bukan hasil capture baru.
+
 ## Batas review dan capture
 
 - Kandidat sudah dikonsumsi; request `phase: none, capture: false` menahan

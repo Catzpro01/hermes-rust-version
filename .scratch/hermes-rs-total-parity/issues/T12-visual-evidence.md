@@ -204,8 +204,9 @@ cycles at public write_banner. All GREEN runs passed fmt/check/clippy/full
 workspace tests. Exact exported deltas were hash-verified and applied before
 source commits; see `docs/hermes-ui-spec/017/evidence/tdd-followup.md`.
 
-Candidates consumed, `phase: none, capture: false`. Final source CI still
-requires verification. Review fixed point and handling of missing independent
+Candidates consumed, `phase: none, capture: false`. Actual source 3e7c895
+passed CI 34784967731. Run 34784967746 confirms final capture/export skipped,
+not a new capture result. Review fixed point and handling of missing independent
 subagents must be clarified with user; no fabricated review. Then enable
 capture and obtain fresh committed-source paired evidence. Existing FAIL
 images remain unchanged; no overall visual PASS or closure/merge permission.

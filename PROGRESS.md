@@ -792,3 +792,14 @@ performed.** The Python installation was not modified.
 - Next verify this source commit's CI, then ask for review fixed point and an
   explicit limited-review/human-review route since independent subagents are
   unavailable. No merge, personal approval or closure accepted.
+
+## 2026-09-14: Actual follow-up source CI green; review input required next
+
+- Exact source 3e7c89590b22881898b0f0b37e882a5d415d072b passed CI 34784967731,
+  including all workspace checks and workflow QA. Run 34784967746 succeeded
+  while build/final-capture/export steps were verified SKIPPED as requested.
+- Both old evidence directories' file checksums reverified unchanged. Updated
+  the TDD ledger, MEMORY and T12 with these observed—not predicted—results.
+- Ask user for review fixed point (all ANSI fixes vs this follow-up) and explicit
+  limited direct review vs human-review packet. No independent subagent verdict
+  is available. Final paired recapture remains after that review boundary.

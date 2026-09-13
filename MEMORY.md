@@ -111,8 +111,10 @@ layout 34783950104/34784076114; bold 34784219747/34784316150;
 dim 34784445723/34784546009; punctuation 34784685139/34784783352.
 See docs/hermes-ui-spec/017/evidence/tdd-followup.md for exact provenance.
 Actual Rust changes only welcome.rs; old images remain unmodified FAIL evidence.
-Final source commit needs its own CI verification. Candidate removed and
-request set to phase none, capture false to respect review-before-recapture.
+Actual source 3e7c89590b22881898b0f0b37e882a5d415d072b passed CI
+34784967731. Run 34784967746 verified that final capture/build/exports are
+skipped (not a capture success). Candidate removed and request set to phase
+none, capture false to respect review-before-recapture.
 Next: obtain review fixed point and user choice between explicitly limited
 direct review or human-review packet; independent subagents are unavailable.
 Do not invent independent review or silently skip to final capture. No merge.
