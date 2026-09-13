@@ -1,0 +1,53 @@
+No existing configuration found — running first-time setup.
+Configuration Location
+Config file:  /tmp/hermes-ui-rust-m4lfdmcz/config.yaml
+Secrets file: /tmp/hermes-ui-rust-m4lfdmcz/.env
+Data folder:  /tmp/hermes-ui-rust-m4lfdmcz
+Install dir:  /home/runner/work/hermes-rust-version/hermes-rust-version/crates/hermes-cli
+You can edit these files directly or use 'hermes config edit'
+
+Tip: jump straight to a section with 'hermes setup model|terminal|gateway|tools|agent', or fill only missing items with --quick.
+Press Enter to keep it, or type a new value to change it.
+
+[?25l[38;5;10m?[39m How would you like to set up Hermes?  
+[38;5;14m>[39m [38;5;14mQuick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (reco[39m
+[38;5;14mmmended)[39m
+  Full setup — configure every provider, tool & option yourself (bring your own 
+keys)
+  Blank Slate — everything off except the bare minimum; opt in to each capabilit
+y
+[38;5;14m[[39m[38;5;14m↑↓ to move, enter to select, type to filter[39m[38;5;14m][39m[7A[39C[?25h[?25l[39D
+  Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (reco[K
+mmended)[K
+[38;5;14m>[39m [38;5;14mFull setup — configure every provider, tool & option yourself (bring your own [39m[K
+[38;5;14mkeys)[39m[K
+
+
+[7A[39C[?25h[?25l[39D
+
+
+  Full setup — configure every provider, tool & option yourself (bring your own [K
+keys)[K
+[38;5;14m>[39m [38;5;14mBlank Slate — everything off except the bare minimum; opt in to each capabilit[39m[K
+[38;5;14my[39m[K
+[7A[39C[?25h[?25l[39D[38;5;10m>[39m How would you like to set up Hermes? [38;5;14mBlank Slate — everything off except the b[39m[K
+[38;5;14mare minimum; opt in to each capability[39m[K
+[2K
+[2K
+[2K
+[2K
+[2K
+[2K
+[?25h[6A[?25h
+Model & Provider
+Choose how to connect to your main chat model.
+   Guide: https://hermes-agent.nousresearch.com/docs/integrations/providers
+[?25l[38;5;10m?[39m Select provider:  
+[38;5;14m>[39m [38;5;14mNous Portal (Everything your agent needs, 300+ models with bundled tool use)[39m
+  Fireworks AI (OpenAI-compatible direct model API)
+  OpenRouter (Pay-per-use API aggregator)
+  Mixture of Agents (named presets; aggregator acts after reference models)
+  NovitaAI (Cloud: Model API, Agent Sandbox, GPU Cloud)
+  LM Studio (Local desktop app with built-in model server)
+v Anthropic (Claude models via API key or Claude Code)
+[38;5;14m[[39m[38;5;14m↑↓ to move, enter to select, type to filter[39m[38;5;14m][39m[8A[19C[?25h

@@ -1,0 +1,31 @@
+No existing configuration found — running first-time setup.
+Configuration Location
+Config file:  /tmp/hermes-ui-rust-wpesoj3j/config.yaml
+Secrets file: /tmp/hermes-ui-rust-wpesoj3j/.env
+Data folder:  /tmp/hermes-ui-rust-wpesoj3j
+Install dir:  /home/runner/work/hermes-rust-version/hermes-rust-version/crates/hermes-cli
+You can edit these files directly or use 'hermes config edit'
+
+Tip: jump straight to a section with 'hermes setup model|terminal|gateway|tools|agent', or fill only missing items with --quick.
+Press Enter to keep it, or type a new value to change it.
+
+
+Messaging Platforms
+Toggle with Space, confirm with Enter.
+[?25l[38;5;10m?[39m Select platforms to configure:  
+[38;5;14m>[39m [38;5;14m[ ][39m [38;5;14m💬 Mattermost  (not configured)[39m
+  [ ] 📡 Signal  (not configured)
+  [ ] 💬 Weixin / WeChat  (not configured)
+  [ ] 💬 BlueBubbles (iMessage)  (not configured)
+  [ ] 🐧 QQ Bot  (not configured)
+  [ ] 💎 Yuanbao  (not configured)
+[38;5;14m[[39m[38;5;14m↑↓ to move, space to select one, → to all, ← to none, type to filter[39m[38;5;14m][39m[7A[33C[?25h[?25l[33D[38;5;10m>[39m Select platforms to configure: [K
+[2K
+[2K
+[2K
+[2K
+[2K
+[2K
+[2K
+[?25h[7A[?25hNo platforms selected. Run 'hermes setup gateway' later to configure.
+Setup complete! You're ready to go.

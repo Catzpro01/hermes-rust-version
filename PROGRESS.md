@@ -978,3 +978,19 @@ Tool-toggle now toggles on both sides after Python's extra platform menu.
 Added explicit per-case fixture metadata, CAPTURE_INCOMPLETE status and a
 post-export all-case/raw-integrity gate; successful transport alone is not
 complete capture. Recapture from the next committed driver, no runtime fix yet.
+
+### Direct image inspection rejected the first packet; correcting capture
+
+ui-1e3abe7 retains all 48 pairs as DIAGNOSTIC, not acceptance evidence. Opened
+all 24 wide PNGs: Rust summary output was blank/truncated because poll(exit)
+preceded draining PTY bytes. Observed real-PTY RED for 60,003-byte exit output;
+fixed drain-until-EOF, GREEN (5 recorder tests). Summary gate now also requires
+its actual count in retained bytes. No production banner change justified.
+Python gateway warnings exposed missing isolated dependencies: installed
+pinned aiohttp/cryptography in cache only. Gateway attempted auto-service work;
+temporary-home guard refused writes and systemd/linger calls failed. Now deny
+external process launches in Python child explicitly as well as networking.
+Snapshot rules select the unavailable notice / end-of-platform step before
+next menus/services, keeping the full later raw recording unchanged.
+CI now runs recorder tests and policy-checks the new workflow too. Re-capture
+clean fixtures; do not approve diagnostic images or hide the failures.

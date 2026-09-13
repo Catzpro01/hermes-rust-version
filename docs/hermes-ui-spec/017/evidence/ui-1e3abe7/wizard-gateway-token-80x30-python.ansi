@@ -1,0 +1,29 @@
+
+[35m┌─────────────────────────────────────────────────────────┐[0m
+[35m│     ⚕ Hermes Setup — Messaging Platforms (Gateway)      │[0m
+[35m└─────────────────────────────────────────────────────────┘[0m
+
+[36m[1m◆ Messaging Platforms[0m
+[2m  Connect to messaging platforms to chat with Hermes from anywhere.[0m
+[2m  Toggle with Space, confirm with Enter.[0m
+
+Failed to load plugin 'slack-platform': No module named 'aiohttp'
+Failed to load plugin 'wecom-platform': No module named 'cryptography'
+[?1049h[22;0;0t[1;30r(B[m[4l[?7h[?1h=[39;49m[?25l[39;49m(B[m[H[2J(B[0;1m[33mSelect platforms to configure:[2d[39m(B[0;2m  ↑↓ navigate  SPACE toggle  ENTER confirm  ESC cancel[4d(B[0;1m[32m → [ ] 💬 Mattermost  (not configured)[5;4H[39m(B[m[ ] 📡 Signal  (not configured)[6;4H[ ] 💬 Weixin / WeChat  (not configured)[7;4H[ ] 💬 BlueBubbles (iMessage)  (not configured)[8;4H[ ] 🐧 QQ Bot  (not configured)[9;4H[ ] 💎 Yuanbao  (not configured)[10;4H[ ] 🧩 A2A  (not configured)[11;4H[ ] 🐝 Buzz  (not configured)[12;4H[ ] 🐳 DingTalk  (not configured)[13;4H[ ] 🎮 Discord  (not configured)[14;4H[ ] 📧 Email  (not configured)[15;4H[ ]   Feishu / Lark  (not configured)[16;4H[ ] 💬 Google Chat  (not configured)[17;4H[ ] 🏠 Home Assistant  (not configured)[18;4H[ ] 💬 IRC  (not configured)[19;4H[ ] 💚 LINE  (not configured)[20;4H[ ] 🔐 Matrix  (not configured)[21;4H[ ] 🔔 ntfy  (not configured)[22;4H[ ] 📱 iMessage via Photon  (not configured)[23;4H[ ] 🔔 Raft  (not configured)[24;4H[ ] 🔒 SimpleX Chat  (not configured)[25;4H[ ] 📱 SMS (Twilio)  (not configured)[26;4H[ ] 💼 Microsoft Teams  (not configured)[27;4H[ ] ✈️ Telegram  (not configured)[28;4H[ ] 💬 WhatsApp  (not configured)[H[2J(B[0;1m[33mSelect platforms to configure:[2d[39m(B[0;2m  ↑↓ navigate  SPACE toggle  ENTER confirm  ESC cancel[4d(B[0;1m[32m → [✓] 💬 Mattermost  (not configured)[5;4H[39m(B[m[ ] 📡 Signal  (not configured)[6;4H[ ] 💬 Weixin / WeChat  (not configured)[7;4H[ ] 💬 BlueBubbles (iMessage)  (not configured)[8;4H[ ] 🐧 QQ Bot  (not configured)[9;4H[ ] 💎 Yuanbao  (not configured)[10;4H[ ] 🧩 A2A  (not configured)[11;4H[ ] 🐝 Buzz  (not configured)[12;4H[ ] 🐳 DingTalk  (not configured)[13;4H[ ] 🎮 Discord  (not configured)[14;4H[ ] 📧 Email  (not configured)[15;4H[ ]   Feishu / Lark  (not configured)[16;4H[ ] 💬 Google Chat  (not configured)[17;4H[ ] 🏠 Home Assistant  (not configured)[18;4H[ ] 💬 IRC  (not configured)[19;4H[ ] 💚 LINE  (not configured)[20;4H[ ] 🔐 Matrix  (not configured)[21;4H[ ] 🔔 ntfy  (not configured)[22;4H[ ] 📱 iMessage via Photon  (not configured)[23;4H[ ] 🔔 Raft  (not configured)[24;4H[ ] 🔒 SimpleX Chat  (not configured)[25;4H[ ] 📱 SMS (Twilio)  (not configured)[26;4H[ ] 💼 Microsoft Teams  (not configured)[27;4H[ ] ✈️ Telegram  (not configured)[28;4H[ ] 💬 WhatsApp  (not configured)[?1l>[30;1H[?12l[?25h[?1049l[23;0;0t[?1l>
+[36m  ─── 💬 Mattermost Setup ───[0m
+
+[2m    1. In Mattermost: Integrations → Bot Accounts → Add Bot Account[0m
+[2m       (System Console → Integrations → Bot Accounts must be enabled)[0m
+[2m    2. Give it a username (e.g. hermes) and copy the bot token[0m
+[2m    3. Works with any self-hosted Mattermost instance — enter your server URL[0m
+[2m    4. To find your user ID: click your avatar (top-left) → Profile[0m
+[2m       Your user ID is displayed there — click it to copy.[0m
+[2m       ⚠ This is NOT your username — it's a 26-character alphanumeric ID.[0m
+[2m    5. To get a channel ID: click the channel name → View Info → copy the ID[0m
+
+[2m    Your Mattermost server URL. Works with any self-hosted instance.[0m
+[?12l[?25h[6n[?2004h[?1l[?25l[0m[?7l[0m[J[0;33m  Server URL (e.g. https://mm.example.com): [44D[44C[?7h[0m[?12l[?25h[?25l[?7l[?7h[0m[?12l[?25h[?25l[?7l[44D[0m[J[0;33m  Server URL (e.g. https://mm.example.com): [0mhttps://fixture.invalid[67D[0m
+[J[?7h[0m[?12l[?25h[?2004l[32m✓   Saved MATTERMOST_URL[0m
+
+[2m    Paste the bot token from step 2 above.[0m
+[33m  Bot token: [0m

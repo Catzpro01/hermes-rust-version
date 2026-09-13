@@ -100,7 +100,9 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
                 select.select([], [], [], 0.02)
             marker, key = steps[index]
             code = proc.poll()
-            ready = (marker.encode() in bytes(output[cursor:]) or (len(output) > cursor and marker in '\n'.join(screen.display))) if marker != '@exit' else code is not None
+            ready = (marker.encode() in bytes(output[cursor:]) or (len(output) > cursor and marker in '\n'.join(screen.display))) if marker != '@exit' else code is not None and eof
+            if code is not None and not eof:
+                continue  # Child exit does not mean its PTY output has been drained.
             if code is not None and code != 0:
                 error = f'process exit {code} at stage {index}'
                 break
@@ -208,6 +210,21 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES, w
                     (home/'empty-bin').mkdir()
                     extra['PATH'] = str(home/'empty-bin')
                 result = record(command,home,width,steps_for(name,side),extra)
+                # Select a recorded instant, not normalized output. Keep later
+                # bytes/events too, including deliberately blocked service calls.
+                if side == 'python' and name in ('wizard-docker', 'wizard-gateway-empty') and not result['error']:
+                    raw = base64.b64decode(result['raw_base64'])
+                    if name == 'wizard-docker':
+                        pos = raw.find(b'Docker not found')
+                        end = raw.find(b'\x1b[?1049h', pos) if pos >= 0 else -1
+                        boundary = 'before next alternate-screen menu after Docker unavailable notice'
+                    else:
+                        pos = raw.find(b'Installing the gateway background service')
+                        end = raw.rfind(b'\n', 0, pos)+1 if pos >= 0 else -1
+                        boundary = 'after empty platform result, before deferred service orchestration'
+                    if end > 0:
+                        result['snapshot_end_byte'] = end
+                        result['snapshot_rule'] = boundary + '; full later output retained unchanged'
                 print(side,name,width,result['error'] or 'CAPTURED_NOT_REVIEWED',file=sys.stderr)
                 cases.append({'id':f'{name}-{width}x30','scenario':name,'fixture':{'home':'isolated fresh temporary directory', 'credentials':'none supplied', 'docker_available':False if name=='wizard-docker' else 'not controlled', 'picker_seed':[SID_A,SID_B] if name.startswith('picker') and name!='picker-empty' else [], 'picker_timestamp_base':1700000000 if name.startswith('picker') else None},side:result})
     return cases
@@ -218,6 +235,10 @@ def python_child(reference, name, width):
     # External networking is forbidden; UI implementations are unmodified.
     import socket
     def deny(*args, **kwargs): raise OSError('network disabled for isolated visual evidence')
+    def audit(event, args):
+        if event in ('subprocess.Popen', 'os.system', 'os.posix_spawn', 'os.exec'):
+            raise PermissionError('external processes disabled for isolated visual evidence')
+    sys.addaudithook(audit)
     socket.socket.connect = deny
     socket.create_connection = deny
     socket.getaddrinfo = deny
@@ -266,7 +287,10 @@ def validate_bundle(bundle):
     assert len(bundle['cases']) == len(expected), 'missing or duplicate cases'
     assert {c['id'] for c in bundle['cases']} == expected, 'case matrix mismatch'
     assert not bundle['errors'], 'unreached UI cases'
+    sides = {s for s in ('python', 'rust') if s in bundle['cases'][0]}
+    assert sides, 'no captured sides'
     for c in bundle['cases']:
+        assert {s for s in ('python', 'rust') if s in c} == sides
         for side in ('python', 'rust'):
             if side not in c:
                 continue
@@ -276,7 +300,10 @@ def validate_bundle(bundle):
             raw = base64.b64decode(r['raw_base64'], validate=True)
             assert hashlib.sha256(raw).hexdigest() == r['raw_sha256']
             assert b''.join(base64.b64decode(e[1], validate=True) for e in r['events_base64']) == raw
-            assert r['snapshot_end_byte'] == len(raw)
+            assert 0 < r['snapshot_end_byte'] <= len(raw)
+            if c['scenario'].startswith('summary-'):
+                expected_count = b'0 tools' if c['scenario']=='summary-zero' else b'3 tools'
+                assert expected_count in raw[:r['snapshot_end_byte']], 'summary count not visible in captured bytes'
 
 
 def main():

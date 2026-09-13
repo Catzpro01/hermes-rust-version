@@ -1,0 +1,19 @@
+
+[35m┌─────────────────────────────────────────────────────────┐[0m
+[35m│     ⚕ Hermes Setup — Terminal Backend                   │[0m
+[35m└─────────────────────────────────────────────────────────┘[0m
+
+[36m[1m◆ Terminal Backend[0m
+[2m  Choose where Hermes runs shell commands and code.[0m
+[2m  This affects tool execution, file access, and isolation.[0m
+[2m     Guide: https://hermes-agent.nousresearch.com/docs/user-guide/configuration#terminal-backend-configuration[0m
+
+[?1049h[22;0;0t[1;30r(B[m[4l[?7h[?1h=[39;49m[?25l[39;49m(B[m[H[2J(B[0;1m[33mSelect terminal backend:[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4;4H(B[m(○) Local - run directly on this machine (default)[5;4H(○) Docker - isolated container with configurable resources[6;4H(○) Modal - serverless cloud sandbox[7;4H(○) SSH - run on a remote machine[8;4H(○) Daytona - persistent cloud development environment[9;4H(○) Vercel Sandbox - cloud microVM with snapshot filesystem persistence[10;4H(○) Singularity/Apptainer - HPC-friendly container[11d(B[0;1m[32m → (●) Keep current (local)[39m(B[m[H[2J(B[0;1m[33mSelect terminal backend:[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4d(B[0;1m[32m → (○) Local - run directly on this machine (default)[5;4H[39m(B[m(○) Docker - isolated container with configurable resources[6;4H(○) Modal - serverless cloud sandbox[7;4H(○) SSH - run on a remote machine[8;4H(○) Daytona - persistent cloud development environment[9;4H(○) Vercel Sandbox - cloud microVM with snapshot filesystem persistence[10;4H(○) Singularity/Apptainer - HPC-friendly container[11;4H(●) Keep current (local)[H[2J(B[0;1m[33mSelect terminal backend:[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4;4H(B[m(○) Local - run directly on this machine (default)[5d(B[0;1m[32m → (○) Docker - isolated container with configurable resources[6;4H[39m(B[m(○) Modal - serverless cloud sandbox[7;4H(○) SSH - run on a remote machine[8;4H(○) Daytona - persistent cloud development environment[9;4H(○) Vercel Sandbox - cloud microVM with snapshot filesystem persistence[10;4H(○) Singularity/Apptainer - HPC-friendly container[11;4H(●) Keep current (local)[?1l>[30;1H[?12l[?25h[?1049l[23;0;0t[?1l>
+[32m✓ Terminal backend: Docker[0m
+[33m⚠ Docker not found in PATH![0m
+[2m  Install Docker: https://docs.docker.com/get-docker/[0m
+
+[2m  Docker sandboxes can be protected with the egress credential firewall.[0m
+[2m  It routes sandbox traffic through iron-proxy so containers receive proxy tokens instead of real API keys.[0m
+[2m     Docker only for now; Modal, SSH, Daytona, and Singularity are not wired yet.[0m
+[?1049h[22;0;0t[1;30r[?25l[39;49m]104(B[m[4l[?7h[H[2J(B[0;1m[33mSelect terminal backend:[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4;4H(B[m(○) Local - run directly on this machine (default)[5d(B[0;1m[32m → (○) Docker - isolated container with configurable resources[6;4H[39m(B[m(○) Modal - serverless cloud sandbox[7;4H(○) SSH - run on a remote machine[8;4H(○) Daytona - persistent cloud development environment[9;4H(○) Vercel Sandbox - cloud microVM with snapshot filesystem persistence[10;4H(○) Singularity/Apptainer - HPC-friendly container[11;4H(●) Keep current (local)[?1h=[39;49m(B[m[H[2J(B[0;1m[33m  Enable egress firewall for Docker sandboxes?[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel  ← previous[4;4H(B[m(○) Yes[5d(B[0;1m[32m → (●) No[39m(B[m

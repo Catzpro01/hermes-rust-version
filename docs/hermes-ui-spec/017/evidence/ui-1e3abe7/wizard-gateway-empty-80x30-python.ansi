@@ -1,0 +1,29 @@
+
+[35m┌─────────────────────────────────────────────────────────┐[0m
+[35m│     ⚕ Hermes Setup — Messaging Platforms (Gateway)      │[0m
+[35m└─────────────────────────────────────────────────────────┘[0m
+
+[36m[1m◆ Messaging Platforms[0m
+[2m  Connect to messaging platforms to chat with Hermes from anywhere.[0m
+[2m  Toggle with Space, confirm with Enter.[0m
+
+Failed to load plugin 'slack-platform': No module named 'aiohttp'
+Failed to load plugin 'wecom-platform': No module named 'cryptography'
+[?1049h[22;0;0t[1;30r(B[m[4l[?7h[?1h=[39;49m[?25l[39;49m(B[m[H[2J(B[0;1m[33mSelect platforms to configure:[2d[39m(B[0;2m  ↑↓ navigate  SPACE toggle  ENTER confirm  ESC cancel[4d(B[0;1m[32m → [ ] 💬 Mattermost  (not configured)[5;4H[39m(B[m[ ] 📡 Signal  (not configured)[6;4H[ ] 💬 Weixin / WeChat  (not configured)[7;4H[ ] 💬 BlueBubbles (iMessage)  (not configured)[8;4H[ ] 🐧 QQ Bot  (not configured)[9;4H[ ] 💎 Yuanbao  (not configured)[10;4H[ ] 🧩 A2A  (not configured)[11;4H[ ] 🐝 Buzz  (not configured)[12;4H[ ] 🐳 DingTalk  (not configured)[13;4H[ ] 🎮 Discord  (not configured)[14;4H[ ] 📧 Email  (not configured)[15;4H[ ]   Feishu / Lark  (not configured)[16;4H[ ] 💬 Google Chat  (not configured)[17;4H[ ] 🏠 Home Assistant  (not configured)[18;4H[ ] 💬 IRC  (not configured)[19;4H[ ] 💚 LINE  (not configured)[20;4H[ ] 🔐 Matrix  (not configured)[21;4H[ ] 🔔 ntfy  (not configured)[22;4H[ ] 📱 iMessage via Photon  (not configured)[23;4H[ ] 🔔 Raft  (not configured)[24;4H[ ] 🔒 SimpleX Chat  (not configured)[25;4H[ ] 📱 SMS (Twilio)  (not configured)[26;4H[ ] 💼 Microsoft Teams  (not configured)[27;4H[ ] ✈️ Telegram  (not configured)[28;4H[ ] 💬 WhatsApp  (not configured)[?1l>[30;1H[?12l[?25h[?1049l[23;0;0t[?1l>[2m  No platforms selected. Run 'hermes setup gateway' later to configure.[0m
+
+[2m    Installing the gateway background service ...[0m
+✗ Refusing to write the gateway systemd unit: HERMES_HOME resolves to a temporary directory (/tmp/hermes-ui-python-sg71zlnk).
+  This usually means a test/E2E environment exported HERMES_HOME. Unset it (or run from a clean shell) and retry.
+[33m⚠   Could not reach user systemd to start the gateway service:[0m
+[2m    loginctl enable-linger was denied: Failed to connect to bus: No such file or directory[0m
+[2m      systemctl --user cannot reach the user D-Bus session in this shell.[0m
+[2m    [0m
+[2m      To fix:[0m
+[2m      sudo loginctl enable-linger user[0m
+[2m    [0m
+[2m      Alternative: run the gateway in the foreground (stays up until[0m
+[2m      you exit / close the terminal):[0m
+[2m        hermes gateway run[0m
+[2m  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+
+[32m✓ Messaging Platforms (Gateway) configuration complete![0m

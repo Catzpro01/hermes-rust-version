@@ -24,9 +24,11 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install QA dependency
-        run: python3 -m pip install PyYAML==6.0.3
+        run: python3 -m pip install PyYAML==6.0.3 pyte==0.8.2 wcwidth==0.8.3
       - name: Test workflow gates
-        run: python3 scripts/test_ci_workflow.py
+        run: |
+          python3 scripts/test_ci_workflow.py
+          python3 scripts/test_capture_ui.py
 
   test:
     name: fmt + clippy + test
