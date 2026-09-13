@@ -1072,3 +1072,24 @@ new adaptation, deferred feature or merge is needed for this routing. Continue
 in this repo/session for the scoped next slice; no portable handoff needed.
 Explicit final user acceptance remains required. No runtime/evidence changed
 by this `/ask-matt` invocation.
+
+### `/diagnosing-bugs` — picker delete-hint loop and remote RED proposal
+
+Target is V2's `d delete` hint while a filter is active, not every remaining
+visual difference. Restored isolated pyte0.8.2/wcwidth0.8.3; initial missing-module
+failure was harness setup, NOT bug RED. Replay command:
+`PYTHONPATH=/home/user/.cache/hermes-ui-pyte python3 scripts/check_picker_filter_hint.py docs/hermes-ui-spec/017/evidence/ui-3b39bd7/paired-bundle.json --side rust`.
+It reaches both-width frames: normal2 PASS, filtered/no-match4 FAIL; Python6 PASS.
+Ranked predictions announced: eligibility not propagated; counts mistaken for
+filter state; stale redraw/replay. Minimal proposed regression uses one row and
+a filter matching ALL rows, plus no-match/normal controls at real frame_lines.
+No Rust source applied; official runner must confirm exact named RED three times,
+then fmt/check/clippy/full GREEN before exact patch application. Bounded new
+workflow is read-only/SHA-pinned/90-day, permits session_picker.rs proposals only.
+Eight workflow policy tests pass including the new workflow.
+
+Workspace Git metadata initially pointed at base6ded9dd, while saved files matched
+remote2c7397b. Fetched ONLY the assigned branch and verified every remote tracked
+blob against disk (zero differences), then aligned HEAD/index with a mixed reset;
+no working file, user edit, branch switch, merge or force-push was involved.
+Cache reinstalls and Git metadata alignment do not modify the Python reference.

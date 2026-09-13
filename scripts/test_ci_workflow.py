@@ -78,7 +78,7 @@ class CiGateTests(unittest.TestCase):
             "actions/checkout", "actions/setup-python", "actions/upload-artifact",
             "dtolnay/rust-toolchain", "Swatinem/rust-cache",
         }
-        for name in ("ci.yml", "visual-evidence.yml", "ui-evidence.yml"):
+        for name in ("ci.yml", "visual-evidence.yml", "ui-evidence.yml", "picker-diagnostic.yml"):
             with self.subTest(workflow=name):
                 workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
                 self.assertEqual(workflow.get("permissions"), {"contents": "read"})

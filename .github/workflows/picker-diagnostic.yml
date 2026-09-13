@@ -1,0 +1,107 @@
+name: Picker diagnostic regression
+on:
+  push:
+    branches: ["arena/01a09c1e-hermes-rust-version"]
+    paths: ['.scratch/hermes-rs-total-parity/diagnostics/picker/request.json']
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    if: github.ref == 'refs/heads/arena/01a09c1e-hermes-rust-version'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Official Rust tools
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+          rustup default stable
+      - name: Verify and apply bounded diagnostic proposal
+        id: plan
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          folder = Path('.scratch/hermes-rs-total-parity/diagnostics/picker')
+          request = json.loads((folder/'request.json').read_text())
+          phase = request['phase']
+          assert phase in ('red', 'green', 'capture')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'phase={phase}\n')
+          if phase != 'capture':
+              source = Path('crates/hermes-cli/src/session_picker.rs')
+              patch = folder/(phase+'.patch')
+              assert hashlib.sha256(source.read_bytes()).hexdigest() == request['source_sha256']
+              assert hashlib.sha256(patch.read_bytes()).hexdigest() == request['patch_sha256']
+              assert 0 < patch.stat().st_size < 40000
+              names = subprocess.check_output(['git','apply','--numstat',str(patch)],text=True)
+              assert names.strip() and all(line.split('\t')[-1] == str(source) for line in names.splitlines())
+              subprocess.run(['git','apply','--check',str(patch)],check=True)
+              subprocess.run(['git','apply',str(patch)],check=True)
+          PY
+      - name: Format and type check
+        run: |
+          cargo fmt --all
+          cargo fmt --all -- --check
+          cargo check --workspace --all-targets --locked
+      - name: Exact frame regression repeated three times
+        id: regression
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+          TEST: session_picker::tests::picker_footer_tracks_delete_availability
+        run: |
+          for attempt in 1 2 3; do
+            set +e
+            cargo test --locked -p hermes-rs "$TEST" -- --exact > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F "test $TEST ... FAILED" "regression-$attempt.log"
+            else
+              test "$status" -eq 0
+              grep -F "test $TEST ... ok" "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker regression::$PHASE exact frame regression verified three times"
+      - name: Full GREEN validation
+        if: steps.plan.outputs.phase != 'red'
+        run: |
+          cargo clippy --workspace --all-targets -- -D warnings
+          cargo test --workspace --no-fail-fast
+      - name: Export exactly tested proposal
+        if: steps.plan.outputs.phase != 'capture'
+        run: |
+          mkdir -p evidence
+          git diff --binary -- '*.rs' > evidence/tested.patch
+          python3 scripts/capture_banner.py export evidence/tested.patch --label 'candidate patch'
+      - name: Capture committed picker and verify original symptom
+        if: steps.plan.outputs.phase == 'capture'
+        run: |
+          test -z "$(git diff --name-only -- '*.rs')"
+          cargo build --locked -p hermes-rs --bin hermes-rs
+          python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
+          PYTHONPATH=/tmp/picker-qa python3 scripts/capture_picker_diagnostic.py target/debug/hermes-rs evidence/picker.json
+          PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_filter_hint.py evidence/picker.json --side rust
+          python3 scripts/capture_banner.py export evidence/picker.json
+      - name: Export exact regression log
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('regression-1.log')
+          if p.exists():
+              text='\n'.join(p.read_text().splitlines()[-30:])
+              print('::notice title=picker exact result::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: picker-diagnostic-${{ github.sha }}
+          path: |
+            evidence/
+            regression-*.log
+          retention-days: 90
