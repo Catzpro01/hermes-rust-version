@@ -1,6 +1,6 @@
 # Spec 017: visual-evidence decision interview
 
-Status: Q1-Q3 settled; awaiting round 3 answers (`needs-info`)
+Status: Q1-Q6 settled; awaiting round 4 answers (`needs-info`)
 Owner: user (decisions), Arena agent (fact-finding and documentation)
 Started: 2026-09-14
 Origin: explicit user invocation of `/grill-with-docs`
@@ -42,10 +42,10 @@ understanding. Commit/push notes; merge remains unauthorized.
    - Applicable runtime reference/provenance and scenarios for all five areas.
    - Q2: review artifact format and raw capture provenance.
    - Q3: scenario coverage across all five required areas.
-3. **Comparison rules** (current frontier, Q4-Q6)
+3. **Comparison rules** (settled, Q4 = A, Q5 = A, Q6 = A)
    - Terminal conditions, dynamic-value normalization, intentional adaptations,
      and concrete examples of acceptable versus unacceptable differences.
-4. **Failure handling and acceptance**, blocked by comparison rules
+4. **Failure handling and acceptance** (current frontier, Q7-Q8)
    - Which mismatches block closure; permitted corrective-work scope.
    - Review/sign-off requirements and handling unavailable evidence.
 5. **Shared-understanding confirmation**, blocked by all remaining decisions
@@ -132,6 +132,54 @@ These facts ground the proposals below; they are not user approvals.
 - B: a user-specified terminal matrix instead; state desired dimensions and
   target conditions before fixing the capture matrix.
 
-**User answers:** Q4 pending; Q5 pending; Q6 pending. Failure handling,
-permitted corrective-work scope, sign-off, and final shared-understanding
-confirmation remain downstream. No captures or runtime modifications yet.
+**User answers:** explicit `4A, 5A, 6A` (2026-09-14). All three are settled.
+
+- Q4's existing-adaptation reference is the Spec 017 table and picker
+  adaptations in `docs/PARITY.md` at checkpoint `b38d09e`, the material used
+  in the question. New documentation cannot silently add accepted exceptions.
+  A different rendering crate is not blanket permission for arbitrary visual
+  differences. Each applicable exception must be identified in the report.
+- Q5 preserves original paired captures and recordings unchanged; dynamic
+  normalization is confined to an explicitly logged derived comparison view.
+  Wrong geometry, colors, static labels, or meaningful counts cannot be hidden.
+- Q6 fixes 100x30 baseline, 80x30 narrow layouts, and 94x30/95x30 banner
+  threshold cases with matched rendering conditions and recorded versions.
+
+Added the resolved distinction "Hermes comparison view" to the glossary.
+These are evidence-policy decisions, not capture execution or closure approval.
+No new architecture ADR is required for the reversible comparison setup.
+
+## Round 4: corrective scope and final sign-off
+
+Facts checked: T10 explicitly keeps new features such as Nous Portal OAuth,
+live model catalogs, Docker egress firewall, and toolset-to-registry wiring
+outside this closure. The user's standing instruction is to fix errors;
+the unresolved scope question is whether that instruction should also expand
+this task into those deliberately deferred features.
+
+The already-agreed real-evidence requirement means a required case that
+cannot be captured is BLOCKED, not passed or replaced by a mockup/test result.
+Undocumented mismatches stay visible until resolved or explicitly reconsidered
+by the user. This does not create a new automatic waiver category.
+
+**Q7: Corrective-work scope (after final plan confirmation).**
+- A (recommended): fix deviations in the five agreed UI areas and directly
+  related regressions; regenerate affected evidence. Keep deliberately
+  deferred features as separately tracked work, not implicit additions.
+- B: also bring deferred features into this effort; choose the exact additions
+  in a subsequent round before broadening the plan.
+
+**Q8: Who gives final closure sign-off?**
+
+Before presenting closure for approval, every required case must have its
+agreed evidence, comparison outcomes must respect the agreed exception list,
+and relevant CI must pass. Green CI alone is not sign-off.
+- A (recommended): the user explicitly reviews/accepts the final evidence
+  report before Spec 017 is marked closed.
+- B: a reviewer explicitly designated by the user gives sign-off instead;
+  establish their identity and review channel before relying on that approval.
+
+**User answers:** Q7 pending; Q8 pending. Once these and any branches they
+open are settled, present the complete agreement for confirmation. No
+implementation begins and no closure is declared merely from a round answer.
+Merge remains a separate explicit user instruction in either option.

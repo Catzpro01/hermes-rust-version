@@ -33,10 +33,11 @@ user's private Python installation.
 - Ticket: `.scratch/hermes-rs-total-parity/issues/T11-closure-review.md`.
 - Evidence and chronological updates: `PROGRESS.md`.
 - Active `/grill-with-docs` interview: `.scratch/hermes-rs-total-parity/grilling.md`.
-  Q1-Q3 are settled (A, 2A, 3A): real captures for all five §J.7 areas,
-  paired images + terminal recordings + metadata, and normal plus risky-state
-  coverage with dummy fixtures. Q4-Q6 comparison rules are pending; no
-  implementation or closure is approved yet.
+  Q1-Q6 are settled (all A): real captures + recordings + metadata, normal
+  and risky-state coverage, only existing documented adaptations, unchanged
+  originals with separately logged dynamic normalization, and the agreed
+  100/80/94/95-column terminal matrix. Q7 scope and Q8 sign-off are pending;
+  no implementation, closure, or merge is approved yet.
 - The missing `/ask-matt` skill blocker is resolved. On the user's download
   request, all 37 official Matt Pocock skills were installed project-locally
   from pinned upstream `3cca18b368ae95cdbdebbff572ccafa662551015`.
@@ -51,11 +52,9 @@ user's private Python installation.
   fmt/clippy success, 576 Rust tests, and five CI regression tests. Formatting
   and false error annotations are fixed. Later documentation checkpoints
   must still report their own check status rather than inheriting green.
-- Remaining closure work: §J.7 visual evidence/explicit alternative approval
-  and human sign-off. See T11; code CI success does not close visual parity.
-- Spec 017 implementation and closure sign-off are different: §J.7 still
-  needs the complete visual evidence set or explicit approval of an
-  alternative. Do not invent reviewer approval.
+- Remaining closure work: the real §J.7 evidence set selected in Q1 and
+  explicit sign-off. See T11; code CI success does not close visual parity.
+  Do not invent reviewer approval or revert to the unselected evidence policy.
 - Historical PR #6: 576 tests passed, clippy success; the original workflow
   masked fmt errors. This is not proof that the current commit passes.
 - This session's assigned branch is `arena/01a09c1e-hermes-rust-version`.

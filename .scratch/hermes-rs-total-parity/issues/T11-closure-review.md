@@ -64,8 +64,10 @@ closure review. Pada ronde 1 `/grill-with-docs` (2026-09-14), user memilih A:
 pertahankan capture nyata §J.7 dengan tes sebagai pendamping, bukan pengganti.
 User kemudian mengonfirmasi `2A, 3A`: gambar berdampingan + rekaman terminal
 mentah + metadata; jalur normal dan kondisi berisiko yang representatif.
-Aturan perbandingan dan kriteria penerimaan masih dibahas di `../grilling.md`;
-belum ada persetujuan closure atau implementasi.
+User juga mengonfirmasi `4A, 5A, 6A`: hanya adaptasi terdokumentasi,
+normalisasi dinamis di tampilan pembanding terpisah dengan bukti asli utuh,
+dan matriks terminal yang disepakati. Cakupan perbaikan dan pihak sign-off
+masih dibahas di `../grilling.md`; belum ada persetujuan closure atau implementasi.
 
 ### P2 — Laporan parity memuat informasi yang bertentangan (diperbaiki)
 

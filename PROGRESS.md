@@ -296,3 +296,20 @@ performed.** The Python installation was not modified.
 - No captures, runtime changes, independent subagents, or new local Rust
   tests were run. Implementation still waits for final shared-understanding
   confirmation. Commit/push notes; no merge or branch switch.
+
+## 2026-09-14: Grilling Q4-Q6 confirmed; closure authority remains open
+
+- User explicitly answered `4A, 5A, 6A`. Recorded existing-adaptation-only
+  comparison, unchanged originals with separately logged dynamic-value
+  normalization, and the matched 100x30/80x30/94x30/95x30 terminal matrix.
+  Added the resolved "Hermes comparison view" glossary term immediately.
+- Pinned the existing adaptation reference to docs/PARITY.md at `b38d09e`:
+  later documentation cannot silently enlarge the approved exception list.
+- Rechecked T10's deferred-feature list. The next frontier asks whether
+  corrective scope stays within the five UI areas (recommended) and whether
+  the user or an explicitly designated reviewer gives final sign-off.
+  Required missing evidence remains BLOCKED under the already-agreed policy.
+- Rechecked CI `34778569326`: both jobs succeeded on `b38d09e`. No new Rust
+  execution, captures, runtime changes, independent subagents, or merge.
+- Documentation only; commit/push the settled choices and pending questions.
+  Implementation still waits for final shared-understanding confirmation.
