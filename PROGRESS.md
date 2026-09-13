@@ -862,3 +862,30 @@ performed.** The Python installation was not modified.
   no runtime text normalization, expected edits, or unrelated feature changes.
 - Candidate consumed; next push recaptures actual committed source. b56c9a3
   FAIL evidence remains immutable. No independent approval or closure/merge.
+
+## 2026-09-14: Banner centering resolved; actual recapture inspected
+
+Actual source 5a8e12c97dd760bf05f411a5d59585a97f0b5ad6 passed CI 34785921216
+and capture 34785921221. New immutable evidence: banner-5a8e12c/ under
+`docs/hermes-ui-spec/017/evidence/`. All eight PNGs directly inspected and all
+eight raw/event/cast round trips verified; source hash and empty Rust diff
+verified. Bundle 81053 bytes, SHA-256
+705a6aee68b0a346e8f696a06bbe5b4f2af562220b7dca3ad4e95afbe24bbf93;
+transport job 103801264070. Tools columns 51/41/48/49 and Session 4/17/21/21
+match. Non-title glyph positions and same-glyph attributes match; background,
+inverse/underline also checked on blank cells. Status is fixture match with
+documented branding, not raw/pixel identity or overall acceptance.
+
+b56c9a3 remained FAIL_SESSION_CENTER_94. New exact public-writer RED
+34785680910 / GREEN 34785789939 resolved it without changing expectations.
+Limited direct review addendum recorded. No independent approval. Candidate
+consumed; none/false avoids redundant banner capture on documentation push.
+
+Next: real paired wizard/picker/completion/summary evidence. Preliminary
+setup/curses imports succeeded in isolated temporary homes, scrubbed env,
+network blocked; NOT UI captures. `hermes_cli.completion` import also succeeded
+but is shell script generation, NOT REPL candidate UI. Locate actual REPL seam.
+Picker reference: hermes_cli/sessions_cmd.py wrapper and main.py
+_session_browse_picker. Wizard: setup.py run_setup_wizard; Rust src/wizard/,
+with tests/wizard_e2e.rs. Inventory every implemented step before capture.
+Preserve Python data; no new features, independent verdict, closure or merge.

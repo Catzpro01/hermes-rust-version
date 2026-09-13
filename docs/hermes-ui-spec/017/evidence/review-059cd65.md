@@ -81,3 +81,11 @@ pelanggaran keras Standards atau scope creep Spec pada delta ini. Patch 3644
 byte SHA-256 d306f7bb2d8861e1c1a50dc6cc1e2f2871f5b4a9c11539058e4c6119652095c8
 terverifikasi dan diterapkan persis. Recapture aktual berikutnya tetap wajib.
 Ini masih pemeriksaan langsung terbatas, bukan reviewer independen.
+
+### Hasil recapture setelah addendum
+
+CI aktual 34785921216 dan capture 34785921221 dari 5a8e12c SUCCESS.
+Semua delapan gambar [paket baru](banner-5a8e12c/REPORT.md) diperiksa:
+centering 94 cocok, juga glyph/style yang diperbandingkan. P1 recapture
+banner tertangani pada fixture ini; P2 kelengkapan empat area lainnya tetap
+terbuka. Bukan bukti independen atau final acceptance.

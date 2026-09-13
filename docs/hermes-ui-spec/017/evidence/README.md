@@ -1,22 +1,37 @@
-# Bukti visual Spec 017 — capture awal dan temuan
+# Bukti visual Spec 017
 
-**Terbaru: perbaikan spasi ANSI terverifikasi pada `a2a3d08`; parity masih FAIL.**
+**Terbaru: fixture banner 5a8e12c cocok selain branding terdokumentasi;
+keseluruhan §J.7 belum selesai atau diterima user.**
 
-Lihat [laporan capture ulang](banner-a2a3d08/REPORT.md): RED/GREEN dan CI kode
-lulus; kolom 100/80 cocok, tetapi 94/95 dan style masih berbeda. Capture dari
-sumber committed sudah menyertakan compiler/Cargo. Bukti lama di bawah tetap
-menjadi catatan diagnosis awal, bukan status validasi terbaru.
+[Laporan terbaru](banner-5a8e12c/REPORT.md): CI 34785921216 dan capture
+34785921221 SUCCESS; semua delapan PNG diperiksa, delapan raw/event/cast round
+trip terverifikasi. Tools 51/41/48/49 dan Session 4/17/21/21 cocok; tidak ada
+perbedaan posisi glyph non-judul atau atribut glyph sama. Ini bukan klaim
+pixel/raw identity atau semua variasi banner.
 
-Kesepakatan Q1–Q8 dan izin eksekusi sudah dikonfirmasi user. Ini hasil tahap
-pertama, bukan bukti lengkap kelima area dan bukan persetujuan closure.
+| Paket immutable | Hasil pada sumber itu |
+|---|---|
+| [814c235](banner-814c235/) | FAIL spasi ANSI/kolom/style |
+| [a2a3d08](banner-a2a3d08/REPORT.md) | FAIL long-session/style |
+| [b56c9a3](banner-b56c9a3/REPORT.md) | FAIL Session centering 94 |
+| [5a8e12c](banner-5a8e12c/REPORT.md) | Fixture match dengan branding terdokumentasi; bukan closure |
 
-## Tindak lanjut kode
+[Ledger TDD](tdd-followup.md) mencatat empat slice yang diminta ditambah
+regresi centering setelah recapture. [Standards/Spec review](review-059cd65.md)
+adalah pemeriksaan langsung terbatas, **bukan independen**.
 
-[Empat slice TDD](tdd-followup.md) untuk layout session panjang dan style
-sudah RED → GREEN. Review serta capture final masih menunggu; gambar lama
-bukan bukti kelulusan kode yang baru diperbaiki.
+Wizard, picker, completion candidates, dan variasi summary nol/non-nol masih
+memerlukan bukti berpasangan sesuai Q1–Q8. Persiapan import Python setup dan
+curses berhasil di home sementara tanpa kredensial dengan koneksi diblokir;
+ini bukan capture UI. `hermes_cli.completion` hanya generator shell completion,
+bukan seam kandidat REPL; jangan salah memakai import itu sebagai bukti.
+Closure tetap memerlukan acceptance user. Tidak ada izin merge.
 
-## Hasil yang benar-benar dijalankan
+---
+
+Catatan berikut mempertahankan diagnosis historis, bukan status terbaru.
+
+## Historis: capture awal 814c235
 
 - Rust: CLI asli, provider `fake`, PTY 30 baris pada 100/80/94/95 kolom.
   Sumber `814c235fd6391f1173e9d3d7bc6ec879c8bda5fd`; [capture runner
@@ -91,7 +106,7 @@ Transport Rust: tiga annotation base64/gzip, diverifikasi lengkap, ukuran
 `311964327069028ef542075a8b9ca76d6b5e9e4f6c43dd90cc637aa86d0204d4`.
 Signed artifact ZIP gagal di sandbox; tidak ada bagian hilang yang diabaikan.
 
-## Hambatan dan pekerjaan tersisa
+## Hambatan pada tahap a2a3d08 (historis)
 
 - Validasi kini memakai push yang diizinkan dan rustup resmi; dispatch manual
   403 bukan lagi prasyarat. RED/GREEN serta CI sumber `a2a3d08` sudah berhasil.
