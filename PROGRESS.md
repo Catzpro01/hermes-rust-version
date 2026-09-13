@@ -239,3 +239,14 @@ performed.** The Python installation was not modified.
   decision; no reviewer approval or merge permission was inferred.
 - All source/metadata checks passed; no download error remains. No merge,
   branch switch, global installer, hook, or Python Hermes mutation occurred.
+
+## 2026-09-14: `/ask-matt` route for Spec 017 closure
+
+- Read the installed original router, phase-boundary tree, and active T11.
+  Rechecked run `34777939387`: both CI jobs passed on `f5f820a`.
+- Recommendation: user invokes `/grill-with-docs` to settle §J.7's required
+  visual evidence, normalization/adaptations, and acceptance/sign-off criteria.
+  Build only after those decisions; split into spec/tickets if multi-session.
+- Continue in this session: the current reasoning remains relevant. No clear,
+  compact, new user-only flow, independent review, or merge was performed.
+- Routing/progress documentation only; no code change or new Rust test run.
