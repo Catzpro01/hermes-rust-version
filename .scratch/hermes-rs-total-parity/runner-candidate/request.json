@@ -2,5 +2,6 @@
   "phase": "green",
   "source_sha256": "0200acd6d02900fda4950e235e8753829d9107995c8a1adb53b7a0d0825e1c6a",
   "patch_sha256": "b4daed99be5f7c4a5bfd7707e17aa99d787dc9f8641df936253c0d986766445f",
-  "red_run": 34782681568
+  "red_run": 34782681568,
+  "retry": "expose-first-differing-row"
 }

@@ -600,3 +600,12 @@ performed.** The Python installation was not modified.
 - Added compiler/Cargo version recording to future raw capture bundles.
   GREEN must pass fmt/check, the regression, clippy and full workspace tests;
   only then apply the exported, verified Rust delta locally.
+
+## 2026-09-14: First GREEN candidate still fails; expose exact difference
+
+- Run 34782794534 on e92cc63 passed candidate fmt/check but the ANSI regression
+  still failed. Do not apply or declare the candidate fixed. Workspace checks
+  and captures correctly did not run after failure.
+- Added a bounded first-differing-row diagnostic from the real assertion log,
+  with the job still failing. Retrying the same candidate to inspect the exact
+  mismatch instead of guessing or weakening the comparison.

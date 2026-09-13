@@ -86,6 +86,7 @@ jobs:
           cargo fmt --all -- --check
           cargo check --workspace --locked
       - name: Exercise ANSI geometry regression
+        id: regression
         if: steps.plan.outputs.phase != 'none'
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
@@ -104,6 +105,26 @@ jobs:
             grep -F 'test tui::welcome::tests::banner_ansi_preserves_python_reference_layout ... ok' regression.log
             echo '::notice title=ANSI regression::GREEN: named geometry regression passed.'
           fi
+      - name: Report exact regression difference
+        if: always() && steps.regression.outcome == 'failure'
+        run: |
+          python3 - <<'PYCODE'
+          import pathlib, re, json
+          text = pathlib.Path('regression.log').read_text()
+          try:
+              left = json.loads(re.search(r'^\s*left: (.*)$', text, re.M)[1])
+              right = json.loads(re.search(r'^\s*right: (.*)$', text, re.M)[1])
+              lines = [f'actual rows={len(left)}, expected rows={len(right)}']
+              for index, (a, b) in enumerate(zip(left, right)):
+                  if a != b:
+                      lines += [f'first differing row={index}', f'actual={a!r}', f'expected={b!r}']
+                      break
+              body = '\n'.join(lines)
+          except Exception:
+              body = '\n'.join(text.splitlines()[-20:])[:2500]
+          body = body.replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+          print('::error title=ANSI regression difference::' + body[:3500])
+          PYCODE
       - name: Check complete corrected workspace
         if: steps.plan.outputs.phase == 'green'
         run: |
