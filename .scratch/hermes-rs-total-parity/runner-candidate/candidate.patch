@@ -1,29 +1,19 @@
 --- a/crates/hermes-cli/src/tui/welcome.rs
 +++ b/crates/hermes-cli/src/tui/welcome.rs
-@@ -773,9 +773,8 @@
-         for x in area.x..area.x + area.width {
-             let cell = &buf[(x, y)];
-             let sgr = sgr_for(cell, depth);
--            if cell.symbol() == " " && sgr.is_empty() {
--                continue;
--            }
-+            // Unstyled spaces still advance the terminal cursor. Omitting
-+            // them collapses padding, columns, and the panel's right border.
-             if sgr.is_empty() && !current.is_empty() {
-                 w.write_all(b"\x1b[0m")?;
-                 current.clear();
-@@ -1334,6 +1333,48 @@
+@@ -1334,6 +1334,50 @@
      }
  
      #[test]
 +    fn banner_ansi_preserves_python_reference_layout() {
 +        let theme = HermesTheme::dark_canonical();
-+        let info = banner_info(Some("gpt-5"), Some(128_000), &[], &[], None);
-+        for (width, reference) in [
-+            (100, REF_W100_PRIMARY),
-+            (80, REF_W80_PRIMARY),
-+            (94, REF_W94_PRIMARY),
-+            (95, REF_W95_PRIMARY),
++        // Each independent Python reference has its own input fixture,
++        // identical to the corresponding plain-banner reference test above.
++        for (width, info, reference) in [
++            (100, banner_info(Some("anthropic/claude-sonnet-4-5"), Some(200_000),
++                &["file_read", "file_write", "web_search"], &[], None), REF_W100_PRIMARY),
++            (80, banner_info(Some("anthropic/claude-sonnet-4-5"), None, &[], &[], None), REF_W80_PRIMARY),
++            (94, banner_info(Some("gpt-5"), Some(128_000), &[], &[], None), REF_W94_PRIMARY),
++            (95, banner_info(Some("gpt-5"), Some(128_000), &[], &[], None), REF_W95_PRIMARY),
 +        ] {
 +            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
 +                let mut bytes = Vec::new();

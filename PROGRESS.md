@@ -609,3 +609,14 @@ performed.** The Python installation was not modified.
 - Added a bounded first-differing-row diagnostic from the real assertion log,
   with the job still failing. Retrying the same candidate to inspect the exact
   mismatch instead of guessing or weakening the comparison.
+
+## 2026-09-14: Correct regression fixtures, then repeat genuine RED
+
+- Inspection found an error in the proposed test: it reused gpt-5/128K/no-tools
+  for every reference, but width 100 expects Claude/200K/three tools and width
+  80 expects Claude/no context. Widths 94/95 use gpt-5/128K.
+- Corrected only test inputs to exactly match the existing independent Python
+  references. Expected rows and assertions are NOT changed or weakened.
+- The earlier named RED is real execution but is superseded as the trusted
+  baseline because its fixture was wrong. Re-submit TEST ONLY on the unchanged
+  buggy writer in RED phase; then revalidate the minimal fix separately.
