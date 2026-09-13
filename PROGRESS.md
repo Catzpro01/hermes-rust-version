@@ -55,3 +55,25 @@ modification of Python Hermes is claimed.
   actual push/CI result in the next entry, not as a prediction here.
 - Visual §J.7 evidence or explicit reviewer approval remains required.
 - No merge or auto-merge is authorized. No PR has been opened in this session.
+
+## 2026-09-14 — Checkpoint pushed; genuine format failure exposed
+
+- Commit `52a5fba` pushed successfully to the assigned branch; remote HEAD
+  was verified as `52a5fba2c3b73c544859318b4bc1627d76101078`.
+- CI run [34776587517](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34776587517)
+  failed correctly: annotations report `fmt=failure clippy=success test=success`.
+  All **576 Rust tests** passed; the workflow regression job also passed.
+- The new gate exposed pre-existing Rust formatting drift, beginning in
+  `approval.rs`; the old `|| true` had hidden it. Do not disable the gate.
+- The diagnostics also incorrectly called successful SIGINT test output
+  (`error: interrupted`) a build failure. Restrict test-build annotations
+  to failed test steps and retain a regression for genuine compiler errors.
+- Signed artifact/raw log downloads are blocked (EOF), and local Rust
+  downloads remain unavailable. Add a formatting-recovery step on the
+  GitHub runner: run `cargo fmt --all`, verify formatting, run `cargo check`,
+  and export a tracked-Rust-only patch as artifact plus compressed,
+  checksummed annotations. It does **not** commit/push or mask the original
+  failed check. The patch must be decoded, hash-checked, and reviewed locally.
+- Next: push this diagnostics/recovery checkpoint, retrieve its verified
+  formatting patch, review/apply it, commit with progress, and rerun CI.
+  No merge is authorized or performed.

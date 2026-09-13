@@ -4,7 +4,11 @@ Run: python3 -m pip install PyYAML && python3 scripts/test_ci_workflow.py
 PyYAML is a review/test dependency only, not a Hermes runtime dependency.
 """
 
+import base64
+import gzip
+import hashlib
 import itertools
+import re
 import os
 from pathlib import Path
 import subprocess
@@ -67,6 +71,10 @@ class CiGateTests(unittest.TestCase):
             with self.subTest(status=status), tempfile.TemporaryDirectory() as tmp:
                 if log is not None:
                     (Path(tmp) / "fmt.log").write_text(log)
+                (Path(tmp) / "test.log").write_text(
+                    "error: interrupted\ntest smoke_sigint_returns_130 ... ok\n"
+                    "test result: ok. 1 passed; 0 failed;\n"
+                )
                 env = dict(os.environ, FMT=status, CLIPPY="success", TEST="success",
                            GITHUB_STEP_SUMMARY=str(Path(tmp) / "summary.md"))
                 result = subprocess.run(
@@ -74,12 +82,48 @@ class CiGateTests(unittest.TestCase):
                     cwd=tmp, env=env, capture_output=True, text=True, check=False,
                 )
                 self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertNotIn("::error title=test-build::", result.stdout)
                 self.assertIn(f"fmt={status} clippy=success test=success", result.stdout)
                 self.assertEqual("::error title=rustfmt::" in result.stdout, status != "success")
                 if status == "failure":
                     self.assertIn("100%25", result.stdout)
                 if status == "skipped":
                     self.assertIn("Formatting check did not succeed.", result.stdout)
+
+
+    def test_diagnostics_still_report_a_real_test_build_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "test.log").write_text("error[E0425]: unknown value\n")
+            env = dict(os.environ, FMT="success", CLIPPY="success", TEST="failure",
+                       GITHUB_STEP_SUMMARY=str(Path(tmp) / "summary.md"))
+            result = subprocess.run(
+                ["bash", "-e", "-c", STEPS["Publish diagnostics"]["run"]],
+                cwd=tmp, env=env, capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("::error title=test-build::error[E0425]", result.stdout)
+
+    def test_format_patch_roundtrip_excludes_non_rust_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(["git", "init", "--quiet", tmp], check=True)
+            root = Path(tmp)
+            (root / "main.rs").write_text("fn main(){}\n")
+            (root / "config.yaml").write_text("old: value\n")
+            subprocess.run(["git", "add", "."], cwd=tmp, check=True)
+            (root / "main.rs").write_text("fn main() {}\n")
+            (root / "config.yaml").write_text("private: do-not-export\n")
+            result = subprocess.run(
+                ["python3", str(ROOT / "scripts/export_format_patch.py")],
+                cwd=tmp, capture_output=True, text=True, check=True,
+            )
+            chunks = re.findall(r"::notice title=rustfmt patch \d+/\d+::(.*)", result.stdout)
+            patch = gzip.decompress(base64.b64decode("".join(chunks)))
+            self.assertEqual(patch, (root / "fmt.patch").read_bytes())
+            self.assertIn(hashlib.sha256(patch).hexdigest(), result.stdout)
+            self.assertIn(b"main.rs", patch)
+            self.assertNotIn(b"config.yaml", patch)
+            self.assertNotIn(b"do-not-export", patch)
+            subprocess.run(["git", "apply", "--check", "--reverse", "fmt.patch"], cwd=tmp, check=True)
 
 
 if __name__ == "__main__":

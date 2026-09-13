@@ -95,9 +95,12 @@ jobs:
           for b in blocks('clippy.log', r'^(error|warning)(\[|:)'):
               if n >= 45: break
               emit('error' if b[0].startswith('error') else 'warning', 'clippy', b); n += 1
-          for b in blocks('test.log', r'^(error)(\[|:)'):
-              if n >= 45: break
-              emit('error', 'test-build', b); n += 1
+          # Passing cancellation/error-path tests can print `error: ...`.
+          # Only classify these lines as build diagnostics when tests failed.
+          if os.environ.get('TEST') != 'success':
+              for b in blocks('test.log', r'^(error)(\[|:)'):
+                  if n >= 45: break
+                  emit('error', 'test-build', b); n += 1
           try: t = open('test.log').read()
           except FileNotFoundError: t = ''
           for m in re.finditer(r'^---- (.+?) stdout ----\n(.*?)(?=^---- |^failures:|\Z)', t, re.S | re.M):
@@ -114,6 +117,18 @@ jobs:
           CLIPPY: ${{ steps.clippy.outcome }}
           TEST: ${{ steps.test.outcome }}
 
+      # Offer a verified, reviewable patch when the sandbox has no Rust
+      # toolchain. This never commits/pushes and never changes the failed
+      # outcome of the original format check.
+      - name: Prepare formatting patch
+        if: ${{ !cancelled() && steps.fmt.outcome == 'failure' }}
+        run: |
+          set -o pipefail
+          cargo fmt --all
+          cargo fmt --all -- --check
+          cargo check --workspace --locked 2>&1 | tee format-recovery-check.log
+          python3 scripts/export_format_patch.py
+
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -123,6 +138,8 @@ jobs:
             fmt.log
             clippy.log
             test.log
+            format-recovery-check.log
+            fmt.patch
 
       - name: Fail if any step failed
         if: always() && (steps.fmt.outcome != 'success' || steps.clippy.outcome != 'success' || steps.test.outcome != 'success')
