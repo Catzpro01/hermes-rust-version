@@ -3,7 +3,6 @@
 #[allow(dead_code)]
 #[path = "../src/tui/art.rs"]
 mod art;
-#[allow(dead_code)]
 #[path = "../src/tui/theme.rs"]
 mod theme;
 #[allow(dead_code)]

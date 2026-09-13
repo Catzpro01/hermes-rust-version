@@ -943,3 +943,13 @@ is diagnostic only. Summary adapter validation 34786776914 failed with exit
 101; signed logs unavailable (EOF), no Rust applied. Added bounded annotation
 diagnostics and retry, without weakening any Rust gate. Remaining UI source
 has not been corrected or declared equivalent.
+
+### Adapter failure diagnosed; fixture navigation corrected
+
+34786950556 diagnostics identify clippy duplicated_attributes: theme.rs
+already allows dead_code. Removed only the duplicate adapter attribute; gates
+remain unchanged. Python diagnostic capture identified invalid fixture API
+(create_session has no started_at parameter) and Docker menu's Keep-current
+entry; fixed seeding via isolated DB and matched navigation. All subsequent
+snapshots now require concrete readiness labels, not empty-marker quiet alone.
+This avoids mistaking transitional/empty screens for completion evidence.

@@ -93,7 +93,7 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
                 select.select([], [], [], 0.02)
             marker, key = steps[index]
             code = proc.poll()
-            ready = marker.encode() in bytes(output[cursor:]) if marker != '@exit' else code is not None
+            ready = (marker.encode() in bytes(output[cursor:]) or (len(output) > cursor and marker in '\n'.join(screen.display))) if marker != '@exit' else code is not None
             if code is not None and code != 0:
                 error = f'process exit {code} at stage {index}'
                 break
@@ -137,26 +137,26 @@ def steps_for(name, side):
     mode = 'How would you like to set up Hermes?'
     if name == 'wizard-mode': return [(mode, None)]
     if name == 'wizard-full': return [(mode, down+'\r'), (provider, None)]
-    if name == 'wizard-blank': return [(mode, down*2+'\r'), ('', None)]
-    if name == 'wizard-quick': return [(mode, '\r'), ('', None)]
+    if name == 'wizard-blank': return [(mode, down*2+'\r'), (provider, None)]
+    if name == 'wizard-quick': return [(mode, '\r'), (terminal if py else provider, None)]
     if name == 'wizard-model': return [(provider, None)]
     if name == 'wizard-terminal': return [(terminal, None)]
     if name == 'wizard-local': return [(terminal, '\r'), ('@exit', None)]
-    if name == 'wizard-docker': return [(terminal, down+'\r'), ('Docker not found', None)]
+    if name == 'wizard-docker': return [(terminal, down*(2 if py else 1)+'\r'), ('Docker not found', None)]
     if name == 'wizard-gateway': return [(gateway, None)]
     if name == 'wizard-gateway-empty': return [(gateway, '\r'), ('@exit', None)]
-    if name == 'wizard-gateway-token': return [(gateway, ' \r'), ('', None)]
+    if name == 'wizard-gateway-token': return [(gateway, ' \r'), ('Server URL', 'https://fixture.invalid\r'), ('Bot token', None)]
     if name == 'wizard-tools': return [(tools, None)]
-    if name == 'wizard-tools-toggle': return [(tools, '\r' if py else ' '), ('', None)]
+    if name == 'wizard-tools-toggle': return [(tools, '\r' if py else ' '), ('Tools for' if py else 'Select toolsets to enable:', None)]
     if name == 'wizard-cancel': return [(terminal, '\x1b'), ('@exit', None)]
     if name == 'picker-empty': return [('No sessions found.', None)]
     if name == 'picker-normal': return [('Browse sessions', None)]
-    if name == 'picker-filter': return [('Browse sessions', 'deploy'), ('', None)]
+    if name == 'picker-filter': return [('Browse sessions', 'deploy'), ('filter: deploy', None)]
     if name == 'picker-no-match': return [('Browse sessions', 'zzzz'), ('No sessions match', None)]
-    if name == 'picker-delete': return [('Browse sessions', 'd'), ('', None)]
+    if name == 'picker-delete': return [('Browse sessions', 'd'), ('Delete', None)]
     if name.startswith('completion-'):
         text = {'completion-command':'/mod', 'completion-subcommand':'/skills ', 'completion-alternatives':'/s'}[name]
-        return [('❯' if py else 'Welcome to Hermes Agent!', text+'\t\t'), ('', None)]
+        return [('❯' if py else 'Welcome to Hermes Agent!', text+'\t\t'), (text.rstrip(), None)]
     return [('@exit', None)]
 
 
@@ -221,8 +221,10 @@ def python_child(reference, name, width):
         db = SessionDB(Path(os.environ['HERMES_HOME'])/'state.db')
         if name != 'picker-empty':
             for i,(sid,text) in enumerate(((SID_A,'deploy the thing'),(SID_B,'second topic'))):
-                db.create_session(sid,source='cli',started_at=1700000000+i)
+                db.create_session(sid,source='cli')
                 db.append_message(sid,'user',text,timestamp=1700000000.5+i)
+                with sqlite3.connect(Path(os.environ['HERMES_HOME'])/'state.db') as seed:
+                    seed.execute('UPDATE sessions SET started_at=?, last_activity_at=? WHERE id=?',(1700000000+i,1700000000.5+i,sid))
         _session_browse_picker(db.list_sessions_rich(),session_db=db)
     elif name.startswith('completion'):
         from prompt_toolkit import PromptSession
