@@ -8,7 +8,8 @@ const bundled = require('@sparticuz/chromium');
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 
 async function main() {
-  const [input, output] = process.argv.slice(2);
+  const [input, output, mode = 'banner'] = process.argv.slice(2);
+  if (!['banner', 'ui'].includes(mode)) throw new Error('Unsupported render mode');
   if (!input || !output) throw new Error('Usage: node render.cjs paired.json NEW_OUTPUT_DIR');
   if (fs.existsSync(output)) throw new Error('Refusing to overwrite evidence');
   const bundle = JSON.parse(fs.readFileSync(input, 'utf8'));
@@ -26,10 +27,16 @@ async function main() {
     fonts: fontFiles.map(f => ({weight:f.weight, style:f.style, sha256:sha(f.data)})), cases: [] };
   try {
     for (const entry of bundle.cases) {
-      if (!/^banner-(100|80|94|95)x30$/.test(entry.id)) throw new Error('Unsupported case id');
+      const validId = mode === 'banner' ? /^banner-(100|80|94|95)x30$/ : /^(wizard|picker|completion|summary)-[a-z-]+-(100|80)x30$/;
+      if (!validId.test(entry.id)) throw new Error('Unsupported case id');
       const page = await browser.newPage({ viewport: { width: 2300, height: 1000 }, deviceScaleFactor: 1 });
       await page.route('**/*', route => route.abort()); // Replay needs no network.
       await page.setContent('<html><head></head><body><div id="pair"><section><h3>Python — upstream display component</h3><div id="python"></div></section><section><h3>Rust — real offline REPL banner</h3><div id="rust"></div></section></div></body></html>');
+      if (mode === 'ui') await page.evaluate(() => {
+        const headings = document.querySelectorAll('h3');
+        headings[0].textContent = 'Python — upstream UI component';
+        headings[1].textContent = 'Rust — actual CLI / summary component';
+      });
       await page.addStyleTag({ content: fontCSS + '\nbody{margin:0;padding:20px;background:#16191d;color:#eee;font:14px sans-serif}#pair{display:flex;gap:24px;width:max-content}section{width:max-content}h3{margin:0 0 12px}.xterm{padding:0}' });
       await page.addStyleTag({ path: require.resolve('@xterm/xterm/css/xterm.css') });
       await page.addScriptTag({ path: require.resolve('@xterm/xterm/lib/xterm.js') });
@@ -37,6 +44,7 @@ async function main() {
       const screens = {};
       for (const side of ['python', 'rust']) {
         const c = entry[side];
+        if (c.error) throw new Error(`Unreached UI case ${entry.id}/${side}: ${c.error}`);
         const raw = Buffer.from(c.raw_base64, 'base64');
         if (sha(raw) !== c.raw_sha256) throw new Error('Corrupt raw capture');
         const replay = Buffer.concat(c.events_base64.map(e => Buffer.from(e[1], 'base64')));

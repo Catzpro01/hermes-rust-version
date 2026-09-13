@@ -953,3 +953,14 @@ remain unchanged. Python diagnostic capture identified invalid fixture API
 entry; fixed seeding via isolated DB and matched navigation. All subsequent
 snapshots now require concrete readiness labels, not empty-marker quiet alone.
 This avoids mistaking transitional/empty screens for completion evidence.
+
+### Verified adapter applied; committed-source remaining UI capture enabled
+
+Summary adapter GREEN 34787050413 / 536cbfc passed fmt/check, clippy and full
+workspace tests. Verified runner export and applied exactly (byte-identical
+Rust diff); proposal consumed. No runtime UI logic changed. Now capture actual
+committed CLI + summary component. Python diagnostic attempt2 reached 46/48
+cases; filter 'deploy' accidentally invokes the existing d-delete key binding.
+Use 'topic' instead as the ordinary filter fixture, leaving delete separate.
+Shared renderer now supports UI case IDs; eight previous banner PNGs replayed
+byte-identically, with immutable originals untouched. No parity PASS inferred.

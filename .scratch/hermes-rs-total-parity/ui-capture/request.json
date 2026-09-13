@@ -1,1 +1,1 @@
-{"phase":"validate-summary-adapter","capture":false,"retry":"remove-duplicate-theme-attribute"}
+{"phase":"capture","capture":true,"adapter_green_run":34787050413}

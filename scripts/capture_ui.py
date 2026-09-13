@@ -151,7 +151,7 @@ def steps_for(name, side):
     if name == 'wizard-cancel': return [(terminal, '\x1b'), ('@exit', None)]
     if name == 'picker-empty': return [('No sessions found.', None)]
     if name == 'picker-normal': return [('Browse sessions', None)]
-    if name == 'picker-filter': return [('Browse sessions', 'deploy'), ('filter: deploy', None)]
+    if name == 'picker-filter': return [('Browse sessions', 'topic'), ('filter: topic', None)]
     if name == 'picker-no-match': return [('Browse sessions', 'zzzz'), ('No sessions match', None)]
     if name == 'picker-delete': return [('Browse sessions', 'd'), ('Delete', None)]
     if name.startswith('completion-'):
