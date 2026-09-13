@@ -121,6 +121,7 @@ jobs:
       # toolchain. This never commits/pushes and never changes the failed
       # outcome of the original format check.
       - name: Prepare formatting patch
+        id: format_recovery
         if: ${{ !cancelled() && steps.fmt.outcome == 'failure' }}
         run: |
           set -o pipefail
@@ -128,6 +129,22 @@ jobs:
           cargo fmt --all -- --check
           cargo check --workspace --locked 2>&1 | tee format-recovery-check.log
           python3 scripts/export_format_patch.py
+
+      - name: Export formatting patch group 2
+        if: ${{ !cancelled() && steps.format_recovery.outcome == 'success' }}
+        run: python3 scripts/export_format_patch.py --group 1
+
+      - name: Export formatting patch group 3
+        if: ${{ !cancelled() && steps.format_recovery.outcome == 'success' }}
+        run: python3 scripts/export_format_patch.py --group 2
+
+      - name: Export formatting patch group 4
+        if: ${{ !cancelled() && steps.format_recovery.outcome == 'success' }}
+        run: python3 scripts/export_format_patch.py --group 3
+
+      - name: Export formatting patch group 5
+        if: ${{ !cancelled() && steps.format_recovery.outcome == 'success' }}
+        run: python3 scripts/export_format_patch.py --group 4
 
       - name: Upload logs
         if: always()

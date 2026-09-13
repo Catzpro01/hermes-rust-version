@@ -95,3 +95,21 @@ modification of Python Hermes is claimed.
   Preserve checksum validation before applying any remote patch.
 - Next: push the corrected exporter, fetch complete parts, verify checksum,
   inspect/apply the Rust-only patch, and rerun CI. No merge performed.
+
+## 2026-09-14 — Respect Actions' per-step annotation quota
+
+- Checkpoint `fe8c5f8` pushed; run
+  [34776815998](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34776815998)
+  again passed clippy/576 tests and verified the formatted workspace with
+  `cargo check`. The five QA tests passed. Original fmt failure stays visible.
+- The complete patch is 274,328 bytes (26 compressed parts). Individual
+  3,000-character parts now survive the API, but Actions retained only the
+  first ten notices in the exporter step (digest + nine parts).
+  Completeness validation rejected retrieval; no incomplete patch applied.
+- Split export into groups of eight parts across separate workflow steps,
+  leaving room for the digest within the per-step quota. Extend the test
+  past eight parts and assert per-step notice and per-part size bounds.
+- The sandbox's `gh` lacks `--slurp`; use `gh api .../annotations?per_page=100`
+  and validate part indices plus digest when retrieving the patch.
+- Next action remains checksum-verified patch application, then fresh CI.
+  No merge or auto-merge has been performed.
