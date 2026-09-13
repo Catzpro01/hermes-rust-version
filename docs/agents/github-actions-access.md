@@ -1,0 +1,64 @@
+# Pemulihan akses dispatch GitHub Actions
+
+Status 2026-09-14: **BLOCKED — otorisasi koneksi GitHub perlu tindakan user/pemilik integrasi.**
+
+## Yang diperiksa agent
+
+- Pembacaan workflow/run bekerja. CI `34779850516` pada `3a644c7` berhasil
+  di kedua job. Ini tidak membuktikan izin memulai run manual.
+- Pembacaan pengaturan `GET /repos/Catzpro01/hermes-rust-version/actions/permissions`
+  ditolak HTTP 403 `Resource not accessible by integration`.
+- Percobaan pemulihan melalui dispatch capture tanpa kandidat juga ditolak:
+
+  ```bash
+  gh workflow run visual-evidence.yml \
+    --ref arena/01a09c1e-hermes-rust-version \
+    -f regression_phase=none
+  ```
+
+  Hasil: HTTP 403 `Resource not accessible by integration`. Tidak ada run
+  baru atau hasil RED/GREEN dari percobaan ini.
+- Tidak ada perubahan pengaturan izin, token, secrets, gate CI, atau sumber
+  Rust. Push progress tetap bekerja; jangan menyimpulkan seluruh Actions mati.
+
+GitHub mendokumentasikan **Actions repository permission: write** untuk
+GitHub App/fine-grained authorization pada [Create a workflow dispatch
+event](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event).
+Kegagalan yang diamati adalah penolakan otorisasi pada pemanggilan API;
+penyebab spesifik pada konfigurasi integrasi tidak dapat dipastikan karena
+pengaturan izin tidak dapat dibaca. Mengubah `permissions:` milik job tidak
+memperluas izin koneksi agent yang memanggil API tersebut.
+
+## Tahapan yang memerlukan pemilik koneksi
+
+Ini tahapan manual yang diusulkan sesuai rute `/wizard`, bukan klaim bahwa
+sebuah wizard interaktif sudah dijalankan. Tidak ada nilai kredensial yang
+perlu disalin ke chat, `.env`, atau GitHub secrets.
+
+| Tahap | Tindakan | Nilai yang dikumpulkan |
+|---|---|---|
+| 1 | Sambungkan ulang GitHub melalui kontrol koneksi GitHub di Arena, untuk akun/repository yang benar. Posisi/nama menu Arena tidak diverifikasi dari sandbox ini. | Tidak ada |
+| 2 | Jika diminta GitHub, tinjau dan setujui akses aplikasi yang relevan ke `Catzpro01/hermes-rust-version`, termasuk permintaan izin Actions yang dibutuhkan. Jangan membuat atau mengirim PAT. | Tidak ada |
+| 3 | Beri tahu agent bahwa koneksi telah diperbarui. Agent mengulang dispatch pada branch sesi dan memverifikasi run sebenarnya. | Konfirmasi non-rahasia saja |
+
+Jika 403 tetap muncul setelah reconnect, hubungi dukungan Arena/pemilik
+integrasi: minta pemeriksaan izin **Actions: write** untuk repository ini.
+Pemilik instalasi tidak selalu dapat menambahkan izin yang belum diminta
+oleh aplikasi. Jangan menonaktifkan pembatasan organisasi atau memberikan
+izin luas yang tidak terkait untuk mengatasi masalah ini.
+
+## Bukti pemulihan yang diperlukan
+
+- [ ] Dispatch diterima oleh GitHub pada branch sesi.
+- [ ] Run baru benar-benar muncul dengan SHA/ref yang sesuai.
+- [ ] Job yang dimaksud berjalan; kegagalan build/test dilaporkan terpisah.
+
+Hanya setelah itu status akses dinyatakan pulih. Keberhasilan CI push atau
+pembaruan skill tidak menggantikan bukti tersebut.
+
+## Rute kerja setelah akses pulih
+
+`/tdd` pada output ANSI banner → verifikasi RED/GREEN dan fmt/check/clippy/test
+→ `/code-review` → capture ulang → sisa kasus T12. Gunakan `/diagnosing-bugs`
+jika loop tidak mengonfirmasi dugaan penyebab. Tetap di sesi/branch sekarang;
+Q1–Q8 tidak dibuka ulang, dan closure/merge tidak otomatis disetujui.

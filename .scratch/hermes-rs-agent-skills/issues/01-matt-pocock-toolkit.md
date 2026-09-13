@@ -42,3 +42,15 @@ alternative. Installation is not a claim that every workflow was executed.
 
 No runtime Rust change, global installation, credential configuration,
 Git hook, branch switch, PR, or merge is part of this task.
+
+## Latest upstream check — 2026-09-14
+
+User requested the newest collection again. Queried official `main`/HEAD:
+`3cca18b368ae95cdbdebbff572ccafa662551015` remains current. Downloaded a fresh
+archive, verified all 164 files / 666,067 bytes and 37 local skill links.
+Canonical tree: `6e84c093fda2026396cea9fad6a924a6da0e1452`.
+The installed snapshot already matches; no upstream code change is needed.
+Refreshed verification metadata in the existing lock and corrected the
+integration document's stale initial routing (Q1-Q8 are now settled).
+Latest `/ask-matt`: human Actions authorization first (`/wizard` scope), then
+focused `/tdd`, review and remaining captures. This is not personal approval.

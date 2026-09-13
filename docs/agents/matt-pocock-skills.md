@@ -10,6 +10,14 @@ scripts, metadata, and documentation, are preserved without edits. The
 adjacent `mattpocock-skills.lock.json` records every path, Git blob hash,
 size, and mode. This is a source snapshot, not an automatic updater.
 
+Latest refresh check (2026-09-14): downloaded the official archive again and
+verified all 164 files (666,067 source bytes) against the canonical upstream
+Git tree and the installed snapshot, plus all 37 local links. Upstream
+`main` is still `3cca18b368ae95cdbdebbff572ccafa662551015`: the installed
+collection is current as observed, not a newly invented upgrade. The lock's
+`latest_verification` records archive SHA-256 and canonical tree identity.
+No vendor file, invocation gate, or global installation was changed.
+
 All 37 skill directories are linked into the project-local `.agents/skills/`:
 25 stable engineering/productivity skills, eight `in-progress` skills, and
 four `misc` skills. The latter two buckets are included because the user
@@ -73,13 +81,16 @@ interpretation in this session was mistaken. No personal Matt verdict has
 been obtained, and earlier historical approval claims are not validated by
 installing the router.
 
-Applied to the current handoff: CI repair is verified, but Spec 017 §J.7's
-visual-evidence decision remains open. The recommended next user-invoked
-flow is `/grill-with-docs` to settle the evidence and acceptance criteria.
-Use `/to-spec` and `/to-tickets` if that produces multi-session work; otherwise
-use `/implement` on the agreed scope. For a separate diff review, choose
-`/code-review` with an explicit fixed point and account for the subagent
-limitation above. The router itself grants no closure or merge approval.
+Applied to the current handoff: Q1-Q8 and execution are confirmed; first real
+captures exposed an ANSI whitespace/geometry defect. T12 remains blocked by
+HTTP 403 on workflow dispatch, not by missing skills. The immediate route is
+the human-only authorization stage covered by `/wizard`; see
+[Actions access recovery](github-actions-access.md). No credential-collecting
+wizard was generated or executed. After access is actually verified, use
+`/tdd` for the narrow regression, then `/code-review` and remaining captures.
+Use `/diagnosing-bugs` if the loop challenges the suspected cause. Continue
+in this session; do not re-interview the settled evidence policy. The router
+itself grants no closure, personal Matt verdict, or merge approval.
 
 ## Updating and verification
 

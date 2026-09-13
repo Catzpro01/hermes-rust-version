@@ -50,11 +50,16 @@ user's private Python installation.
   is prepared but NOT executed/applied; no Rust fix is claimed. After access
   returns, remote fmt/check + RED/GREEN verification must precede Rust commit.
   Use the report, T12 and tooling README for exact evidence/next commands.
-- Latest `/ask-matt` routing: continue in this session; use `/tdd` for the
-  narrow ANSI geometry regression once Actions access is restored, then
-  `/code-review` and the remaining T12 captures. Q1-Q8 need no re-interview.
-  `/diagnosing-bugs` is the fallback if the feedback loop does not confirm
-  the suspected cause. Routing is not execution, access restoration, or sign-off.
+- Latest user request: restore Actions, download latest Matt Pocock skills,
+  then `/ask-matt`. Rechecked dispatch and permission settings: both still
+  HTTP 403; access was NOT restored. Follow docs/agents/github-actions-access.md
+  for the human-only authorization stage (`/wizard` route; no script or secret
+  collection performed). Then `/tdd` → `/code-review` → remaining T12 captures;
+  `/diagnosing-bugs` if needed. Continue here; Q1-Q8 need no re-interview.
+- Fresh official toolkit download verified on 2026-09-14: upstream main still
+  `3cca18b368ae95cdbdebbff572ccafa662551015`, all 164 files/37 links match.
+  Latest is the already-installed version, not a new release. Verification
+  added to the existing lock; no vendor edits or global installer execution.
 - The missing `/ask-matt` skill blocker is resolved. On the user's download
   request, all 37 official Matt Pocock skills were installed project-locally
   from pinned upstream `3cca18b368ae95cdbdebbff572ccafa662551015`.

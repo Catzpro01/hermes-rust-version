@@ -988,5 +988,16 @@
       "size": 102,
       "mode": "100644"
     }
-  ]
+  ],
+  "latest_verification": {
+    "checked_on": "2026-09-14",
+    "observed_default_branch": "main",
+    "observed_head": "3cca18b368ae95cdbdebbff572ccafa662551015",
+    "downloaded_archive_sha256": "3328ddacf3b39f4b8e43206f2068123427d1ad379cd7093f7345a2725f3aa5a5",
+    "tree_sha": "6e84c093fda2026396cea9fad6a924a6da0e1452",
+    "verified_files": 164,
+    "verified_source_bytes": 666067,
+    "verified_skill_links": 37,
+    "result": "Fresh upstream download equals installed snapshot; no newer upstream commit observed."
+  }
 }

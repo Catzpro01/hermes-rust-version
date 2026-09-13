@@ -87,3 +87,15 @@ Do not restart the settled interview, broaden into new features, or treat
 routing as personal Matt approval. Continue in the same session; there is
 no portability need for a handoff or reason to discard the relevant context.
 Actions access remains a prerequisite, not resolved by selecting a skill.
+
+## Access recovery request and latest skill refresh (2026-09-14)
+
+User asked to restore Actions, download current official skills, then route
+with `/ask-matt`. Permission-settings read and a no-candidate dispatch retry
+both returned HTTP 403. No new run was created; T12 remains BLOCKED.
+Current official skills were freshly downloaded and verified (same upstream
+commit, all 164 files and 37 links). Immediate routing now explicitly includes
+the human authorization stage of `/wizard` before the already-planned `/tdd`.
+Recovery stages and proof requirements: `docs/agents/github-actions-access.md`.
+No credential collection, privilege change, or interactive wizard execution
+was performed. Refreshing skills does not resolve the integration permission.

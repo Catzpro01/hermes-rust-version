@@ -413,3 +413,30 @@ performed.** The Python installation was not modified.
   credential request, Rust change, new capture, or closure approval this turn.
 - Documentation-only routing checkpoint; commit/push the notes. New checkpoint
   CI must be reported separately from the observed historical success.
+
+## 2026-09-14: Actions recovery attempted; official latest toolkit redownloaded and routed
+
+- User requested recovery + newest Matt Pocock skills + `/ask-matt`. Re-read
+  inherited context and original router/phase boundaries, then its `/wizard`
+  human-only procedure guidance. No native Skill/subagent execution claimed.
+- Retried Actions settings read and capture dispatch with `regression_phase=none`
+  on the assigned branch. Both returned HTTP 403 Resource not accessible by
+  integration. No run, access recovery, privilege change, or Rust test claimed.
+  Consulted GitHub's workflow-dispatch documentation: GitHub App/fine-grained
+  authorization requires repository Actions write permission. Recovery needs
+  reconnect/owner attention; no credentials requested or workflow gates relaxed.
+- Official `main`/HEAD still resolves to 3cca18b368ae95cdbdebbff572ccafa662551015.
+  Downloaded a fresh archive; all 164 upstream files (666,067 bytes), modes,
+  safe symlink, and 37 local links matched. Verified canonical commit tree
+  6e84c093fda2026396cea9fad6a924a6da0e1452. Source snapshot unchanged because it
+  is already the observed latest. Added archive checksum/provenance to lock.
+- Corrected stale initial routing in integration docs. Immediate `/ask-matt`
+  result: human-only authorization (`/wizard` scope; no interactive script yet),
+  then `/tdd` for ANSI geometry, `/code-review`, and remaining T12 captures.
+  Continue here; no new grilling, skill reinstall, feature expansion, or merge.
+- Prior CI 34779850516 on exact 3a644c7 passed both jobs; not evidence of
+  dispatch permission or passing visual parity. Record this turn's checks
+  and new commit CI separately. Save/push recovery guide and progress.
+- Local verification completed: 164 Git-index entries and all 37 skill
+  metadata/invocation policies verified; five existing CI gate QA tests passed;
+  `git diff --check` clean. No new Rust execution or capture this turn.
