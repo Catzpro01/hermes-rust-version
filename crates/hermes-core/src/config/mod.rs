@@ -6,4 +6,7 @@ mod schema;
 
 pub use error::ConfigError;
 pub use home::{load_config, load_config_with_provider, resolve_hermes_home, HermesHome};
-pub use schema::{ApiMode, CompressionConfig, HermesConfig, McpServerConfig, ModelConfig, ProviderConfig, SecretString};
+pub use schema::{
+    ApiMode, CompressionConfig, HermesConfig, McpServerConfig, ModelConfig, ProviderConfig,
+    SandboxConfig, SecretString,
+};

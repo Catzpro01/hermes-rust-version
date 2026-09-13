@@ -98,6 +98,73 @@ pub struct HermesConfig {
     /// tools (zero regression).
     #[serde(default)]
     pub mcp_servers: HashMap<String, McpServerConfig>,
+    /// Tool execution sandbox (Spec 007). Absent -> shell tools inherit the
+    /// process environment exactly as before Spec 007 (zero regression).
+    #[serde(default)]
+    pub sandbox: Option<SandboxConfig>,
+}
+
+/// `sandbox:` section (Spec 007). Every field is optional; `enabled: true`
+/// turns on the strict defaults (cleared env + allowlist, cwd jail, 64 KiB
+/// output cap) and the remaining fields opt into rlimits / network denial.
+/// See `tools::sandbox::SandboxPolicy::from_config` for the mapping.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+pub struct SandboxConfig {
+    #[serde(default)]
+    pub enabled: bool,
+    /// `inherit` (default) or `deny` (loopback-only network namespace).
+    #[serde(default)]
+    pub network: Option<String>,
+    #[serde(default)]
+    pub cpu_seconds: Option<u64>,
+    #[serde(default)]
+    pub max_file_size_kb: Option<u64>,
+    #[serde(default)]
+    pub max_processes: Option<u64>,
+    #[serde(default)]
+    pub max_memory_kb: Option<u64>,
+    /// Cap on tool output returned to the model, in KiB (default 64).
+    #[serde(default)]
+    pub max_output_kb: Option<u64>,
+    /// Extra environment variable **names** forwarded to the child, on top
+    /// of the built-in allowlist (`PATH`, `HOME`, locale, `TERM`, ...).
+    #[serde(default)]
+    pub env_allowlist: Vec<String>,
+}
+
+impl SandboxConfig {
+    /// Semantic validation: `(field, reason)` pairs; empty means valid.
+    pub fn validate(&self) -> Vec<(String, String)> {
+        let mut problems = Vec::new();
+        if let Some(n) = self.network.as_deref() {
+            if n != "inherit" && n != "deny" {
+                problems.push((
+                    "network".to_owned(),
+                    format!("expected `inherit` or `deny`, got `{n}`"),
+                ));
+            }
+        }
+        for (name, v) in [
+            ("cpu_seconds", self.cpu_seconds),
+            ("max_file_size_kb", self.max_file_size_kb),
+            ("max_processes", self.max_processes),
+            ("max_memory_kb", self.max_memory_kb),
+            ("max_output_kb", self.max_output_kb),
+        ] {
+            if v == Some(0) {
+                problems.push((name.to_owned(), "must be greater than 0".to_owned()));
+            }
+        }
+        for e in &self.env_allowlist {
+            if e.is_empty() || e.contains('=') || e.chars().any(char::is_whitespace) {
+                problems.push((
+                    "env_allowlist".to_owned(),
+                    format!("`{e}` is not a valid environment variable name"),
+                ));
+            }
+        }
+        problems
+    }
 }
 impl HermesConfig {
     /// Semantic validation of configured MCP servers. Returns `(server, reason)`
@@ -246,6 +313,38 @@ impl fmt::Debug for ModelConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sandbox_absent_by_default_and_parses() {
+        let c = HermesConfig::default();
+        assert!(c.sandbox.is_none());
+        let c: HermesConfig = serde_yaml::from_str("model: m\n").unwrap();
+        assert!(c.sandbox.is_none(), "pre-007 configs stay untouched");
+        let c: HermesConfig = serde_yaml::from_str(
+            "sandbox:\n  enabled: true\n  network: deny\n  cpu_seconds: 10\n  max_output_kb: 8\n  env_allowlist: [CARGO_HOME]\n",
+        )
+        .unwrap();
+        let sb = c.sandbox.expect("parsed");
+        assert!(sb.enabled);
+        assert_eq!(sb.network.as_deref(), Some("deny"));
+        assert_eq!(sb.cpu_seconds, Some(10));
+        assert_eq!(sb.max_output_kb, Some(8));
+        assert_eq!(sb.env_allowlist, vec!["CARGO_HOME".to_owned()]);
+        assert!(sb.validate().is_empty());
+    }
+
+    #[test]
+    fn sandbox_validate_reports_bad_values() {
+        let sb = SandboxConfig {
+            enabled: true,
+            network: Some("firewall".into()),
+            cpu_seconds: Some(0),
+            env_allowlist: vec!["A=B".into(), "".into()],
+            ..Default::default()
+        };
+        let fields: Vec<String> = sb.validate().into_iter().map(|(f, _)| f).collect();
+        assert_eq!(fields, vec!["network", "cpu_seconds", "env_allowlist", "env_allowlist"]);
+    }
 
     #[test]
     fn default_has_no_mcp_servers() {

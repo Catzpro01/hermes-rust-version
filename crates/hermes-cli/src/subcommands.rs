@@ -1,4 +1,4 @@
-//! Spec 014 (T03+): shell subcommands.
+//! Spec 014: shell subcommands.
 //!
 //! Subcommands reuse the same data sources and output functions as the REPL
 //! (`session_menu`, `search`, MCP handles) so the shell and the REPL render
@@ -21,7 +21,7 @@ use hermes_core::session::{SessionId, SessionStore};
 
 use crate::session_menu::{inspect_session, list_sessions};
 use crate::tui::theme::detect_color_depth;
-use crate::tui::welcome::{sgr_banner_text, sgr_bold_gold, sgr_dim_brown, SGR_RESET};
+use crate::tui::welcome::{sgr_banner_text, sgr_bold_gold, sgr_dim_brown, SGR_RESET, VERSION_LABEL};
 use crate::{Args, Commands};
 
 /// Resolve the Hermes home and load `config.yaml` (missing = `None`, same
@@ -38,31 +38,53 @@ pub(crate) fn load_home_config(
     Ok((home, config))
 }
 
+/// Hermes home for `setup`: explicit flag → `HERMES_HOME` → `~/.hermes`,
+/// without requiring the directory to exist yet.
+fn setup_home(explicit: Option<&Path>) -> PathBuf {
+    if let Some(p) = explicit {
+        return p.to_path_buf();
+    }
+    if let Some(v) = std::env::var_os("HERMES_HOME").filter(|v| !v.is_empty()) {
+        return PathBuf::from(v);
+    }
+    std::env::var_os("HOME")
+        .map(|h| PathBuf::from(h).join(".hermes"))
+        .unwrap_or_else(|| PathBuf::from(".hermes"))
+}
+
 /// Run one subcommand to completion (never enters the REPL/TUI).
 pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
+    // `version` (T07) is static: it must work even when config.yaml is
+    // invalid or the home does not exist, so it never loads anything.
+    if matches!(cmd, Commands::Version) {
+        let mut out = io::stdout().lock();
+        render_version(args.hermes_home.as_deref(), &mut out)?;
+        return out.flush().map_err(Into::into);
+    }
+    // `setup` (Spec 017 T05) may run before the home directory exists
+    // (first-time setup): resolve the path leniently and let the wizard
+    // create it on apply. Config validity is irrelevant here (the wizard
+    // edits the raw YAML mapping and backs the old file up first).
+    if let Commands::Setup { section } = cmd {
+        let home = setup_home(args.hermes_home.as_deref());
+        let section = match section.as_deref() {
+            None => None,
+            Some(tok) => match crate::wizard::setup::Section::parse(tok) {
+                Some(s) => Some(s),
+                None => anyhow::bail!(
+                    "unknown setup section '{tok}' (expected model|terminal|gateway|tools)"
+                ),
+            },
+        };
+        return match crate::wizard::setup::run_setup(&home, section) {
+            Ok(_) => Ok(()),
+            Err(e) => anyhow::bail!("{e}"),
+        };
+    }
     let (home, config) = load_home_config(args.hermes_home.as_deref())?;
     match cmd {
-        Commands::Setup => {
-            if io::stdout().is_terminal() {
-                let _ = crate::radiolist::prompt_radiolist(
-                    "Would you like to see what can be imported?",
-                    &["Yes", "No"],
-                    0,
-                );
-                let _ = crate::radiolist::prompt_radiolist(
-                    "How would you like to set up Hermes?",
-                    &[
-                        "Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)",
-                        "Full setup — configure every provider, tool & option yourself (bring your own keys)",
-                        "Blank Slate — everything off except the bare minimum; opt in to each capability",
-                    ],
-                    0,
-                );
-                println!("\n  Current model:    laguna-s-2.1-free\n  Active provider:  OpenCode Free\n\nSetup complete.");
-            } else {
-                println!("Setup complete (defaults).");
-            }
-        }
+        Commands::Version => unreachable!("handled above"),
+        Commands::Setup { .. } => unreachable!("handled above"),
         Commands::Model => {
             let colored = io::stdout().is_terminal();
             let mut out = io::stdout().lock();
@@ -116,49 +138,35 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
             crate::session_menu::search_sessions(&store, query)?;
         }
         Commands::Info => {
-            // Spec 014 T06: provider & context info
-            // Show active provider, hermes home, and basic context
-            println!("Hermes Home: {}", home.display());
-            if let Some(cfg) = config.as_ref() {
-                println!("Active provider: {}", active_provider(Some(cfg), args.provider.as_deref()));
-                println!("Providers configured: {}", cfg.providers.len());
-                if let Some(model) = &cfg.model.provider {
-                    println!("Model provider: {}", model);
-                }
-            } else {
-                println!("Active provider: fake (built-in)");
-                println!("No config.yaml found");
-            }
-            // Try to show session count if store exists
-            if let Some(store) = open_existing_store(&home)? {
-                match store.list() {
-                    Ok(sessions) => println!("Sessions: {}", sessions.len()),
-                    Err(_) => println!("Sessions: unknown"),
-                }
-            }
+            // Spec 014 T06: provider & context info, read-only. The first
+            // line mirrors the REPL's `/info` accounting for a fresh session
+            // (no turns in flight from the shell), followed by shell-only
+            // facts (home, config presence, session count).
+            let active = active_provider(config.as_ref(), args.provider.as_deref());
+            let ctx = crate::repl::resolve_context(config.as_ref(), &active);
+            let sessions = match open_existing_store(&home)? {
+                Some(store) => store.list().map(|s| s.len()).ok(),
+                None => Some(0),
+            };
+            let mut out = io::stdout().lock();
+            render_info(
+                &home,
+                config.as_ref(),
+                &active,
+                &ctx,
+                sessions,
+                &mut out,
+            )?;
+            out.flush()?;
         }
         Commands::Mcp { action } => {
-            // Spec 014 T06: MCP server status
-            // For shell, show placeholder with action, or list if config has mcp_servers
-            if let Some(cfg) = config.as_ref() {
-                if cfg.mcp_servers.is_empty() {
-                    println!("no MCP servers connected (add `mcp_servers:` to config.yaml)");
-                } else {
-                    match action {
-                        None | Some(crate::McpAction::List) => {
-                            println!("MCP servers:");
-                            for (name, srv) in &cfg.mcp_servers {
-                                println!("  {}: command={} (confirm={})", name, srv.command, srv.confirm);
-                            }
-                        }
-                        Some(crate::McpAction::Restart { name }) => {
-                            println!("mcp[{name}]: restart not supported in shell mode, use REPL /mcp restart");
-                        }
-                    }
-                }
-            } else {
-                println!("no MCP servers connected (add `mcp_servers:` to config.yaml)");
-            }
+            // Spec 014 T06: MCP server status from config.yaml. The shell
+            // never spawns an MCP child (no new execution surface outside the
+            // REPL), so the status column reads `configured` instead of the
+            // REPL's live `connected`/`down`; the row layout is the REPL's.
+            let mut out = io::stdout().lock();
+            render_mcp(config.as_ref(), action.as_ref(), &mut out)?;
+            out.flush()?;
         }
     }
     Ok(())
@@ -185,16 +193,9 @@ fn parse_session_id(raw: &str) -> anyhow::Result<SessionId> {
         .map_err(|_| anyhow::anyhow!("invalid session id '{raw}' (expected a UUID)"))
 }
 
-/// T01 placeholder for subcommands not yet implemented (T04-T06). Static
-/// output only — no state, provider or network access — so the CLI-boundary
-/// sanitization contract is trivially satisfied.
-#[allow(dead_code)]
-pub(crate) fn placeholder(cmd: &Commands) -> String {
-    format!("coming soon: {} (Spec 014)", name(cmd))
-}
-
 /// Shell-verbatim name of a subcommand (matches clap's kebab-case rendering).
-#[allow(dead_code)]
+/// Pinned by unit tests as the contract between clap and the docs.
+#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn name(cmd: &Commands) -> &'static str {
     match cmd {
         Commands::Model => "model",
@@ -205,8 +206,130 @@ pub(crate) fn name(cmd: &Commands) -> &'static str {
         Commands::Search { .. } => "search",
         Commands::Info => "info",
         Commands::Mcp { .. } => "mcp",
-        Commands::Setup => "setup",
+        Commands::Setup { .. } => "setup",
+        Commands::Version => "version",
     }
+}
+
+/// `hermes version` / `--version` (T07). Python prints
+/// `Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301` followed by install
+/// facts; the Rust port prints the same label shape (`VERSION_LABEL`, shared
+/// with the banner) plus the facts that exist for a cargo build. Static:
+/// no config, state, provider or network access.
+pub fn render_version(home_flag: Option<&Path>, w: &mut impl Write) -> anyhow::Result<()> {
+    writeln!(w, "{VERSION_LABEL}")?;
+    let exe = std::env::current_exe().ok();
+    let install_dir = exe
+        .as_deref()
+        .and_then(Path::parent)
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|| "unknown".to_owned());
+    writeln!(w, "Install directory: {install_dir}")?;
+    writeln!(w, "Install method: cargo")?;
+    writeln!(w, "Crate version: {}", env!("CARGO_PKG_VERSION"))?;
+    // Home is reported only if it resolves; never an error from `version`.
+    if let Ok(home) = resolve_hermes_home(home_flag) {
+        writeln!(w, "Hermes home: {}", home.display())?;
+    }
+    Ok(())
+}
+
+/// `hermes info` (T06) body. Line 1 has the exact shape of the REPL's
+/// `/info` for a fresh session; the trailing lines are shell-only facts.
+/// Pure over its inputs (unit-testable).
+pub(crate) fn render_info(
+    home: &Path,
+    config: Option<&HermesConfig>,
+    active: &str,
+    ctx: &crate::repl::ResolvedContext,
+    sessions: Option<usize>,
+    w: &mut impl Write,
+) -> anyhow::Result<()> {
+    let limit = ctx
+        .limit
+        .map(|l| l.to_string())
+        .unwrap_or_else(|| "none".to_owned());
+    let compression = if !ctx.compression_enabled {
+        "off".to_owned()
+    } else {
+        match ctx.compression_target {
+            Some(t) => format!("on (target ~{t} tokens)"),
+            None => "on (no target)".to_owned(),
+        }
+    };
+    writeln!(
+        w,
+        "provider: {active} | estimated context: ~0 tokens | limit: {limit} | window: 0/0 turns sent | pinned: 0 | compression: {compression}"
+    )?;
+    writeln!(w, "Hermes Home: {}", home.display())?;
+    match config {
+        Some(cfg) => {
+            writeln!(w, "Active provider: {active}")?;
+            writeln!(w, "Providers configured: {}", cfg.providers.len())?;
+            if let Some(model) = &cfg.model.provider {
+                writeln!(w, "Model provider: {model}")?;
+            }
+            writeln!(w, "MCP servers configured: {}", cfg.mcp_servers.len())?;
+        }
+        None => {
+            writeln!(w, "Active provider: {active} (built-in)")?;
+            writeln!(w, "No config.yaml found")?;
+        }
+    }
+    // Spec 007: the boundary shell tools would run inside from this cwd
+    // (same resolution as the REPL; names/numbers only, never env values).
+    let root = std::env::current_dir().unwrap_or_default();
+    let sandbox = hermes_core::tools::SandboxPolicy::from_config(
+        config.and_then(|c| c.sandbox.as_ref()),
+        &root,
+    );
+    writeln!(w, "{}", sandbox.summary())?;
+    match sessions {
+        Some(n) => writeln!(w, "Sessions: {n}")?,
+        None => writeln!(w, "Sessions: unknown")?,
+    }
+    Ok(())
+}
+
+/// `hermes mcp [list|restart <name>]` (T06) body. Rows use the REPL's
+/// `/mcp` layout (`{:<12} {:<10} {} tool(s) ({} mode)`); the shell has no
+/// live child so status is `configured` and the tool count is unknown
+/// (`?`). `restart` is REPL-only: the shell prints a clear pointer, and an
+/// unknown name is an error (non-zero exit), as in the REPL.
+pub(crate) fn render_mcp(
+    config: Option<&HermesConfig>,
+    action: Option<&crate::McpAction>,
+    w: &mut impl Write,
+) -> anyhow::Result<()> {
+    let servers = config.map(|c| &c.mcp_servers);
+    let none = servers.map(|s| s.is_empty()).unwrap_or(true);
+    match action {
+        None | Some(crate::McpAction::List) => {
+            if none {
+                writeln!(w, "no MCP servers connected (add `mcp_servers:` to config.yaml)")?;
+                return Ok(());
+            }
+            let servers = servers.expect("non-empty");
+            let mut names: Vec<&String> = servers.keys().collect();
+            names.sort();
+            writeln!(w, "MCP servers:")?;
+            for name in names {
+                let mode = if servers[name].confirm { "confirm" } else { "auto" };
+                writeln!(w, "  {:<12} {:<10} ? tool(s) ({} mode)", name, "configured", mode)?;
+            }
+        }
+        Some(crate::McpAction::Restart { name }) => {
+            let known = servers.map(|s| s.contains_key(name)).unwrap_or(false);
+            if !known {
+                anyhow::bail!("no MCP server named '{name}'");
+            }
+            writeln!(
+                w,
+                "mcp[{name}]: restart is only available inside the REPL (`/mcp restart {name}`); the shell never spawns MCP servers"
+            )?;
+        }
+    }
+    Ok(())
 }
 
 /// `hermes model` (T02): list configured providers and their models, with
@@ -510,7 +633,7 @@ mod tests {
     }
 
     #[test]
-    fn placeholder_names_and_message_are_pinned() {
+    fn subcommand_names_are_pinned() {
         let cases: Vec<(Commands, &str)> = vec![
             (Commands::Model, "model"),
             (Commands::Sessions, "sessions"),
@@ -532,11 +655,147 @@ mod tests {
                 },
                 "mcp",
             ),
+            (Commands::Setup { section: None }, "setup"),
+            (Commands::Version, "version"),
         ];
         for (cmd, n) in cases {
             assert_eq!(name(&cmd), n);
-            assert_eq!(placeholder(&cmd), format!("coming soon: {n} (Spec 014)"));
         }
+    }
+
+    #[test]
+    fn version_renders_label_and_never_touches_home() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let home = dir.path().join("does-not-exist");
+        let mut out = Vec::new();
+        render_version(Some(&home), &mut out).expect("render");
+        let s = String::from_utf8(out).unwrap();
+        assert!(s.starts_with(VERSION_LABEL), "{s}");
+        assert!(s.contains("Install method: cargo"), "{s}");
+        assert!(s.contains("Crate version: "), "{s}");
+        assert!(!s.contains('\u{1b}'), "plain text: {s}");
+        assert!(!home.exists(), "version must not create the home");
+    }
+
+    #[test]
+    fn info_first_line_matches_repl_shape() {
+        let c = config_with(&[("a", None, &["m1"])]);
+        let ctx = crate::repl::resolve_context(Some(&c), "a");
+        let mut out = Vec::new();
+        render_info(Path::new("/tmp/h"), Some(&c), "a", &ctx, Some(2), &mut out).expect("render");
+        let s = String::from_utf8(out).unwrap();
+        let first = s.lines().next().unwrap();
+        assert_eq!(
+            first,
+            "provider: a | estimated context: ~0 tokens | limit: none | window: 0/0 turns sent | pinned: 0 | compression: off"
+        );
+        assert!(s.contains("Hermes Home: /tmp/h\n"), "{s}");
+        assert!(s.contains("Providers configured: 1\n"), "{s}");
+        assert!(s.contains("MCP servers configured: 0\n"), "{s}");
+        assert!(s.contains("sandbox: off (inherit)\n"), "{s}");
+        assert!(s.contains("Sessions: 2\n"), "{s}");
+    }
+
+    #[test]
+    fn info_reports_sandbox_policy_without_env_values() {
+        let mut c = config_with(&[]);
+        c.sandbox = Some(hermes_core::config::SandboxConfig {
+            enabled: true,
+            network: Some("deny".into()),
+            cpu_seconds: Some(5),
+            ..Default::default()
+        });
+        let ctx = crate::repl::resolve_context(Some(&c), FAKE_PROVIDER);
+        let mut out = Vec::new();
+        render_info(Path::new("/tmp/h"), Some(&c), FAKE_PROVIDER, &ctx, Some(0), &mut out)
+            .expect("render");
+        let s = String::from_utf8(out).unwrap();
+        let line = s.lines().find(|l| l.starts_with("sandbox: on")).expect("sandbox line");
+        assert!(line.contains("cpu=5s") && line.contains("network=deny"), "{line}");
+        assert!(line.contains("env=PATH,HOME"), "{line}");
+        // Names only: the actual PATH value must not be printed.
+        if let Ok(path) = std::env::var("PATH") {
+            assert!(!s.contains(&path), "env value leaked: {s}");
+        }
+    }
+
+    #[test]
+    fn info_without_config_reports_builtin_fake() {
+        let ctx = crate::repl::resolve_context(None, FAKE_PROVIDER);
+        let mut out = Vec::new();
+        render_info(Path::new("/tmp/h"), None, FAKE_PROVIDER, &ctx, Some(0), &mut out)
+            .expect("render");
+        let s = String::from_utf8(out).unwrap();
+        assert!(s.contains("Active provider: fake (built-in)\n"), "{s}");
+        assert!(s.contains("No config.yaml found\n"), "{s}");
+    }
+
+    fn config_with_mcp(names: &[(&str, bool)]) -> HermesConfig {
+        let mut c = config_with(&[]);
+        for (n, confirm) in names {
+            c.mcp_servers.insert(
+                (*n).to_owned(),
+                hermes_core::config::McpServerConfig {
+                    command: "true".to_owned(),
+                    confirm: *confirm,
+                    ..Default::default()
+                },
+            );
+        }
+        c
+    }
+
+    #[test]
+    fn mcp_list_uses_repl_row_layout_sorted() {
+        let c = config_with_mcp(&[("zeta", true), ("alpha", false)]);
+        let mut out = Vec::new();
+        render_mcp(Some(&c), None, &mut out).expect("render");
+        let s = String::from_utf8(out).unwrap();
+        assert_eq!(
+            s,
+            "MCP servers:\n  alpha        configured ? tool(s) (auto mode)\n  zeta         configured ? tool(s) (confirm mode)\n"
+        );
+        let mut out = Vec::new();
+        render_mcp(Some(&c), Some(&McpAction::List), &mut out).expect("render");
+        assert_eq!(String::from_utf8(out).unwrap(), s, "`mcp` and `mcp list` are identical");
+    }
+
+    #[test]
+    fn mcp_without_servers_matches_repl_message() {
+        for cfg in [None, Some(config_with(&[]))] {
+            let mut out = Vec::new();
+            render_mcp(cfg.as_ref(), None, &mut out).expect("render");
+            assert_eq!(
+                String::from_utf8(out).unwrap(),
+                "no MCP servers connected (add `mcp_servers:` to config.yaml)\n"
+            );
+        }
+    }
+
+    #[test]
+    fn mcp_restart_points_to_repl_and_rejects_unknown_name() {
+        let c = config_with_mcp(&[("srv", true)]);
+        let mut out = Vec::new();
+        render_mcp(
+            Some(&c),
+            Some(&McpAction::Restart {
+                name: "srv".into(),
+            }),
+            &mut out,
+        )
+        .expect("render");
+        let s = String::from_utf8(out).unwrap();
+        assert!(s.contains("mcp[srv]: restart is only available inside the REPL"), "{s}");
+        let err = render_mcp(
+            Some(&c),
+            Some(&McpAction::Restart {
+                name: "nope".into(),
+            }),
+            &mut Vec::new(),
+        )
+        .unwrap_err()
+        .to_string();
+        assert_eq!(err, "no MCP server named 'nope'");
     }
 
     #[test]

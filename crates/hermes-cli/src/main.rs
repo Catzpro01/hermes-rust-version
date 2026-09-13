@@ -18,7 +18,10 @@ mod wizard;
 #[derive(Debug, Parser)]
 #[command(
     name = "hermes-rs",
-    version = "0.21.0-rs",
+    // Spec 014 T07: clap's built-in `--version` renders `hermes-rs <ver>`;
+    // Python prints `Hermes Agent v0.21.0 (2026.8.31) · upstream …` plus
+    // install facts, so the flag is handled manually (see `Args::version`).
+    disable_version_flag = true,
     about = "Hermes Agent Rust rewrite - Rust implementation of Hermes Agent v0.21.0",
     long_about = "Hermes Agent Rust rewrite - Rust implementation of Hermes Agent
 
@@ -28,6 +31,10 @@ Commands: model, sessions, inspect, messages, tool-calls, search, info, mcp, set
 Mirrors Python Hermes Agent where implemented."
 )]
 struct Args {
+    /// Print version information and exit (same output as `hermes version`).
+    #[arg(short = 'V', long, global = true)]
+    version: bool,
+
     /// Hermes home directory; defaults to HERMES_HOME or ~/.hermes.
     #[arg(long, global = true)]
     hermes_home: Option<std::path::PathBuf>,
@@ -78,11 +85,6 @@ struct Args {
     #[arg(long, global = true)]
     tui: bool,
 
-    /// Spec 017 (T01): run the setup-wizard skeleton. Hidden from `--help`
-    /// until T05 replaces it with the `hermes setup` subcommand.
-    #[arg(long, hide = true)]
-    setup_skeleton: bool,
-
     /// Shell subcommand (Spec 014). Omitted -> interactive REPL
     /// (zero regression: the pre-014 default behavior).
     #[command(subcommand)]
@@ -92,11 +94,17 @@ struct Args {
 /// Spec 014: shell-accessible subcommands, mirroring the Hermes Python
 /// `hermes <subcommand>` surface. Data sources already exist (ProviderRegistry,
 /// SessionStore, `search_messages`, theme/status-bar, McpServerRegistry);
-/// tickets 02-07 wire them up. T01 keeps every variant a static placeholder.
+/// every variant is wired in `subcommands::run` (T02-T07).
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Interactive setup wizard
-    Setup,
+    /// Interactive setup wizard (optionally one section:
+    /// model|terminal|gateway|tools)
+    Setup {
+        /// Jump straight to a section (setup.py: `hermes setup model|terminal|gateway|tools|agent`).
+        section: Option<String>,
+    },
+    /// Show Hermes version and install information
+    Version,
 
     /// List available models for the active provider
     Model,
@@ -151,18 +159,17 @@ async fn run() -> anyhow::Result<()> {
         .try_init()
         .ok();
     let args = Args::parse();
+    // Spec 014 (T07): `--version` (any position) wins over everything else
+    // and never touches config, state, provider or network.
+    if args.version {
+        return subcommands::run(&Commands::Version, &args).await;
+    }
     // Spec 014 (T02): a subcommand runs to completion and exits before any
     // provider resolution or session creation (it loads home/config itself;
     // see subcommands::run). No subcommand -> REPL/TUI path exactly as before
     // (zero regression).
     if let Some(cmd) = &args.command {
         return subcommands::run(cmd, &args).await;
-    }
-    // Spec 017 (T01): the setup-wizard skeleton (hidden flag; T05 replaces
-    // it with `hermes setup`). Runs to completion: no REPL/TUI, no provider,
-    // no session, no state write.
-    if args.setup_skeleton {
-        return wizard::run_skeleton_cli();
     }
     // Spec 012: TUI requires an interactive terminal. Rejecting a piped stdin
     // here prevents crossterm raw-mode from hanging/crashing smoke/E2E tests
@@ -314,5 +321,19 @@ mod tests {
 
         let e = parse(&["hermes-rs", "search", "q", "--tui"]);
         assert!(e.tui);
+    }
+
+    #[test]
+    fn version_flag_and_subcommand_parse() {
+        assert!(parse(&["hermes-rs", "--version"]).version);
+        assert!(parse(&["hermes-rs", "-V"]).version);
+        // Global: also accepted after a subcommand.
+        let a = parse(&["hermes-rs", "info", "--version"]);
+        assert!(a.version && matches!(a.command, Some(Commands::Info)));
+        assert!(matches!(
+            parse(&["hermes-rs", "version"]).command,
+            Some(Commands::Version)
+        ));
+        assert!(!parse(&["hermes-rs"]).version);
     }
 }

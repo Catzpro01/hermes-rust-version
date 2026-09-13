@@ -26,6 +26,7 @@ mod layout;
 pub(crate) mod kawaii;
 pub(crate) mod theme;
 mod worker;
+pub mod tips;
 pub mod welcome;
 #[cfg(test)]
 mod e2e;

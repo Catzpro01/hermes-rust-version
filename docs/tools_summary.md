@@ -10,7 +10,8 @@ Tool-calling primitives for Spec 002: explicit, policy-gated execution of model-
 |------|------:|---------|
 | `mod.rs` | 202 | Core types, `Tool` trait, `ToolRegistry`, re-exports, `ToolExecutionStatus` |
 | `readonly.rs` | 183 | `read_file` and `list_dir` tools with root jail + size caps |
-| `shell.rs` | 159 | `shell` and `shell_readonly` tools with confirmation + blocklist |
+| `shell.rs` | ~190 | `shell` and `shell_readonly` tools with confirmation + blocklist; both spawn via `sandbox::run_shell` |
+| `sandbox.rs` | ~480 | Spec 007 `SandboxPolicy` (env allowlist, cwd, output cap, `ulimit` rlimits, `unshare --net`), single spawn site |
 | `write.rs` | 194 | `write_file` tool with confirmation, root jail, atomic write |
 
 ## Core types (`mod.rs`)
@@ -44,6 +45,15 @@ Tool-calling primitives for Spec 002: explicit, policy-gated execution of model-
 - **Safety:** Dangerous patterns checked via `approval.rs`, confirmation gate.
 - **Timeout:** Configurable, default via `Tool` impl.
 - **Cancellation:** `tokio::select!` against cancel token, timeout via `tokio::time::timeout`.
+
+### Sandbox (Spec 007, `sandbox.rs`)
+
+- **`SandboxPolicy`** — `inherit()` (default, == Spec 002) or `strict(root)` / `from_config(cfg, root)`.
+- **Env:** `env_clear` + `DEFAULT_ENV_ALLOWLIST` (`PATH HOME LANG LC_ALL LC_CTYPE TERM TZ USER SHELL TMPDIR`) + config names; sets `HERMES_SANDBOX=1`.
+- **Output:** `DEFAULT_MAX_OUTPUT_BYTES = 64 KiB`, marker `[output truncated by sandbox]`.
+- **Limits:** `ulimit -t/-f/-u/-v` via `sh -c '… && exec sh -c "$1"' hermes-sandbox <cmd>` (command is `$1`, never interpolated).
+- **Network:** `NetworkPolicy::Deny` → `unshare --user --map-root-user --net --`; fails closed when unavailable.
+- **Order:** blocklist → confirmation → sandbox; timeout + cancellation still apply.
 
 ### `write_file`
 

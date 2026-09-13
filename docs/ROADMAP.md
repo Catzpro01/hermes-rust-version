@@ -12,14 +12,14 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 2 — Inspection & search | 004 | FTS5 full-text search | Done |
 | 3 — Multi-model & routing | 005 | Multi-provider runtime routing | Done |
 | 3 — Multi-model & routing | 006 | Model fallback and load balancing | Done |
-| 4 — Advanced agent | 007 | Tool execution sandbox | Not started |
+| 4 — Advanced agent | 007 | Tool execution sandbox | Done |
 | 4 — Advanced agent | 008 | Memory and context management | Done |
 | 4 — Advanced agent | 009 | Multi-turn planning and reflection | Done |
 | 5 — Ecosystem | 010 | Plugin/extension system (WASM) | Deferred (v2.0 backlog — Spec 011b) |
 | 5 — Ecosystem | 011 | MCP client | Done |
 | 5 — Ecosystem | 012 | TUI dashboard (ratatui) | Done |
 | 5 — Ecosystem | 013 | Hermes Python UI parity (visual) | Done |
-| 6 — CLI surface | 014 | CLI subcommands parity (shell access) | In progress |
+| 6 — CLI surface | 014 | CLI subcommands parity (shell access) | Done |
 | 7 — Total parity | 017 | Hermes Python v0.21.0 total byte-level parity (wizard, katalog, UX) | Fase 0 re-archaeology — menunggu review Matt |
 
 ## Spec 004 closure
@@ -270,12 +270,76 @@ Spec 011 (MCP), Spec 012 (TUI) and Spec 013 (Python UI parity) are **Done**;
 Spec 010 (plugin/extension system, WASM) is formally **deferred to the v2.0
 backlog** per the Spec 011b decision. **Phase 5 (Ecosystem) is therefore 100%
 DONE** for the v1.0 milestone. (Phase-4 Spec 007, tool-execution sandbox,
-remains Not started outside Phase 5.)
+landed afterwards — see below.)
+
+## Spec 014 — CLI subcommands parity closure
+
+Spec 014 maps the Hermes Python `hermes <subcommand>` shell surface onto
+clap subcommands so the existing data sources can be queried **without
+entering the REPL**: `model`, `sessions`, `inspect <id>`, `messages <id>`,
+`tool-calls <id>`, `search <query>`, `info`, `mcp [list|restart <name>]`
+and `version` / `-V` / `--version`. Each subcommand reuses the REPL's own
+renderer (`session_menu`, `resolve_context`, `/mcp` row layout) rather than
+copying a format, so shell and REPL output is identical by construction.
+
+| Ticket | Scope |
+|---|---|
+| 01 | Subcommand parser foundation (clap `Commands`, global flags position-independent, dispatch before provider/session) |
+| 02 | `hermes model` (providers + models, active marker, `--provider` filter, TTY-only gold/brown colors) |
+| 03 | `hermes sessions` + `hermes inspect <id>` (read-only `open_existing_store`, UUID validation, clear errors) |
+| 04 | `hermes messages <id>` + `hermes tool-calls <id>` (same renderers as `/messages` and `/tool-calls`) |
+| 05 | `hermes search <query>` (FTS5 + redaction via `search_sessions`) |
+| 06 | `hermes info` (line 1 == `/info` for a fresh session) + `hermes mcp` (config-only, never spawns a child) |
+| 07 | `--version`/`hermes version` print the banner `VERSION_LABEL` + install facts, before config load; `--help` lists every real subcommand |
+| 08 | Placeholder removal, docs (`cli_subcommands.md`, `PARITY.md`, this file), closure proof |
+
+Closure proof (Spec 014): `crates/hermes-cli/tests/subcommands_e2e.rs`
+(26 tests) drives the real binary and asserts, per subcommand: exit 0
+without the REPL prompt, ANSI-free stdout when piped, byte-identity with the
+**live REPL** command on the same `state.db`, no credential on any output
+path, no `state.db` creation and unchanged canonical rows for read-only
+paths, and the pre-014 bare invocation still entering the REPL. Invariants
+held: the shell adds no execution surface (MCP spawn stays REPL-only) and
+the Python installation is untouched.
+
+## Spec 007 — Tool execution sandbox closure
+
+Spec 007 adds an **opt-in, process-level sandbox** for the shell tools
+(ADR 0006). `SandboxPolicy` is threaded through the one spawn site
+(`tools::sandbox::run_shell`) used by both `shell` and `shell_readonly`;
+without a `sandbox:` config section the policy is `inherit` and behaviour is
+byte-for-byte Spec 002 (zero regression, legacy constructors unchanged).
+
+| Ticket | Scope |
+|---|---|
+| 01 | `SandboxPolicy` / `ResourceLimits` / `NetworkPolicy`, `run_shell` single spawn site, output cap with marker |
+| 02 | Env allowlist (`env_clear` + names), cwd jail, `HERMES_SANDBOX=1` flag |
+| 03 | POSIX `ulimit` wrapper with positional command (no interpolation); `unshare --net` fail-closed |
+| 04 | `sandbox:` config section + load-time validation (`ConfigError::SandboxInvalid`) |
+| 05 | REPL/TUI wiring, `/sandbox`, `hermes info` line, docs/ADR/STRIDE, E2E closure |
+
+Closure proof (Spec 007): `crates/hermes-core/tests/sandbox_e2e.rs` drives a
+scripted provider through `chat_agentic` with a sandboxed `shell_readonly`:
+a parent-env secret is invisible to the command, `HERMES_SANDBOX=1` is set,
+cwd is the jail, and the persisted `tool_calls` row carries the confined
+result. Companion tests pin: legacy constructor == Spec 002 behaviour
+(secret visible, no flag); output cap + `fsize` rlimit on both shell tools;
+blocklist and confirmation still run before any spawn; a hostile command
+with quotes/`$1` cannot escape the `ulimit` wrapper. CLI E2E
+(`subcommands_e2e.rs`) covers `hermes info` / `/sandbox` reporting and
+load-time rejection of `network: dney`.
 
 ## Verification
 
 Last full run (2026-09-05, Spec 013 closure): `cargo test --workspace` — 400
 passed, 0 failed; `clippy --workspace --all-targets -D warnings` clean.
+
+Last full run (2026-09-13, Spec 014 + Spec 007 closure, GitHub Actions
+`CI` workflow on `ubuntu-latest`, stable toolchain): `cargo test --workspace`
+— 509 passed, 0 failed; `clippy --workspace --all-targets -D warnings` clean.
+CI (`.github/workflows/ci.yml`) runs fmt/clippy/test on every push to `main`
+and `arena/**` and on pull requests; diagnostics are published as check-run
+annotations.
 
 ## Invariants
 

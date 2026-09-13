@@ -26,7 +26,8 @@ use hermes_core::conversation::{AgentEvent, AgenticResult, ConversationRunner};
 use hermes_core::provider::{Provider, ProviderError};
 use hermes_core::session::{SessionId, SessionStore};
 use hermes_core::tools::{
-    Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, ToolRegistry, WriteFileTool,
+    Confirmation, ListDirTool, ReadFileTool, SandboxPolicy, ShellReadonlyTool, ToolRegistry,
+    WriteFileTool,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -140,7 +141,14 @@ fn build_runtime(
     let mut registry = ToolRegistry::new();
     registry.register(ReadFileTool::new(&root));
     registry.register(ListDirTool::new(&root));
-    registry.register(ShellReadonlyTool::new(confirm.clone(), Duration::from_secs(30)));
+    // Spec 007: same sandbox policy as the REPL (inherit when unconfigured).
+    let sandbox = SandboxPolicy::from_config(
+        config.as_ref().and_then(|c| c.sandbox.as_ref()),
+        &root,
+    );
+    registry.register(
+        ShellReadonlyTool::new(confirm.clone(), Duration::from_secs(30)).with_sandbox(sandbox),
+    );
     registry.register(WriteFileTool::new(&root, confirm));
 
     Some(AgentRuntime {

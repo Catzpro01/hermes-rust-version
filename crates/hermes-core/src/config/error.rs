@@ -25,4 +25,6 @@ pub enum ConfigError {
     InvalidOverride { field: String, reason: String },
     #[error("invalid MCP server '{server}': {reason}")]
     McpServerInvalid { server: String, reason: String },
+    #[error("invalid sandbox config field `{field}`: {reason}")]
+    SandboxInvalid { field: String, reason: String },
 }

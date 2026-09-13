@@ -213,7 +213,7 @@ installation was read-only throughout (`smoke_python_hermes_untouched`).
 | Brand strings | "Hermes Agent …" | "Hermes-RS …" (T02 decision, approved) | Intentional difference |
 | User-message echo | `─`×40 accent separator + `●` bold-text line in the scrollback | Prompt echo `❯ <text>`; no scrollback line | Intentional structural difference (line-REPL echo model) |
 | Agentic iteration marker | not printed | dim `[iter N/10]` line | Rust-only informational |
-| CLI surface (`--help` / `--version`) | argparse help (~90 subcommands), `Hermes Agent vX …` | Subset help + `hermes-rs 0.1.0` | Intentional (Spec 013 scope = in-app look & feel; the display-mode flag `--tui` exists in both) |
+| CLI surface (`--help` / `--version`) | argparse help (~90 subcommands), `Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301` + install facts | `--help` lists the implemented subset (Spec 014); `--version` / `hermes version` print `Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301` + install facts (Spec 014 T07) | Label shape 100%; brand `Hermes-RS` intentional; unimplemented Python subcommands are not advertised |
 
 Status-bar visual customizers are marked **100% compatible**: tier
 thresholds, separators, context-style thresholds, gauge rendering, the title
@@ -228,6 +228,20 @@ Capture artifacts (VM `/tmp/t06_out/`, 2026-09-05): `t06_rs_repl_{50,60,80,100,1
 stdout; Python reference outputs at `/tmp/t06_py_help.txt` and
 `/tmp/t06_py_version.txt` (venv interpreter, read-only).
 
+## Spec 014 — CLI subcommands (shell access)
+
+| Python `hermes …` | Rust `hermes-rs …` | Rendering | Status |
+|---|---|---|---|
+| `model` | `model [--provider <name>]` | providers + models, `*` active marker, TTY-only colors | ✅ |
+| `sessions list` | `sessions` | `session_menu::list_sessions` (== REPL `/sessions`) | ✅ |
+| `sessions show <id>` | `inspect <id>` / `messages <id>` / `tool-calls <id>` | `session_menu::{inspect_session, show_messages, show_tool_calls}` (== REPL) | ✅ |
+| `sessions search <q>` | `search <query>` | `session_menu::search_sessions` (FTS5 + redaction, == REPL `/search`) | ✅ |
+| `status` / `config` | `info` | line 1 == REPL `/info`; then home, provider, counts | ✅ (subset) |
+| `mcp` | `mcp [list\|restart <name>]` | REPL `/mcp` row layout from config; shell never spawns servers | ✅ (config-only) |
+| `--version` / `version` | `--version` / `-V` / `version` | banner `VERSION_LABEL` + install facts | ✅ |
+| `setup` | `setup` | Spec 017 wizard | 🚧 Spec 017 |
+| `chat`, `gateway`, `cron`, `skills`, `doctor`, … | — | not implemented; not listed in `--help` | ❌ (later specs) |
+
 ## Differences ⚠️
 
 | Feature | Python | Rust | Impact |
@@ -235,7 +249,7 @@ stdout; Python reference outputs at `/tmp/t06_py_help.txt` and
 | Session ID format | UUID v4 | UUID v7 | Low — schema-compatible and time-sortable |
 | FTS index | Enabled | Not yet | Low — search is not implemented |
 | Provider catalog | Many built-ins + plugins | Config-declared + built-in `fake` | Medium — Rust has no dynamic plugin loading |
-| Tool execution | Python sandbox | Native shell integration | High — different security model |
+| Tool execution | Docker sandbox + egress proxy | Native shell; opt-in process-level sandbox (env allowlist, cwd jail, output cap, `ulimit`, `unshare --net`) — Spec 007 | Medium — no container isolation; see ADR 0006 |
 | TUI dashboard | Rich/curses terminal output only (no dedicated dashboard) | Opt-in Ratatui `--tui` dashboard + readline REPL | Rust-only capability (Spec 012) |
 
 ## Known Gaps 🚧

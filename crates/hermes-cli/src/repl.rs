@@ -14,8 +14,8 @@ use hermes_core::{
     provider::{Provider, ProviderError, ProviderRegistry, RegistryError},
     session::SessionStore,
     tools::{
-        Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, Tool, ToolRegistry,
-        WriteFileTool,
+        Confirmation, ListDirTool, ReadFileTool, SandboxPolicy, ShellReadonlyTool, Tool,
+        ToolRegistry, WriteFileTool,
     },
 };
 use rustyline::{error::ReadlineError, Editor};
@@ -80,6 +80,7 @@ const SLASH_COMMANDS: &[(&str, &str)] = &[
     ("/tools", "List available agent tools and invocation status"),
     ("/toolsets", "List enabled/disabled toolsets"),
     ("/mcp", "Show MCP server status and manage servers"),
+    ("/sandbox", "Show the tool execution sandbox policy (Spec 007)"),
     ("/skills", "Show installed and active agent skills"),
     ("/browser", "Browser automation & CDP status"),
 
@@ -212,10 +213,17 @@ pub async fn run_repl(
     };
     tool_registry.register(ReadFileTool::new(&tool_root));
     tool_registry.register(ListDirTool::new(&tool_root));
-    tool_registry.register(ShellReadonlyTool::new(
-        confirmation.clone(),
-        Duration::from_secs(30),
-    ));
+    // Spec 007: shell tools run inside the configured sandbox. Without a
+    // `sandbox:` section this is `SandboxPolicy::inherit()` — byte-for-byte
+    // the pre-007 behaviour (zero regression).
+    let sandbox = SandboxPolicy::from_config(
+        config.as_ref().and_then(|c| c.sandbox.as_ref()),
+        &tool_root,
+    );
+    tool_registry.register(
+        ShellReadonlyTool::new(confirmation.clone(), Duration::from_secs(30))
+            .with_sandbox(sandbox.clone()),
+    );
     tool_registry.register(WriteFileTool::new(&tool_root, confirmation.clone()));
     // Spec 013 T03 / Spec 017 T02 — startup welcome banner (v0.21.0 Python
     // parity). TTY-only: piped E2E invocations must keep byte-stable,
@@ -245,17 +253,25 @@ pub async fn run_repl(
             terminal_width(),
             &banner_info,
         );
-        println!("\nWelcome to Hermes Agent! Type your message or /help for commands.");
-        println!("✦ Tip: BROWSER_CDP_URL connects browser tools to any running Chromium-family browser — accepts WebSocket, HTTP, or host:port.\n");
-    }
-    println!("Hermes-RS session {session_id} (provider {provider_name})");
-    println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /plan [on|off|reset], /reflect [on|off], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
-    if let Some(limit) = ctx.limit {
-        println!(
-            "[context ~{} tokens / limit {limit} | compression {}]",
-            runner.estimated_tokens(),
-            compression_label(&ctx)
-        );
+        // Spec 017 T03 — info line parity (spec §B): the v0.21.0 banner
+        // already carries the model line (A.2 item 1) and the dim summary
+        // line (A.2 item 8). There is NO `●`/`provider:` info line, NO
+        // `✦ Tip:` line and no command cheat-sheet after the banner in
+        // Python; only the skin `welcome` branding string follows.
+        println!("\n{}", crate::tui::welcome::WELCOME);
+    } else {
+        // Piped/non-TTY mode has no banner: keep the plain, ANSI-free
+        // session header so scripted callers still see the session id and
+        // the advisory context budget (byte-stable, pre-T03 wording).
+        println!("Hermes-RS session {session_id} (provider {provider_name})");
+        println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /plan [on|off|reset], /reflect [on|off], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
+        if let Some(limit) = ctx.limit {
+            println!(
+                "[context ~{} tokens / limit {limit} | compression {}]",
+                runner.estimated_tokens(),
+                compression_label(&ctx)
+            );
+        }
     }
     let editor = Arc::new(Mutex::new(editor));
     let confirmation_editor = Arc::clone(&editor);
@@ -779,6 +795,12 @@ pub async fn run_repl(
                 }
                 continue;
             }
+            // `/sandbox` (Spec 007) shows the boundary shell tools run inside.
+            // Display-only: names and numbers, never environment values.
+            "/sandbox" => {
+                println!("{}", sandbox.summary());
+                continue;
+            }
             // `/mcp` / `/mcp list` shows each connected MCP server and its tool
             // count (Spec 011b #04). `/mcp restart <name>` swaps one server.
             "/mcp" | "/mcp list" => {
@@ -875,6 +897,7 @@ pub async fn run_repl(
                     ("/tools", "list registered tools"),
                     ("/toolsets", "list available toolsets"),
                     ("/mcp [list|restart]", "inspect & restart MCP servers"),
+                    ("/sandbox", "tool execution sandbox policy"),
                     ("/skin [name]", "choose UI skin theme"),
                     ("/battery", "host system metrics"),
                     ("/mascot, /journey", "Hermes journey & companion"),

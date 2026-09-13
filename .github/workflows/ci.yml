@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "arena/**"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: never
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: fmt + clippy + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: cargo fmt --check
+        run: cargo fmt --all -- --check 2>&1 | tee fmt.log || true
+
+      - name: cargo clippy
+        id: clippy
+        run: |
+          set -o pipefail
+          cargo clippy --workspace --all-targets -- -D warnings 2>&1 | tee clippy.log
+        continue-on-error: true
+
+      - name: cargo test
+        id: test
+        run: |
+          set -o pipefail
+          cargo test --workspace --no-fail-fast 2>&1 | tee test.log
+        continue-on-error: true
+
+      # Diagnostics are emitted as check-run annotations (readable via the
+      # REST API even where raw logs/artifacts are not reachable) and as a
+      # job summary.
+      - name: Publish diagnostics
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import re, os
+          def blocks(path, pat):
+              try: txt = open(path).read()
+              except FileNotFoundError: return []
+              out, cur = [], None
+              for line in txt.splitlines():
+                  if re.match(pat, line):
+                      if cur: out.append(cur)
+                      cur = [line]
+                  elif cur is not None:
+                      if line.startswith(('   Compiling', '    Checking', '    Finished', 'warning: `', 'error: could not compile')):
+                          out.append(cur); cur = None
+                      else:
+                          cur.append(line)
+              if cur: out.append(cur)
+              return out
+          def emit(kind, title, lines, limit=40):
+              body = "\n".join(lines[:limit]).replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+              print(f"::{kind} title={title}::{body}")
+          n = 0
+          for b in blocks('clippy.log', r'^(error|warning)(\[|:)'):
+              if n >= 45: break
+              emit('error' if b[0].startswith('error') else 'warning', 'clippy', b); n += 1
+          for b in blocks('test.log', r'^(error)(\[|:)'):
+              if n >= 45: break
+              emit('error', 'test-build', b); n += 1
+          try: t = open('test.log').read()
+          except FileNotFoundError: t = ''
+          for m in re.finditer(r'^---- (.+?) stdout ----\n(.*?)(?=^---- |^failures:|\Z)', t, re.S | re.M):
+              if n >= 48: break
+              emit('error', f'test failed: {m.group(1)}', m.group(2).splitlines(), 25); n += 1
+          results = re.findall(r'^test result: .*$', t, re.M)
+          fails = re.findall(r'^    (\S+)$', t.split('failures:')[-1], re.M) if 'failures:' in t else []
+          emit('notice', 'summary', [f"clippy={os.environ.get('CLIPPY')} test={os.environ.get('TEST')}"] + results + (["FAILED: " + ", ".join(fails)] if fails else []), 60)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
+              f.write("```\n" + "\n".join(results) + "\n" + "\n".join(fails) + "\n```\n")
+          PY
+        env:
+          CLIPPY: ${{ steps.clippy.outcome }}
+          TEST: ${{ steps.test.outcome }}
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-logs
+          path: |
+            fmt.log
+            clippy.log
+            test.log
+
+      - name: Fail if any step failed
+        if: steps.clippy.outcome != 'success' || steps.test.outcome != 'success'
+        run: exit 1

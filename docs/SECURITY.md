@@ -2,7 +2,7 @@
 
 ## Scope
 
-Spec 002 tools execute with the permissions of the Hermes-RS process. They are not a substitute for an OS sandbox or container. Never run the CLI with untrusted prompts in a privileged account.
+Spec 002 tools execute with the permissions of the Hermes-RS process. Spec 007 adds an opt-in process-level sandbox for shell tools (see below); it is still not a container or VM. Never run the CLI with untrusted prompts in a privileged account.
 
 ## Policy tiers
 
@@ -36,6 +36,59 @@ The model may generate malicious, surprising, or destructive tool arguments. The
 ## Review requirements
 
 Any new tool must define its root, input validation, output limits, timeout/cancellation behavior, confirmation policy, and tests for traversal, denial, and failure before registration in the CLI.
+
+## Tool execution sandbox (Spec 007)
+
+`SandboxPolicy` (`crates/hermes-core/src/tools/sandbox.rs`, ADR 0006) is the
+boundary every `shell` / `shell_readonly` spawn goes through (`run_shell` is
+the single spawn site). **Off by default**: without a `sandbox:` section the
+policy is `inherit` and behaviour is byte-for-byte Spec 002.
+
+```yaml
+sandbox:
+  enabled: true          # strict defaults below
+  network: deny          # inherit (default) | deny  (needs unshare + user namespaces)
+  cpu_seconds: 30        # ulimit -t
+  max_file_size_kb: 10240
+  max_processes: 128     # ulimit -u (per-user on Linux)
+  max_memory_kb: 1048576 # ulimit -v
+  max_output_kb: 64      # stdout+stderr fed back to the model
+  env_allowlist: [CARGO_HOME]   # names added to PATH, HOME, LANG, LC_*, TERM, TZ, USER, SHELL, TMPDIR
+```
+
+Gate order is unchanged: readonly blocklist → confirmation → sandbox. The
+sandbox never widens what the gates allow.
+
+### STRIDE
+
+- **Spoofing / Tampering (wrapper escape).** With rlimits on, the child is
+  `sh -c 'ulimit …; exec sh -c "$1"' hermes-sandbox <command>`. The model's
+  string is argv, never interpolated into the prologue, so quotes, `$1`,
+  `;` or newlines cannot skip a `ulimit` (pinned by
+  `limits_use_a_positional_wrapper_never_interpolation` and the E2E
+  `spec007_hostile_command_cannot_escape_the_ulimit_wrapper`).
+- **Information disclosure (credentials).** Enabled policies `env_clear()`
+  and copy only allowlisted *names*. Provider keys, `HERMES_*` secrets and
+  anything else in the parent env are invisible to the command
+  (`spec007_sandboxed_shell_through_agentic_loop_hides_secrets_and_jails_cwd`).
+  `/sandbox` and `hermes info` print names and numbers only, never values.
+- **Denial of service.** `max_output_kb` bounds what re-enters the context
+  window; `cpu_seconds` / `max_file_size_kb` / `max_processes` /
+  `max_memory_kb` bound the child; the Spec 002 timeout and cancellation
+  still apply on top and are tested under the sandbox.
+- **Elevation of privilege.** No new privilege is granted: `unshare --user`
+  maps the caller to root *inside* a new namespace only, and is used solely to
+  drop network (`--net`). If the host cannot provide it the call **fails
+  closed** with an explicit error rather than running with network.
+- **Repudiation.** Unchanged: every tool call is persisted in `tool_calls`
+  with status; a sandbox failure is an ordinary `error` row.
+
+### Limits of the model
+
+Not a container: no filesystem read denial (a sandboxed shell reads what the
+user can read), no seccomp/Landlock, no isolation of MCP children (their trust
+model is Spec 011's) and no effect on `write_file` (already root-jailed +
+confirmed). POSIX only; `ulimit -u` is per-user.
 
 ## Provider credentials (Spec 005 — per-provider `key_env` routing)
 

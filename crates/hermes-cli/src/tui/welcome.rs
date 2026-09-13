@@ -63,6 +63,12 @@ pub const SEPARATOR: &str = "─────────────────
 /// Goodbye line on clean exit — `main.py` `GOODBYE`.
 pub const GOODBYE: &str = "Goodbye! ⚕";
 
+/// Post-banner welcome copy — default skin `branding.welcome`
+/// (`get_branding("welcome", …)`, spec §9). Spec 017 T03: this is the only
+/// line that follows the banner in v0.21.0 — there is no `●` info line, no
+/// `provider:` line and no `✦ Tip:` line (spec §B / §E corrections).
+pub const WELCOME: &str = "Welcome to Hermes Agent! Type your message or /help for commands.";
+
 /// `/help` header line — `main.py` `HELP_HEADER`.
 pub const HELP_HEADER: &str = "(^_^)? Available Commands";
 
@@ -526,16 +532,25 @@ fn right_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
     right.push(header("Available Skills"));
     right.push(SLine::new(vec![("No skills installed", dim)]));
     right.push(SLine::blank());
-    let summary = [
-        format!("{} tools", info.tools.len()),
-        // The Rust port has no skills (T06/T07 territory) and MCP tools are
-        // registered after the banner, so the connected count is 0 here.
-        "0 skills".to_owned(),
-        "/help for commands".to_owned(),
-    ]
-    .join(" · ");
+    // The Rust port has no skills (T06/T07 territory) and MCP servers connect
+    // after the banner, so the connected count is 0 here (spec A.2 item 8:
+    // the `K MCP servers` part is only emitted when K > 0 — the Python
+    // reference buffers with a configured-but-not-connected server omit it).
+    let summary = summary_line(info.tools.len(), 0, 0);
     right.push(SLine::new(vec![(summary.as_str(), dim)]));
     right
+}
+
+/// Spec 017 T03 — the dim summary line (banner.py A.2 item 8):
+/// `' · '.join(summary_parts)` with parts `{n} tools`, `{m} skills`,
+/// `{k} MCP servers` (only when `k > 0`), `/help for commands`.
+pub fn summary_line(tools: usize, skills: usize, mcp_connected: usize) -> String {
+    let mut parts = vec![format!("{tools} tools"), format!("{skills} skills")];
+    if mcp_connected > 0 {
+        parts.push(format!("{mcp_connected} MCP servers"));
+    }
+    parts.push("/help for commands".to_owned());
+    parts.join(" · ")
 }
 
 /// Full layout of the panel content at panel width `width`: wrapped left/
@@ -920,6 +935,24 @@ mod tests {
     const REF_W60_SHRINK: &str = "\n╭─── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ────╮\n│                             Available Tools              │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀…  other: file_read             │\n│  ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀…                               │\n│  ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙…  Available Skills             │\n│  ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻…  No skills installed          │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀…  1 tools · 0 skills · /help   │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀…  for commands                 │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀…                               │\n│                                                          │\n│  claude-sonnet-4-5 · 200K                                │\n│   context · Nous Research                                │\n│       /home/user/demo                                    │\n╰──────────────────────────────────────────────────────────╯";
     
     const REF_W70_NOMODEL: &str = "\n╭──────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ─────────╮\n│                                  Available Tools                   │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀  Available Skills                  │\n│  ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀  No skills installed               │\n│  ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  0 tools · 0 skills · /help for    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  commands                          │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│                                                                    │\n│    no model configured — run                                       │\n│      /model or hermes setup                                        │\n│         /home/user/demo                                            │\n╰────────────────────────────────────────────────────────────────────╯";
+
+    #[test]
+    fn summary_line_matches_python_join_rule() {
+        assert_eq!(summary_line(0, 0, 0), "0 tools · 0 skills · /help for commands");
+        assert_eq!(
+            summary_line(5, 3, 1),
+            "5 tools · 3 skills · 1 MCP servers · /help for commands"
+        );
+    }
+
+    #[test]
+    fn welcome_copy_is_verbatim_default_skin() {
+        assert_eq!(
+            WELCOME,
+            "Welcome to Hermes Agent! Type your message or /help for commands."
+        );
+        assert!(!WELCOME.contains('●') && !WELCOME.contains("Tip:"));
+    }
 
     #[test]
     fn brand_strings_are_verbatim() {
