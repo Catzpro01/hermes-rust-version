@@ -529,3 +529,17 @@ performed.** The Python installation was not modified.
 - Rechecked CI 34781167909 on cbbcec7 and 34781191605 on 9349006: both
   completed successfully. These are prior checkpoints; verify new commit CI
   after push. Local diff hygiene passes.
+
+## 2026-09-14: Retry after discussion of PR-creation/approval permission
+
+- User asked to try again. RED candidate dispatch from Arena still returned
+  HTTP 403 Resource not accessible by integration; no RED run was created.
+  Visual workflow history still contains only push capture 34779200470.
+- CI 34781593732 on exact 369095c succeeded. SHA pins, read-only workflow
+  policy and artifact-retention changes pass CI; this does not grant the
+  external Arena connection permission to dispatch workflows.
+- Enabling Actions PR creation/approval would affect workflow GITHUB_TOKEN
+  capability, not the caller's dispatch authorization. User's actual checkbox
+  state was not inspected or assumed. No PR, approval, merge, Rust correction,
+  or new capture occurred. Reconnect GitHub in Arena; if already done, escalate
+  the persistent dispatch denial to the integration owner/Arena support.
