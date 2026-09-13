@@ -1409,6 +1409,8 @@ pub struct HermesCompleter {
     pub(crate) skills: Vec<Skill>,
     /// User home for `~` expansion (NOT the Hermes home).
     pub(crate) user_home: PathBuf,
+    /// Working directory relative path tokens resolve against.
+    pub(crate) cwd: PathBuf,
 }
 
 impl Default for HermesCompleter {
@@ -1575,7 +1577,7 @@ impl HermesCompleter {
                 return (0, Vec::new());
             }
             if is_path_token(token) {
-                return (0, path_candidates(token, &self.user_home));
+                return (0, path_candidates(token, &self.user_home, &self.cwd));
             }
             return (0, Vec::new());
         }
