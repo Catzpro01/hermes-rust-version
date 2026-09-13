@@ -574,3 +574,16 @@ performed.** The Python installation was not modified.
 - Saved the candidate protocol and updated T12, recovery guide and memory.
   Six existing QA checks passed before the initial candidate push; rerun local
   checks for this checkpoint. Remote checks remain blocked before jobs start.
+
+## 2026-09-14: Refocus on Hermes ANSI behavior, remove unnecessary wrapper actions
+
+- User asked to focus on Hermes. Both workflows now install the official
+  stable toolchain with runner-provided rustup instead of importing the two
+  disallowed third-party wrapper actions. Their code is not fetched/executed
+  elsewhere. Dropped the optional third-party cargo cache. GitHub-owned actions
+  remain SHA-pinned, tokens read-only, and server policy/dispatch permissions
+  unchanged. This reduces dependencies rather than disabling a restriction.
+- Retried the digest-bound test-only candidate via authorized branch push.
+  Objective remains one concrete ANSI geometry regression: RED, minimal fix,
+  GREEN with remote fmt/check/clippy/test, then genuine recapture. No Rust
+  source fix is claimed until that evidence exists.
