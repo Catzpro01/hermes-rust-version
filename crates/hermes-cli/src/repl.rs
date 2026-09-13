@@ -1019,6 +1019,20 @@ pub async fn run_repl(
                         }
                     }
                 };
+                // Final drain: while the turn's last poll ran to completion
+                // without yielding, display events may still be queued in
+                // `disp_rx` — the turn-ready select branch wins that race,
+                // so consume them here, in arrival order, before handling
+                // the result (without this the `  [tool]` line and the
+                // streamed chunks can silently vanish from piped stdout).
+                while let Ok(ev) = disp_rx.try_recv() {
+                    let _ = crate::streaming::apply_event(
+                        &mut renderer,
+                        &mut spinner,
+                        &mut std::io::stdout(),
+                        &ev,
+                    );
+                }
                 // The turn future is complete; drop it so its borrows of
                 // `runner`/`store` end before we save turns below.
                 drop(turn);
