@@ -78,7 +78,7 @@ pub fn prompt_radiolist<T: AsRef<str>>(
 
             // Item rows
             let end_idx = (scroll_offset + visible_rows).min(items.len());
-            for (_draw_i, i) in (scroll_offset..end_idx).enumerate() {
+            for i in scroll_offset..end_idx {
                 let is_cursor = i == cursor;
                 let is_sel = i == selected;
 

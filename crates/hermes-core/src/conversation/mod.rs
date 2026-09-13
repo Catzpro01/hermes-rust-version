@@ -365,6 +365,11 @@ impl<P: Provider> ConversationRunner<P> {
     /// emitted context keeps chronological order.
     fn keep_indices(&self) -> Vec<usize> {
         let n = self.turns.len();
+        // An empty history has nothing to window (and no "newest turn"):
+        // `/info` on a fresh session with a configured limit hits this path.
+        if n == 0 {
+            return Vec::new();
+        }
         let limit = match self.context_limit {
             None => return (0..n).collect(),
             Some(limit) => limit,
@@ -878,6 +883,16 @@ mod tests {
         r.set_context_limit(Some(100));
         let sent = r.turns_to_send();
         assert_eq!(sent.len(), 1, "must never send an empty window");
+    }
+
+    #[test]
+    fn empty_history_with_a_limit_does_not_panic() {
+        // Regression: `/info` on a fresh session with `context_length` set
+        // used to underflow on `n - 1` inside `keep_indices`.
+        let mut r = ConversationRunner::new(FakeProvider);
+        r.set_context_limit(Some(4096));
+        assert!(r.dropped_turns().is_empty());
+        assert!(r.turns_to_send().is_empty());
     }
 
     #[test]

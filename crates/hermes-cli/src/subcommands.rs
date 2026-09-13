@@ -180,6 +180,8 @@ fn parse_session_id(raw: &str) -> anyhow::Result<SessionId> {
 }
 
 /// Shell-verbatim name of a subcommand (matches clap's kebab-case rendering).
+/// Pinned by unit tests as the contract between clap and the docs.
+#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn name(cmd: &Commands) -> &'static str {
     match cmd {
         Commands::Model => "model",
