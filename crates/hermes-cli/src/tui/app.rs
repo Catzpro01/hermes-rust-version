@@ -726,8 +726,7 @@ mod tests {
         use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
         let mut app = App::new();
         let in_catalog = |app: &App| {
-            crate::tui::tips::COMPOSER_PLACEHOLDERS
-                .contains(&app.placeholder().as_str())
+            crate::tui::tips::COMPOSER_PLACEHOLDERS.contains(&app.placeholder())
         };
         assert!(in_catalog(&app));
         app.handle_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE));

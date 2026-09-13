@@ -1260,7 +1260,7 @@ pub fn discover_skills(skills_dir: &Path) -> Vec<Skill> {
             skills.push(Skill { name, description });
         }
     }
-    skills.sort_by(|a, b| a.name.to_ascii_lowercase().cmp(&b.name.to_ascii_lowercase()));
+    skills.sort_by_key(|a| a.name.to_ascii_lowercase());
     skills
 }
 
@@ -1547,8 +1547,8 @@ impl HermesCompleter {
             if token.is_empty() {
                 return (pos, Vec::new());
             }
-            if token.starts_with('/') {
-                let mut cands = self.command_candidates(&token[1..]);
+            if let Some(prefix) = token.strip_prefix('/') {
+                let mut cands = self.command_candidates(prefix);
                 let used = HashSet::new();
                 cands.extend(self.skill_candidates(token, &used));
                 if !cands.is_empty() {
@@ -2159,7 +2159,8 @@ mod tests {
         // empty hermes home (no skills)
         let hermes = home.path().join("hermes-home");
         std::fs::create_dir_all(&hermes).expect("hermes home");
-        (home, HermesCompleter::with_home(&hermes, home.path()))
+        let c = HermesCompleter::with_home(&hermes, home.path());
+        (home, c)
     }
 
     #[test]
