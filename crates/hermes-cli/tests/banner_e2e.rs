@@ -150,6 +150,16 @@ fn banner_wide_tty_shows_logo_gold_title_bronze_border() {
     assert!(out.contains("Available Tools"));
     assert!(out.contains("Available Skills"));
     assert!(out.contains("No skills installed"));
+    // Spec 017 T03 — info line parity (spec §B/§E): after the banner only
+    // the default-skin welcome copy follows; no `●`/`provider:` info line,
+    // no `✦ Tip:` line, no Rust-only command cheat-sheet on a TTY.
+    let out = r
+        .wait_for("Welcome to Hermes Agent! Type your message or /help for commands.")
+        .expect("welcome branding line follows the banner");
+    assert!(!out.contains("✦ Tip:"), "no tip prefix in v0.21.0: {out}");
+    assert!(!out.contains("Hermes-RS session"), "no Rust-only session header on TTY: {out}");
+    assert!(!out.contains("Commands: /provider"), "no cheat-sheet on TTY: {out}");
+    assert!(!out.contains("provider:"), "no `provider:` info line (spec §B): {out}");
 
     r.send(b"/exit\r");
     let out = r

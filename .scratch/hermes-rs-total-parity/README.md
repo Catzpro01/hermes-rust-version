@@ -11,8 +11,8 @@ autocomplete /slash, tips, session picker. Sumber ground truth:
 |---|---|---|
 | Fase 0 | [Re-Archaeology total](issues/00-phase0-rearchaeology.md) | DONE — APPROVED Matt (8 koreksi diterima) |
 | T01 | [inquire + wizard skeleton](issues/01-wizard-skeleton.md) | DONE — APPROVED Matt (fa69b80) |
-| T02 | Banner v0.21.0 | IN REVIEW — 451/451 + clippy clean; banner byte-identik dgn Python v0.21.0 (9 referensi), menunggu review Matt |
-| T03 | Info line | Not started |
+| T02 | Banner v0.21.0 | APPROVED (per /ask-matt) — banner byte-identik dgn Python v0.21.0 (9 referensi) |
+| T03 | Info line | IN REVIEW — `issues/03-info-line.md`; post-banner hanya `WELCOME` (spec §B/§E koreksi) |
 | T04 | Tips rotating | Not started |
 | T05 | Setup wizard multi-step (`hermes setup`) | Not started |
 | T06 | Provider catalog (39 provider) | Not started |

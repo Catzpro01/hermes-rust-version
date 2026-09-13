@@ -253,17 +253,25 @@ pub async fn run_repl(
             terminal_width(),
             &banner_info,
         );
-        println!("\nWelcome to Hermes Agent! Type your message or /help for commands.");
-        println!("✦ Tip: BROWSER_CDP_URL connects browser tools to any running Chromium-family browser — accepts WebSocket, HTTP, or host:port.\n");
-    }
-    println!("Hermes-RS session {session_id} (provider {provider_name})");
-    println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /plan [on|off|reset], /reflect [on|off], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
-    if let Some(limit) = ctx.limit {
-        println!(
-            "[context ~{} tokens / limit {limit} | compression {}]",
-            runner.estimated_tokens(),
-            compression_label(&ctx)
-        );
+        // Spec 017 T03 — info line parity (spec §B): the v0.21.0 banner
+        // already carries the model line (A.2 item 1) and the dim summary
+        // line (A.2 item 8). There is NO `●`/`provider:` info line, NO
+        // `✦ Tip:` line and no command cheat-sheet after the banner in
+        // Python; only the skin `welcome` branding string follows.
+        println!("\n{}", crate::tui::welcome::WELCOME);
+    } else {
+        // Piped/non-TTY mode has no banner: keep the plain, ANSI-free
+        // session header so scripted callers still see the session id and
+        // the advisory context budget (byte-stable, pre-T03 wording).
+        println!("Hermes-RS session {session_id} (provider {provider_name})");
+        println!("Commands: /provider [name], /pin <n>, /unpin <n>, /pinned, /goal [on|off|reset], /plan [on|off|reset], /reflect [on|off], /new, /sessions, /inspect <id>, /messages <id>, /tool-calls <id>, /search <query>, /resume <id>, /info, /exit");
+        if let Some(limit) = ctx.limit {
+            println!(
+                "[context ~{} tokens / limit {limit} | compression {}]",
+                runner.estimated_tokens(),
+                compression_label(&ctx)
+            );
+        }
     }
     let editor = Arc::new(Mutex::new(editor));
     let confirmation_editor = Arc::clone(&editor);
