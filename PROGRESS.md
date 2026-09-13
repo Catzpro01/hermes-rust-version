@@ -77,3 +77,21 @@ modification of Python Hermes is claimed.
 - Next: push this diagnostics/recovery checkpoint, retrieve its verified
   formatting patch, review/apply it, commit with progress, and rerun CI.
   No merge is authorized or performed.
+
+## 2026-09-14 — Recovery export transport correction
+
+- Checkpoint `b1c8d5c` was pushed. CI run
+  [34776704677](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34776704677)
+  completed: five workflow regression tests passed, clippy and all 576 Rust
+  tests passed, and the recovery step successfully ran `cargo fmt --all`,
+  `cargo fmt --all -- --check`, and `cargo check --workspace --locked`.
+  The overall job still correctly failed its original fmt check.
+- False `test-build` annotations for successful SIGINT tests are gone.
+- Patch retrieval exposed another concrete error: the API/proxy truncated
+  each 48,000-character annotation to 4,096 characters. Gzip validation
+  rejected the incomplete data; **no corrupt patch was applied**.
+- Reduce encoded patch parts to 3,000 characters (maximum 40 parts) and
+  extend the regression with multi-part, poorly compressible content.
+  Preserve checksum validation before applying any remote patch.
+- Next: push the corrected exporter, fetch complete parts, verify checksum,
+  inspect/apply the Rust-only patch, and rerun CI. No merge performed.

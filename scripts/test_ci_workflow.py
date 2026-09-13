@@ -9,6 +9,8 @@ import gzip
 import hashlib
 import itertools
 import re
+import random
+import string
 import os
 from pathlib import Path
 import subprocess
@@ -110,13 +112,18 @@ class CiGateTests(unittest.TestCase):
             (root / "main.rs").write_text("fn main(){}\n")
             (root / "config.yaml").write_text("old: value\n")
             subprocess.run(["git", "add", "."], cwd=tmp, check=True)
-            (root / "main.rs").write_text("fn main() {}\n")
+            # Force several incompressible chunks to catch annotation/API
+            # truncation that a tiny one-line formatting fixture misses.
+            noise = "".join(random.Random(42).choices(string.ascii_letters, k=12000))
+            (root / "main.rs").write_text("fn main() {}\n// " + noise + "\n")
             (root / "config.yaml").write_text("private: do-not-export\n")
             result = subprocess.run(
                 ["python3", str(ROOT / "scripts/export_format_patch.py")],
                 cwd=tmp, capture_output=True, text=True, check=True,
             )
             chunks = re.findall(r"::notice title=rustfmt patch \d+/\d+::(.*)", result.stdout)
+            self.assertGreater(len(chunks), 1)
+            self.assertTrue(all(len(chunk) <= 3000 for chunk in chunks))
             patch = gzip.decompress(base64.b64decode("".join(chunks)))
             self.assertEqual(patch, (root / "fmt.patch").read_bytes())
             self.assertIn(hashlib.sha256(patch).hexdigest(), result.stdout)
