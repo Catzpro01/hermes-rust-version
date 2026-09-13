@@ -85,6 +85,11 @@ pub const MESSAGING_QUESTION: &str = "Connect a messaging platform? (Telegram, D
 pub const MESSAGING_NOW: &str = "Set up messaging now (recommended)";
 pub const MESSAGING_SKIP: &str = "Skip — set up later with 'hermes setup gateway'";
 pub const SETUP_COMPLETE: &str = "Setup complete! You're ready to go.";
+/// Rust-only notice (no Python original; per /ask-matt): the Nous Portal
+/// OAuth flow is not ported, so Quick Setup falls through to the regular
+/// provider picker and must say so instead of implying a login happens.
+pub const NOUS_NOT_AVAILABLE: &str =
+    "  Nous Portal OAuth is not available in Hermes-RS yet — pick a provider below.";
 
 /// Rust-only prompts (no Python original: upstream resolves URL/key_env per
 /// provider module; here they are asked once, generic).
@@ -246,6 +251,7 @@ pub fn run_setup(home: &Path, section: Option<Section>) -> Result<Outcome, Wizar
         println!("{NOUS_LINE1}");
         println!("{NOUS_LINE2}");
         println!("{NOUS_SIGNUP}");
+        println!("{NOUS_NOT_AVAILABLE}");
         println!();
     }
 
@@ -767,6 +773,10 @@ mod tests {
         assert_eq!(SETUP_COMPLETE, "Setup complete! You're ready to go.");
         assert_eq!(MODEL_INTRO, "Choose how to connect to your main chat model.");
         assert_eq!(DOCKER_MISSING, "Docker not found in PATH!");
+        // Rust-only notice must be clearly marked as such (not `✦`, not
+        // pretending to be a Python string) and mention the fallback.
+        assert!(NOUS_NOT_AVAILABLE.contains("not available in Hermes-RS"));
+        assert!(NOUS_NOT_AVAILABLE.contains("pick a provider below"));
     }
 
     #[test]

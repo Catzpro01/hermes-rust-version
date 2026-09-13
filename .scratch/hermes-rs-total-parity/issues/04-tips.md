@@ -1,7 +1,7 @@
 # T04 — Tips rotating (Spec 017)
 
-Status: IN REVIEW (CI-verified) — data + selector port; **display wiring
-menunggu keputusan Matt** (spec §J.4).
+Status: DONE (per /ask-matt 2026-09-13: **opsi 1 — skip display**; opsi 3
+ghost text dipertimbangkan ulang di T08).
 
 ## Fakta (spec §E [KOREKSI])
 

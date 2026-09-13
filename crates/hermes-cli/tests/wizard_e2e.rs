@@ -16,6 +16,9 @@ mod consts {
         "   Docker only for now; Modal, SSH, Daytona, and Singularity are not wired yet.";
     pub const SETUP_COMPLETE: &str = "Setup complete! You're ready to go.";
     pub const BACKUP_NOTICE: &str = "Previous config backed up to: ";
+    pub const NOUS_SIGNUP: &str = "Sign up: https://portal.nousresearch.com/manage-subscription";
+    pub const NOUS_NOT_AVAILABLE: &str =
+        "  Nous Portal OAuth is not available in Hermes-RS yet — pick a provider below.";
 }
 
 use assert_cmd::Command;
@@ -261,5 +264,25 @@ mod pty {
             std::fs::read_to_string(w.home.path().join(&backups[0])).unwrap(),
             CFG
         );
+    }
+
+    /// Quick Setup (default mode, ENTER) prints the verbatim Nous Portal
+    /// notice followed by the Rust-only "not available" line, then falls
+    /// through to the regular provider picker. ESC there → cancelled,
+    /// nothing written.
+    #[test]
+    fn quick_setup_states_nous_oauth_is_unavailable() {
+        let mut w = PtyWizard::spawn(&["setup"], None);
+        w.wait_for(consts::MODE_QUESTION).unwrap();
+        w.send(b"\r"); // Quick Setup (first option)
+        let out = w.wait_for(consts::PROVIDER_QUESTION).unwrap();
+        let signup = out.find(consts::NOUS_SIGNUP).expect("portal notice");
+        let notice = out.find(consts::NOUS_NOT_AVAILABLE).expect("rust-only notice");
+        assert!(signup < notice, "notice follows the verbatim portal block: {out}");
+        w.send(b"\x1b");
+        w.wait_for(consts::CANCELED_MESSAGE).unwrap();
+        let status = w.child.wait().expect("child exits");
+        assert!(status.success(), "exit: {status}");
+        assert!(!w.home.path().join("config.yaml").exists());
     }
 }

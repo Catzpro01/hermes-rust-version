@@ -45,13 +45,18 @@ flag tersembunyi `--setup-skeleton` (T01) dengan wizard nyata (spec §C):
   `HermesConfig` strict (unit test).
 - `serde_yaml` naik dari dev-dep ke dep normal `hermes-rs`.
 
-## Belum diport (keputusan Matt)
+## Keputusan per /ask-matt (2026-09-13)
 
-- Nous Portal OAuth (Quick Setup mencetak notice portal lalu memakai
-  picker provider yang sama).
-- OpenClaw import (`IMPORT_QUESTION` tetap ada, tidak ditanyakan — Python
-  hanya bertanya saat instalasi OpenClaw terdeteksi).
-- Egress firewall Docker, `hermes setup agent`, `--quick`.
+- Quick Setup mencetak blok Nous Portal verbatim **lalu** baris Rust-only
+  `  Nous Portal OAuth is not available in Hermes-RS yet — pick a provider
+  below.` (konstanta `NOUS_NOT_AVAILABLE`, ditandai bukan string Python),
+  kemudian picker provider biasa. E2E
+  `quick_setup_states_nous_oauth_is_unavailable`.
+- Nous Portal OAuth → **tunda**, tiket terpisah (integrasi eksternal).
+- OpenClaw import → **skip permanen** (`IMPORT_QUESTION` tetap ada, tidak
+  ditanyakan).
+- Egress firewall Docker → **tunda** sampai backend Docker dieksekusi.
+- `hermes setup agent`, `--quick` → tiket kecil setelah T06/T07.
 
 ## Tes
 
