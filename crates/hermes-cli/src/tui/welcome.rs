@@ -467,34 +467,47 @@ fn right_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
         // Python truncation rule: joined > 45 cells -> accumulate names while
         // `length + len(name) + 2 <= 42`, then append "..." and stop.
         let joined = names.join(", ");
-        let tools_str = if joined.chars().count() > 45 {
-            let mut short: Vec<&str> = Vec::new();
+        let displayed: Vec<(&str, Style)> = if joined.chars().count() > 45 {
+            let mut short = Vec::new();
             let mut length = 0usize;
             for name in &names {
                 if length + name.chars().count() + 2 > 42 {
-                    short.push("...");
+                    short.push(("...", Style::default().add_modifier(Modifier::DIM)));
                     break;
                 }
-                short.push(name);
+                short.push((*name, body));
                 length += name.chars().count() + 2;
             }
-            short.join(", ")
+            short
         } else {
-            joined
+            names.into_iter().map(|name| (name, body)).collect()
         };
-        right.push(SLine {
-            runs: vec![
-                Run {
-                    text: "other:".to_owned(),
-                    style: dim,
-                },
-                Run {
-                    text: format!(" {tools_str}"),
-                    style: body,
-                },
-            ],
-        });
+        let mut runs = vec![
+            Run {
+                text: "other:".to_owned(),
+                style: dim,
+            },
+            Run {
+                text: " ".to_owned(),
+                style: Style::default(),
+            },
+        ];
+        for (index, (name, style)) in displayed.into_iter().enumerate() {
+            if index > 0 {
+                // Rich joins individually styled names with plain punctuation.
+                runs.push(Run {
+                    text: ", ".to_owned(),
+                    style: Style::default(),
+                });
+            }
+            runs.push(Run {
+                text: name.to_owned(),
+                style,
+            });
+        }
+        right.push(SLine { runs });
     }
+
     if !info.mcp_servers.is_empty() {
         right.push(SLine::blank());
         right.push(header("MCP Servers"));
@@ -1644,6 +1657,60 @@ mod tests {
                     if depth == ColorDepth::Truecolor {
                         assert_eq!(style.foreground, Color::Rgb(139, 134, 130));
                     }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn banner_ansi_tool_punctuation_matches_python() {
+        // Independent Python capture: names use banner_text, commas use the
+        // terminal foreground, and the truncation marker is default + dim.
+        let theme = HermesTheme::dark_canonical();
+        let info = banner_info(
+            Some("parity-fixture"),
+            None,
+            &["list_dir", "read_file", "shell_readonly", "write_file"],
+            &[],
+            Some("01a09c9f-9e5e-7a23-a26b-3671192efa10"),
+        );
+        for width in [100, 80, 94, 95] {
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
+                let cells = observed_banner_cells(&bytes);
+                let plain: String = cells.iter().map(|(ch, _)| ch).collect();
+                for name in ["list_dir", "read_file", "shell_readonly"] {
+                    let start = plain[..plain.find(name).unwrap()].chars().count();
+                    let style = cells[start].1;
+                    assert!(!style.bold && !style.dim, "tool name {name}");
+                    if depth == ColorDepth::Truecolor {
+                        assert_eq!(style.foreground, Color::Rgb(255, 248, 220));
+                    }
+                    let (comma, style) = cells[start + name.chars().count()];
+                    assert_eq!(comma, ',');
+                    assert_eq!(
+                        style,
+                        ObservedAnsiStyle {
+                            foreground: Color::Reset,
+                            bold: false,
+                            dim: false,
+                        },
+                        "comma after {name}, width={width}, depth={depth:?}"
+                    );
+                }
+                let start = plain[..plain.find("...").unwrap()].chars().count();
+                for (ch, style) in &cells[start..start + 3] {
+                    assert_eq!(*ch, '.');
+                    assert_eq!(
+                        *style,
+                        ObservedAnsiStyle {
+                            foreground: Color::Reset,
+                            bold: false,
+                            dim: true,
+                        },
+                        "tool truncation marker, width={width}, depth={depth:?}"
+                    );
                 }
             }
         }

@@ -1,6 +1,6 @@
 # T12 — Real Python/Rust visual evidence
 
-- Status: IN PROGRESS — space-collapse fixed; layout/style parity still FAIL
+- Status: IN PROGRESS — four follow-up TDD slices GREEN; review/final recapture pending
 - Label: `ready-for-agent`
 - Owner: Arena agent (capture/corrections), user (final acceptance)
 - Basis: [confirmed Q1-Q8 agreement](../grilling.md), user `setuju lanjutkan`
@@ -195,3 +195,17 @@ seam is already agreed; do not assert a layout root cause before testing it.
 
 Routing only this turn; no new RED/GREEN or runtime changes. This is not a
 personal Matt Pocock review, acceptance of evidence, or permission to merge.
+
+## Four follow-up TDD slices verified — 2026-09-14
+
+User confirmed exact sequence. Layout, bold transition, secondary dim/cropped
+session ellipsis, and tool punctuation each completed independent RED/GREEN
+cycles at public write_banner. All GREEN runs passed fmt/check/clippy/full
+workspace tests. Exact exported deltas were hash-verified and applied before
+source commits; see `docs/hermes-ui-spec/017/evidence/tdd-followup.md`.
+
+Candidates consumed, `phase: none, capture: false`. Final source CI still
+requires verification. Review fixed point and handling of missing independent
+subagents must be clarified with user; no fabricated review. Then enable
+capture and obtain fresh committed-source paired evidence. Existing FAIL
+images remain unchanged; no overall visual PASS or closure/merge permission.

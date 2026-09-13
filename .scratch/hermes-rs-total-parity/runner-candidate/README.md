@@ -8,7 +8,10 @@ the named regression to fail in RED mode.
 Current phase/test are in request.json. The `test` selector accepts only
 `banner_ansi_[a-z_]+` names and invokes one fully qualified test with --exact;
 zero matches, another test's failure, and compiler failures cannot satisfy RED.
-The long-session slice starts with an unapplied test-only proposal.
+All four follow-up slices have completed RED/GREEN. Candidates are consumed.
+Current request is `phase: none, capture: false`: do not auto-capture before
+review. After the review boundary is resolved, set capture true and push to
+capture the committed source without any candidate patch.
 
 After observing RED, replace the proposal with the smallest correction plus
 regression and set phase GREEN. The runner must pass the named regression,

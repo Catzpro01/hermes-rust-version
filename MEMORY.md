@@ -105,10 +105,14 @@ user's private Python installation.
 
 ## Current TDD execution — 2026-09-14
 
-User explicitly invoked the sequence. Long-session layout: RED 34783950104
-(cc458e9), GREEN 34784076114 (33209fd), all required checks passed. Exact
-4075-byte tested delta (ffe59885824b13a0c6d73f54eff9b12691b5da93e93aca91e37b0f0425b244cd)
-applied to source. Next candidate is test-only RED for title-to-border bold,
-using public SGR decoding (not buffer internals); request.json is authoritative.
-No review/recapture completion or merge. After style slices, ask for review
-fixed point and an honest way to handle unavailable independent subagents.
+User explicitly invoked layout → separate styles → review → recapture.
+All four slices have observed RED/GREEN and verified tested deltas applied:
+layout 34783950104/34784076114; bold 34784219747/34784316150;
+dim 34784445723/34784546009; punctuation 34784685139/34784783352.
+See docs/hermes-ui-spec/017/evidence/tdd-followup.md for exact provenance.
+Actual Rust changes only welcome.rs; old images remain unmodified FAIL evidence.
+Final source commit needs its own CI verification. Candidate removed and
+request set to phase none, capture false to respect review-before-recapture.
+Next: obtain review fixed point and user choice between explicitly limited
+direct review or human-review packet; independent subagents are unavailable.
+Do not invent independent review or silently skip to final capture. No merge.

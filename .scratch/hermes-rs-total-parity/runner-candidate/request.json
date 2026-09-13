@@ -1,7 +1,8 @@
 {
-  "phase": "green",
-  "test": "banner_ansi_tool_punctuation_matches_python",
-  "source_sha256": "61d7c1326e499508eb531630f475f3426d40a03170efda3dadccdfd436ccfc34",
-  "patch_sha256": "eabd016f54ee79f7df34695bd5657ae8965414a6d16aec61d35dbc25f355cf15",
-  "red_run": 34784685139
+  "phase": "none",
+  "capture": false,
+  "reason": "tested-candidates-consumed-wait-for-code-review-before-final-capture",
+  "green_run": 34784783352,
+  "tested_patch_sha256": "69584e4065123dcb522cba2cf04be736bd5ed395574825dff0c866f56db9e573",
+  "source_sha256": "baa0ddf2de644c168d55b8d89457014ff656a00fe72a2c4d18b877f66e98ec0d"
 }

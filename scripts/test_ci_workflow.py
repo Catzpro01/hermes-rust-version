@@ -8,6 +8,7 @@ import base64
 import gzip
 import hashlib
 import itertools
+import json
 import re
 import random
 import string
@@ -25,6 +26,27 @@ STEPS = {step["name"]: step for step in WORKFLOW["jobs"]["test"]["steps"] if "na
 
 
 class CiGateTests(unittest.TestCase):
+    def test_visual_capture_can_wait_for_review(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/visual-evidence.yml").read_text())
+        steps = workflow["jobs"]["capture"]["steps"]
+        plan = next(s for s in steps if s.get("id") == "plan")
+        for capture in (False, True, "false"):
+            with self.subTest(capture=capture), tempfile.TemporaryDirectory() as tmp:
+                folder = Path(tmp) / ".scratch/hermes-rs-total-parity/runner-candidate"
+                folder.mkdir(parents=True)
+                (folder / "request.json").write_text(json.dumps({"phase": "none", "capture": capture}))
+                output = Path(tmp) / "output"
+                env = dict(os.environ, GITHUB_EVENT_NAME="push", GITHUB_OUTPUT=str(output))
+                run = subprocess.run(["bash", "-e", "-c", plan["run"]], cwd=tmp, env=env,
+                                     capture_output=True, text=True, check=False)
+                self.assertEqual(run.returncode == 0, isinstance(capture, bool), run.stderr)
+                if isinstance(capture, bool):
+                    self.assertIn(f"capture={str(capture).lower()}\n", output.read_text())
+        for step in steps:
+            if step.get("name") in ("Build real CLI", "Capture offline startup at four terminal sizes",
+                                    "Export verifiable raw capture group 1", "Export verifiable raw capture group 2"):
+                self.assertEqual(step["if"], "steps.plan.outputs.phase != 'red' && steps.plan.outputs.capture == 'true'")
+
     def test_visual_gate_requires_exact_selected_regression(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/visual-evidence.yml").read_text())
         step = next(s for s in workflow["jobs"]["capture"]["steps"] if s.get("id") == "regression")

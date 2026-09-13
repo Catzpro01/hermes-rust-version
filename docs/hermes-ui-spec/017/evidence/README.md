@@ -10,6 +10,12 @@ menjadi catatan diagnosis awal, bukan status validasi terbaru.
 Kesepakatan Q1–Q8 dan izin eksekusi sudah dikonfirmasi user. Ini hasil tahap
 pertama, bukan bukti lengkap kelima area dan bukan persetujuan closure.
 
+## Tindak lanjut kode
+
+[Empat slice TDD](tdd-followup.md) untuk layout session panjang dan style
+sudah RED → GREEN. Review serta capture final masih menunggu; gambar lama
+bukan bukti kelulusan kode yang baru diperbaiki.
+
 ## Hasil yang benar-benar dijalankan
 
 - Rust: CLI asli, provider `fake`, PTY 30 baris pada 100/80/94/95 kolom.

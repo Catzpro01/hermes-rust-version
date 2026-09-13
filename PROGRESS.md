@@ -776,3 +776,19 @@ performed.** The Python installation was not modified.
   emitting individually styled names, plain comma/space separators, and a
   default-foreground dim truncation marker. No change to labels or counters.
 - Exact test and full workspace gates must pass before this source is applied.
+
+## 2026-09-14: Apply final punctuation GREEN; stop at requested review boundary
+
+- GREEN 34784783352 / 7af74af passed exact regression, fmt/check, clippy and full
+  workspace tests. Verified/applied 5232-byte delta SHA-256
+  69584e4065123dcb522cba2cf04be736bd5ed395574825dff0c866f56db9e573;
+  git apply --check and byte-identical local Rust diff passed before commit.
+- All four independent TDD slices completed. Saved provenance ledger, refreshed
+  MEMORY/T12/index; no original screenshots/recordings changed or relabelled PASS.
+- To respect the user's review-before-final-capture order, added boolean capture
+  selection. QA observed failure before implementation, then all eight passed.
+  Final request consumes the candidate and sets none/false; no final source
+  capture is claimed. This does not disable candidate regression/workspace gates.
+- Next verify this source commit's CI, then ask for review fixed point and an
+  explicit limited-review/human-review route since independent subagents are
+  unavailable. No merge, personal approval or closure accepted.

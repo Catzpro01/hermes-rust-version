@@ -45,20 +45,24 @@ jobs:
           python3 - <<'PYCODE'
           import os, json, pathlib, re
           test = "banner_ansi_preserves_python_reference_layout"
+          capture = True
           if os.environ['GITHUB_EVENT_NAME'] == 'push':
               request = json.loads(pathlib.Path('.scratch/hermes-rs-total-parity/runner-candidate/request.json').read_text())
               phase = request['phase']
               test = request.get('test', test)
+              capture = request.get('capture', True)
               candidate = phase != 'none'
           else:
               phase = os.environ['INPUT_PHASE'] or 'none'
               candidate = bool(os.environ['INPUT_CANDIDATE'])
           if phase not in ('none', 'red', 'green'):
               raise SystemExit('Invalid validation phase')
+          if not isinstance(capture, bool):
+              raise SystemExit('capture must be a boolean')
           if not re.fullmatch(r'banner_ansi_[a-z_]+', test):
               raise SystemExit('Invalid regression test name')
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-              out.write(f'phase={phase}\ncandidate={str(candidate).lower()}\ntest={test}\n')
+              out.write(f'phase={phase}\ncandidate={str(candidate).lower()}\ntest={test}\ncapture={str(capture).lower()}\n')
           PYCODE
       - name: Apply bounded pre-commit candidate
         if: steps.plan.outputs.candidate == 'true'
@@ -145,18 +149,19 @@ jobs:
         if: steps.plan.outputs.candidate == 'true'
         run: python3 scripts/capture_banner.py export evidence/tested.patch --label 'candidate patch' --group 1
       - name: Build real CLI
-        if: steps.plan.outputs.phase != 'red'
+        if: steps.plan.outputs.phase != 'red' && steps.plan.outputs.capture == 'true'
         run: cargo build --locked -p hermes-rs
       - name: Capture offline startup at four terminal sizes
-        if: steps.plan.outputs.phase != 'red'
+        if: steps.plan.outputs.phase != 'red' && steps.plan.outputs.capture == 'true'
         run: python3 scripts/capture_banner.py rust target/debug/hermes-rs evidence/banner-rust.json
       - name: Export verifiable raw capture group 1
-        if: steps.plan.outputs.phase != 'red'
+        if: steps.plan.outputs.phase != 'red' && steps.plan.outputs.capture == 'true'
         run: python3 scripts/capture_banner.py export evidence/banner-rust.json
       - name: Export verifiable raw capture group 2
-        if: steps.plan.outputs.phase != 'red'
+        if: steps.plan.outputs.phase != 'red' && steps.plan.outputs.capture == 'true'
         run: python3 scripts/capture_banner.py export evidence/banner-rust.json --group 1
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - if: steps.plan.outputs.candidate == 'true' || steps.plan.outputs.capture == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: banner-raw-${{ github.sha }}
           retention-days: 90
