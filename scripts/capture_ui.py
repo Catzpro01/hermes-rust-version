@@ -1,0 +1,288 @@
+"""Real PTY evidence for remaining Spec 017 UI; no UI text is reconstructed.
+
+Readiness labels route keystrokes only; original streams and input events are
+retained. Errors are explicit per case, never promoted to reviewed parity.
+"""
+import base64
+import errno
+import fcntl
+import gzip
+import hashlib
+import json
+import os
+from pathlib import Path
+import pty
+import select
+import signal
+import sqlite3
+import struct
+import subprocess
+import sys
+import tempfile
+import termios
+import time
+
+ROOT = Path(__file__).resolve().parents[1]
+UPSTREAM = '63279301bcbdc185c1b07b98a9312eb0c862f26d'
+SID_A = '550e8400-e29b-41d4-a716-446655440000'
+SID_B = '660f8400-e29b-41d4-a716-446655440001'
+CASES = ('wizard-mode', 'wizard-full', 'wizard-blank', 'wizard-quick',
+         'wizard-model', 'wizard-terminal', 'wizard-local', 'wizard-docker',
+         'wizard-gateway', 'wizard-gateway-empty', 'wizard-gateway-token',
+         'wizard-tools', 'wizard-tools-toggle', 'wizard-cancel',
+         'picker-normal', 'picker-empty', 'picker-filter', 'picker-no-match',
+         'picker-delete', 'completion-command', 'completion-subcommand',
+         'completion-alternatives', 'summary-zero', 'summary-nonzero')
+
+
+def record(command, home, width, steps, extra_env=None, timeout=15):
+    env = {'PATH': os.defpath, 'HOME': str(home), 'HERMES_HOME': str(home),
+           'TERM': 'xterm-256color', 'COLORTERM': 'truecolor', 'LANG': 'C.UTF-8',
+           'LC_ALL': 'C.UTF-8', 'PYTHONDONTWRITEBYTECODE': '1'}
+    env.update(extra_env or {})
+    master, slave = pty.openpty()
+    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 30, width, 0, 0))
+
+    def session():
+        os.setsid()
+        fcntl.ioctl(slave, termios.TIOCSCTTY, 0)
+
+    proc = subprocess.Popen(command, stdin=slave, stdout=slave, stderr=slave,
+                            cwd=home, env=env, preexec_fn=session)
+    os.close(slave)
+    begin = last = stage_begin = time.monotonic()
+    output = bytearray()
+    events, inputs, completed = [], [], []
+    index = cursor = 0
+    error = None
+    import pyte
+    screen = pyte.Screen(width, 30)
+    def terminal_reply(text):
+        reply = text.encode()
+        os.write(master, reply)
+        inputs.append([round(time.monotonic()-begin, 6), base64.b64encode(reply).decode(), 'terminal response (pyte 0.8.2)'])
+    screen.write_process_input = terminal_reply
+    terminal = pyte.ByteStream(screen)
+    eof = False
+    try:
+        while index < len(steps):
+            now = time.monotonic()
+            if now - stage_begin > timeout:
+                error = f'missing readiness/timeout at stage {index}: {steps[index][0]}'
+                break
+            if not eof and select.select([master], [], [], 0.05)[0]:
+                try:
+                    data = os.read(master, 65536)
+                except OSError as exc:
+                    if exc.errno != errno.EIO:
+                        raise
+                    data = b''
+                if data:
+                    output.extend(data)
+                    events.append([round(time.monotonic()-begin, 6), base64.b64encode(data).decode()])
+                    last = time.monotonic()
+                    if len(output) > 2_000_000:
+                        error = 'output limit exceeded'
+                        break
+                    # Respond using terminal state, never hard-code cursor 1,1.
+                    terminal.feed(data)
+                else:
+                    eof = True
+            elif eof:
+                # poll() reaps an exited child; bounded wait avoids a hot loop.
+                select.select([], [], [], 0.02)
+            marker, key = steps[index]
+            code = proc.poll()
+            ready = marker.encode() in bytes(output[cursor:]) if marker != '@exit' else code is not None
+            if code is not None and code != 0:
+                error = f'process exit {code} at stage {index}'
+                break
+            if ready and (time.monotonic()-last >= 0.3 or code is not None):
+                completed.append({'marker': marker, 'end_byte': len(output)})
+                index += 1
+                if key is not None:
+                    data = key.encode()
+                    os.write(master, data)
+                    inputs.append([round(time.monotonic()-begin, 6), base64.b64encode(data).decode(), 'scenario key'])
+                    cursor = len(output)
+                    stage_begin = last = time.monotonic()
+            elif code is not None:
+                error = f'missing readiness at stage {index}: {marker}'
+                break
+        return {'command': command, 'environment': env, 'cwd': str(home),
+                'width': width, 'height': 30, 'events_base64': events,
+                'inputs_base64': inputs, 'raw_base64': base64.b64encode(output).decode(),
+                'raw_sha256': hashlib.sha256(output).hexdigest(),
+                'snapshot_end_byte': len(output), 'snapshot_rule': 'observed readiness + 300ms output quiet, or explicit exit',
+                'terminal_responder': 'pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)', 'steps': steps, 'completed_steps': completed, 'error': error,
+                'exit_code_at_snapshot': proc.poll(), 'termination': 'SIGTERM after snapshot if still running'}
+    finally:
+        if proc.poll() is None:
+            os.killpg(proc.pid, signal.SIGTERM)
+            try:
+                proc.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                os.killpg(proc.pid, signal.SIGKILL)
+                proc.wait()
+        os.close(master)
+
+
+def steps_for(name, side):
+    py = side == 'python'
+    down = '\x1bOB' if py else '\x1b[B'
+    provider = 'Select provider'
+    terminal = 'Select terminal backend'
+    gateway = 'Select platforms to configure'
+    tools = 'Select an option:' if py else 'Select toolsets to enable:'
+    mode = 'How would you like to set up Hermes?'
+    if name == 'wizard-mode': return [(mode, None)]
+    if name == 'wizard-full': return [(mode, down+'\r'), (provider, None)]
+    if name == 'wizard-blank': return [(mode, down*2+'\r'), ('', None)]
+    if name == 'wizard-quick': return [(mode, '\r'), ('', None)]
+    if name == 'wizard-model': return [(provider, None)]
+    if name == 'wizard-terminal': return [(terminal, None)]
+    if name == 'wizard-local': return [(terminal, '\r'), ('@exit', None)]
+    if name == 'wizard-docker': return [(terminal, down+'\r'), ('Docker not found', None)]
+    if name == 'wizard-gateway': return [(gateway, None)]
+    if name == 'wizard-gateway-empty': return [(gateway, '\r'), ('@exit', None)]
+    if name == 'wizard-gateway-token': return [(gateway, ' \r'), ('', None)]
+    if name == 'wizard-tools': return [(tools, None)]
+    if name == 'wizard-tools-toggle': return [(tools, '\r' if py else ' '), ('', None)]
+    if name == 'wizard-cancel': return [(terminal, '\x1b'), ('@exit', None)]
+    if name == 'picker-empty': return [('No sessions found.', None)]
+    if name == 'picker-normal': return [('Browse sessions', None)]
+    if name == 'picker-filter': return [('Browse sessions', 'deploy'), ('', None)]
+    if name == 'picker-no-match': return [('Browse sessions', 'zzzz'), ('No sessions match', None)]
+    if name == 'picker-delete': return [('Browse sessions', 'd'), ('', None)]
+    if name.startswith('completion-'):
+        text = {'completion-command':'/mod', 'completion-subcommand':'/skills ', 'completion-alternatives':'/s'}[name]
+        return [('❯' if py else 'Welcome to Hermes Agent!', text+'\t\t'), ('', None)]
+    return [('@exit', None)]
+
+
+def section_for(name):
+    if name.startswith('wizard-gateway'): return 'gateway'
+    if name.startswith('wizard-tools'): return 'tools'
+    if name in ('wizard-terminal','wizard-local','wizard-docker','wizard-cancel'): return 'terminal'
+    return 'model' if name == 'wizard-model' else None
+
+
+def seed_rust(home, empty=False):
+    with sqlite3.connect(home/'state.db') as db:
+        db.executescript('''CREATE TABLE sessions(id TEXT PRIMARY KEY,source TEXT NOT NULL,started_at REAL NOT NULL);
+        CREATE TABLE messages(id INTEGER PRIMARY KEY AUTOINCREMENT,session_id TEXT NOT NULL,role TEXT NOT NULL,content TEXT,timestamp REAL NOT NULL);
+        CREATE TABLE tool_calls(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,turn_index INTEGER NOT NULL,tool_name TEXT NOT NULL,arguments TEXT NOT NULL,result TEXT,status TEXT NOT NULL,created_at REAL NOT NULL);''')
+        if not empty:
+            for i,(sid,text) in enumerate(((SID_A,'deploy the thing'),(SID_B,'second topic'))):
+                db.execute('INSERT INTO sessions VALUES (?,?,?)',(sid,'cli',1700000000+i))
+                db.execute('INSERT INTO messages(session_id,role,content,timestamp) VALUES (?,?,?,?)',(sid,'user',text,1700000000.5+i))
+
+
+def capture_side(side, binary=None, summary=None, reference=None, names=CASES, widths=(100,80)):
+    cases = []
+    for width in widths:
+        for name in names:
+            with tempfile.TemporaryDirectory(prefix='hermes-ui-'+side+'-') as tmp:
+                home = Path(tmp)
+                if name.startswith('picker') and side == 'rust': seed_rust(home, name=='picker-empty')
+                if name.startswith('completion'):
+                    (home/'config.yaml').write_text('model:\n  provider: auto\n  name: parity-fixture\n')
+                if side == 'rust':
+                    if name.startswith('wizard'):
+                        command = [str(binary),'setup'] + ([section_for(name)] if section_for(name) else [])
+                    elif name.startswith('picker'): command = [str(binary),'sessions','browse']
+                    elif name.startswith('completion'): command = [str(binary),'--provider','fake']
+                    else: command = [str(summary),'0' if name.endswith('zero') and not name.endswith('nonzero') else '3',str(width)]
+                    extra = {}
+                else:
+                    command = [sys.executable,str(Path(__file__).resolve()),'python-child',str(reference),name,str(width)]
+                    extra = {'PYTHONPATH': os.environ.get('PYTHONPATH','')}
+                result = record(command,home,width,steps_for(name,side),extra)
+                print(side,name,width,result['error'] or 'CAPTURED_NOT_REVIEWED',file=sys.stderr)
+                cases.append({'id':f'{name}-{width}x30','scenario':name,side:result})
+    return cases
+
+
+def python_child(reference, name, width):
+    sys.path.insert(0,str(reference))
+    # External networking is forbidden; UI implementations are unmodified.
+    import socket
+    def deny(*args, **kwargs): raise OSError('network disabled for isolated visual evidence')
+    socket.socket.connect = deny
+    socket.create_connection = deny
+    socket.getaddrinfo = deny
+    if name.startswith('wizard'):
+        from types import SimpleNamespace
+        from hermes_cli.setup import run_setup_wizard
+        run_setup_wizard(SimpleNamespace(section=section_for(name)))
+    elif name.startswith('picker'):
+        from hermes_state import SessionDB
+        from hermes_cli.main import _session_browse_picker
+        db = SessionDB(Path(os.environ['HERMES_HOME'])/'state.db')
+        if name != 'picker-empty':
+            for i,(sid,text) in enumerate(((SID_A,'deploy the thing'),(SID_B,'second topic'))):
+                db.create_session(sid,source='cli',started_at=1700000000+i)
+                db.append_message(sid,'user',text,timestamp=1700000000.5+i)
+        _session_browse_picker(db.list_sessions_rich(),session_db=db)
+    elif name.startswith('completion'):
+        from prompt_toolkit import PromptSession
+        from hermes_cli.commands import SlashCommandCompleter
+        # Native prompt_toolkit host of the actual REPL completer, not full CLI.
+        # Prompt is host chrome; candidate labels come solely from upstream.
+        PromptSession(completer=SlashCommandCompleter(),complete_while_typing=False).prompt('❯ ')
+    else:
+        from rich.console import Console
+        from hermes_cli.banner import build_welcome_banner
+        tools = [] if name=='summary-zero' else ['list_dir','read_file','write_file']
+        build_welcome_banner(Console(width=width),model='parity-fixture',cwd='/fixture/demo',
+                             tools=[{'function':{'name':t}} for t in tools],
+                             get_toolset_for_tool=lambda name:'other',availability={},skills_by_category={})
+
+
+def export(path, group):
+    raw=Path(path).read_bytes()
+    data=base64.b64encode(gzip.compress(raw,mtime=0)).decode()
+    chunks=[data[i:i+3000] for i in range(0,len(data),3000)]
+    if len(chunks)>32: raise RuntimeError('Annotation budget exceeded; never truncate')
+    if group==0: print(f'::notice title=visual bundle digest::sha256={hashlib.sha256(raw).hexdigest()}; bytes={len(raw)}')
+    for i in range(group*8,min((group+1)*8,len(chunks))):
+        print(f'::notice title=visual bundle {i+1}/{len(chunks)}::{chunks[i]}')
+
+
+def main():
+    mode,*args=sys.argv[1:]
+    if mode=='python-child': return python_child(Path(args[0]),args[1],int(args[2]))
+    if mode=='export': return export(args[0],int(args[1]))
+    output=Path(args[-1])
+    if output.exists(): raise RuntimeError('Refusing to overwrite evidence')
+    if mode=='rust':
+        binary,summary=map(lambda s:Path(s).resolve(),args[:2])
+        bundle={'schema':1,'status':'CAPTURED_NOT_REVIEWED','scope':'remaining UI cases',
+                'rust_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+                'rustc_version':subprocess.check_output(['rustc','--version'],text=True).strip(),
+                'cargo_version':subprocess.check_output(['cargo','--version'],text=True).strip(),
+                'rust_worktree_diff_sha256':hashlib.sha256(subprocess.check_output(['git','diff','--binary','--','*.rs'])).hexdigest(),
+                'binary_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (binary,summary)},
+                'python_reference':UPSTREAM,
+                'cases':capture_side('rust',binary=binary,summary=summary)}
+    elif mode=='python':
+        reference=Path(args[0]).resolve()
+        assert (reference/'.visual-evidence-reference').read_text().strip()==UPSTREAM
+        bundle={'schema':1,'python_reference':UPSTREAM,'python_version':sys.version,
+                'source_sha256':{str(p.relative_to(reference)):hashlib.sha256(p.read_bytes()).hexdigest()
+                                  for p in reference.rglob('*.py')},
+                'cases':capture_side('python',reference=reference)}
+    elif mode=='pair':
+        bundle=json.loads(Path(args[0]).read_text());py=json.loads(Path(args[1]).read_text())
+        assert bundle['python_reference']==py['python_reference']
+        lookup={c['id']:c['python'] for c in py['cases']}
+        for case in bundle['cases']: case['python']=lookup.pop(case['id'])
+        assert not lookup
+        bundle['python_version']=py['python_version'];bundle['python_source_sha256']=py['source_sha256']
+    else: raise ValueError(mode)
+    bundle['errors']=[{'id':c['id'],'side':s,'error':c[s]['error']} for c in bundle['cases'] for s in ('python','rust') if s in c and c[s]['error']]
+    output.parent.mkdir(parents=True,exist_ok=True)
+    output.write_text(json.dumps(bundle,indent=2)+'\n')
+
+
+if __name__=='__main__': main()

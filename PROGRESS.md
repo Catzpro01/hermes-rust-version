@@ -932,3 +932,14 @@ before applying Rust. New branch-only/read-only workflow, pinned actions; no
 production source changed yet. Local official Rust download still fails TLS.
 Python isolated reference has evolved details relative to prose spec; preserve
 real outputs and record discrepancies, never silently synthesize expected UI.
+
+### Capture harness behavior and adapter diagnostic retry
+
+PTY recorder input/round-trip test observed RED assertion (0 inputs vs 1), then
+GREEN; two fail-closed missing-marker/nonzero-exit tests also pass. Initial
+missing-module probe was scaffolding, not a behavioral RED. DSR replies now
+use pyte terminal cursor state, not a fabricated 1,1 cursor. Python attempt1
+is diagnostic only. Summary adapter validation 34786776914 failed with exit
+101; signed logs unavailable (EOF), no Rust applied. Added bounded annotation
+diagnostics and retry, without weakening any Rust gate. Remaining UI source
+has not been corrected or declared equivalent.
