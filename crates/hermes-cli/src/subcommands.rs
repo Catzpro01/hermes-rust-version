@@ -666,10 +666,12 @@ mod tests {
         assert!(s.contains("  [ ] spotify  "), "{s}");
         assert_eq!(s.lines().count(), 27, "{s}");
 
-        let mut c = HermesConfig::default();
-        c.tools = Some(hermes_core::config::ToolsConfig {
-            enabled_toolsets: vec!["spotify".into()],
-        });
+        let c = HermesConfig {
+            tools: Some(hermes_core::config::ToolsConfig {
+                enabled_toolsets: vec!["spotify".into()],
+            }),
+            ..HermesConfig::default()
+        };
         let mut out = Vec::new();
         render_tools(Some(&c), &mut out).unwrap();
         let s = String::from_utf8(out).unwrap();

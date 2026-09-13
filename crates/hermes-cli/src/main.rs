@@ -4,7 +4,6 @@ use hermes_core::config::resolve_hermes_home;
 use hermes_core::provider::{Provider, ProviderRegistry, FAKE_PROVIDER};
 
 pub(crate) mod approval;
-pub(crate) mod radiolist;
 mod output;
 mod render;
 mod repl;
