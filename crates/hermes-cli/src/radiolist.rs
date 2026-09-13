@@ -78,13 +78,13 @@ pub fn prompt_radiolist<T: AsRef<str>>(
 
             // Item rows
             let end_idx = (scroll_offset + visible_rows).min(items.len());
-            for i in scroll_offset..end_idx {
+            for (i, item) in items.iter().enumerate().take(end_idx).skip(scroll_offset) {
                 let is_cursor = i == cursor;
                 let is_sel = i == selected;
 
                 let radio = if is_sel { "\u{25cf}" } else { "\u{25cb}" };
                 let arrow = if is_cursor { "\u{2192}" } else { " " };
-                let item_text = items[i].as_ref();
+                let item_text = item.as_ref();
 
                 let prefix = format!(" {} ({}) ", arrow, radio);
                 let available_width = if max_x > prefix.len() + 1 {
