@@ -495,7 +495,7 @@ fn help_lists_every_subcommand_and_global_flags() {
         .stdout(predicate::str::contains("\u{1b}").not());
     let stdout = String::from_utf8_lossy(&out.get_output().stdout);
     for cmd in [
-        "setup", "version", "model", "sessions", "inspect", "messages", "tool-calls", "search",
+        "setup", "version", "model", "tools", "sessions", "inspect", "messages", "tool-calls", "search",
         "info", "mcp", "help",
     ] {
         assert!(

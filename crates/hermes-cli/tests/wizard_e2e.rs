@@ -68,6 +68,24 @@ fn setup_skeleton_flag_is_gone() {
         .stderr(predicate::str::contains("unexpected argument"));
 }
 
+/// Piped `hermes tools` is a plain listing (T07) — no prompt, no writes.
+#[test]
+fn tools_piped_lists_catalog_without_writing() {
+    let home = TempDir::new().unwrap();
+    Command::cargo_bin("hermes-rs")
+        .unwrap()
+        .env("HERMES_HOME", home.path())
+        .args(["tools"])
+        .write_stdin("")
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with("Toolsets:\n"))
+        .stdout(predicate::str::contains("[x] web  "))
+        .stdout(predicate::str::contains("[ ] spotify  "))
+        .stdout(predicate::str::contains('\x1b').not());
+    assert!(!home.path().join("config.yaml").exists());
+}
+
 #[cfg(unix)]
 mod pty {
     use super::consts;
@@ -279,6 +297,40 @@ mod pty {
         let signup = out.find(consts::NOUS_SIGNUP).expect("portal notice");
         let notice = out.find(consts::NOUS_NOT_AVAILABLE).expect("rust-only notice");
         assert!(signup < notice, "notice follows the verbatim portal block: {out}");
+        w.send(b"\x1b");
+        w.wait_for(consts::CANCELED_MESSAGE).unwrap();
+        let status = w.child.wait().expect("child exits");
+        assert!(status.success(), "exit: {status}");
+        assert!(!w.home.path().join("config.yaml").exists());
+    }
+
+    /// T07: `hermes tools` on a TTY is the wizard's Tools checklist. Toggle
+    /// the first row (web, pre-checked → off) and confirm → config gets
+    /// `tools.enabled_toolsets` without `web`, with the other defaults.
+    #[test]
+    fn tools_tty_checklist_writes_enabled_toolsets() {
+        let mut w = PtyWizard::spawn(&["tools"], None);
+        w.wait_for("Select toolsets to enable:").unwrap();
+        w.send(b" \r");
+        w.wait_for(consts::SETUP_COMPLETE).unwrap();
+        let status = w.child.wait().expect("child exits");
+        assert!(status.success(), "exit: {status}");
+        let cfg = std::fs::read_to_string(w.home.path().join("config.yaml")).unwrap();
+        let parsed: hermes_core::config::HermesConfig = serde_yaml::from_str(&cfg).unwrap();
+        let on = parsed.tools.expect("tools section").enabled_toolsets;
+        assert!(!on.contains(&"web".to_owned()), "{on:?}");
+        assert!(on.contains(&"file".to_owned()) && on.contains(&"terminal".to_owned()), "{on:?}");
+        assert!(!on.contains(&"spotify".to_owned()), "{on:?}");
+    }
+
+    /// T06: `hermes model` on a TTY (no --provider) is the wizard's Model
+    /// section — same code path as `hermes setup model` (spec §C.3).
+    #[test]
+    fn model_tty_is_the_provider_picker() {
+        let mut w = PtyWizard::spawn(&["model"], None);
+        let out = w.wait_for(consts::PROVIDER_QUESTION).unwrap();
+        assert!(out.contains("Choose how to connect to your main chat model."), "{out}");
+        assert!(out.contains("Nous Portal (Everything your agent needs"), "{out}");
         w.send(b"\x1b");
         w.wait_for(consts::CANCELED_MESSAGE).unwrap();
         let status = w.child.wait().expect("child exits");

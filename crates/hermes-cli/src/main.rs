@@ -27,7 +27,7 @@ mod wizard;
 
 Usage: hermes-rs [OPTIONS] [COMMAND]
 
-Commands: model, sessions, inspect, messages, tool-calls, search, info, mcp, setup, help, version
+Commands: model, tools, sessions, inspect, messages, tool-calls, search, info, mcp, setup, help, version
 Mirrors Python Hermes Agent where implemented."
 )]
 struct Args {
@@ -106,8 +106,10 @@ enum Commands {
     /// Show Hermes version and install information
     Version,
 
-    /// List available models for the active provider
+    /// Pick provider + model (interactive) or list configured providers (piped / --provider)
     Model,
+    /// Enable/disable toolsets (interactive checklist) or list them (piped)
+    Tools,
     /// List all chat sessions
     Sessions,
     /// Inspect a session's metadata

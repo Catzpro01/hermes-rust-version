@@ -102,6 +102,18 @@ pub struct HermesConfig {
     /// process environment exactly as before Spec 007 (zero regression).
     #[serde(default)]
     pub sandbox: Option<SandboxConfig>,
+    /// Toolset switches written by `hermes setup tools` / `hermes tools`
+    /// (Spec 017 T07). Absent -> catalog defaults; the Rust tool registry
+    /// does not consult it yet (display/config parity only).
+    #[serde(default)]
+    pub tools: Option<ToolsConfig>,
+}
+
+/// `tools:` section (Spec 017 T07) — mirrors Python `tools.enabled_toolsets`.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+pub struct ToolsConfig {
+    #[serde(default)]
+    pub enabled_toolsets: Vec<String>,
 }
 
 /// `sandbox:` section (Spec 007). Every field is optional; `enabled: true`

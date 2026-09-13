@@ -15,8 +15,8 @@ autocomplete /slash, tips, session picker. Sumber ground truth:
 | T03 | Info line | IN REVIEW — `issues/03-info-line.md`; post-banner hanya `WELCOME` (spec §B/§E koreksi) |
 | T04 | Tips rotating | IN REVIEW — `issues/04-tips.md`; katalog 380+11 verbatim + selector, display menunggu Matt (§J.4) |
 | T05 | Setup wizard multi-step (`hermes setup`) | IN REVIEW — `issues/05-setup-wizard.md`; 4 section + section tunggal, atomic write + backup, ESC = no-write |
-| T06 | Provider catalog (39 provider) | Not started |
-| T07 | Toolsets catalog (26 toolset) | Not started |
+| T06 | Provider catalog (39 provider) | IN REVIEW — `issues/06-provider-catalog.md`; `hermes model` TTY = section wizard |
+| T07 | Toolsets catalog (26 toolset) | IN REVIEW — `issues/07-toolsets-catalog.md`; `hermes tools` baru |
 | T08 | Autocomplete /slash (parity perilaku prompt_toolkit) | Not started |
 | T09 | Session picker | Not started |
 | T10 | Parity, docs & closure | Not started |
