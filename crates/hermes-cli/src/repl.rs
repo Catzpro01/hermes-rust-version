@@ -14,8 +14,8 @@ use hermes_core::{
     provider::{Provider, ProviderError, ProviderRegistry, RegistryError},
     session::SessionStore,
     tools::{
-        Confirmation, ListDirTool, ReadFileTool, ShellReadonlyTool, Tool, ToolRegistry,
-        WriteFileTool,
+        Confirmation, ListDirTool, ReadFileTool, SandboxPolicy, ShellReadonlyTool, Tool,
+        ToolRegistry, WriteFileTool,
     },
 };
 use rustyline::{error::ReadlineError, Editor};
@@ -80,6 +80,7 @@ const SLASH_COMMANDS: &[(&str, &str)] = &[
     ("/tools", "List available agent tools and invocation status"),
     ("/toolsets", "List enabled/disabled toolsets"),
     ("/mcp", "Show MCP server status and manage servers"),
+    ("/sandbox", "Show the tool execution sandbox policy (Spec 007)"),
     ("/skills", "Show installed and active agent skills"),
     ("/browser", "Browser automation & CDP status"),
 
@@ -212,10 +213,17 @@ pub async fn run_repl(
     };
     tool_registry.register(ReadFileTool::new(&tool_root));
     tool_registry.register(ListDirTool::new(&tool_root));
-    tool_registry.register(ShellReadonlyTool::new(
-        confirmation.clone(),
-        Duration::from_secs(30),
-    ));
+    // Spec 007: shell tools run inside the configured sandbox. Without a
+    // `sandbox:` section this is `SandboxPolicy::inherit()` — byte-for-byte
+    // the pre-007 behaviour (zero regression).
+    let sandbox = SandboxPolicy::from_config(
+        config.as_ref().and_then(|c| c.sandbox.as_ref()),
+        &tool_root,
+    );
+    tool_registry.register(
+        ShellReadonlyTool::new(confirmation.clone(), Duration::from_secs(30))
+            .with_sandbox(sandbox.clone()),
+    );
     tool_registry.register(WriteFileTool::new(&tool_root, confirmation.clone()));
     // Spec 013 T03 / Spec 017 T02 — startup welcome banner (v0.21.0 Python
     // parity). TTY-only: piped E2E invocations must keep byte-stable,
@@ -779,6 +787,12 @@ pub async fn run_repl(
                 }
                 continue;
             }
+            // `/sandbox` (Spec 007) shows the boundary shell tools run inside.
+            // Display-only: names and numbers, never environment values.
+            "/sandbox" => {
+                println!("{}", sandbox.summary());
+                continue;
+            }
             // `/mcp` / `/mcp list` shows each connected MCP server and its tool
             // count (Spec 011b #04). `/mcp restart <name>` swaps one server.
             "/mcp" | "/mcp list" => {
@@ -875,6 +889,7 @@ pub async fn run_repl(
                     ("/tools", "list registered tools"),
                     ("/toolsets", "list available toolsets"),
                     ("/mcp [list|restart]", "inspect & restart MCP servers"),
+                    ("/sandbox", "tool execution sandbox policy"),
                     ("/skin [name]", "choose UI skin theme"),
                     ("/battery", "host system metrics"),
                     ("/mascot, /journey", "Hermes journey & companion"),

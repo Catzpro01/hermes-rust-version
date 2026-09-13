@@ -182,6 +182,7 @@ fn info_subcommand_shows_home_and_provider() {
         )))
         .stdout(predicate::str::contains("Active provider: fake (built-in)\n"))
         .stdout(predicate::str::contains("No config.yaml found\n"))
+        .stdout(predicate::str::contains("sandbox: off (inherit)\n"))
         .stdout(predicate::str::contains("Sessions: 0\n"))
         .stdout(predicate::str::contains("❯ ").not())
         .stdout(predicate::str::contains("\u{1b}").not());
@@ -851,4 +852,63 @@ fn sessions_accepts_hermes_home_flag_after_subcommand() {
         .stdout(predicate::str::contains(format!(
             "{SEED_ID_A}  started=1700000000.000  parity check A"
         )));
+}
+
+// ---------------------------------------------------------------------------
+// Spec 007: tool execution sandbox — config surface
+// ---------------------------------------------------------------------------
+
+#[test]
+fn sandbox_config_is_reported_by_info_and_repl_sandbox_command() {
+    let home = TempDir::new().unwrap();
+    std::fs::write(
+        home.path().join("config.yaml"),
+        "sandbox:\n  enabled: true\n  cpu_seconds: 5\n  max_output_kb: 8\n  env_allowlist: [CARGO_HOME]\n",
+    )
+    .unwrap();
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["info"])
+        .write_stdin("")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("sandbox: on | cwd="))
+        .stdout(predicate::str::contains("CARGO_HOME"))
+        .stdout(predicate::str::contains("output<=8KiB"))
+        .stdout(predicate::str::contains("cpu=5s"))
+        .stdout(predicate::str::contains("network=inherit"));
+    // The REPL shows the same summary line via `/sandbox`.
+    let repl = hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["--provider", "fake"])
+        .write_stdin("/sandbox\n/exit\n")
+        .output()
+        .unwrap();
+    assert!(repl.status.success());
+    let stdout = String::from_utf8_lossy(&repl.stdout);
+    assert!(
+        stdout.lines().map(strip_prompt).any(|l| l.starts_with("sandbox: on | cwd=") && l.contains("cpu=5s")),
+        "{stdout}"
+    );
+}
+
+#[test]
+fn invalid_sandbox_config_fails_at_load_time() {
+    let home = TempDir::new().unwrap();
+    std::fs::write(home.path().join("config.yaml"), "sandbox:\n  enabled: true\n  network: dney\n").unwrap();
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["info"])
+        .write_stdin("")
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains("invalid sandbox config field `network`"));
+    // `version` is still fine (never loads config).
+    hermes_cmd()
+        .env("HERMES_HOME", home.path())
+        .args(["version"])
+        .write_stdin("")
+        .assert()
+        .success();
 }

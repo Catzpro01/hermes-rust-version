@@ -116,10 +116,12 @@ impl Default for ToolRegistry {
 
 pub mod parser;
 pub mod readonly;
+pub mod sandbox;
 pub mod shell;
 pub mod write;
 pub use parser::parse_tool_events;
 pub use readonly::{ListDirTool, ReadFileTool};
+pub use sandbox::{NetworkPolicy, ResourceLimits, SandboxPolicy};
 pub use shell::{validate_readonly_command, Confirmation, ShellReadonlyTool, ShellTool};
 pub use write::WriteFileTool;
 

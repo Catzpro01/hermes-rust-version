@@ -260,6 +260,14 @@ pub(crate) fn render_info(
             writeln!(w, "No config.yaml found")?;
         }
     }
+    // Spec 007: the boundary shell tools would run inside from this cwd
+    // (same resolution as the REPL; names/numbers only, never env values).
+    let root = std::env::current_dir().unwrap_or_default();
+    let sandbox = hermes_core::tools::SandboxPolicy::from_config(
+        config.and_then(|c| c.sandbox.as_ref()),
+        &root,
+    );
+    writeln!(w, "{}", sandbox.summary())?;
     match sessions {
         Some(n) => writeln!(w, "Sessions: {n}")?,
         None => writeln!(w, "Sessions: unknown")?,
@@ -668,7 +676,31 @@ mod tests {
         assert!(s.contains("Hermes Home: /tmp/h\n"), "{s}");
         assert!(s.contains("Providers configured: 1\n"), "{s}");
         assert!(s.contains("MCP servers configured: 0\n"), "{s}");
+        assert!(s.contains("sandbox: off (inherit)\n"), "{s}");
         assert!(s.contains("Sessions: 2\n"), "{s}");
+    }
+
+    #[test]
+    fn info_reports_sandbox_policy_without_env_values() {
+        let mut c = config_with(&[]);
+        c.sandbox = Some(hermes_core::config::SandboxConfig {
+            enabled: true,
+            network: Some("deny".into()),
+            cpu_seconds: Some(5),
+            ..Default::default()
+        });
+        let ctx = crate::repl::resolve_context(Some(&c), FAKE_PROVIDER);
+        let mut out = Vec::new();
+        render_info(Path::new("/tmp/h"), Some(&c), FAKE_PROVIDER, &ctx, Some(0), &mut out)
+            .expect("render");
+        let s = String::from_utf8(out).unwrap();
+        let line = s.lines().find(|l| l.starts_with("sandbox: on")).expect("sandbox line");
+        assert!(line.contains("cpu=5s") && line.contains("network=deny"), "{line}");
+        assert!(line.contains("env=PATH,HOME"), "{line}");
+        // Names only: the actual PATH value must not be printed.
+        if let Ok(path) = std::env::var("PATH") {
+            assert!(!s.contains(&path), "env value leaked: {s}");
+        }
     }
 
     #[test]

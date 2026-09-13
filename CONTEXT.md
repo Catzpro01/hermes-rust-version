@@ -25,7 +25,7 @@ Hermes-RS is a Rust rewrite of Hermes Agent, developed compatibility-first again
 
 - Which provider abstraction and streaming model to standardize.
 - Which `~/.hermes` files are read-only compatible first.
-- Tool permission and sandbox policy.
+- Tool permission policy beyond the Spec 007 process-level sandbox (container/Landlock backends).
 - Memory indexing and retrieval strategy.
 - Gateway and dashboard boundaries.
 

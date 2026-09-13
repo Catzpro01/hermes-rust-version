@@ -1,7 +1,7 @@
+use super::sandbox::{run_shell, SandboxPolicy};
 use super::{Tool, ToolCall, ToolError, ToolResponse};
 use async_trait::async_trait;
 use std::time::Duration;
-use tokio::{process::Command, time::timeout};
 use tokio_util::sync::CancellationToken;
 #[async_trait]
 pub trait Confirmation: Send + Sync {
@@ -10,13 +10,25 @@ pub trait Confirmation: Send + Sync {
 pub struct ShellTool<C> {
     confirmation: C,
     timeout: Duration,
+    sandbox: SandboxPolicy,
 }
 impl<C> ShellTool<C> {
+    /// Legacy constructor: inherits the process environment (Spec 002
+    /// behaviour, `SandboxPolicy::inherit`).
     pub fn new(confirmation: C, timeout: Duration) -> Self {
         Self {
             confirmation,
             timeout,
+            sandbox: SandboxPolicy::inherit(),
         }
+    }
+    /// Spec 007: run every command inside `policy`.
+    pub fn with_sandbox(mut self, policy: SandboxPolicy) -> Self {
+        self.sandbox = policy;
+        self
+    }
+    pub fn sandbox(&self) -> &SandboxPolicy {
+        &self.sandbox
     }
 }
 #[async_trait]
@@ -35,19 +47,12 @@ impl<C: Confirmation> Tool for ShellTool<C> {
         if !self.confirmation.confirm(&call.arguments).await {
             return Err(ToolError::Denied("confirmation declined".into()));
         }
-        let child = Command::new("sh")
-            .arg("-c")
-            .arg(&call.arguments)
-            .kill_on_drop(true)
-            .output();
-        let output = tokio::select! { _=cancel.cancelled()=>return Err(ToolError::Cancelled), result=timeout(self.timeout,child)=>result.map_err(|_|ToolError::Timeout(self.timeout))?.map_err(|e|ToolError::Failed(e.to_string()))? };
-        let content =
-            String::from_utf8_lossy(&[output.stdout, output.stderr].concat()).into_owned();
+        let out = run_shell(&self.sandbox, &call.arguments, self.timeout, cancel).await?;
         Ok(ToolResponse {
             id: call.id.clone(),
             name: call.name.clone(),
-            success: output.status.success(),
-            content,
+            success: out.success,
+            content: out.content,
         })
     }
 }
@@ -60,18 +65,31 @@ pub struct ShellReadonlyTool<C> {
     confirmation: C,
     timeout: Duration,
     unsafe_mode: bool,
+    sandbox: SandboxPolicy,
 }
 impl<C> ShellReadonlyTool<C> {
+    /// Legacy constructor: inherits the process environment (Spec 002
+    /// behaviour, `SandboxPolicy::inherit`).
     pub fn new(confirmation: C, timeout: Duration) -> Self {
         Self {
             confirmation,
             timeout,
             unsafe_mode: false,
+            sandbox: SandboxPolicy::inherit(),
         }
     }
     pub fn with_unsafe(mut self, enabled: bool) -> Self {
         self.unsafe_mode = enabled;
         self
+    }
+    /// Spec 007: run every command inside `policy`. The blocklist still
+    /// applies first — the sandbox is defense in depth, not a replacement.
+    pub fn with_sandbox(mut self, policy: SandboxPolicy) -> Self {
+        self.sandbox = policy;
+        self
+    }
+    pub fn sandbox(&self) -> &SandboxPolicy {
+        &self.sandbox
     }
 }
 pub fn validate_readonly_command(command: &str, unsafe_mode: bool) -> Result<(), ToolError> {
@@ -107,19 +125,12 @@ impl<C: Confirmation> Tool for ShellReadonlyTool<C> {
         {
             return Err(ToolError::Denied("confirmation declined".into()));
         }
-        let child = Command::new("sh")
-            .arg("-c")
-            .arg(&call.arguments)
-            .kill_on_drop(true)
-            .output();
-        let output = tokio::select! {_=cancel.cancelled()=>return Err(ToolError::Cancelled),r=timeout(self.timeout,child)=>r.map_err(|_|ToolError::Timeout(self.timeout))?.map_err(|e|ToolError::Failed(e.to_string()))?};
-        let content =
-            String::from_utf8_lossy(&[output.stdout, output.stderr].concat()).into_owned();
+        let out = run_shell(&self.sandbox, &call.arguments, self.timeout, cancel).await?;
         Ok(ToolResponse {
             id: call.id.clone(),
             name: call.name.clone(),
-            content,
-            success: output.status.success(),
+            content: out.content,
+            success: out.success,
         })
     }
 }
@@ -155,5 +166,20 @@ mod readonly_tests {
                 .content,
             "ok"
         );
+    }
+    #[tokio::test]
+    async fn sandboxed_readonly_still_applies_blocklist_first() {
+        let t = ShellReadonlyTool::new(Yes, Duration::from_secs(2))
+            .with_sandbox(SandboxPolicy::strict(std::env::temp_dir()));
+        let c = ToolCall {
+            id: None,
+            name: "shell_readonly".into(),
+            arguments: "rm -rf /".into(),
+        };
+        assert!(matches!(
+            t.execute(&c, CancellationToken::new()).await.unwrap_err(),
+            ToolError::Denied(_)
+        ));
+        assert!(t.sandbox().enabled);
     }
 }

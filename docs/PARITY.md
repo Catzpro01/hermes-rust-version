@@ -249,7 +249,7 @@ stdout; Python reference outputs at `/tmp/t06_py_help.txt` and
 | Session ID format | UUID v4 | UUID v7 | Low — schema-compatible and time-sortable |
 | FTS index | Enabled | Not yet | Low — search is not implemented |
 | Provider catalog | Many built-ins + plugins | Config-declared + built-in `fake` | Medium — Rust has no dynamic plugin loading |
-| Tool execution | Python sandbox | Native shell integration | High — different security model |
+| Tool execution | Docker sandbox + egress proxy | Native shell; opt-in process-level sandbox (env allowlist, cwd jail, output cap, `ulimit`, `unshare --net`) — Spec 007 | Medium — no container isolation; see ADR 0006 |
 | TUI dashboard | Rich/curses terminal output only (no dedicated dashboard) | Opt-in Ratatui `--tui` dashboard + readline REPL | Rust-only capability (Spec 012) |
 
 ## Known Gaps 🚧

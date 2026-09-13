@@ -42,6 +42,15 @@ pub fn load_config(home: &Path) -> Result<HermesConfig, ConfigError> {
     if let Some((server, reason)) = config.validate_mcp_servers().into_iter().next() {
         return Err(ConfigError::McpServerInvalid { server, reason });
     }
+    // Spec 007: a malformed `sandbox:` section fails at load time so a typo
+    // (`network: dney`) can never silently run tools unconfined.
+    if let Some((field, reason)) = config
+        .sandbox
+        .as_ref()
+        .and_then(|s| s.validate().into_iter().next())
+    {
+        return Err(ConfigError::SandboxInvalid { field, reason });
+    }
     Ok(config)
 }
 

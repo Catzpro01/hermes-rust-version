@@ -12,7 +12,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 2 — Inspection & search | 004 | FTS5 full-text search | Done |
 | 3 — Multi-model & routing | 005 | Multi-provider runtime routing | Done |
 | 3 — Multi-model & routing | 006 | Model fallback and load balancing | Done |
-| 4 — Advanced agent | 007 | Tool execution sandbox | Not started |
+| 4 — Advanced agent | 007 | Tool execution sandbox | Done |
 | 4 — Advanced agent | 008 | Memory and context management | Done |
 | 4 — Advanced agent | 009 | Multi-turn planning and reflection | Done |
 | 5 — Ecosystem | 010 | Plugin/extension system (WASM) | Deferred (v2.0 backlog — Spec 011b) |
@@ -270,7 +270,7 @@ Spec 011 (MCP), Spec 012 (TUI) and Spec 013 (Python UI parity) are **Done**;
 Spec 010 (plugin/extension system, WASM) is formally **deferred to the v2.0
 backlog** per the Spec 011b decision. **Phase 5 (Ecosystem) is therefore 100%
 DONE** for the v1.0 milestone. (Phase-4 Spec 007, tool-execution sandbox,
-remains Not started outside Phase 5.)
+landed afterwards — see below.)
 
 ## Spec 014 — CLI subcommands parity closure
 
@@ -302,12 +302,39 @@ paths, and the pre-014 bare invocation still entering the REPL. Invariants
 held: the shell adds no execution surface (MCP spawn stays REPL-only) and
 the Python installation is untouched.
 
+## Spec 007 — Tool execution sandbox closure
+
+Spec 007 adds an **opt-in, process-level sandbox** for the shell tools
+(ADR 0006). `SandboxPolicy` is threaded through the one spawn site
+(`tools::sandbox::run_shell`) used by both `shell` and `shell_readonly`;
+without a `sandbox:` config section the policy is `inherit` and behaviour is
+byte-for-byte Spec 002 (zero regression, legacy constructors unchanged).
+
+| Ticket | Scope |
+|---|---|
+| 01 | `SandboxPolicy` / `ResourceLimits` / `NetworkPolicy`, `run_shell` single spawn site, output cap with marker |
+| 02 | Env allowlist (`env_clear` + names), cwd jail, `HERMES_SANDBOX=1` flag |
+| 03 | POSIX `ulimit` wrapper with positional command (no interpolation); `unshare --net` fail-closed |
+| 04 | `sandbox:` config section + load-time validation (`ConfigError::SandboxInvalid`) |
+| 05 | REPL/TUI wiring, `/sandbox`, `hermes info` line, docs/ADR/STRIDE, E2E closure |
+
+Closure proof (Spec 007): `crates/hermes-core/tests/sandbox_e2e.rs` drives a
+scripted provider through `chat_agentic` with a sandboxed `shell_readonly`:
+a parent-env secret is invisible to the command, `HERMES_SANDBOX=1` is set,
+cwd is the jail, and the persisted `tool_calls` row carries the confined
+result. Companion tests pin: legacy constructor == Spec 002 behaviour
+(secret visible, no flag); output cap + `fsize` rlimit on both shell tools;
+blocklist and confirmation still run before any spawn; a hostile command
+with quotes/`$1` cannot escape the `ulimit` wrapper. CLI E2E
+(`subcommands_e2e.rs`) covers `hermes info` / `/sandbox` reporting and
+load-time rejection of `network: dney`.
+
 ## Verification
 
 Last full run (2026-09-05, Spec 013 closure): `cargo test --workspace` — 400
 passed, 0 failed; `clippy --workspace --all-targets -D warnings` clean.
 
-Spec 014 T04–T08 (2026-09-13) were authored in an offline sandbox without a
+Spec 014 T04–T08 and Spec 007 (2026-09-13) were authored in an offline sandbox without a
 Rust toolchain; run `cargo fmt --all && cargo test --workspace && cargo
 clippy --workspace --all-targets -- -D warnings` before merging and record
 the count here.
