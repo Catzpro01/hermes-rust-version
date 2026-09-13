@@ -1,9 +1,7 @@
 # 013-07: Race — event display hilang saat turn selesai tanpa yield
 
-**Status:** IN REVIEW (CI-verified) — menunggu review Matt (PR terpisah,
-diekstrak dari branch T08 sesuai verdict /ask-matt 2026-09-13).
+**Status:** DONE — MERGED (PR #4, `82bf018`).
 
-Follow-up dari **013-04** (streaming box & spinner).
 
 ## Bug
 

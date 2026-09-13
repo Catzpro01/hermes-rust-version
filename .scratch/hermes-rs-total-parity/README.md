@@ -12,13 +12,13 @@ autocomplete /slash, tips, session picker. Sumber ground truth:
 | Fase 0 | [Re-Archaeology total](issues/00-phase0-rearchaeology.md) | DONE — APPROVED Matt (8 koreksi diterima) |
 | T01 | [inquire + wizard skeleton](issues/01-wizard-skeleton.md) | DONE — APPROVED Matt (fa69b80) |
 | T02 | Banner v0.21.0 | APPROVED (per /ask-matt) — banner byte-identik dgn Python v0.21.0 (9 referensi) |
-| T03 | Info line | IN REVIEW — `issues/03-info-line.md`; post-banner hanya `WELCOME` (spec §B/§E koreksi) |
+| T03 | Info line | DONE — MERGED (PR #1, `07093dc`) |
 | T04 | Tips rotating | IN REVIEW — `issues/04-tips.md`; katalog 380+11 verbatim + selector, display menunggu Matt (§J.4) |
-| T05 | Setup wizard multi-step (`hermes setup`) | IN REVIEW — `issues/05-setup-wizard.md`; 4 section + section tunggal, atomic write + backup, ESC = no-write |
-| T06 | Provider catalog (39 provider) | IN REVIEW — `issues/06-provider-catalog.md`; `hermes model` TTY = section wizard |
-| 007b | Sandbox default on + `--no-sandbox` | IN REVIEW — `issues/08-sandbox-default-on.md` |
-| T07 | Toolsets catalog (26 toolset) | IN REVIEW — `issues/07-toolsets-catalog.md`; `hermes tools` baru |
-| T08 | Autocomplete /slash + ghost text (parity perilaku prompt_toolkit) | IN REVIEW — `issues/09-autocomplete-slash.md`; registry 101 verbatim + stacked skills + path + trailing-space + Hinter ghost text; T04 opsi 3 = placeholder ghost di TUI |
+| T05 | Setup wizard multi-step (`hermes setup`) | DONE — MERGED (PR #1, `07093dc`) |
+| T06 | Provider catalog (39 provider) | DONE — MERGED (PR #2, `319d719`) |
+| 007b | Sandbox default on + `--no-sandbox` | DONE — MERGED (PR #2, `319d719`) |
+| T07 | Toolsets catalog (26 toolset) | DONE — MERGED (PR #2, `319d719`) |
+| T08 | Autocomplete /slash + ghost text (parity perilaku prompt_toolkit) | DONE — MERGED (PR #3, `8d66bbb`); verdict /ask-matt 2026-09-13: cap 60 char, skill discovery best-effort, TUI-only placeholder — disetujui |
 | T09 | Session picker | Not started |
 | T10 | Parity, docs & closure | Not started |
 
