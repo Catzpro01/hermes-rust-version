@@ -220,3 +220,22 @@ performed.** The Python installation was not modified.
   No branch switch, PR, merge, auto-merge, global Git hook, or credential
   request occurred. The next agent should read the original skill on invocation
   and state any unavailable capability instead of fabricating its execution.
+
+## 2026-09-14: Toolkit checkpoint verified on GitHub
+
+- Commit `b959ab396422bdd98daccf7b0f8c9710c21cfc0e` was pushed and remote
+  HEAD verified. Run
+  [34777846810](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34777846810)
+  is **SUCCESS** for that exact installation checkpoint.
+- Both jobs passed. Rust job `103779132129` explicitly reports
+  `fmt=success clippy=success test=success`, **576 Rust tests passed**.
+  Workflow regression job `103779132017` passed the existing **five QA tests**.
+- Marked the installation ticket DONE. This follow-up changes only the
+  ticket and progress notes; its own commit/run status will be reported after
+  push, not predicted in this entry.
+- Successor entry point: `docs/agents/matt-pocock-skills.md`, then the exact
+  `.agents/skills/<name>/SKILL.md`. The user's earlier `/ask-matt` request can
+  now be answered from its original router. §J.7 still needs an evidence
+  decision; no reviewer approval or merge permission was inferred.
+- All source/metadata checks passed; no download error remains. No merge,
+  branch switch, global installer, hook, or Python Hermes mutation occurred.

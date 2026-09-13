@@ -1,6 +1,6 @@
 # 01: Install the complete official Matt Pocock skills collection
 
-- Status: implementation complete; checkpoint CI pending
+- Status: DONE; installation checkpoint CI passed
 - Label: `ready-for-agent`
 - Owner: Arena agent
 - Date: 2026-09-14
@@ -19,7 +19,8 @@
 - [x] Connect the skill catalog to AGENTS, MEMORY, and progress inheritance.
 - [x] Verify source completeness/hashes, symlinks, metadata, and existing QA tests.
 - [x] Apply the original `/ask-matt` routing to the current closure handoff.
-- [ ] Commit/push this checkpoint and inspect its actual CI result.
+- [x] Commit/push this checkpoint and inspect its actual CI result: `b959ab3`,
+  run `34777846810` SUCCESS (576 Rust tests and five QA tests).
 
 ## Application and limits
 
