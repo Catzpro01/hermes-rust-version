@@ -112,6 +112,8 @@ def rust_capture(binary):
     return {"schema": 1, "status": "CAPTURED_NOT_REVIEWED", "scope": "banner first slice",
             "rust_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
             "rust_binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+            "rustc_version": subprocess.check_output(["rustc", "--version"], text=True).strip(),
+            "cargo_version": subprocess.check_output(["cargo", "--version"], text=True).strip(),
             "rust_worktree_diff_sha256": hashlib.sha256(subprocess.check_output(
                 ["git", "diff", "--binary", "--", "*.rs"])).hexdigest(),
             "rust_banner_source_sha256": hashlib.sha256(Path(

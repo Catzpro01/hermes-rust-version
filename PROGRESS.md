@@ -587,3 +587,16 @@ performed.** The Python installation was not modified.
   Objective remains one concrete ANSI geometry regression: RED, minimal fix,
   GREEN with remote fmt/check/clippy/test, then genuine recapture. No Rust
   source fix is claimed until that evidence exists.
+
+## 2026-09-14: Actual ANSI RED observed; minimal correction submitted for GREEN
+
+- Run 34782681568 on 059cd65 succeeded in expected-RED mode: fmt/check passed,
+  and the named public-writer geometry assertion failed as required. Verified
+  its annotation; this is an actual test failure, not a startup/compiler error.
+- Retrieved the exact formatted test delta (2069 bytes, SHA-256
+  f262bac24553d79643d346ae970419112ab02f321bd14d52cea7ac702f41c8ca).
+  Prepared GREEN candidate by removing only the unstyled-space skip and
+  documenting why spaces advance the cursor. Actual Rust source still unchanged.
+- Added compiler/Cargo version recording to future raw capture bundles.
+  GREEN must pass fmt/check, the regression, clippy and full workspace tests;
+  only then apply the exported, verified Rust delta locally.
