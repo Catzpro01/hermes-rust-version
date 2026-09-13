@@ -79,6 +79,9 @@ jobs:
           mkdir -p evidence
           git diff --binary -- '*.rs' > evidence/tested.patch
           python3 scripts/capture_banner.py export evidence/tested.patch --label 'candidate patch'
+      - name: Export tested Rust delta group 2
+        if: inputs.candidate_patch_base64 != ''
+        run: python3 scripts/capture_banner.py export evidence/tested.patch --label 'candidate patch' --group 1
       - name: Build real CLI
         if: inputs.regression_phase != 'red'
         run: cargo build --locked -p hermes-rs

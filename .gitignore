@@ -5,3 +5,5 @@
 
 # Local Python bytecode (capture/QA tooling)
 __pycache__/
+
+/scripts/visual-renderer/node_modules/

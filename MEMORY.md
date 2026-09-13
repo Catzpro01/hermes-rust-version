@@ -41,9 +41,15 @@ user's private Python installation.
   report for closure. User confirmed `setuju lanjutkan`: scoped execution is
   authorized; closure and merge are not. Active execution ticket is
   `.scratch/hermes-rs-total-parity/issues/T12-visual-evidence.md`.
-  Official Python source is verified in an isolated cache. Rust capture uses
-  the GitHub runner; signed artifact downloads still fail, so bounded,
-  checksummed annotation transport is provided. No full parity pass yet.
+  Official Python source is verified in an isolated cache. Four paired banner
+  cases are retained under docs/hermes-ui-spec/017/evidence/banner-814c235/.
+  They expose a real ANSI whitespace/column-collapse defect; none is a parity
+  pass. Python side is a public display-component call, not full CLI startup.
+  T12 is BLOCKED: workflow dispatch returned HTTP 403 Resource not accessible
+  by integration. Ask user to reconnect/check GitHub in Arena. RED candidate
+  is prepared but NOT executed/applied; no Rust fix is claimed. After access
+  returns, remote fmt/check + RED/GREEN verification must precede Rust commit.
+  Use the report, T12 and tooling README for exact evidence/next commands.
 - The missing `/ask-matt` skill blocker is resolved. On the user's download
   request, all 37 official Matt Pocock skills were installed project-locally
   from pinned upstream `3cca18b368ae95cdbdebbff572ccafa662551015`.

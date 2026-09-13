@@ -373,3 +373,27 @@ performed.** The Python installation was not modified.
   Rust source is not committed before required remote fmt/check verification.
 - Next: observe RED, test the minimal whitespace fix GREEN, apply the exact
   verified delta locally, regenerate paired captures, inspect before any pass.
+
+## 2026-09-14: Retained failed banner evidence; correction validation blocked by Actions access
+
+- Common offline xterm/Chromium renderer produced four paired cases, eight
+  PNGs, original ANSI, timed cast recordings, cell dumps and integrity metadata.
+  Package is ~740 KB before final manifest. Python dependency warnings were
+  resolved and all four Python captures repeated; originals are not edited.
+- Inspected clean screenshots and cell geometry: Available Tools starts at
+  Python columns 51/41/48/49 versus Rust column 2 at widths 100/80/94/95.
+  Recorded FAIL_GEOMETRY_NOT_CLOSED, not an exception or passing parity proof.
+- RED workflow dispatch failed HTTP 403 `Resource not accessible by integration`.
+  No RED run exists. GitHub push/read works; Actions dispatch permission needs
+  attention/reconnection in Arena. No tokens requested, no Rust source changed,
+  and no mandatory pre-commit fmt/check bypassed. Candidate stays unapplied.
+- Saved T12 blocker, reproduction guide, dependency pins, evidence report,
+  hashes, and memory handoff. Fixed candidate annotation export to include its
+  second group, so any allowed bundle can be retrieved completely.
+- CI `34779396792` succeeded on `d7727e5`. Source for retained Rust captures is
+  still `814c235`, not these later tooling/docs commits. No full Python CLI
+  or wizard/picker/completion/complete summary coverage is claimed.
+- Local review: actual Python captures/replay passed; byte/event checksums
+  verified, script syntax and existing five QA tests checked. No independent
+  subagent review or new Rust regression execution is claimed. Next requires
+  restored Actions access, RED/GREEN, exact tested delta, then fresh captures.

@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const zlib = require('zlib');
 const { chromium } = require('playwright');
 const bundled = require('@sparticuz/chromium');
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
@@ -78,7 +79,7 @@ async function main() {
         await page.locator('#pair').screenshot({path:path.join(output,file)});
         images.push({file,sha256:sha(fs.readFileSync(path.join(output,file))),viewport:position});
       }
-      fs.writeFileSync(path.join(output,`${entry.id}-cells.json`),JSON.stringify(screens));
+      fs.writeFileSync(path.join(output,`${entry.id}-cells.json.gz`),zlib.gzipSync(JSON.stringify(screens)));
       manifest.cases.push({id:entry.id,width:entry.rust.width,height:30,images});
       await page.close();
     }

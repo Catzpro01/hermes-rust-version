@@ -1,7 +1,7 @@
 # T12 — Real Python/Rust visual evidence
 
-- Status: IN PROGRESS — banner tracer slice; other areas not captured
-- Label: `ready-for-agent`
+- Status: BLOCKED — banner geometry FAIL; Actions dispatch permission required
+- Label: `ready-for-human`
 - Owner: Arena agent (capture/corrections), user (final acceptance)
 - Basis: [confirmed Q1-Q8 agreement](../grilling.md), user `setuju lanjutkan`
 - Depends on: executable pinned reference, Rust runtime, matched renderer
@@ -45,3 +45,33 @@ A successful capture job does not assert visual equality or close §J.7.
 First slice is partial and unreviewed until images are inspected. Keep
 component and full-CLI coverage distinct. Do not extrapolate banner evidence
 to other areas or label missing cases passed. No new deferred features.
+
+## Observed result and immediate next action
+
+Four real paired banner cases and eight top/bottom screenshots are saved in
+`docs/hermes-ui-spec/017/evidence/banner-814c235/`; the report is one directory
+above. Python dependency warnings were removed by installing missing packages
+in cache and recapturing. Inspected clean pairs: Rust loses unstyled spaces,
+so Available Tools starts at column 2 rather than 51/41/48/49 (100/80/94/95).
+All four geometry cases FAIL. Raw/cast/screenshots and checksums are retained.
+
+The public ANSI writer regression is prepared at
+`/home/user/.cache/hermes-visual-reference/red.patch` (ephemeral candidate,
+not applied to source). It compares actual serialized output, with only SGR
+removed, against existing independent Python references for four widths and
+two color depths. If the cache is unavailable, recreate from this criterion;
+never claim RED based on reasoning alone. Minimal correction to validate:
+retain unstyled spaces in `write_buffer_ansi` instead of skipping them.
+
+Dispatch for the RED run failed HTTP 403 `Resource not accessible by
+integration`. No RED/GREEN job was created and no Rust correction was applied.
+Ask the user to reconnect/check the GitHub connection in Arena for Actions
+permission; never request tokens. After it is restored, dispatch the bounded
+candidate, verify RED, then GREEN with fmt/check/clippy/full tests before
+committing the actual Rust change. The workflow exports the exact tested
+Rust delta with a digest; verify it before applying locally. Capture again
+from the final committed source and record compiler/version provenance.
+
+Prior checks: CI `34779396792` on `d7727e5` passed. Capture `34779200470`
+and CI `34779200438` on `814c235` passed; these are infrastructure/code checks,
+not passing visual comparisons. The user has not accepted closure.

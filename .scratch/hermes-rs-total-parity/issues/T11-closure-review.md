@@ -1,7 +1,7 @@
 # T11 — Review closure Spec 017 dan gate CI
 
 - Tanggal: 2026-09-14
-- Status: IN REVIEW — perbaikan di GitHub, CI hijau; bukti §J.7/sign-off terbuka
+- Status: IN REVIEW — gate CI diperbaiki; capture T12 menemukan cacat ANSI; closure terbuka
 - Label: `ready-for-human`
 - Owner: Arena agent (review/perbaikan); human reviewer (keputusan §J.7)
 - Bergantung pada: T10, akses toolchain Rust untuk verifikasi, bukti §J.7
@@ -130,6 +130,14 @@ historis tidak dinyatakan bersih karena workflow lama menelan kegagalannya.
 - Pada review awal belum ada push/CI baru. Checkpoint berikutnya harus
   di-commit/push sesuai instruksi user; catat hasil aktual di `PROGRESS.md`.
 - Capture visual Python/Rust lengkap §J.7 belum dibuat.
+
+## Temuan eksekusi bukti T12
+
+Capture nyata empat ukuran banner menunjukkan writer ANSI membuang spasi
+sehingga kolom/border bergeser. Ini bukan adaptasi yang diizinkan dan belum
+terperbaiki. Laporan: `docs/hermes-ui-spec/017/evidence/README.md`.
+Validasi kandidat perbaikan terhambat izin dispatch Actions (403); tidak ada
+klaim RED/GREEN atau perbaikan runtime yang belum diuji.
 
 ## Acceptance criteria / blocking edges
 
