@@ -98,8 +98,8 @@ Selesainya wizard bukan bukti izin pulih; agent tetap harus memverifikasinya.
 
 ## Rekomendasi untuk layar repository Settings → Actions → General
 
-User menunjukkan daftar opsi, bukan konfirmasi bahwa opsi tertentu sudah
-aktif. Rekomendasi berikut belum diterapkan oleh agent:
+User kemudian menyetujui rekomendasi dengan “baik terapkan”. Target berikut
+sudah disepakati; status penerapan dibedakan pada tabel di bagian terakhir:
 
 - Pilih **Allow Catzpro01, and select non-Catzpro01, actions and reusable
   workflows**, lalu izinkan lima referensi yang benar-benar dipakai:
@@ -137,3 +137,29 @@ rekomendasi awal untuk menunda checkbox tersebut digantikan dengan migrasi
 workflow, bukan mematikan aturan. Lima tag diresolusikan lewat API repository
 upstream pada 2026-09-14; seluruh sepuluh `uses:` sekarang berupa SHA 40 digit.
 CI baru tetap perlu diperiksa; ini tidak memperbaiki otorisasi dispatch Arena.
+
+## Penerapan setelah persetujuan user
+
+User menyetujui konfigurasi dengan **“baik terapkan”**. Agent menerapkan bagian
+yang dapat dinyatakan di workflow tanpa memperluas izin integrasi:
+
+| Target | Status aktual |
+|---|---|
+| Action dipin SHA penuh | Sudah diterapkan: 10 `uses:`; CI `34781191605` pada `9349006` lulus setelah perbaikan pin. |
+| Token workflow read-only | Kedua workflow kini eksplisit `permissions: contents: read`; scope yang tidak disebut, termasuk pull-requests, tidak diberikan. Default repository belum dapat diverifikasi/diubah. |
+| Retensi artifact 90 hari | Kedua upload menetapkan `retention-days: 90` untuk artifact baru, tunduk pada batas platform. Ini tidak mengubah retensi log/default repository atau artifact lama. |
+| Allowlist action level repository | Belum diterapkan/diverifikasi via API; user perlu menyimpan daftar yang disepakati di Settings. |
+| Approval semua contributor eksternal | Pengaturan repository, belum diterapkan/diverifikasi oleh agent. |
+| Larangan membuat/menyetujui PR | Workflow kita tidak memperoleh scope tulis PR; checkbox global repository belum dapat diverifikasi/diubah. |
+| Retensi log 90 hari | Pengaturan repository, belum diterapkan/diverifikasi oleh agent. |
+
+GET Actions permissions dan GET default workflow permissions keduanya kembali
+HTTP 403. Tidak ada percobaan mengubah pengaturan server secara buta setelah
+pemeriksaan akses ini ditolak, dan tidak ada klaim seluruh pilihan Settings
+sudah tersimpan. Gunakan halaman Settings sebagai pemilik repository untuk
+bagian yang tersisa, atau pulihkan akses administrasi integrasi yang tepat.
+
+Regresi konfigurasi workflow ditambahkan pada suite QA yang ada: RED karena
+izin CI dan retensi artifact belum eksplisit, lalu GREEN setelah YAML diperbaiki.
+Keenam tes QA lokal lulus. Ini **bukan** RED/GREEN perbaikan ANSI; T12 masih
+menunggu akses dispatch dan bukti visual yang memenuhi persyaratan.

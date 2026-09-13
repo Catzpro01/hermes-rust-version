@@ -508,3 +508,24 @@ performed.** The Python installation was not modified.
   this documentation/count expectation and reran with fail-fast shell gating:
   both workflows parse and all ten uses match the five upstream-verified SHAs.
   The five existing QA tests also passed. No failed check is reported as passed.
+
+## 2026-09-14: Applied approved policy in workflows; repository settings remain inaccessible
+
+- User said "baik terapkan". Read current workflows, instructions, active
+  context and prior notes. Both Actions permission-settings GET endpoints
+  (general and default workflow permissions) returned 403. Did not attempt
+  blind server mutations or claim repository settings had been saved.
+- At the existing workflow QA boundary, added a policy test first. Observed
+  RED: CI lacked explicit permissions and uploads lacked retention-days.
+  Applied contents: read to CI (visual workflow already had it), and explicit
+  90-day retention to both artifact uploads. SHA pins stay unchanged.
+- The targeted policy test then passed; all six QA tests passed locally.
+  This is workflow-policy RED/GREEN, not execution of the blocked ANSI test.
+  No Rust source change, capture, permission escalation, or merge.
+- Recorded the boundary in the guide/MEMORY/T12: server allowlist, external
+  contributor approvals, log retention and default token/PR settings still
+  require owner action/access. Workflow-level changes do not grant Arena
+  Actions dispatch permission or change old artifacts/log retention.
+- Rechecked CI 34781167909 on cbbcec7 and 34781191605 on 9349006: both
+  completed successfully. These are prior checkpoints; verify new commit CI
+  after push. Local diff hygiene passes.

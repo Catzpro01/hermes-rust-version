@@ -25,6 +25,30 @@ STEPS = {step["name"]: step for step in WORKFLOW["jobs"]["test"]["steps"] if "na
 
 
 class CiGateTests(unittest.TestCase):
+    def test_workflows_use_approved_readonly_artifact_policy(self):
+        allowed = {
+            "actions/checkout", "actions/setup-python", "actions/upload-artifact",
+            "dtolnay/rust-toolchain", "Swatinem/rust-cache",
+        }
+        for name in ("ci.yml", "visual-evidence.yml"):
+            with self.subTest(workflow=name):
+                workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+                self.assertEqual(workflow.get("permissions"), {"contents": "read"})
+                uploads = 0
+                for job in workflow["jobs"].values():
+                    if "permissions" in job:
+                        self.assertEqual(job["permissions"], {"contents": "read"})
+                    for step in job["steps"]:
+                        if "uses" not in step:
+                            continue
+                        self.assertRegex(step["uses"], r"^[^@]+@[0-9a-f]{40}$")
+                        action = step["uses"].split("@", 1)[0]
+                        self.assertIn(action, allowed)
+                        if action == "actions/upload-artifact":
+                            uploads += 1
+                            self.assertEqual(step.get("with", {}).get("retention-days"), 90)
+                self.assertGreater(uploads, 0, "Artifact policy must cover an actual upload")
+
     def test_format_pipeline_preserves_exit_status_and_log(self):
         step = STEPS["cargo fmt --check"]
         self.assertEqual(step["id"], "fmt")

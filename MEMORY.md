@@ -70,6 +70,14 @@ user's private Python installation.
   keep Require full-length SHA enabled and allow the five action repositories
   listed in docs/agents/github-actions-access.md. This is NOT restoration of
   Arena's manual dispatch permission. Verify the new commit CI independently.
+- User approved Actions-setting recommendations ("baik terapkan"). Both
+  workflow files now explicitly grant contents: read and retain new uploaded
+  artifacts for 90 days; all 10 action uses remain SHA-pinned. Six local QA
+  tests passed, including a new policy regression observed RED then GREEN.
+  These are YAML changes, NOT server settings or ANSI bug correction. Reads of
+  repository/default workflow permission APIs still returned 403; action
+  allowlist, external-contributor approval, log retention, global token/PR
+  settings remain unverified/unapplied by the agent. See recovery guide table.
 - Fresh official toolkit download verified on 2026-09-14: upstream main still
   `3cca18b368ae95cdbdebbff572ccafa662551015`, all 164 files/37 links match.
   Latest is the already-installed version, not a new release. Verification

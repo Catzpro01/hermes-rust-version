@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: never
   RUST_BACKTRACE: 1
@@ -151,6 +154,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ci-logs
+          retention-days: 90
           path: |
             fmt.log
             clippy.log

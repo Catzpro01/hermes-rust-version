@@ -110,3 +110,13 @@ reconnection, collects no credentials, and does not execute GitHub writes.
 Syntax/static checks passed; interactive completion and actual permission
 recovery remain unverified. TDD, correction review, and new captures remain
 downstream; no source fix or independent review is claimed.
+
+## Approved workflow policy application
+
+User approved the settings recommendations. SHA pins are already in place;
+now both workflows explicitly use contents: read and 90-day artifact uploads.
+Six local QA tests pass (the new configuration-policy test was observed RED
+then GREEN). This is not the pending ANSI regression. Repository settings
+reads still return 403; no server-side allowlist/approval/log-retention change
+or dispatch recovery is claimed. CI 34781191605 on 9349006 passed before this
+policy change; evaluate the new commit separately.
