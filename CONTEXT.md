@@ -13,7 +13,7 @@ Hermes-RS is a Rust rewrite of Hermes Agent, developed compatibility-first again
 - **Tool**: an explicitly permissioned capability the agent can invoke.
 - **Gateway**: a channel adapter for messaging platforms.
 - **Compatibility-first**: preserve existing data and behavior through adapters; do not modify or delete the Python Hermes installation during the rewrite.
-- **Hermes visual parity evidence**: paired captures of the real Python and Rust Hermes UI, with automated tests as supporting evidence rather than a substitute.
+- **Hermes visual parity evidence**: paired images of the real Python and Rust Hermes UI, retained terminal recordings, and reproduction metadata. Automated tests support this evidence rather than replace it.
 
 ## Current boundary
 

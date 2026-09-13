@@ -1,6 +1,6 @@
 # Spec 017: visual-evidence decision interview
 
-Status: Q1 settled; awaiting round 2 answers (`needs-info`)
+Status: Q1-Q3 settled; awaiting round 3 answers (`needs-info`)
 Owner: user (decisions), Arena agent (fact-finding and documentation)
 Started: 2026-09-14
 Origin: explicit user invocation of `/grill-with-docs`
@@ -38,11 +38,11 @@ understanding. Commit/push notes; merge remains unauthorized.
      automated tests as complementary regression evidence. Selected by user.
    - B: explicitly amend §J.7 to an alternative evidence policy; its exact
      coverage and limitations must be decided in subsequent rounds.
-2. **Evidence matrix** (current frontier, Q2 and Q3)
+2. **Evidence format and coverage** (settled, Q2 = A and Q3 = A)
    - Applicable runtime reference/provenance and scenarios for all five areas.
    - Q2: review artifact format and raw capture provenance.
    - Q3: scenario coverage across all five required areas.
-3. **Comparison rules**, blocked by the evidence matrix
+3. **Comparison rules** (current frontier, Q4-Q6)
    - Terminal conditions, dynamic-value normalization, intentional adaptations,
      and concrete examples of acceptable versus unacceptable differences.
 4. **Failure handling and acceptance**, blocked by comparison rules
@@ -93,7 +93,45 @@ mockups or a raw unit-test result to masquerade as captured UI evidence.
 - B: real captures of the normal paths for all five areas, including each
   implemented wizard step; edge-state evidence stays in automated tests only.
 
-**User answers:** Q2 pending; Q3 pending. The detailed capture matrix,
-normalization rules, permitted corrective scope, and acceptance/sign-off
-remain unresolved. Do not produce artifacts or change code before the final
-shared-understanding confirmation.
+**User answers:** explicit `2A, 3A` (2026-09-14), after clarification.
+Both decisions are settled: paired real-screen images, retained terminal
+recordings and metadata; normal paths plus representative risky states in
+all five §J.7 areas, using isolated dummy fixtures. This confirms artifact
+format and scenario breadth, not comparison rules or implementation approval.
+
+## Round 3: comparison rules
+
+Facts checked: `docs/PARITY.md` records deliberate Rust branding and picker
+adaptations (including eight-character IDs versus six in the Python UI).
+`banner_e2e.rs` uses 80/100 columns and 30 rows; the banner's logo threshold
+is 95 columns. `session_picker_e2e.rs` uses 100 columns by 30 rows.
+These facts ground the proposals below; they are not user approvals.
+
+**Q4: Intentional adaptations.**
+- A (recommended): accept only the specifically listed existing adaptations
+  in `docs/PARITY.md` for this comparison, with a per-case exception ledger.
+  Example: Hermes-RS branding is allowed; a missing button/hint, wrong static
+  label, or undocumented interaction difference is not silently accepted.
+- B: require Python-identical presentation/behavior including the currently
+  adapted branding and picker details; revisit their scope before any build.
+
+**Q5: Dynamic values.**
+- A (recommended): use deterministic dummy fixtures, retain original screen
+  images/terminal recordings unchanged, and permit an explicitly logged
+  normalization of unavoidable timestamp/session-ID/path differences in a
+  separate comparison view only. Preserve positions/widths, colors, static
+  labels, and meaningful counters; normalization cannot hide a UI defect.
+- B: permit no normalization; arrange fixed inputs/environment to compare
+  raw rendered outputs directly. Report unavoidable differences as unresolved.
+
+**Q6: Terminal conditions.**
+- A (recommended): baseline 100x30, narrow-layout cases at 80x30, and 94x30 /
+  95x30 specifically around the banner logo threshold. Match TERM, color
+  capability, locale, font, and renderer for each Python/Rust pair; record
+  exact tool versions and dimensions. This is not all resolutions on all OSes.
+- B: a user-specified terminal matrix instead; state desired dimensions and
+  target conditions before fixing the capture matrix.
+
+**User answers:** Q4 pending; Q5 pending; Q6 pending. Failure handling,
+permitted corrective-work scope, sign-off, and final shared-understanding
+confirmation remain downstream. No captures or runtime modifications yet.

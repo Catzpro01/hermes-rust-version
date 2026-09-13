@@ -280,3 +280,19 @@ performed.** The Python installation was not modified.
 - Rechecked CI `34778224770`: both jobs succeeded on `0a31e65`. This turn
   changes documentation only; no Rust test/capture run is claimed.
 - Commit/push this decision record. No merge, branch switch, or UI change.
+
+## 2026-09-14: Grilling Q2/Q3 confirmed; comparison frontier opened
+
+- After the ambiguous `a` was clarified, user explicitly answered `2A, 3A`.
+  Recorded paired real-screen images + raw terminal recordings + provenance,
+  and normal plus representative risky-state coverage with dummy fixtures.
+  Updated the project glossary and active handoff; no ADR needed for this
+  reversible evidence-packaging choice.
+- Inspected documented branding/picker adaptations and PTY dimensions. Next
+  independent decisions: Q4 adaptation allowlist, Q5 dynamic normalization,
+  and Q6 terminal matrix. Recommendations are proposals only.
+- Rechecked CI `34778331471`: both jobs succeeded on `3e2f2fc`. This is prior
+  checkpoint verification; this turn changes documentation only.
+- No captures, runtime changes, independent subagents, or new local Rust
+  tests were run. Implementation still waits for final shared-understanding
+  confirmation. Commit/push notes; no merge or branch switch.

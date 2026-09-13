@@ -62,8 +62,10 @@ Tes itu berguna, tetapi bukan bukti seluruh layar/ANSI-stream identik.
 T10, board, ROADMAP, dan PARITY kini membedakan implementasi selesai dari
 closure review. Pada ronde 1 `/grill-with-docs` (2026-09-14), user memilih A:
 pertahankan capture nyata §J.7 dengan tes sebagai pendamping, bukan pengganti.
-Format, matriks skenario, dan kriteria penerimaan masih dibahas di
-`../grilling.md`; belum ada persetujuan closure atau implementasi.
+User kemudian mengonfirmasi `2A, 3A`: gambar berdampingan + rekaman terminal
+mentah + metadata; jalur normal dan kondisi berisiko yang representatif.
+Aturan perbandingan dan kriteria penerimaan masih dibahas di `../grilling.md`;
+belum ada persetujuan closure atau implementasi.
 
 ### P2 — Laporan parity memuat informasi yang bertentangan (diperbaiki)
 
