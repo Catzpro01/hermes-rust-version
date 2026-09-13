@@ -1,6 +1,8 @@
 {
-  "phase": "green",
-  "source_sha256": "0200acd6d02900fda4950e235e8753829d9107995c8a1adb53b7a0d0825e1c6a",
-  "patch_sha256": "3023a03f5cc059e1b64d92ea2c725f60a3cc938f4d8d7f590c7220d8a67456c1",
-  "red_run": 34782931817
+  "phase": "none",
+  "reason": "candidate-consumed-capture-clean-committed-source",
+  "red_run": 34782931817,
+  "green_run": 34783039592,
+  "tested_patch_sha256": "5ae5e9b3430ad1a32e44cded4cd25b55cf6d6a81800edc613a6f82df4216a79e",
+  "source_sha256": "8568068c84f27052aa1b559ac282d86bf9e142d4b7c8ef0cc658604e58efcfb8"
 }

@@ -1,7 +1,7 @@
 # T12 — Real Python/Rust visual evidence
 
-- Status: BLOCKED — banner geometry FAIL; Actions dispatch permission required
-- Label: `ready-for-human`
+- Status: IN PROGRESS — ANSI correction under remote RED/GREEN validation
+- Label: `ready-for-agent`
 - Owner: Arena agent (capture/corrections), user (final acceptance)
 - Basis: [confirmed Q1-Q8 agreement](../grilling.md), user `setuju lanjutkan`
 - Depends on: executable pinned reference, Rust runtime, matched renderer
@@ -55,22 +55,24 @@ in cache and recapturing. Inspected clean pairs: Rust loses unstyled spaces,
 so Available Tools starts at column 2 rather than 51/41/48/49 (100/80/94/95).
 All four geometry cases FAIL. Raw/cast/screenshots and checksums are retained.
 
-The public ANSI writer regression is prepared at
-`/home/user/.cache/hermes-visual-reference/red.patch` (ephemeral candidate,
-not applied to source). It compares actual serialized output, with only SGR
-removed, against existing independent Python references for four widths and
-two color depths. If the cache is unavailable, recreate from this criterion;
-never claim RED based on reasoning alone. Minimal correction to validate:
-retain unstyled spaces in `write_buffer_ansi` instead of skipping them.
+The candidate transport is tracked in `../runner-candidate/`. Authorized
+branch-scoped push runs now work with official rustup, without requiring
+manual dispatch or additional repository settings changes. The installed
+Python is untouched; source/patch digests bind each candidate.
 
-Dispatch for the RED run failed HTTP 403 `Resource not accessible by
-integration`. No RED/GREEN job was created and no Rust correction was applied.
-Ask the user to reconnect/check the GitHub connection in Arena for Actions
-permission; never request tokens. After it is restored, dispatch the bounded
-candidate, verify RED, then GREEN with fmt/check/clippy/full tests before
-committing the actual Rust change. The workflow exports the exact tested
-Rust delta with a digest; verify it before applying locally. Capture again
-from the final committed source and record compiler/version provenance.
+Correct-fixture RED run 34782931817 on 209d04e passed fmt/check and observed
+`banner_ansi_preserves_python_reference_layout` fail on the buggy writer.
+The earlier test proposal reused the wrong model/context/tool fixtures for
+widths 100/80; its baseline was superseded. References and assertions remain
+unchanged. Test inputs now match the existing independent Python fixtures.
+
+GREEN run 34783039592 on 3f3d996 passed fmt/check, the named regression,
+clippy and full tests. Exact tested delta verified (3469 bytes, SHA-256
+5ae5e9b3430ad1a32e44cded4cd25b55cf6d6a81800edc613a6f82df4216a79e) and applied
+locally, with byte-for-byte diff equality. Candidate consumed/disabled.
+Next push captures the final committed source with compiler/Cargo provenance;
+verify actual-commit CI and compare new real pairs. Candidate capture alone
+is not final source evidence. Review and five-area coverage remain open.
 
 Prior checks: CI `34779396792` on `d7727e5` passed. Capture `34779200470`
 and CI `34779200438` on `814c235` passed; these are infrastructure/code checks,

@@ -630,3 +630,21 @@ performed.** The Python installation was not modified.
   b19953c39138a7f17d04210985f85842ff0e6239956f3e24209fe1adae92935e.
   Submitted this exact test plus the minimal unstyled-space correction for
   GREEN. No production Rust source changed yet; no parity claim or merge.
+
+## 2026-09-14: GREEN verified; apply exactly tested ANSI fix to Rust source
+
+- Run 34783039592 on 3f3d996 succeeded: cargo fmt/check, named regression,
+  clippy -D warnings, all workspace tests, real CLI build and candidate capture.
+- Verified exported delta SHA-256
+  5ae5e9b3430ad1a32e44cded4cd25b55cf6d6a81800edc613a6f82df4216a79e, 3469 bytes;
+  only welcome.rs changes. `git apply --check` and exact byte-for-byte equality
+  between the local Rust diff and the runner-tested patch passed.
+- Production fix: retain unstyled spaces to preserve cursor geometry. Added
+  public-writer regression against four Python fixtures × two color depths.
+  Remote fmt/check ran BEFORE this Rust commit; no local toolchain is claimed.
+- Consumed patch removed; phase none requests a new capture from committed
+  source, with rustc/Cargo provenance. Its CI/capture still need verification.
+- Refreshed MEMORY/T12/access guide: direct official rustup and authorized push
+  validation work; repetitive dispatch/settings recovery is not a prerequisite.
+  Independent code-review needs the user's fixed point and unavailable
+  subagents; no review verdict, evidence acceptance, closure or merge claimed.

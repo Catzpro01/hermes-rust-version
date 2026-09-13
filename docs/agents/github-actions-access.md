@@ -1,8 +1,15 @@
 # Pemulihan akses dispatch GitHub Actions
 
-Status 2026-09-14: **BLOCKED — otorisasi koneksi GitHub perlu tindakan user/pemilik integrasi.**
+Status 2026-09-14: **Dispatch manual masih 403; pekerjaan Hermes via push berjalan.**
 
-## Terbaru: isi kolom allowlist salah — penyebab CI push juga terblokir
+Workflow kini memakai `rustup` resmi runner tanpa action wrapper pihak ketiga.
+Run RED 34782931817 benar-benar menjalankan fmt/check dan regresi ANSI.
+Tidak perlu mengulang pemulihan izin untuk melanjutkan jalur push ini.
+Enam pemakaian action GitHub tetap SHA-pinned, token read-only, artifact 90 hari.
+Bagian pemulihan di bawah adalah riwayat/opsi jika dispatch manual dibutuhkan;
+bukan prasyarat pekerjaan Hermes saat ini.
+
+## Riwayat: isi kolom allowlist salah — penyebab startup failure sebelumnya
 
 Run [34782293467](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34782293467)
 menyebut pola yang diizinkan sebagai `permissions: contents: write
@@ -21,8 +28,8 @@ Klik **Simpan**. Biarkan aturan SHA penuh aktif—workflow sudah kompatibel.
 Jangan tempel `permissions:` ke kolom ini. Workflow capture tetap read-only.
 
 Kandidat ANSI sekarang bisa diuji lewat trigger push yang sudah diizinkan,
-tanpa memulihkan API dispatch. Namun allowlist yang salah ini harus diperbaiki
-agar runner bisa mulai. Perubahan setting server tidak dilakukan oleh agent.
+tanpa memulihkan API dispatch. Wrapper yang ditolak kini sudah dihapus dari workflow; koreksi allowlist
+bukan lagi prasyarat runner saat ini. Perubahan setting server tidak dilakukan oleh agent.
 
 ## Yang diperiksa agent
 
@@ -78,7 +85,7 @@ izin luas yang tidak terkait untuk mengatasi masalah ini.
 Hanya setelah itu status akses dinyatakan pulih. Keberhasilan CI push atau
 pembaruan skill tidak menggantikan bukti tersebut.
 
-## Rute kerja setelah akses pulih
+## Rute kerja (sudah dapat memakai trigger push)
 
 `/tdd` pada output ANSI banner → verifikasi RED/GREEN dan fmt/check/clippy/test
 → `/code-review` → capture ulang → sisa kasus T12. Gunakan `/diagnosing-bugs`
@@ -183,5 +190,5 @@ bagian yang tersisa, atau pulihkan akses administrasi integrasi yang tepat.
 
 Regresi konfigurasi workflow ditambahkan pada suite QA yang ada: RED karena
 izin CI dan retensi artifact belum eksplisit, lalu GREEN setelah YAML diperbaiki.
-Keenam tes QA lokal lulus. Ini **bukan** RED/GREEN perbaikan ANSI; T12 masih
-menunggu akses dispatch dan bukti visual yang memenuhi persyaratan.
+Keenam tes QA lokal lulus. Ini **bukan** RED/GREEN perbaikan ANSI; T12 kini
+menjalankan regresi ANSI lewat push; bukti visual lengkap tetap diperlukan.

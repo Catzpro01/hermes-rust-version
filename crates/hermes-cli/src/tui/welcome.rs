@@ -773,9 +773,8 @@ pub fn write_buffer_ansi(w: &mut impl Write, buf: &Buffer, depth: ColorDepth) ->
         for x in area.x..area.x + area.width {
             let cell = &buf[(x, y)];
             let sgr = sgr_for(cell, depth);
-            if cell.symbol() == " " && sgr.is_empty() {
-                continue;
-            }
+            // Unstyled spaces still advance the terminal cursor. Omitting
+            // them collapses padding, columns, and the panel's right border.
             if sgr.is_empty() && !current.is_empty() {
                 w.write_all(b"\x1b[0m")?;
                 current.clear();
@@ -1331,6 +1330,71 @@ mod tests {
             c256.contains("38;5;"),
             "256-color path must use palette indices"
         );
+    }
+
+    #[test]
+    fn banner_ansi_preserves_python_reference_layout() {
+        let theme = HermesTheme::dark_canonical();
+        // Each independent Python reference has its own input fixture,
+        // identical to the corresponding plain-banner reference test above.
+        for (width, info, reference) in [
+            (
+                100,
+                banner_info(
+                    Some("anthropic/claude-sonnet-4-5"),
+                    Some(200_000),
+                    &["file_read", "file_write", "web_search"],
+                    &[],
+                    None,
+                ),
+                REF_W100_PRIMARY,
+            ),
+            (
+                80,
+                banner_info(Some("anthropic/claude-sonnet-4-5"), None, &[], &[], None),
+                REF_W80_PRIMARY,
+            ),
+            (
+                94,
+                banner_info(Some("gpt-5"), Some(128_000), &[], &[], None),
+                REF_W94_PRIMARY,
+            ),
+            (
+                95,
+                banner_info(Some("gpt-5"), Some(128_000), &[], &[], None),
+                REF_W95_PRIMARY,
+            ),
+        ] {
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
+                // This public writer emits only SGR escapes. Strip colors, not
+                // spaces: the independent Python rows pin terminal geometry.
+                let mut plain = String::new();
+                let mut escape = false;
+                for ch in String::from_utf8(bytes).unwrap().chars() {
+                    if ch == '\x1b' {
+                        escape = true;
+                    } else if escape {
+                        if ch == 'm' {
+                            escape = false;
+                        }
+                    } else {
+                        plain.push(ch);
+                    }
+                }
+                assert!(!escape, "unterminated SGR");
+                let actual: Vec<String> = plain
+                    .lines()
+                    .map(|line| line.trim_end().to_owned())
+                    .collect();
+                assert_eq!(
+                    actual,
+                    ref_lines(reference),
+                    "ANSI geometry at {width} columns"
+                );
+            }
+        }
     }
 
     #[test]

@@ -45,49 +45,29 @@ user's private Python installation.
   cases are retained under docs/hermes-ui-spec/017/evidence/banner-814c235/.
   They expose a real ANSI whitespace/column-collapse defect; none is a parity
   pass. Python side is a public display-component call, not full CLI startup.
-  T12 is BLOCKED: workflow dispatch returned HTTP 403 Resource not accessible
-  by integration. Ask user to reconnect/check GitHub in Arena. RED candidate
-  is prepared but NOT executed/applied; no Rust fix is claimed. After access
-  returns, remote fmt/check + RED/GREEN verification must precede Rust commit.
-  Use the report, T12 and tooling README for exact evidence/next commands.
-- Latest user request: restore Actions, download latest Matt Pocock skills,
-  then `/ask-matt`. Rechecked dispatch and permission settings: both still
-  HTTP 403; access was NOT restored. Follow docs/agents/github-actions-access.md
-  for the human-only authorization stage (`/wizard` route; no script or secret
-  collection performed). Then `/tdd` → `/code-review` → remaining T12 captures;
-  `/diagnosing-bugs` if needed. Continue here; Q1-Q8 need no re-interview.
-- User explicitly requested `/wizard` → `/tdd` for ANSI → `/code-review` →
-  recapture. A RED dispatch retry still returned 403; no RED job ran. Generated
-  one-shot `/home/user/actions-access-wizard.sh` for human reconnection, using
-  the unchanged upstream library, three confirmation stages, no credential
-  collection or storage. Bash syntax/static checks passed; not run end-to-end.
-  It is a session deliverable, intentionally not a permanent tracked installer.
-  Wait for the user's actual reconnect confirmation, then probe from Arena;
-  local-user gh success does not prove this session's integration access.
-- User's Actions-settings question exposed a separate CI configuration issue:
-  run 34780902412 on ec78897 failed setup because full-SHA pinning is required.
-  Migrated both workflows' ten uses to verified full upstream commit SHAs;
-  keep Require full-length SHA enabled and allow the five action repositories
-  listed in docs/agents/github-actions-access.md. This is NOT restoration of
-  Arena's manual dispatch permission. Verify the new commit CI independently.
-- User approved Actions-setting recommendations ("baik terapkan"). Both
-  workflow files now explicitly grant contents: read and retain new uploaded
-  artifacts for 90 days; all 10 action uses remain SHA-pinned. Six local QA
-  tests passed, including a new policy regression observed RED then GREEN.
-  These are YAML changes, NOT server settings or ANSI bug correction. Reads of
-  repository/default workflow permission APIs still returned 403; action
-  allowlist, external-contributor approval, log retention, global token/PR
-  settings remain unverified/unapplied by the agent. See recovery guide table.
-- Continuation uses authorized push-triggered candidate validation rather than
-  retrying denied dispatch. Test-only patch + source/patch digests live in
-  `.scratch/hermes-rs-total-parity/runner-candidate/`; actual Rust unchanged.
-  New run 34782293467 on 596fad0 was created but failed before any job. Its
-  GitHub page identifies the real new blocker: selected-action allowlist holds
-  `permissions: contents: write pull-requests: write` YAML instead of action
-  patterns, rejecting dtolnay/rust-toolchain and Swatinem/rust-cache. User must
-  replace that textbox with the five repo@* patterns in the recovery guide.
-  Do not call startup_failure a RED assertion. Once corrected, change only a
-  request retry marker and push to trigger RED, then GREEN before Rust commit.
+  T12 is IN PROGRESS, not waiting for another permission-setting loop.
+  Authorized branch-scoped pushes validate an unapplied welcome.rs-only
+  candidate under `.scratch/hermes-rs-total-parity/runner-candidate/`.
+  Official runner rustup replaces third-party wrapper actions; remaining
+  GitHub-owned actions are SHA-pinned, tokens read-only, artifacts 90 days.
+  Server settings and manual dispatch permissions remain unverified/403;
+  these are not required for this push route. No policy bypass or merge.
+- Actual correct-fixture RED: run 34782931817 on 209d04e passed fmt/check
+  then observed the named regression fail. The earlier test accidentally
+  reused the wrong model/tool fixture for width 100/80; that flawed baseline
+  is superseded, not hidden. References/assertions remain unchanged.
+  GREEN run 34783039592 on 3f3d996 passed fmt/check, named regression,
+  clippy/full tests and candidate capture. Verified and applied the exact
+  3469-byte Rust delta (SHA-256 5ae5e9b3430ad1a32e44cded4cd25b55cf6d6a81800edc613a6f82df4216a79e).
+  It removes only the unstyled-space skip and adds the public-writer test.
+  Candidate consumed/disabled (phase none); next push captures the final
+  committed source, including compiler/Cargo versions. Verify its own CI
+  and real rendered pairs. Never substitute candidate capture/CI for images.
+- User requested `/wizard` → `/tdd` → `/code-review` → recapture. Wizard
+  was delivered/static checked, not run interactively; no need repeat it.
+  `/code-review` still needs a user-supplied fixed point and unavailable
+  independent subagents; do not invent completed review. Q1-Q8 remain settled.
+  Latest user instruction is to focus on the Hermes project itself.
 - Fresh official toolkit download verified on 2026-09-14: upstream main still
   `3cca18b368ae95cdbdebbff572ccafa662551015`, all 164 files/37 links match.
   Latest is the already-installed version, not a new release. Verification
