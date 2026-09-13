@@ -668,3 +668,18 @@ performed.** The Python installation was not modified.
   regressions for long-session column allocation and ANSI style transitions.
   Independent review, other UI areas and explicit final acceptance remain open.
   No merge and no Python user installation/data changes.
+
+## 2026-09-14: User invokes `/ask-matt` after the first ANSI fix
+
+- Read installed upstream ask-matt/SKILL.md and PHASE-BOUNDARIES.md alongside
+  inherited MEMORY/T12/context. Choose Continue: same repository/session,
+  existing evidence and decisions are needed; no clear/handoff or new interview.
+- Route to `/tdd` for the precise remaining long-session 94/95-column behavior
+  at the already-agreed public writer. Then separate style regressions;
+  `/diagnosing-bugs` if the reproducible loop/correction contradicts expectations.
+  Follow with Standards/Spec review and new real captures; no parity shortcut.
+- Rechecked CI 34783499466 on 905b5e9: still IN_PROGRESS at inspection, not
+  declared green. Source a2a3d08 CI/capture successes remain historical evidence.
+- This invocation selects the next workflow; it does not execute another
+  fix/test cycle or supply personal/independent reviewer approval. Keep Q1-Q8,
+  final explicit user acceptance, Python preservation, and no-merge boundaries.

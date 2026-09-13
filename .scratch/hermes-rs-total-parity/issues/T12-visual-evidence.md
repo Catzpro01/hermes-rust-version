@@ -171,3 +171,27 @@ actual named RED evidence, then propose/test GREEN before applying Rust.
   regressions. Run actual RED/GREEN before source commits and retain recaptures.
   Investigate `layout_banner` post-wrap `left_w` vs allocated width; the simple
   reference fixtures do not cover this case. No extra feature or merge.
+
+## `/ask-matt` routing — 2026-09-14, after post-fix captures
+
+Read the installed upstream router and PHASE-BOUNDARIES.md. Recommendation:
+continue in this session with `/tdd`, not another interview, prototype, or
+Actions wizard. The next behavior is concrete and the public `write_banner`
+seam is already agreed; do not assert a layout root cause before testing it.
+
+1. One slice: replay the exact long-session/four-tool fixture from
+   banner-a2a3d08/paired-bundle.json through the real public writer. Require
+   a new RED for the 94/95-column symptom (Rust 42 vs Python 48/49), then the
+   smallest GREEN correction. Keep 100/80 and existing references passing.
+2. Separate slices: title-to-border bold reset, then dim/separator styling.
+   Use independent Python attributes; do not reuse the geometry test as
+   evidence that colors match or replace expected values with Rust output.
+3. If a reliable reproducer cannot be made, or the minimal correction does
+   not resolve it, use `/diagnosing-bugs`: establish its executed feedback
+   loop before hypotheses; do not call reading old captures a live RED loop.
+4. `/code-review` on Standards + Spec, then new committed-source paired
+   captures and remaining T12 coverage. Review still needs the user's fixed
+   point and unavailable independent subagents; no substitute verdict claimed.
+
+Routing only this turn; no new RED/GREEN or runtime changes. This is not a
+personal Matt Pocock review, acceptance of evidence, or permission to merge.

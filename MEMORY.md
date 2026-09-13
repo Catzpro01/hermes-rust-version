@@ -72,7 +72,10 @@ user's private Python installation.
   was delivered/static checked, not run interactively; no need repeat it.
   `/code-review` still needs a user-supplied fixed point and unavailable
   independent subagents; do not invent completed review. Q1-Q8 remain settled.
-  Latest user instruction is to focus on the Hermes project itself.
+  Latest `/ask-matt` routing: Continue here; `/tdd` first for long-session
+  94/95-column layout, then separate style slices; `/diagnosing-bugs` if the
+  loop/correction resists. The agreed public seam and Q1-Q8 need no re-interview.
+  No new regression/fix was executed in that routing turn. Keep focus on Hermes.
 - Fresh official toolkit download verified on 2026-09-14: upstream main still
   `3cca18b368ae95cdbdebbff572ccafa662551015`, all 164 files/37 links match.
   Latest is the already-installed version, not a new release. Verification
