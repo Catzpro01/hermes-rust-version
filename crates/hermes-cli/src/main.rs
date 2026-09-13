@@ -85,11 +85,6 @@ struct Args {
     #[arg(long, global = true)]
     tui: bool,
 
-    /// Spec 017 (T01): run the setup-wizard skeleton. Hidden from `--help`
-    /// until T05 replaces it with the `hermes setup` subcommand.
-    #[arg(long, hide = true)]
-    setup_skeleton: bool,
-
     /// Shell subcommand (Spec 014). Omitted -> interactive REPL
     /// (zero regression: the pre-014 default behavior).
     #[command(subcommand)]
@@ -102,8 +97,12 @@ struct Args {
 /// every variant is wired in `subcommands::run` (T02-T07).
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Interactive setup wizard
-    Setup,
+    /// Interactive setup wizard (optionally one section:
+    /// model|terminal|gateway|tools)
+    Setup {
+        /// Jump straight to a section (setup.py: `hermes setup model|terminal|gateway|tools|agent`).
+        section: Option<String>,
+    },
     /// Show Hermes version and install information
     Version,
 
@@ -171,12 +170,6 @@ async fn run() -> anyhow::Result<()> {
     // (zero regression).
     if let Some(cmd) = &args.command {
         return subcommands::run(cmd, &args).await;
-    }
-    // Spec 017 (T01): the setup-wizard skeleton (hidden flag; T05 replaces
-    // it with `hermes setup`). Runs to completion: no REPL/TUI, no provider,
-    // no session, no state write.
-    if args.setup_skeleton {
-        return wizard::run_skeleton_cli();
     }
     // Spec 012: TUI requires an interactive terminal. Rejecting a piped stdin
     // here prevents crossterm raw-mode from hanging/crashing smoke/E2E tests

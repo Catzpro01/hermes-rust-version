@@ -38,6 +38,20 @@ pub(crate) fn load_home_config(
     Ok((home, config))
 }
 
+/// Hermes home for `setup`: explicit flag → `HERMES_HOME` → `~/.hermes`,
+/// without requiring the directory to exist yet.
+fn setup_home(explicit: Option<&Path>) -> PathBuf {
+    if let Some(p) = explicit {
+        return p.to_path_buf();
+    }
+    if let Some(v) = std::env::var_os("HERMES_HOME").filter(|v| !v.is_empty()) {
+        return PathBuf::from(v);
+    }
+    std::env::var_os("HOME")
+        .map(|h| PathBuf::from(h).join(".hermes"))
+        .unwrap_or_else(|| PathBuf::from(".hermes"))
+}
+
 /// Run one subcommand to completion (never enters the REPL/TUI).
 pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
     // `version` (T07) is static: it must work even when config.yaml is
@@ -47,30 +61,30 @@ pub(crate) async fn run(cmd: &Commands, args: &Args) -> anyhow::Result<()> {
         render_version(args.hermes_home.as_deref(), &mut out)?;
         return out.flush().map_err(Into::into);
     }
+    // `setup` (Spec 017 T05) may run before the home directory exists
+    // (first-time setup): resolve the path leniently and let the wizard
+    // create it on apply. Config validity is irrelevant here (the wizard
+    // edits the raw YAML mapping and backs the old file up first).
+    if let Commands::Setup { section } = cmd {
+        let home = setup_home(args.hermes_home.as_deref());
+        let section = match section.as_deref() {
+            None => None,
+            Some(tok) => match crate::wizard::setup::Section::parse(tok) {
+                Some(s) => Some(s),
+                None => anyhow::bail!(
+                    "unknown setup section '{tok}' (expected model|terminal|gateway|tools)"
+                ),
+            },
+        };
+        return match crate::wizard::setup::run_setup(&home, section) {
+            Ok(_) => Ok(()),
+            Err(e) => anyhow::bail!("{e}"),
+        };
+    }
     let (home, config) = load_home_config(args.hermes_home.as_deref())?;
     match cmd {
         Commands::Version => unreachable!("handled above"),
-        Commands::Setup => {
-            if io::stdout().is_terminal() {
-                let _ = crate::radiolist::prompt_radiolist(
-                    "Would you like to see what can be imported?",
-                    &["Yes", "No"],
-                    0,
-                );
-                let _ = crate::radiolist::prompt_radiolist(
-                    "How would you like to set up Hermes?",
-                    &[
-                        "Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)",
-                        "Full setup — configure every provider, tool & option yourself (bring your own keys)",
-                        "Blank Slate — everything off except the bare minimum; opt in to each capability",
-                    ],
-                    0,
-                );
-                println!("\n  Current model:    laguna-s-2.1-free\n  Active provider:  OpenCode Free\n\nSetup complete.");
-            } else {
-                println!("Setup complete (defaults).");
-            }
-        }
+        Commands::Setup { .. } => unreachable!("handled above"),
         Commands::Model => {
             let colored = io::stdout().is_terminal();
             let mut out = io::stdout().lock();
@@ -192,7 +206,7 @@ pub(crate) fn name(cmd: &Commands) -> &'static str {
         Commands::Search { .. } => "search",
         Commands::Info => "info",
         Commands::Mcp { .. } => "mcp",
-        Commands::Setup => "setup",
+        Commands::Setup { .. } => "setup",
         Commands::Version => "version",
     }
 }
@@ -641,7 +655,7 @@ mod tests {
                 },
                 "mcp",
             ),
-            (Commands::Setup, "setup"),
+            (Commands::Setup { section: None }, "setup"),
             (Commands::Version, "version"),
         ];
         for (cmd, n) in cases {

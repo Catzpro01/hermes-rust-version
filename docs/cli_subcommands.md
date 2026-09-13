@@ -42,7 +42,7 @@ Global flags: `--hermes-home`, `--provider`, `--api-url`, `--tui`, `--version`, 
     Search { query } => search_sessions(&store, query),
     Info => render_info(..),
     Mcp { action } => render_mcp(..),
-    Setup => wizard prompts,
+    Setup { section } => wizard::setup::run_setup(..)   // Spec 017 T05 (model|terminal|gateway|tools)
   }
   ```
   The T01 `placeholder()` helper was removed in T08: every variant is real.

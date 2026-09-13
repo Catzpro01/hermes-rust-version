@@ -12,17 +12,19 @@
 //!   (invariant 8) — `inquire` would return `NotTTY` anyway, but the
 //!   pre-check keeps the message deterministic and unit-testable.
 //!
-//! T01 is a **skeleton**: three steps (import → mode → sections) collect
-//! answers and print a summary; nothing is written to disk (T05 adds the
-//! real sections, the atomic config write and the backup). Question strings
-//! that have a Python original are verbatim from `hermes_cli/setup.py`
-//! v0.21.0 (provenance: `docs/HERMES_UI_SPEC.md` §C.2/§K); skeleton-only
-//! strings are marked. All output is static strings (no untrusted content),
-//! so the CLI-boundary sanitization/redaction contract is trivially met.
+//! T01 shipped the helpers + a hidden skeleton flag; T05 (`setup.rs`)
+//! replaced it with the real `hermes setup` wizard (sections, atomic config
+//! write, backup) and removed `--setup-skeleton`. Question strings that have
+//! a Python original are verbatim from `hermes_cli/setup.py` v0.21.0
+//! (provenance: `docs/HERMES_UI_SPEC.md` §C.2/§K). Verbatim catalogs live in
+//! `catalog.rs`.
 
 use std::io::{self, IsTerminal};
 
 use inquire::InquireError;
+
+pub mod catalog;
+pub mod setup;
 
 /// Errors a wizard step can surface.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -71,7 +73,7 @@ pub fn is_interactive() -> bool {
     io::stdin().is_terminal()
 }
 
-fn require_tty() -> Result<(), WizardError> {
+pub(crate) fn require_tty() -> Result<(), WizardError> {
     if is_interactive() {
         Ok(())
     } else {
@@ -80,6 +82,7 @@ fn require_tty() -> Result<(), WizardError> {
 }
 
 /// Yes/no prompt (ENTER confirms the highlighted value, ESC cancels).
+#[allow(dead_code)] // OpenClaw import offer (§C.2) is not wired in this port yet.
 pub fn confirm(message: &str, default: bool) -> Result<bool, WizardError> {
     require_tty()?;
     inquire::Confirm::new(message)
@@ -97,7 +100,46 @@ pub fn select<T: std::fmt::Display>(message: &str, options: Vec<T>) -> Result<T,
         .map_err(map_inquire)
 }
 
+/// Single-select list with the cursor on `start` (Python radio menus start
+/// on the current value when one is configured).
+pub fn select_at<T: std::fmt::Display>(
+    message: &str,
+    options: Vec<T>,
+    start: usize,
+) -> Result<T, WizardError> {
+    require_tty()?;
+    let start = start.min(options.len().saturating_sub(1));
+    inquire::Select::new(message, options)
+        .with_starting_cursor(start)
+        .prompt()
+        .map_err(map_inquire)
+}
+
+/// Multi-select with pre-checked rows (`[✓]` in Python's checklist).
+pub fn multiselect_with_defaults<T: std::fmt::Display>(
+    message: &str,
+    options: Vec<T>,
+    defaults: &[usize],
+) -> Result<Vec<T>, WizardError> {
+    require_tty()?;
+    inquire::MultiSelect::new(message, options)
+        .with_default(defaults)
+        .prompt()
+        .map_err(map_inquire)
+}
+
+/// Masked secret input (platform tokens → `.env`, never echoed).
+pub fn password(message: &str) -> Result<String, WizardError> {
+    require_tty()?;
+    inquire::Password::new(message)
+        .without_confirmation()
+        .with_display_mode(inquire::PasswordDisplayMode::Masked)
+        .prompt()
+        .map_err(map_inquire)
+}
+
 /// Multi-select list (SPACE toggles, ENTER confirms — Python semantics).
+#[allow(dead_code)] // `multiselect_with_defaults` is the wizard's variant; kept for T08/T09.
 pub fn multiselect<T: std::fmt::Display>(
     message: &str,
     options: Vec<T>,
@@ -109,7 +151,6 @@ pub fn multiselect<T: std::fmt::Display>(
 }
 
 /// Free-text input pre-filled with `initial`.
-#[allow(dead_code)] // T05 sections (config values) use this; T01 ships it complete.
 pub fn text_input(message: &str, initial: &str) -> Result<String, WizardError> {
     require_tty()?;
     inquire::Text::new(message)
@@ -122,7 +163,9 @@ pub fn text_input(message: &str, initial: &str) -> Result<String, WizardError> {
 // Verbatim Python originals (hermes_cli/setup.py v0.21.0, READ-ONLY).
 // ---------------------------------------------------------------------------
 
-/// setup.py L2799 (`_offer_openclaw_migration`).
+/// setup.py L2799 (`_offer_openclaw_migration`) — only asked upstream when
+/// an OpenClaw install is detected; not wired in this port yet.
+#[allow(dead_code)]
 pub const IMPORT_QUESTION: &str = "Would you like to see what can be imported?";
 /// setup.py L3303 (`_run_setup_wizard_impl`).
 pub const MODE_QUESTION: &str = "How would you like to set up Hermes?";
@@ -145,121 +188,20 @@ pub const SECTIONS: [&str; 4] = [
 /// setup.py L3108 (`run_setup_action_with_navigation`).
 pub const CANCELED_MESSAGE: &str = "Setup cancelled.";
 
-/// Skeleton-only prompt (v0.21.0 has no original — the real wizard runs
-/// every section in order). Style mirrors `Select platforms to configure:`.
-const SECTIONS_QUESTION: &str = "Select sections to configure:";
-
-/// Skeleton-only completion marker (clearly marked so E2E can pin it).
-pub const COMPLETE_MARKER: &str = "Setup (skeleton) complete:";
-
-// ---------------------------------------------------------------------------
-// T01 skeleton
-// ---------------------------------------------------------------------------
-
-/// Result of one `run_skeleton` invocation.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SkeletonResult {
-    /// All three steps answered (the section list may be empty).
-    Completed {
-        import_offered: bool,
-        mode: &'static str,
-        sections: Vec<&'static str>,
-    },
-    /// ESC at some step → rollback to defaults (NOT an error, invariant 3).
-    Canceled {
-        import_offered: bool,
-        mode: Option<&'static str>,
-    },
-}
-
-impl SkeletonResult {
-    #[allow(dead_code)] // used by unit tests and T05's outcome branching.
-    pub fn is_completed(&self) -> bool {
-        matches!(self, SkeletonResult::Completed { .. })
-    }
-}
-
-/// T01 skeleton: import → mode → sections. Performs no writes (T05 adds
-/// the real sections, atomic config write and backup).
-pub fn run_skeleton() -> Result<SkeletonResult, WizardError> {
-    require_tty()?;
-
-    // Step 1 — import (default: no).
-    let import_offered = confirm(IMPORT_QUESTION, false)?;
-
-    // Step 2 — mode (default: first option = Quick Setup).
-    let mode = match select(MODE_QUESTION, vec![MODE_QUICK, MODE_FULL, MODE_BLANK]) {
-        Ok(mode) => mode,
-        Err(WizardError::Canceled) => {
-            return Ok(SkeletonResult::Canceled {
-                import_offered,
-                mode: None,
-            })
-        }
-        Err(e) => return Err(e),
-    };
-
-    // Step 3 — sections (multi-select, nothing pre-selected).
-    let sections = match multiselect(SECTIONS_QUESTION, SECTIONS.to_vec()) {
-        Ok(sections) => sections,
-        Err(WizardError::Canceled) => {
-            return Ok(SkeletonResult::Canceled {
-                import_offered,
-                mode: Some(mode),
-            })
-        }
-        Err(e) => return Err(e),
-    };
-
-    Ok(SkeletonResult::Completed {
-        import_offered,
-        mode,
-        sections,
-    })
-}
-
-/// CLI entry for the hidden `--setup-skeleton` flag (T05 replaces it with
-/// `hermes setup`). Prints the outcome; exit-code semantics: Ok → 0
-/// (cancel included), Err(Interrupted) → 130 via `main`'s "interrupted"
-/// mapping, other Err → 1.
-pub fn run_skeleton_cli() -> anyhow::Result<()> {
-    match run_skeleton() {
-        Ok(SkeletonResult::Completed {
-            import_offered,
-            mode,
-            sections,
-        }) => {
-            // Skeleton-only summary block (no config written in T01).
-            println!("{COMPLETE_MARKER}");
-            println!("  import: {}", if import_offered { "yes" } else { "no" });
-            println!("  mode: {mode}");
-            let secs = if sections.is_empty() {
-                "(none selected)".to_owned()
-            } else {
-                sections.join(", ")
-            };
-            println!("  sections: {secs}");
-        }
-        Ok(SkeletonResult::Canceled { .. }) => {
-            println!("{CANCELED_MESSAGE}");
-        }
-        Err(e) => anyhow::bail!("{e}"),
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn non_tty_stdin_yields_clear_not_tty_error() {
-        // Under `cargo test` stdin is piped → the wizard must refuse with
-        // the deterministic invariant-8 error (same path the E2E asserts).
+        // Under `cargo test` stdin is piped → every prompt helper must refuse
+        // with the deterministic invariant-8 error (same path the E2E asserts).
         assert!(!is_interactive());
-        let err = run_skeleton().expect_err("piped stdin must not run the wizard");
+        let err = confirm(IMPORT_QUESTION, false).expect_err("piped stdin must not prompt");
         assert_eq!(err, WizardError::NotTty);
         assert!(err.to_string().contains("interactive terminal"), "{}", err);
+        assert_eq!(select_at("q", vec!["a"], 5).unwrap_err(), WizardError::NotTty);
+        assert_eq!(password("q").unwrap_err(), WizardError::NotTty);
     }
 
     #[test]
@@ -302,20 +244,5 @@ mod tests {
             "setup wizard requires an interactive terminal (non-TTY stdin detected)"
         );
         assert_eq!(WizardError::Canceled.to_string(), "setup wizard cancelled");
-    }
-
-    #[test]
-    fn skeleton_result_semantics() {
-        let canceled = SkeletonResult::Canceled {
-            import_offered: true,
-            mode: None,
-        };
-        assert!(!canceled.is_completed());
-        let completed = SkeletonResult::Completed {
-            import_offered: false,
-            mode: MODE_FULL,
-            sections: vec!["Tools"],
-        };
-        assert!(completed.is_completed());
     }
 }
