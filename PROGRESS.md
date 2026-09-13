@@ -461,3 +461,15 @@ performed.** The Python installation was not modified.
 - Prior CI 34780165901 on bd7cbd8 succeeded. No local Rust test, correction,
   independent code review, new UI capture, or merge this turn. Next requires
   the user's actual reconnect action and a successful dispatch from Arena.
+
+## 2026-09-14: User-requested Actions retry remains denied
+
+- User asked to try again. Retried RED candidate dispatch from this Arena
+  session on the assigned branch: HTTP 403 Resource not accessible by integration.
+- Confirmed the visual workflow still lists only the prior push-triggered
+  capture run 34779200470 on 814c235; no new RED run was created.
+- CI 34780555935 on c041d72 succeeded. Push CI/read access and manual dispatch
+  permission remain distinct. No restored authorization, Rust fix, test RED,
+  new capture, or merge is claimed. If reconnect has already been completed,
+  the next action is owner/Arena support inspection of Actions write access,
+  not another identical wizard or a request for user credentials.
