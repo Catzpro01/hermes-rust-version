@@ -330,3 +330,25 @@ performed.** The Python installation was not modified.
 - Documentation only; no Rust changes/tests, captures, runtime installation,
   or merge. Reference/runtime availability still needs verification before
   actual captures. Run diff hygiene, commit/push, and inspect the new CI state.
+
+## 2026-09-14: Final confirmation received; visual evidence execution started
+
+- User confirmed `setuju lanjutkan`. Recorded scoped execution authorization,
+  without closure/merge permission, and opened T12. Inherited AGENTS, context,
+  memory, original grilling/domain guidance, and progress-handoff boundaries.
+- Verified the full upstream commit and downloaded a separate archive. All
+  11,327 blobs checked: 11,315 exact, 12 upstream-attributed PowerShell CRLF
+  conversions; Python source exact. No installed Python home was modified.
+- Built a first banner capture slice using the actual Rust REPL PTY and the
+  upstream Python public display component. New read-only, branch-scoped
+  Actions workflow builds Rust and exports raw evidence, not a parity verdict.
+- Five existing CI gate QA tests passed locally. Python compilation passed.
+  New Rust source was not changed; no local Rust run is claimed. Prior CI
+  `34778832012` passed on `f807601`.
+- Environmental checks: signed artifact ZIP still fails EOF; raw annotation
+  transport is bounded/checksummed. Chromium CDN failed TLS; trying the npm
+  Chromium package for the common local renderer. Python deps installed only
+  in cache. Unsupported Python tar `filter` API was replaced with explicit
+  regular-file/directory path validation before extraction.
+- Next: run the capture workflow, verify/retrieve raw data, render/inspect
+  paired banner images, record deviations, then expand to remaining areas.

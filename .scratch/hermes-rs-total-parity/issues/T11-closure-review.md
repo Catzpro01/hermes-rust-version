@@ -68,8 +68,9 @@ User juga mengonfirmasi `4A, 5A, 6A`: hanya adaptasi terdokumentasi,
 normalisasi dinamis di tampilan pembanding terpisah dengan bukti asli utuh,
 dan matriks terminal yang disepakati. Jawaban `7a 8a` menetapkan perbaikan
 hanya pada lima area UI dan regresi terkait, serta sign-off laporan akhir
-oleh user. Q1-Q8 selesai; rangkuman di `../grilling.md` menunggu konfirmasi
-akhir sebelum eksekusi. Belum ada capture baru atau persetujuan closure.
+oleh user. Q1-Q8 dan konfirmasi akhir (`setuju lanjutkan`) selesai:
+eksekusi terbatas diizinkan, diteruskan dalam T12. Closure tetap terbuka;
+persetujuan rencana bukan penerimaan bukti yang belum ditinjau.
 
 ### P2 — Laporan parity memuat informasi yang bertentangan (diperbaiki)
 

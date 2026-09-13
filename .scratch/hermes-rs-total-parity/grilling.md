@@ -1,12 +1,12 @@
 # Spec 017: visual-evidence decision interview
 
-Status: Q1-Q8 settled; awaiting final shared-understanding confirmation (`needs-info`)
+Status: Q1-Q8 and final confirmation settled; scoped execution authorized
 Owner: user (decisions), Arena agent (fact-finding and documentation)
 Started: 2026-09-14
 Origin: explicit user invocation of `/grill-with-docs`
 Related: `issues/T11-closure-review.md`
 
-## Consolidated agreement — awaiting confirmation to proceed
+## Consolidated agreement — confirmed to proceed
 
 All eight policy choices were answered A. This summary records those choices;
 it is not proof that any new capture has been produced or accepted.
@@ -79,7 +79,7 @@ understanding. Commit/push notes; merge remains unauthorized.
 4. **Failure handling and acceptance** (settled, Q7 = A, Q8 = A)
    - Which mismatches block closure; permitted corrective-work scope.
    - Review/sign-off requirements and handling unavailable evidence.
-5. **Shared-understanding confirmation** (current frontier; pending)
+5. **Shared-understanding confirmation** (settled)
    - Summarize the agreed policy; obtain explicit confirmation before action.
 
 ## Round 1
@@ -228,4 +228,6 @@ confirmation to proceed authorizes the scoped evidence/corrective work, not
 acceptance of as-yet-unproduced evidence or a merge. Keep T11 open until its
 actual evidence and user sign-off criteria are satisfied.
 
-**User confirmation:** pending. No execution or closure approval recorded.
+**User confirmation:** `setuju lanjutkan` (2026-09-14). The user confirmed
+shared understanding and authorized scoped evidence/corrective execution.
+No closure sign-off or merge permission was granted. Continue in T12.

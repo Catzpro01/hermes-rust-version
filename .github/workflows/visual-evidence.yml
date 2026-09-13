@@ -1,0 +1,41 @@
+name: Visual evidence (banner slice)
+
+on:
+  push:
+    branches: ["arena/01a09c1e-hermes-rust-version"]
+    paths:
+      - '.github/workflows/visual-evidence.yml'
+      - 'scripts/capture_banner.py'
+      - 'docs/hermes-ui-spec/017/evidence/reference.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    if: github.ref == 'refs/heads/arena/01a09c1e-hermes-rust-version'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build real CLI
+        run: cargo build --locked -p hermes-rs
+      - name: Capture offline startup at four terminal sizes
+        run: python3 scripts/capture_banner.py rust target/debug/hermes-rs evidence/banner-rust.json
+      - name: Export verifiable raw capture group 1
+        run: python3 scripts/capture_banner.py export evidence/banner-rust.json
+      - name: Export verifiable raw capture group 2
+        run: python3 scripts/capture_banner.py export evidence/banner-rust.json --group 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: banner-raw-${{ github.sha }}
+          path: evidence/banner-rust.json
+          if-no-files-found: error
+      - name: State evidence boundary
+        run: |
+          echo 'Captured Rust banner only; no parity pass, Python CLI proof, or closure sign-off.' >> "$GITHUB_STEP_SUMMARY"

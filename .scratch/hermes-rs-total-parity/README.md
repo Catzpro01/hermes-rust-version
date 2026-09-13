@@ -23,6 +23,11 @@ autocomplete /slash, tips, session picker. Sumber ground truth:
 | T10 | [Parity, docs & closure](issues/T10-parity-closure.md) | Dokumen tersedia; closure belum disetujui — temuan review T11 |
 | T11 | [Closure review + CI gate](issues/T11-closure-review.md) | IN REVIEW — CI `34776992554` hijau; bukti/keputusan §J.7 + human sign-off masih terbuka |
 
+## Eksekusi bukti visual
+
+[T12 — Visual evidence](issues/T12-visual-evidence.md) menjalankan kesepakatan
+Q1-Q8 yang sudah dikonfirmasi. Tidak menggantikan sign-off closure T11.
+
 ## Artefak Fase 0
 
 - `docs/HERMES_UI_SPEC.md` — section "v0.21.0 Total Parity (Spec 017)".
