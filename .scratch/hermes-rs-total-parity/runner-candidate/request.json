@@ -1,7 +1,6 @@
 {
-  "phase": "green",
-  "test": "banner_ansi_secondary_text_retains_python_dim",
-  "source_sha256": "4f507ef1404186264ba7bf1fc70ef9b0ce63740e97c00fe9c6a3d677ae4cecaf",
-  "patch_sha256": "6ec7cddc220467951d1742bf9889732203f635c1bc162b70db111d4fb76ff0ef",
-  "red_run": 34784445723
+  "phase": "red",
+  "test": "banner_ansi_tool_punctuation_matches_python",
+  "source_sha256": "61d7c1326e499508eb531630f475f3426d40a03170efda3dadccdfd436ccfc34",
+  "patch_sha256": "706815f4941bbb24b14286ebcf3905dbf23e2d24c91c06a3f477fac02e7a6308"
 }

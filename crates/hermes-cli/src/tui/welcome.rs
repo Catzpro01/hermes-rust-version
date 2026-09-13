@@ -368,10 +368,18 @@ fn wrap_styled(line: &SLine, width: usize) -> Vec<SLine> {
             let mut sl = line.slice(s, e);
             if sl.width() > width {
                 let cut = byte_at_char(&sl.plain(), width.saturating_sub(1));
+                // Rich truncation retains the span at the ellipsis position,
+                // including the dim session color; it does not insert plain text.
+                let ellipsis_style = sl
+                    .slice(cut, sl.plain().len())
+                    .runs
+                    .first()
+                    .map(|run| run.style)
+                    .unwrap_or_default();
                 sl = sl.slice(0, cut);
                 sl.runs.push(Run {
                     text: "…".to_owned(),
-                    style: Style::default(),
+                    style: ellipsis_style,
                 });
             }
             sl
@@ -381,7 +389,7 @@ fn wrap_styled(line: &SLine, width: usize) -> Vec<SLine> {
 
 /// Left column lines (verbatim `build_welcome_banner` `left_lines`).
 fn left_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
-    let dim = theme.banner_dim();
+    let dim = theme.banner_dim().add_modifier(Modifier::DIM);
     let mut left = vec![SLine::blank()];
     for row in caduceus_lines() {
         left.push(SLine::new(vec![(row.text, row.style)]));
@@ -436,7 +444,9 @@ fn left_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
         left.push(SLine {
             runs: vec![Run {
                 text: format!("Session: {sid}"),
-                style: Style::default().fg(SESSION_COLOR),
+                style: Style::default()
+                    .fg(SESSION_COLOR)
+                    .add_modifier(Modifier::DIM),
             }],
         });
     }
@@ -447,7 +457,7 @@ fn left_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
 /// Rust port has no skills system, so the skills section is always the empty
 /// state).
 fn right_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
-    let dim = theme.banner_dim();
+    let dim = theme.banner_dim().add_modifier(Modifier::DIM);
     let body = theme.banner_text();
     let header = |text: &str| SLine::new(vec![(text, theme.banner_section())]);
     let mut right = vec![header("Available Tools")];
@@ -1576,6 +1586,63 @@ mod tests {
                     );
                     if depth == ColorDepth::Truecolor {
                         assert_eq!(style.foreground, Color::Rgb(205, 127, 50));
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn banner_ansi_secondary_text_retains_python_dim() {
+        // Python banner-a2a3d08: secondary text is dim, including the cropped
+        // session ellipsis at width 80. Model/tool names are not dim.
+        let theme = HermesTheme::dark_canonical();
+        let mut info = banner_info(
+            Some("parity-fixture"),
+            None,
+            &["list_dir", "read_file", "shell_readonly", "write_file"],
+            &[],
+            Some("01a09c9f-9e5e-7a23-a26b-3671192efa10"),
+        );
+        info.cwd = "/tmp/hermes-visual-mlzi2a67/demo".to_owned();
+        for width in [100, 80, 94, 95] {
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
+                let cells = observed_banner_cells(&bytes);
+                let plain: String = cells.iter().map(|(ch, _)| ch).collect();
+                for label in [
+                    "other:",
+                    "No skills installed",
+                    "4 tools",
+                    "Nous Research",
+                    "/tmp/hermes-visual-mlzi2a67/demo",
+                    "Session:",
+                ] {
+                    let byte = plain.find(label).unwrap();
+                    let start = plain[..byte].chars().count();
+                    for (_, style) in &cells[start..start + label.chars().count()] {
+                        assert!(
+                            style.dim && !style.bold,
+                            "secondary {label}, width={width}, depth={depth:?}: {style:?}"
+                        );
+                    }
+                }
+                for label in ["parity-fixture", "list_dir"] {
+                    let start = plain[..plain.find(label).unwrap()].chars().count();
+                    assert!(
+                        !cells[start].1.dim && !cells[start].1.bold,
+                        "primary {label}"
+                    );
+                }
+                if width == 80 {
+                    let style = cells.iter().find(|(ch, _)| *ch == '…').unwrap().1;
+                    assert!(
+                        style.dim && !style.bold,
+                        "cropped session ellipsis: {style:?}"
+                    );
+                    if depth == ColorDepth::Truecolor {
+                        assert_eq!(style.foreground, Color::Rgb(139, 134, 130));
                     }
                 }
             }

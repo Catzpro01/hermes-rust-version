@@ -754,3 +754,15 @@ performed.** The Python installation was not modified.
   RGB (139,134,130) plus dim, not the previous unstyled default.
 - Primary names remain non-dim; the earlier SGR reset prevents modifier leakage.
   Tool punctuation/truncation marker colors remain a separate next slice.
+
+## 2026-09-14: Apply verified dim fix; begin tool-punctuation RED
+
+- GREEN 34784546009 / 871faaf passed exact dim test, fmt/check, clippy/full tests.
+  Verified and applied exact 5244-byte patch SHA-256
+  8f04a4cb9efe748c10e2cc3fd49234a817a9194679ca1bf3c3bd10bf8b31057a;
+  local Rust diff matches. Shared theme remains unchanged.
+- Next test-only proposal observes independent Python tool styles: names retain
+  body foreground, commas use default foreground/non-dim, ASCII truncation
+  dots use default foreground + dim. Four widths × both color depths.
+- No punctuation implementation change before named RED. Review before final
+  committed-source recapture remains the next boundary after these TDD slices.
