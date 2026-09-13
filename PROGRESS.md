@@ -183,3 +183,40 @@ performed.** The Python installation was not modified.
   a Matt verdict, recreate a substitute skill, or close §J.7 while waiting.
 - Documentation-only checkpoint; no new Rust test run, external reviewer
   contact, PR, merge, or auto-merge performed. Save this blocker to GitHub.
+
+## 2026-09-14: Official Matt Pocock toolkit installed and applied
+
+- User asked to download Matt Pocock's skills and apply their contents.
+  Located the author's public `mattpocock/skills` repository through GitHub.
+  Pinned source: `3cca18b368ae95cdbdebbff572ccafa662551015`, MIT license.
+- Downloaded all **164 upstream files (666,067 bytes)** through `gh api`,
+  checking each Git blob hash against the pinned tree. Preserved upstream
+  content and modes, including its internal AGENTS symlink. The full snapshot
+  and lock live under `docs/agents/vendor/`.
+- Installed **37 relative project-local skill links** under `.agents/skills/`:
+  25 stable, eight in-progress, four misc. The latter buckets retain their
+  upstream warnings; `retro` is a stub. No upstream installer or package
+  script was executed, and Python Hermes/global skill directories are untouched.
+- Read the original ask-matt/router and phase-boundary instructions, setup
+  preconditions, invocation policy, writing-for-agents and skill mechanics,
+  and code-review/TDD/codebase-design requirements relevant to subsequent
+  work. Scanned every skill's metadata; deeper references are read on trigger,
+  not indiscriminately loaded or executed as a single giant workflow.
+- Corrected the earlier misunderstanding: `/ask-matt` is **a router**, not an
+  external Matt contact or approval service. The previous missing-skill
+  blocker is resolved. Its route for the current §J.7 decision is
+  `/grill-with-docs`, then scoped specification/tickets/implementation if
+  needed. No new user-invoked flow or closure approval was silently started.
+- Existing local-ticket, five-label, and single-context configuration already
+  meets the setup preconditions; retained it. Added concise AGENTS pointers,
+  refreshed MEMORY, and documented the exact-source catalog, permission
+  overrides, experimental status, and missing native Skill/subagent tools.
+- Verification: all 164 blobs/modes and 37 links passed; every YAML skill
+  frontmatter agrees with its `agents/openai.yaml` invocation policy. Existing
+  **five CI workflow regression tests passed locally**. No Rust code changed
+  and no new local Rust run is claimed. Run final whitespace/link checks,
+  commit/push progress to the assigned branch, and inspect checkpoint CI.
+- Tracking: `.scratch/hermes-rs-agent-skills/issues/01-matt-pocock-toolkit.md`.
+  No branch switch, PR, merge, auto-merge, global Git hook, or credential
+  request occurred. The next agent should read the original skill on invocation
+  and state any unavailable capability instead of fabricating its execution.

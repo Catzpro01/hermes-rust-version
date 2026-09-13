@@ -18,6 +18,8 @@ user's private Python installation.
 
 ## Skill entry points
 
+- `.agents/skills/ask-matt/SKILL.md` and `docs/agents/matt-pocock-skills.md`
+
 - `docs/agents/skills/progress-handoff/SKILL.md`
 - `docs/agents/issue-tracker.md`
 - `docs/agents/triage-labels.md`
@@ -30,9 +32,16 @@ user's private Python installation.
   progress on GitHub. No new Spec 018 implementation is authorized by this work.
 - Ticket: `.scratch/hermes-rs-total-parity/issues/T11-closure-review.md`.
 - Evidence and chronological updates: `PROGRESS.md`.
-- Latest request `/ask-matt`: user chose the **existing Matt skill**, not an
-  agent-written substitute. Await the skill's path/attachment; no callable
-  definition was found in the available checkout. No Matt verdict received.
+- The missing `/ask-matt` skill blocker is resolved. On the user's download
+  request, all 37 official Matt Pocock skills were installed project-locally
+  from pinned upstream `3cca18b368ae95cdbdebbff572ccafa662551015`.
+  Read `docs/agents/matt-pocock-skills.md` and the original skill on use.
+- Correction to earlier session guidance: `/ask-matt` is a skill/flow router,
+  not a way to contact Matt or obtain his approval. No personal verdict has
+  been received. Its recommendation does not close Spec 017 §J.7.
+- All skills are available, not all automatically invoked. Respect user-only
+  triggers, experimental/stub status, and the documented missing Skill-tool /
+  independent-subagent capabilities. Do not fabricate completion of those steps.
 - Verified source checkpoint `3e0e8d9`: CI run `34776992554` succeeded with
   fmt/clippy success, 576 Rust tests, and five CI regression tests. Formatting
   and false error annotations are fixed. Later documentation checkpoints

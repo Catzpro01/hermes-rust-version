@@ -4,6 +4,16 @@ Read `CONTEXT.md` before changing domain terms or architecture. Read relevant AD
 
 ## Agent skills
 
+### Matt Pocock toolkit
+
+The official toolkit is installed at `.agents/skills/<name>/SKILL.md`.
+On a matching slash request, read the original skill and its references;
+use model-invoked disciplines when their trigger fits. Preserve user-only
+invocation gates. `/ask-matt` is a workflow router, not a personal reviewer.
+Read [`docs/agents/matt-pocock-skills.md`](docs/agents/matt-pocock-skills.md)
+for the full catalog, pinned source, existing setup, and capability limits.
+Project permission and branch rules below remain binding.
+
 ### Issue tracker
 
 Issues are local Markdown files under `.scratch/<feature>/issues/`. See `docs/agents/issue-tracker.md`.
