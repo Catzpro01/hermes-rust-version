@@ -37,8 +37,10 @@ Port perilaku `SlashCommandCompleter` + `SlashCommandAutoSuggest`
   `_PICKER_COMMANDS` = `model`, `personality`, `skin` (tanpa spasi agar
   Enter langsung membuka picker).
 - **Ghost text** (`SlashCommandAutoSuggest`): rustyline `Hinter` — sisa
-  completion unik, atau shared-prefix jika banyak kandidat (mis. `/to`
-  → ghost `ols`); Tab menerimanya lewat menu completion.
+  completion unik, atau shared-prefix jika banyak kandidat (mis.
+  `/reasoning h` → ghost `i` dari `high`∩`hide`; `/to` → **tanpa**
+  ghost karena `/tools`, `/toolsets`, `/topup`, `/tool-calls` tidak
+  punya prefix bersama). Tab menerimanya lewat menu completion.
 - **Ekstensi Hermes-RS** (14 command ada di dispatch REPL tapi tidak ada
   di registry v0.21.0 — `RS_EXTENSIONS`, di-mark eksplisit):
   `tool-calls`, `inspect`, `messages`, `search`, `info`, `provider`,
@@ -62,7 +64,9 @@ history-forward). Tidak pernah masuk buffer input.
   `Validator`+`Helper`).
 - `repl.rs`: completer lama (static 63 entri, tanpa hint) dihapus;
   editor pakai `HermesCompleter::new(home)` (skills dipindai sekali saat
-  start REPL).
+  start REPL). Token path relatif (`./`, `../`) di-resolve terhadap
+  `cwd` yang diambil saat start (field `HermesCompleter`; tes memakai
+  `with_home(hermes, home, cwd)` agar tidak menyentuh lingkungan).
 - `tui/app.rs`: field `placeholder` + `App::new()` (Default tetap via
   `new()`), `roll_placeholder()` di semua jalur pengosongan,
   `render_input` menampilkan placeholder (menggantikan hint statis
