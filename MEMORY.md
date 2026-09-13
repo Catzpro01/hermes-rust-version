@@ -78,6 +78,16 @@ user's private Python installation.
   repository/default workflow permission APIs still returned 403; action
   allowlist, external-contributor approval, log retention, global token/PR
   settings remain unverified/unapplied by the agent. See recovery guide table.
+- Continuation uses authorized push-triggered candidate validation rather than
+  retrying denied dispatch. Test-only patch + source/patch digests live in
+  `.scratch/hermes-rs-total-parity/runner-candidate/`; actual Rust unchanged.
+  New run 34782293467 on 596fad0 was created but failed before any job. Its
+  GitHub page identifies the real new blocker: selected-action allowlist holds
+  `permissions: contents: write pull-requests: write` YAML instead of action
+  patterns, rejecting dtolnay/rust-toolchain and Swatinem/rust-cache. User must
+  replace that textbox with the five repo@* patterns in the recovery guide.
+  Do not call startup_failure a RED assertion. Once corrected, change only a
+  request retry marker and push to trigger RED, then GREEN before Rust commit.
 - Fresh official toolkit download verified on 2026-09-14: upstream main still
   `3cca18b368ae95cdbdebbff572ccafa662551015`, all 164 files/37 links match.
   Latest is the already-installed version, not a new release. Verification

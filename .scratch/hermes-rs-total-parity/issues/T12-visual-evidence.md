@@ -120,3 +120,31 @@ then GREEN). This is not the pending ANSI regression. Repository settings
 reads still return 403; no server-side allowlist/approval/log-retention change
 or dispatch recovery is claimed. CI 34781191605 on 9349006 passed before this
 policy change; evaluate the new commit separately.
+
+## Push validation is available, but the repository allowlist is malformed
+
+Run [34782293467](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34782293467)
+on `596fad0` was created via push but concluded startup_failure before jobs.
+The ordinary CI run 34782293878 also failed startup; the earlier 1fd48e6 CI
+34782172539 did too, before the candidate workflow change.
+
+The run page gives the exact reason: dtolnay/rust-toolchain and swatinem/rust-cache
+are not allowed because the selected-actions pattern is literally:
+
+```text
+permissions:
+contents: write
+pull-requests: write
+```
+
+This belongs neither in the action allowlist nor in the current read-only
+capture workflow. The user must replace the **allow/block actions textbox**
+at repository Settings → Actions → General with the five action patterns
+in `docs/agents/github-actions-access.md`, then save. Keep full-SHA enforcement.
+No API dispatch restoration or permission escalation is needed for the push
+validation path. No RED/formatter/check run occurred yet; actual Rust unchanged.
+
+The persisted candidate patch is a transparent, unapplied test proposal, not
+production Rust. `request.json` selects RED and binds source and patch hashes.
+Once settings are corrected, update a retry marker there and push; require
+actual named RED evidence, then propose/test GREEN before applying Rust.

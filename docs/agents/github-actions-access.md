@@ -2,6 +2,28 @@
 
 Status 2026-09-14: **BLOCKED — otorisasi koneksi GitHub perlu tindakan user/pemilik integrasi.**
 
+## Terbaru: isi kolom allowlist salah — penyebab CI push juga terblokir
+
+Run [34782293467](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34782293467)
+menyebut pola yang diizinkan sebagai `permissions: contents: write
+pull-requests: write`. Itu **YAML izin token**, bukan pola action. Run tidak
+sampai membuat job; kegagalan ini bukan kegagalan regresi ANSI.
+
+Buka [Settings → Actions → General](https://github.com/Catzpro01/hermes-rust-version/settings/actions).
+Pada kolom **“Izinkan atau blokir tindakan tertentu dan alur kerja yang dapat
+digunakan kembali”**, hapus seluruh YAML tersebut, lalu isi persis:
+
+```text
+actions/checkout@*, actions/setup-python@*, actions/upload-artifact@*, dtolnay/rust-toolchain@*, Swatinem/rust-cache@*
+```
+
+Klik **Simpan**. Biarkan aturan SHA penuh aktif—workflow sudah kompatibel.
+Jangan tempel `permissions:` ke kolom ini. Workflow capture tetap read-only.
+
+Kandidat ANSI sekarang bisa diuji lewat trigger push yang sudah diizinkan,
+tanpa memulihkan API dispatch. Namun allowlist yang salah ini harus diperbaiki
+agar runner bisa mulai. Perubahan setting server tidak dilakukan oleh agent.
+
 ## Yang diperiksa agent
 
 - Pembacaan workflow/run bekerja. CI `34779850516` pada `3a644c7` berhasil

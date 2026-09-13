@@ -557,3 +557,20 @@ performed.** The Python installation was not modified.
 - Push trigger is limited to the candidate request directory. This is proposed
   patch transport for remote pre-commit checks, not a claim of dispatch recovery.
   No RED execution or correction success is claimed before the run is observed.
+
+## 2026-09-14: Push run created; exact selected-action configuration error identified
+
+- Candidate run 34782293467 on 596fad0 was created via push but had
+  startup_failure, no jobs/check-run annotations. Existing CI also failed
+  startup (34782293878), as did the earlier unchanged CI on 1fd48e6.
+- Read the run's GitHub page: it rejects dtolnay/rust-toolchain and
+  swatinem/rust-cache because the action pattern textbox literally contains
+  `permissions: contents: write pull-requests: write`. Recorded the exact
+  error and a copy-ready replacement containing five repo@* patterns.
+- Do not confuse this policy failure with RED or loosen token/SHA controls.
+  User must correct the server-side textbox; after that the prepared push
+  route can run without restoring manual dispatch. No source Rust changes,
+  runtime validation, new screenshot, independent review, or merge claimed.
+- Saved the candidate protocol and updated T12, recovery guide and memory.
+  Six existing QA checks passed before the initial candidate push; rerun local
+  checks for this checkpoint. Remote checks remain blocked before jobs start.
