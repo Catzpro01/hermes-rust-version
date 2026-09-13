@@ -18,7 +18,7 @@ autocomplete /slash, tips, session picker. Sumber ground truth:
 | T06 | Provider catalog (39 provider) | IN REVIEW — `issues/06-provider-catalog.md`; `hermes model` TTY = section wizard |
 | 007b | Sandbox default on + `--no-sandbox` | IN REVIEW — `issues/08-sandbox-default-on.md` |
 | T07 | Toolsets catalog (26 toolset) | IN REVIEW — `issues/07-toolsets-catalog.md`; `hermes tools` baru |
-| T08 | Autocomplete /slash (parity perilaku prompt_toolkit) | Not started |
+| T08 | Autocomplete /slash + ghost text (parity perilaku prompt_toolkit) | IN REVIEW — `issues/09-autocomplete-slash.md`; registry 101 verbatim + stacked skills + path + trailing-space + Hinter ghost text; T04 opsi 3 = placeholder ghost di TUI |
 | T09 | Session picker | Not started |
 | T10 | Parity, docs & closure | Not started |
 

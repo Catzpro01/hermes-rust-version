@@ -4,6 +4,8 @@ use hermes_core::config::resolve_hermes_home;
 use hermes_core::provider::{Provider, ProviderRegistry, FAKE_PROVIDER};
 
 pub(crate) mod approval;
+// Spec 017 T08 — /slash autocomplete + ghost text (REPL completer).
+mod completion;
 mod output;
 mod render;
 mod repl;

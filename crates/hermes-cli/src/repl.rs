@@ -19,124 +19,6 @@ use hermes_core::{
     },
 };
 use rustyline::{error::ReadlineError, Editor};
-use rustyline::completion::{Completer, Pair};
-use rustyline::highlight::Highlighter;
-use rustyline::hint::Hinter;
-use rustyline::validate::Validator;
-use rustyline::Helper;
-
-#[derive(Clone, Default)]
-struct SlashCommandCompleter;
-
-const SLASH_COMMANDS: &[(&str, &str)] = &[
-    // Session & Lifecycle
-    ("/new", "Start a new session (fresh session ID + history) (usage: /new [name])"),
-    ("/reset", "Start a new session (alias for /new)"),
-    ("/clear", "Clear screen and redraw banner"),
-    ("/redraw", "Force a full UI repaint (recovers from terminal drift)"),
-    ("/history", "Show conversation history for active session"),
-    ("/save", "Export current conversation (usage: /save <json|md|html>)"),
-    ("/retry", "Retry last message (resend to agent)"),
-    ("/prompt", "Compose next prompt in $EDITOR (markdown)"),
-    ("/compose", "Compose next prompt in $EDITOR (alias for /prompt)"),
-    ("/undo", "Back up N user turns and re-prompt (usage: /undo [N])"),
-    ("/title", "Set title for current session (usage: /title [name])"),
-    ("/handoff", "Hand off session to messaging platform"),
-    ("/sessions", "List all past chat sessions"),
-    ("/inspect", "Inspect session metadata (usage: /inspect <id>)"),
-    ("/messages", "Show messages in a session (usage: /messages <id>)"),
-    ("/tool-calls", "Show tool calls in a session (usage: /tool-calls <id>)"),
-    ("/search", "Search message history (usage: /search <query>)"),
-    ("/resume", "Resume a previous session (usage: /resume <id>)"),
-    ("/exit", "Exit session"),
-    ("/quit", "Exit session (alias for /exit)"),
-
-    // Model & Intelligence
-    ("/model", "Select default model and provider"),
-    ("/provider", "Switch active provider (usage: /provider [name])"),
-    ("/info", "Show provider & context accounting"),
-    ("/fast", "Toggle fast inference mode / tier"),
-    ("/think", "Set thinking budget/scrubber (usage: /think [low|med|high|off])"),
-    ("/reasoning", "Toggle or inspect model reasoning visibility"),
-    ("/temp", "Set model temperature (usage: /temp <0.0-2.0>)"),
-    ("/tokens", "Display current session token usage & context stats"),
-    ("/context", "Display sliding window context details"),
-    ("/compress", "Manually trigger context compression"),
-    ("/pin", "Pin turn against compression (usage: /pin <n>)"),
-    ("/unpin", "Unpin turn (usage: /unpin <n>)"),
-    ("/pinned", "List pinned turns in current session"),
-
-    // Execution & Automation Mode
-    ("/goal", "Goal tracking [on|off|reset|achieved|blocked]"),
-    ("/plan", "Planning mode [on|off|reset]"),
-    ("/reflect", "Reflection mode [on|off]"),
-    ("/yolo", "Toggle YOLO mode (execute dangerous tools without approval)"),
-    ("/battery", "Show system hardware & battery status"),
-    ("/swarm", "Multi-agent swarm coordination status"),
-    ("/kanban", "Show Kanban board tasks status"),
-    ("/checkpoint", "Create or restore an execution checkpoint"),
-
-    // Tools & MCP
-    ("/tools", "List available agent tools and invocation status"),
-    ("/toolsets", "List enabled/disabled toolsets"),
-    ("/mcp", "Show MCP server status and manage servers"),
-    ("/sandbox", "Show the tool execution sandbox policy (Spec 007)"),
-    ("/skills", "Show installed and active agent skills"),
-    ("/browser", "Browser automation & CDP status"),
-
-    // In-Chat Interventions
-    ("/btw", "Send out-of-band note/guidance without interrupting flow"),
-    ("/memory", "Show remembered facts and preferences"),
-    ("/remember", "Store a fact permanently in memory"),
-    ("/forget", "Remove a fact from memory"),
-
-    // Persona, Skin & Visuals
-    ("/skin", "Set UI skin theme (copper, cyberpunk, matrix, dracula, nord, etc.)"),
-    ("/mascot", "Show current Hermes mascot/pet"),
-    ("/petdex", "Browse Petdex companions"),
-    ("/journey", "Display Star Map of session journey"),
-    ("/indicator", "Toggle spinner/thinking animation style"),
-    ("/status", "Show complete REPL and session state"),
-    ("/quiet", "Toggle quiet mode (suppress verbose logs)"),
-    ("/verbose", "Toggle verbose debugging output"),
-    ("/help", "Show comprehensive command list and guidance"),
-];
-
-impl Completer for SlashCommandCompleter {
-    type Candidate = Pair;
-
-    fn complete(
-        &self,
-        line: &str,
-        pos: usize,
-        _ctx: &rustyline::Context<'_>,
-    ) -> rustyline::Result<(usize, Vec<Pair>)> {
-        if line.starts_with('/') {
-            let prefix = &line[..pos];
-            let mut matches = Vec::new();
-            for (cmd, desc) in SLASH_COMMANDS {
-                if cmd.starts_with(prefix) {
-                    matches.push(Pair {
-                        display: format!("{cmd:<14} {desc}"),
-                        replacement: cmd.to_string(),
-                    });
-                }
-            }
-            if !matches.is_empty() {
-                return Ok((0, matches));
-            }
-        }
-        Ok((pos, Vec::new()))
-    }
-}
-
-impl Hinter for SlashCommandCompleter {
-    type Hint = String;
-}
-impl Highlighter for SlashCommandCompleter {}
-impl Validator for SlashCommandCompleter {}
-impl Helper for SlashCommandCompleter {}
-
 use std::io::{IsTerminal, Write};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -198,7 +80,9 @@ pub async fn run_repl(
     let db = home.join("state.db");
     let mut store = SessionStore::open(&db).context("open Hermes state.db")?;
     let mut editor = Editor::new().context("create terminal editor")?;
-    editor.set_helper(Some(SlashCommandCompleter));
+    // Spec 017 T08 — slash/subcommand/skill/path completion + ghost
+    // text (parity with the upstream prompt_toolkit completer).
+    editor.set_helper(Some(crate::completion::HermesCompleter::new(home)));
     let mut session_id = if resume || !std::io::stdin().is_terminal() {
         match store.list()?.last().copied() {
             Some(id) => id,
