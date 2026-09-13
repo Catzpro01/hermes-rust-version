@@ -473,3 +473,16 @@ performed.** The Python installation was not modified.
   new capture, or merge is claimed. If reconnect has already been completed,
   the next action is owner/Arena support inspection of Actions write access,
   not another identical wizard or a request for user credentials.
+
+## 2026-09-14: Clarified repository Actions settings versus Arena API authorization
+
+- User supplied repository Actions settings and asked which options to select.
+  Inspected both actual workflow files and identified the five used action refs.
+- Recommended a selected-action allowlist, 90-day retention, approval for all
+  external fork contributors, read-only default workflow token, and no PR
+  creation/approval permission. Require-full-SHA needs a tag-to-SHA migration
+  before enabling, since current workflows still reference tags.
+- Saved guidance, not an applied configuration or user-confirmed selection.
+  Explained that repository action policy / GITHUB_TOKEN defaults do not
+  confer dispatch authority on the Arena integration. No dispatch retried,
+  access change, Rust edit, capture, or merge performed this turn.

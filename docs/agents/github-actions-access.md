@@ -95,3 +95,33 @@ installer permanen yang ditambahkan ke Git. Catatan, lingkup dan checksum
 tersimpan di Git; template sumber tetap tersedia di skill `wizard`.
 Setelah reconnect, kirim **“tersambung, cek Actions”** di sesi Arena ini.
 Selesainya wizard bukan bukti izin pulih; agent tetap harus memverifikasinya.
+
+## Rekomendasi untuk layar repository Settings → Actions → General
+
+User menunjukkan daftar opsi, bukan konfirmasi bahwa opsi tertentu sudah
+aktif. Rekomendasi berikut belum diterapkan oleh agent:
+
+- Pilih **Allow Catzpro01, and select non-Catzpro01, actions and reusable
+  workflows**, lalu izinkan lima referensi yang benar-benar dipakai:
+
+  ```text
+  actions/checkout@v4,
+  actions/setup-python@v5,
+  actions/upload-artifact@v4,
+  dtolnay/rust-toolchain@stable,
+  Swatinem/rust-cache@v2
+  ```
+
+- Jangan aktifkan **Require actions to be pinned to a full-length commit SHA**
+  sebelum semua `uses:` dimigrasikan dari tag ke SHA penuh. Konfigurasi saat
+  ini menggunakan tag, jadi mengaktifkan aturan tanpa migrasi dapat memblokir CI.
+- Retensi artifact/log: **90 hari** untuk investigasi ini. Bukti terpilih juga
+  sudah disimpan dalam Git; retensi artifact bukan pengganti paket bukti.
+- Fork PR: **Require approval for all external contributors**.
+- Workflow permissions: **Read repository contents and packages permissions**.
+- **Allow GitHub Actions to create and approve pull requests**: tidak dicentang.
+
+Pilihan ini membatasi action yang boleh dipakai dan izin `GITHUB_TOKEN` di
+job. Itu **bukan** izin pemanggil API dari Arena dan tidak menjamin pemulihan
+403 dispatch. Untuk itu koneksi/integrasi tetap memerlukan otorisasi Actions
+write yang sesuai. Jangan memilih izin workflow luas sebagai pengganti.
