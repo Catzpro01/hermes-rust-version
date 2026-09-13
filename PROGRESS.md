@@ -889,3 +889,16 @@ Picker reference: hermes_cli/sessions_cmd.py wrapper and main.py
 _session_browse_picker. Wizard: setup.py run_setup_wizard; Rust src/wizard/,
 with tests/wizard_e2e.rs. Inventory every implemented step before capture.
 Preserve Python data; no new features, independent verdict, closure or merge.
+
+## 2026-09-14: `/ask-matt` routes remaining T12 evidence
+
+- Read installed upstream router/phase-boundary guidance and persisted memory.
+- Recommend Continue → `/implement` existing T12, wizard capture first, then
+  picker/REPL completion/summary. No repeat grilling, banner TDD, or Actions
+  dashboard detour. Application wizard is not the operational `/wizard` skill.
+- Fix capture-discovered defects via actual RED/GREEN; Standards/Spec review
+  with honest capability limits, then immutable committed-source recapture.
+- Corrected stale T12 header and marked the completed banner inspection only;
+  all-state coverage, other four areas, final user acceptance remain open.
+- Routing/documentation only this invocation. No runtime changes, new tests or
+  captures, independent/personal Matt review, closure, or merge.

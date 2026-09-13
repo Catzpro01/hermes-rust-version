@@ -1,6 +1,6 @@
 # T12 — Real Python/Rust visual evidence
 
-- Status: IN PROGRESS — four follow-up TDD slices GREEN; review/final recapture pending
+- Status: IN PROGRESS — banner fixture recapture inspected; wizard/picker/completion/summary evidence pending
 - Label: `ready-for-agent`
 - Owner: Arena agent (capture/corrections), user (final acceptance)
 - Basis: [confirmed Q1-Q8 agreement](../grilling.md), user `setuju lanjutkan`
@@ -30,7 +30,7 @@ A successful capture job does not assert visual equality or close §J.7.
 
 ## Coverage / acceptance
 
-- [ ] Banner/title/grid: inspect paired images at all four widths; record deviations.
+- [x] Banner/title/grid: retained fixture pairs inspected at all four widths; branding/deviations recorded in banner-5a8e12c/REPORT.md. Not all-state coverage or user acceptance.
 - [ ] Wizard: each implemented step, normal/cancel/unavailable-feature cases.
 - [ ] Picker: normal/empty/filter/delete-confirmation states.
 - [ ] Completion dropdown: normal and representative alternatives.
@@ -237,3 +237,31 @@ Picker reference: hermes_cli/sessions_cmd.py wrapper and main.py
 _session_browse_picker. Wizard: setup.py run_setup_wizard; Rust src/wizard/,
 with tests/wizard_e2e.rs. Inventory every implemented step before capture.
 Preserve Python data; no new features, independent verdict, closure or merge.
+
+## `/ask-matt` routing — 2026-09-14, after inspected banner evidence
+
+Read the installed authentic ask-matt/SKILL.md and PHASE-BOUNDARIES.md,
+MEMORY.md and this ticket. Recommendation: Continue in the same session/repo;
+use `/implement` on the remaining T12 evidence, starting with the setup wizard.
+The spec/acceptance scope is already agreed, so no new grilling, specification,
+triage or prototype is needed. The `/wizard` skill is for human-only operational
+steps, not for capturing the application's setup wizard. No current Actions
+configuration wall requires that detour.
+
+1. Inventory every implemented wizard step and map its Python/Rust entrypoint,
+   normal/cancel/unavailable states and documented adaptation. Build a small
+   real-PTY capture slice first, then extend coverage. Import probes are not
+   screen evidence; retain matched fixtures, inputs, raw output and metadata.
+2. Continue with picker, actual REPL completion candidates (not the shell
+   completion generator), and zero/nonzero summary fixtures.
+3. If captures expose a concrete defect: public-behavior `/tdd`, observed RED
+   then minimal GREEN. For an unclear/resistant bug use `/diagnosing-bugs`
+   only with an executed reproducer/feedback loop, not speculative changes.
+4. Review changed code on Standards + Spec, explicitly respecting available
+   review capabilities; recapture affected areas from committed source and
+   inspect immutable paired images. Existing direct review is not independent.
+5. Complete the agreed five-area evidence and relevant green checks, then
+   request explicit final acceptance. Do not close or merge automatically.
+
+This invocation records routing only: no new implementation, capture, test
+execution, personal Matt Pocock review, or user acceptance is claimed.
