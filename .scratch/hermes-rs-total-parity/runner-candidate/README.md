@@ -5,8 +5,10 @@ production-source change. The branch-scoped push workflow checks source/patch ha
 only welcome.rs changes in its isolated runner, formats/checks it, and requires
 the named regression to fail in RED mode.
 
-Current request is `none`: the GREEN-tested delta has been applied locally
-and the consumed proposal removed. The next push captures committed source.
+Current phase/test are in request.json. The `test` selector accepts only
+`banner_ansi_[a-z_]+` names and invokes one fully qualified test with --exact;
+zero matches, another test's failure, and compiler failures cannot satisfy RED.
+The long-session slice starts with an unapplied test-only proposal.
 
 After observing RED, replace the proposal with the smallest correction plus
 regression and set phase GREEN. The runner must pass the named regression,

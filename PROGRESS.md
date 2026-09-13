@@ -683,3 +683,16 @@ performed.** The Python installation was not modified.
 - This invocation selects the next workflow; it does not execute another
   fix/test cycle or supply personal/independent reviewer approval. Keep Q1-Q8,
   final explicit user acceptance, Python preservation, and no-merge boundaries.
+
+## 2026-09-14: User starts `/tdd`; submit long-session public-writer RED
+
+- Restored skills/context/T12; public write_banner seam and execution order
+  explicitly confirmed by the user. One behavior only: long-session column layout.
+- Proposed test replays exact immutable a2a3d08 four-tool/session/cwd fixtures;
+  independent Python columns 51/41/48/49 are expected at 100/80/94/95. Checks
+  Tools/Skills/summary and panel width at both color depths. Actual Rust untouched.
+- Candidate workflow now selects a validated test name and uses fully qualified
+  --exact matching. Local workflow QA first failed on missing selector, then all
+  seven passed; this is infrastructure QA, not Rust RED. Other-test failures and
+  zero matches are rejected. Existing digest/path/read-only guards preserved.
+- Await actual named RED before any layout correction; style work remains next.

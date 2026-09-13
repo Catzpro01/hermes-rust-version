@@ -43,18 +43,22 @@ jobs:
           INPUT_CANDIDATE: ${{ inputs.candidate_patch_base64 }}
         run: |
           python3 - <<'PYCODE'
-          import os, json, pathlib
+          import os, json, pathlib, re
+          test = "banner_ansi_preserves_python_reference_layout"
           if os.environ['GITHUB_EVENT_NAME'] == 'push':
               request = json.loads(pathlib.Path('.scratch/hermes-rs-total-parity/runner-candidate/request.json').read_text())
               phase = request['phase']
+              test = request.get('test', test)
               candidate = phase != 'none'
           else:
               phase = os.environ['INPUT_PHASE'] or 'none'
               candidate = bool(os.environ['INPUT_CANDIDATE'])
           if phase not in ('none', 'red', 'green'):
               raise SystemExit('Invalid validation phase')
+          if not re.fullmatch(r'banner_ansi_[a-z_]+', test):
+              raise SystemExit('Invalid regression test name')
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-              out.write(f'phase={phase}\ncandidate={str(candidate).lower()}\n')
+              out.write(f'phase={phase}\ncandidate={str(candidate).lower()}\ntest={test}\n')
           PYCODE
       - name: Apply bounded pre-commit candidate
         if: steps.plan.outputs.candidate == 'true'
@@ -90,20 +94,21 @@ jobs:
         if: steps.plan.outputs.phase != 'none'
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
+          TEST: tui::welcome::tests::${{ steps.plan.outputs.test }}
         run: |
           set +e
-          cargo test --locked -p hermes-rs banner_ansi_preserves_python_reference_layout > regression.log 2>&1
+          cargo test --locked -p hermes-rs "$TEST" -- --exact > regression.log 2>&1
           status=$?
           set -e
           cat regression.log
           if [ "$PHASE" = red ]; then
             test "$status" -ne 0
-            grep -F 'test tui::welcome::tests::banner_ansi_preserves_python_reference_layout ... FAILED' regression.log
-            echo '::notice title=ANSI regression::RED: named geometry assertion failed as expected; not a parity pass.'
+            grep -F "test $TEST ... FAILED" regression.log
+            echo "::notice title=ANSI regression::RED: $TEST failed as expected; not a parity pass."
           else
             test "$status" -eq 0
-            grep -F 'test tui::welcome::tests::banner_ansi_preserves_python_reference_layout ... ok' regression.log
-            echo '::notice title=ANSI regression::GREEN: named geometry regression passed.'
+            grep -F "test $TEST ... ok" regression.log
+            echo "::notice title=ANSI regression::GREEN: $TEST passed."
           fi
       - name: Report exact regression difference
         if: always() && steps.regression.outcome == 'failure'

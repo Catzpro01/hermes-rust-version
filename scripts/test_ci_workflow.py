@@ -25,6 +25,32 @@ STEPS = {step["name"]: step for step in WORKFLOW["jobs"]["test"]["steps"] if "na
 
 
 class CiGateTests(unittest.TestCase):
+    def test_visual_gate_requires_exact_selected_regression(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/visual-evidence.yml").read_text())
+        step = next(s for s in workflow["jobs"]["capture"]["steps"] if s.get("id") == "regression")
+        self.assertEqual(step["env"]["TEST"], "tui::welcome::tests::${{ steps.plan.outputs.test }}")
+        selected = "tui::welcome::tests::banner_ansi_long_session_columns_match_python"
+        for phase, name, result, code, accepted in [
+            ("red", selected, "FAILED", 101, True),
+            ("red", "other_test", "FAILED", 101, False),
+            ("red", "no_matching_test", "ok", 0, False),
+            ("green", selected, "ok", 0, True),
+            ("green", "other_test", "ok", 0, False),
+            ("green", selected, "FAILED", 101, False),
+        ]:
+            with self.subTest(phase=phase, name=name, result=result), tempfile.TemporaryDirectory() as tmp:
+                cargo = Path(tmp) / "cargo"
+                cargo.write_text('#!/bin/bash\nprintf "%s\\n" "$@" > args\nprintf "test %s ... %s\\n" "$CASE_NAME" "$CASE_RESULT"\nexit "$CASE_CODE"\n')
+                cargo.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}", TEST=selected,
+                           PHASE=phase, CASE_NAME=name, CASE_RESULT=result, CASE_CODE=str(code))
+                run = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp, env=env,
+                                     capture_output=True, text=True, check=False)
+                self.assertEqual(run.returncode == 0, accepted, run.stdout + run.stderr)
+                args = (Path(tmp) / "args").read_text().splitlines()
+                self.assertIn(selected, args)
+                self.assertEqual(args[-2:], ["--", "--exact"])
+
     def test_workflows_use_approved_readonly_artifact_policy(self):
         allowed = {
             "actions/checkout", "actions/setup-python", "actions/upload-artifact",

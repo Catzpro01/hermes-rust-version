@@ -1,8 +1,6 @@
 {
-  "phase": "none",
-  "reason": "candidate-consumed-capture-clean-committed-source",
-  "red_run": 34782931817,
-  "green_run": 34783039592,
-  "tested_patch_sha256": "5ae5e9b3430ad1a32e44cded4cd25b55cf6d6a81800edc613a6f82df4216a79e",
-  "source_sha256": "8568068c84f27052aa1b559ac282d86bf9e142d4b7c8ef0cc658604e58efcfb8"
+  "phase": "red",
+  "test": "banner_ansi_long_session_columns_match_python",
+  "source_sha256": "8568068c84f27052aa1b559ac282d86bf9e142d4b7c8ef0cc658604e58efcfb8",
+  "patch_sha256": "1937316b7d249a79e2486bafd4548978c37f4ee7d50ce4b79975f6f3b78837dc"
 }
