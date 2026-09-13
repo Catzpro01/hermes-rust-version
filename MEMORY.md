@@ -102,3 +102,13 @@ user's private Python installation.
 - This session's assigned branch is `arena/01a09c1e-hermes-rust-version`.
   A successor must use its own session's assigned branch and must not switch
   to a different branch based only on this historical pointer.
+
+## Current TDD execution — 2026-09-14
+
+User explicitly invoked the sequence. Long-session layout: RED 34783950104
+(cc458e9), GREEN 34784076114 (33209fd), all required checks passed. Exact
+4075-byte tested delta (ffe59885824b13a0c6d73f54eff9b12691b5da93e93aca91e37b0f0425b244cd)
+applied to source. Next candidate is test-only RED for title-to-border bold,
+using public SGR decoding (not buffer internals); request.json is authoritative.
+No review/recapture completion or merge. After style slices, ask for review
+fixed point and an honest way to handle unavailable independent subagents.

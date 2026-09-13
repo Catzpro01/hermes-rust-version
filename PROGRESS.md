@@ -706,3 +706,18 @@ performed.** The Python installation was not modified.
 - GREEN candidate retains the allocated left-column width after wrapping,
   instead of shrinking it again to the longest resulting line. No style change.
   Actual Rust source remains untouched until GREEN fmt/check/clippy/tests.
+
+## 2026-09-14: Apply verified layout fix; begin separate bold-transition RED
+
+- GREEN 34784076114 on 33209fd passed named test, fmt/check, clippy/full tests.
+  Exported 4075-byte delta SHA-256
+  ffe59885824b13a0c6d73f54eff9b12691b5da93e93aca91e37b0f0425b244cd verified,
+  git apply --check passed, local Rust diff equals the tested delta exactly.
+- Commit the allocated-column correction with its long-session regression.
+  No style implementation change is included.
+- Next unapplied test-only candidate observes public ANSI foreground/intensity
+  state and checks that title remains bold but panel corners are not bold/dim.
+  Both color depths × four widths. RGB parameters are parsed as colors, never
+  mistaken for modifier codes. Await real named RED, not a speculative verdict.
+- Seven workflow QA tests pass. Patch transport context spaces are validated
+  with git apply --check; non-patch files pass git diff --check. No gate disabled.

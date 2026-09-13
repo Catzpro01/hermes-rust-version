@@ -535,7 +535,7 @@ pub fn summary_line(tools: usize, skills: usize, mcp_connected: usize) -> String
 }
 
 /// Full layout of the panel content at panel width `width`: wrapped left/
-/// right columns plus their measured (post-wrap) widths.
+/// right columns plus the allocated left-column width.
 struct BannerLayout {
     left: Vec<SLine>,
     right: Vec<SLine>,
@@ -560,7 +560,9 @@ fn layout_banner(width: usize, info: &BannerInfo, theme: &HermesTheme) -> Banner
         .iter()
         .flat_map(|l| wrap_styled(l, r_alloc))
         .collect();
-    let left_w = left.iter().map(SLine::width).max().unwrap_or(0);
+    // Rich keeps the allocated column width even when wrapping a long word
+    // leaves shorter lines. Re-measuring those lines collapses the grid gap.
+    let left_w = l_alloc;
     BannerLayout {
         left,
         right,
@@ -1393,6 +1395,80 @@ mod tests {
                     ref_lines(reference),
                     "ANSI geometry at {width} columns"
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn banner_ansi_long_session_columns_match_python() {
+        // Exact paired PTY fixtures and Python columns from evidence/banner-a2a3d08.
+        // The independently recorded Python positions are not Rust snapshots.
+        let theme = HermesTheme::dark_canonical();
+        for (width, cwd, session, column) in [
+            (
+                100,
+                "/tmp/hermes-visual-wkqpp90e/demo",
+                "01a09c9f-9e4c-7062-9da3-a43fe014205f",
+                51,
+            ),
+            (
+                80,
+                "/tmp/hermes-visual-mlzi2a67/demo",
+                "01a09c9f-9e5e-7a23-a26b-3671192efa10",
+                41,
+            ),
+            (
+                94,
+                "/tmp/hermes-visual-o2epp6b2/demo",
+                "01a09c9f-9e70-7600-8bdd-fa8f1c2edb20",
+                48,
+            ),
+            (
+                95,
+                "/tmp/hermes-visual-3jg1uo86/demo",
+                "01a09c9f-9e82-7390-8e0a-c738202a5bca",
+                49,
+            ),
+        ] {
+            let mut info = banner_info(
+                Some("parity-fixture"),
+                None,
+                &["list_dir", "read_file", "shell_readonly", "write_file"],
+                &[],
+                Some(session),
+            );
+            info.cwd = cwd.to_owned();
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
+                let mut plain = String::new();
+                let mut escape = false;
+                for ch in String::from_utf8(bytes).unwrap().chars() {
+                    if ch == '\x1b' {
+                        escape = true;
+                    } else if escape {
+                        if ch == 'm' {
+                            escape = false;
+                        }
+                    } else {
+                        plain.push(ch);
+                    }
+                }
+                assert!(!escape, "unterminated SGR");
+                for label in ["Available Tools", "Available Skills", "4 tools"] {
+                    let row = plain.lines().find(|line| line.contains(label)).unwrap();
+                    let prefix = row.split_once(label).unwrap().0;
+                    assert_eq!(
+                        prefix.chars().count() + 1,
+                        column,
+                        "Python column for {label}, width={width}, depth={depth:?}"
+                    );
+                    assert_eq!(
+                        row.chars().count(),
+                        usize::from(width),
+                        "panel border column"
+                    );
+                }
             }
         }
     }
