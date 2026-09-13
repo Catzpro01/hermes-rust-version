@@ -994,3 +994,16 @@ Snapshot rules select the unavailable notice / end-of-platform step before
 next menus/services, keeping the full later raw recording unchanged.
 CI now runs recorder tests and policy-checks the new workflow too. Re-capture
 clean fixtures; do not approve diagnostic images or hide the failures.
+
+### Clean matrix reached; align summary component host with real caller
+
+1c3c9dd CI 34787791435 and capture 34787791444 SUCCESS. All 48 Python/Rust
+cases reached and raw was fully drained. No missing-module/traceback warnings
+in Python capture after isolated dependency installation. Service/network
+execution blocked; notice/step snapshot boundaries explicit, later raw kept.
+Summary counts/styles match at absolute row coordinates, but Python
+Console.print appends a newline while the adapter omitted the newline used
+by the actual Rust REPL caller. At width100 buffers are 32 vs31 rows, moving
+bottom viewport by one row. Submit adapter-only correction for remote checks;
+do not "fix" banner production code or normalize images. The untracked
+ui-1c3c9dd packet is retained, not accepted or overwritten.

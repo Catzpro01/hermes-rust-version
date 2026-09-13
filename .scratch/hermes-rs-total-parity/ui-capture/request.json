@@ -1,1 +1,1 @@
-{"phase":"capture","capture":true,"adapter_green_run":34787050413,"retry":"drain-exit-and-isolate-external-processes"}
+{"phase":"validate-summary-adapter","capture":false,"reason":"match-real-callers-panel-newline"}
