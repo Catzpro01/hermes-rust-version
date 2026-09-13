@@ -50,6 +50,11 @@ user's private Python installation.
   is prepared but NOT executed/applied; no Rust fix is claimed. After access
   returns, remote fmt/check + RED/GREEN verification must precede Rust commit.
   Use the report, T12 and tooling README for exact evidence/next commands.
+- Latest `/ask-matt` routing: continue in this session; use `/tdd` for the
+  narrow ANSI geometry regression once Actions access is restored, then
+  `/code-review` and the remaining T12 captures. Q1-Q8 need no re-interview.
+  `/diagnosing-bugs` is the fallback if the feedback loop does not confirm
+  the suspected cause. Routing is not execution, access restoration, or sign-off.
 - The missing `/ask-matt` skill blocker is resolved. On the user's download
   request, all 37 official Matt Pocock skills were installed project-locally
   from pinned upstream `3cca18b368ae95cdbdebbff572ccafa662551015`.

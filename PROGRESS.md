@@ -397,3 +397,19 @@ performed.** The Python installation was not modified.
   verified, script syntax and existing five QA tests checked. No independent
   subagent review or new Rust regression execution is claimed. Next requires
   restored Actions access, RED/GREEN, exact tested delta, then fresh captures.
+
+## 2026-09-14: `/ask-matt` routed the blocked banner correction
+
+- Read the authentic router and phase-boundary tree, inherited memory/T12,
+  and the diagnosing-bugs feedback-loop criteria. No independent subagent
+  or personal Matt review was invoked or claimed.
+- Recommended `/tdd` for this concrete, narrow ANSI geometry behavior once
+  runner access is restored; `/diagnosing-bugs` if the loop challenges the
+  suspected cause. Then code review and remaining T12 captures. Continue in
+  this session; no repeat grilling, clear, new feature scope, or merge.
+- Rechecked exact `d53ce0a`: CI `34779687383` succeeded in both jobs. This
+  does not change the failed visual verdict or mean RED/GREEN has run.
+- The user has not reported restoring Actions access. No repeated dispatch,
+  credential request, Rust change, new capture, or closure approval this turn.
+- Documentation-only routing checkpoint; commit/push the notes. New checkpoint
+  CI must be reported separately from the observed historical success.

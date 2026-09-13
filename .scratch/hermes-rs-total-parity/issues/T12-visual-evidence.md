@@ -75,3 +75,15 @@ from the final committed source and record compiler/version provenance.
 Prior checks: CI `34779396792` on `d7727e5` passed. Capture `34779200470`
 and CI `34779200438` on `814c235` passed; these are infrastructure/code checks,
 not passing visual comparisons. The user has not accepted closure.
+
+## Skill routing — user invoked `/ask-matt` (2026-09-14)
+
+The next narrowly scoped skill is `/tdd`: run the prepared regression at the
+public ANSI serialization boundary, observe RED on the captured geometry
+symptom, then validate the smallest correction GREEN. Use `/diagnosing-bugs`
+if the reproducible loop contradicts the suspected cause or needs deeper
+investigation. Follow with `/code-review` and the remaining evidence cases.
+Do not restart the settled interview, broaden into new features, or treat
+routing as personal Matt approval. Continue in the same session; there is
+no portability need for a handoff or reason to discard the relevant context.
+Actions access remains a prerequisite, not resolved by selecting a skill.
