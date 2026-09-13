@@ -62,3 +62,36 @@ pembaruan skill tidak menggantikan bukti tersebut.
 → `/code-review` → capture ulang → sisa kasus T12. Gunakan `/diagnosing-bugs`
 jika loop tidak mengonfirmasi dugaan penyebab. Tetap di sesi/branch sekarang;
 Q1–Q8 tidak dibuka ulang, dan closure/merge tidak otomatis disetujui.
+
+## Wizard satu kali sudah disiapkan
+
+Atas permintaan user untuk menjalankan urutan `/wizard` → `/tdd` →
+`/code-review` → capture ulang, agent mencoba dispatch kandidat RED.
+Hasilnya masih HTTP 403; regresi tidak berjalan.
+
+Deliverable sesi: `/home/user/actions-access-wizard.sh`. Unduh file tersebut
+ke komputer Anda, lalu jalankan di terminal interaktif:
+
+```bash
+bash actions-access-wizard.sh
+```
+
+Wizard memakai library upstream tanpa perubahan dan tiga tahap di atas.
+Tidak mengumpulkan nilai rahasia, menulis `.env`/secrets, menjalankan git,
+atau mencoba membuktikan izin Arena melalui kredensial gh di komputer lokal.
+Ia membuka halaman umum Arena/GitHub dan meminta konfirmasi tindakan manual.
+Nama/lokasi menu Arena belum diverifikasi; panduan menyebutkan batas ini.
+Jika izin tidak tersedia, wizard mengarahkan ke pemilik integrasi, bukan
+memperluas izin secara otomatis.
+
+Verifikasi: `bash -n` lulus; tiga stage dan tidak adanya pemanggilan helper
+credential/storage/dispatch pada bagian stage diperiksa secara statis.
+Shellcheck tidak tersedia. Wizard **belum dijalankan end-to-end**, karena
+memerlukan browser dan input manusia. SHA-256:
+`99b541e05e042e651310d4ba93dfe1e2f54a809c108c686edffebd89defdefc9`.
+
+Sesuai skill upstream, script ini adalah deliverable satu kali, bukan
+installer permanen yang ditambahkan ke Git. Catatan, lingkup dan checksum
+tersimpan di Git; template sumber tetap tersedia di skill `wizard`.
+Setelah reconnect, kirim **“tersambung, cek Actions”** di sesi Arena ini.
+Selesainya wizard bukan bukti izin pulih; agent tetap harus memverifikasinya.

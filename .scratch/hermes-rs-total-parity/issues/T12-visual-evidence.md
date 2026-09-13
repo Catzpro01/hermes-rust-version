@@ -99,3 +99,14 @@ the human authorization stage of `/wizard` before the already-planned `/tdd`.
 Recovery stages and proof requirements: `docs/agents/github-actions-access.md`.
 No credential collection, privilege change, or interactive wizard execution
 was performed. Refreshing skills does not resolve the integration permission.
+
+## Explicit wizard/TDD/review/recapture request
+
+Retried RED dispatch on the assigned branch with the existing test candidate:
+HTTP 403, so no regression execution occurred. Prepared the three-stage
+one-shot wizard at `/home/user/actions-access-wizard.sh`; scope and checksum
+are in `docs/agents/github-actions-access.md`. It requires user browser
+reconnection, collects no credentials, and does not execute GitHub writes.
+Syntax/static checks passed; interactive completion and actual permission
+recovery remain unverified. TDD, correction review, and new captures remain
+downstream; no source fix or independent review is claimed.

@@ -440,3 +440,24 @@ performed.** The Python installation was not modified.
 - Local verification completed: 164 Git-index entries and all 37 skill
   metadata/invocation policies verified; five existing CI gate QA tests passed;
   `git diff --check` clean. No new Rust execution or capture this turn.
+
+## 2026-09-14: Requested recovery chain; human wizard delivered, RED still blocked
+
+- User explicitly requested Actions connection and `/wizard` → `/tdd` for ANSI
+  → `/code-review` → recapture. Re-read the original skills, template, context,
+  active ticket and recovery stages. Retried the existing RED candidate on
+  the assigned branch; dispatch again returned HTTP 403. No RED job exists.
+- Generated one-shot `/home/user/actions-access-wizard.sh` from the official
+  template, preserving its library byte-for-byte. Three human-only stages:
+  reconnect in Arena, review relevant GitHub application access, return here
+  for agent-side verification. No secret/token input, .env writes, GitHub
+  secret updates, local gh dispatch, git operations, or automatic permission
+  changes. The final message explicitly leaves access unverified.
+- `bash -n` passed; static trace verified three stages and no calls to
+  credential/storage/dispatch helpers in them. Shellcheck unavailable; no
+  interactive end-to-end execution claimed. Script SHA-256 recorded in the
+  recovery guide. Ephemeral deliverable stays outside Git per upstream skill;
+  its scope/provenance/progress are tracked, not a permanent installer.
+- Prior CI 34780165901 on bd7cbd8 succeeded. No local Rust test, correction,
+  independent code review, new UI capture, or merge this turn. Next requires
+  the user's actual reconnect action and a successful dispatch from Arena.

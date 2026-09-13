@@ -56,6 +56,14 @@ user's private Python installation.
   for the human-only authorization stage (`/wizard` route; no script or secret
   collection performed). Then `/tdd` → `/code-review` → remaining T12 captures;
   `/diagnosing-bugs` if needed. Continue here; Q1-Q8 need no re-interview.
+- User explicitly requested `/wizard` → `/tdd` for ANSI → `/code-review` →
+  recapture. A RED dispatch retry still returned 403; no RED job ran. Generated
+  one-shot `/home/user/actions-access-wizard.sh` for human reconnection, using
+  the unchanged upstream library, three confirmation stages, no credential
+  collection or storage. Bash syntax/static checks passed; not run end-to-end.
+  It is a session deliverable, intentionally not a permanent tracked installer.
+  Wait for the user's actual reconnect confirmation, then probe from Arena;
+  local-user gh success does not prove this session's integration access.
 - Fresh official toolkit download verified on 2026-09-14: upstream main still
   `3cca18b368ae95cdbdebbff572ccafa662551015`, all 164 files/37 links match.
   Latest is the already-installed version, not a new release. Verification
