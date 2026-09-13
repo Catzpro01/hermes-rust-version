@@ -1432,9 +1432,8 @@ impl HermesCompleter {
         let mut out: Vec<&'static CommandDef> = COMMAND_REGISTRY
             .iter()
             .filter(|c| !c.gateway_only)
-            .copied()
             .collect();
-        out.extend(RS_EXTENSIONS.iter().copied());
+        out.extend(RS_EXTENSIONS.iter());
         out
     }
 
@@ -1464,7 +1463,7 @@ impl HermesCompleter {
                 let replacement = if PICKER_COMMANDS.contains(&def.name) {
                     format!("/{}", def.name)
                 } else {
-                    format!("/{def.name} ")
+                    format!("/{} ", def.name)
                 };
                 if seen.insert(replacement.clone()) {
                     out.push(Candidate {
@@ -1713,8 +1712,11 @@ mod tests {
     fn no_duplicate_command_or_alias_names() {
         let mut seen: HashSet<String> = HashSet::new();
         for c in COMMAND_REGISTRY.iter().chain(RS_EXTENSIONS.iter()) {
-            assert!(seen.insert(c.name.to_string()), "duplicate {name?}",
-                name = c.name);
+            assert!(
+                seen.insert(c.name.to_string()),
+                "duplicate {name:?}",
+                name = c.name
+            );
             for a in c.aliases {
                 assert!(seen.insert((*a).to_string()), "duplicate alias {a}");
             }
@@ -1835,7 +1837,7 @@ mod tests {
         if inner.trim().is_empty() {
             return Vec::new();
         }
-        split_top(inner).into_iter().map(unquote).collect()
+        split_top(inner).into_iter().map(|s| unquote(&s)).collect()
     }
 
     fn parse_verbatim(text: &str) -> Vec<VerbatimDef> {
@@ -2191,9 +2193,11 @@ mod tests {
         let root = home.path().display().to_string();
         let line = format!("{root}/b");
         let (_, cands) = complete(&c, &line, line.len());
+        let bar = format!("{root}/bar/");
+        let baz = format!("{root}/baz.md");
         let ns = names(&cands);
-        assert!(ns.contains(&format!("{root}/bar/")), "{ns:?}");
-        assert!(ns.contains(&format!("{root}/baz.md")), "{ns:?}");
+        assert!(ns.contains(&bar.as_str()), "{ns:?}");
+        assert!(ns.contains(&baz.as_str()), "{ns:?}");
     }
 
     #[test]
@@ -2272,7 +2276,7 @@ mod tests {
             format!("---\ndescription: {}\n---\n", "y".repeat(80)),
         )
         .expect("write");
-        let c = HermesCompleter::with_home(&tmp, &tmp);
+        let c = HermesCompleter::with_home(tmp.path(), tmp.path());
         let (_, cands) = complete(&c, "/long-des", 9);
         let disp = &cands[0].display;
         assert!(disp.starts_with("⚡ "));
