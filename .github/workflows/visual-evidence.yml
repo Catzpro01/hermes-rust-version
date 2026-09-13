@@ -1,6 +1,10 @@
 name: Visual evidence (banner slice)
 
 on:
+  push:
+    branches: ["arena/01a09c1e-hermes-rust-version"]
+    paths:
+      - '.scratch/hermes-rs-total-parity/runner-candidate/**'
   workflow_dispatch:
     inputs:
       candidate_patch_base64:
@@ -28,14 +32,42 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - name: Select validation phase
+        id: plan
+        env:
+          INPUT_PHASE: ${{ inputs.regression_phase }}
+          INPUT_CANDIDATE: ${{ inputs.candidate_patch_base64 }}
+        run: |
+          python3 - <<'PYCODE'
+          import os, json, pathlib
+          if os.environ['GITHUB_EVENT_NAME'] == 'push':
+              request = json.loads(pathlib.Path('.scratch/hermes-rs-total-parity/runner-candidate/request.json').read_text())
+              phase = request['phase']
+              candidate = phase != 'none'
+          else:
+              phase = os.environ['INPUT_PHASE'] or 'none'
+              candidate = bool(os.environ['INPUT_CANDIDATE'])
+          if phase not in ('none', 'red', 'green'):
+              raise SystemExit('Invalid validation phase')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write(f'phase={phase}\ncandidate={str(candidate).lower()}\n')
+          PYCODE
       - name: Apply bounded pre-commit candidate
-        if: inputs.candidate_patch_base64 != ''
+        if: steps.plan.outputs.candidate == 'true'
         env:
           CANDIDATE: ${{ inputs.candidate_patch_base64 }}
         run: |
           python3 - <<'PYCODE'
-          import os, base64, pathlib, subprocess
-          patch = base64.b64decode(os.environ['CANDIDATE'], validate=True)
+          import os, base64, pathlib, subprocess, json, hashlib
+          if os.environ['GITHUB_EVENT_NAME'] == 'push':
+              folder = pathlib.Path('.scratch/hermes-rs-total-parity/runner-candidate')
+              request = json.loads((folder / 'request.json').read_text())
+              patch = (folder / 'candidate.patch').read_bytes()
+              source = pathlib.Path('crates/hermes-cli/src/tui/welcome.rs').read_bytes()
+              if hashlib.sha256(source).hexdigest() != request['source_sha256'] or hashlib.sha256(patch).hexdigest() != request['patch_sha256']:
+                  raise SystemExit('Candidate/source digest mismatch')
+          else:
+              patch = base64.b64decode(os.environ['CANDIDATE'], validate=True)
           if len(patch) > 40000:
               raise SystemExit('Candidate too large')
           p = pathlib.Path('/tmp/visual-candidate.patch')
@@ -50,9 +82,9 @@ jobs:
           cargo fmt --all -- --check
           cargo check --workspace --locked
       - name: Exercise ANSI geometry regression
-        if: inputs.regression_phase != 'none'
+        if: steps.plan.outputs.phase != 'none'
         env:
-          PHASE: ${{ inputs.regression_phase }}
+          PHASE: ${{ steps.plan.outputs.phase }}
         run: |
           set +e
           cargo test --locked -p hermes-rs banner_ansi_preserves_python_reference_layout > regression.log 2>&1
@@ -69,30 +101,30 @@ jobs:
             echo '::notice title=ANSI regression::GREEN: named geometry regression passed.'
           fi
       - name: Check complete corrected workspace
-        if: inputs.regression_phase == 'green'
+        if: steps.plan.outputs.phase == 'green'
         run: |
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace --no-fail-fast
       - name: Export exactly tested Rust delta
-        if: inputs.candidate_patch_base64 != ''
+        if: steps.plan.outputs.candidate == 'true'
         run: |
           mkdir -p evidence
           git diff --binary -- '*.rs' > evidence/tested.patch
           python3 scripts/capture_banner.py export evidence/tested.patch --label 'candidate patch'
       - name: Export tested Rust delta group 2
-        if: inputs.candidate_patch_base64 != ''
+        if: steps.plan.outputs.candidate == 'true'
         run: python3 scripts/capture_banner.py export evidence/tested.patch --label 'candidate patch' --group 1
       - name: Build real CLI
-        if: inputs.regression_phase != 'red'
+        if: steps.plan.outputs.phase != 'red'
         run: cargo build --locked -p hermes-rs
       - name: Capture offline startup at four terminal sizes
-        if: inputs.regression_phase != 'red'
+        if: steps.plan.outputs.phase != 'red'
         run: python3 scripts/capture_banner.py rust target/debug/hermes-rs evidence/banner-rust.json
       - name: Export verifiable raw capture group 1
-        if: inputs.regression_phase != 'red'
+        if: steps.plan.outputs.phase != 'red'
         run: python3 scripts/capture_banner.py export evidence/banner-rust.json
       - name: Export verifiable raw capture group 2
-        if: inputs.regression_phase != 'red'
+        if: steps.plan.outputs.phase != 'red'
         run: python3 scripts/capture_banner.py export evidence/banner-rust.json --group 1
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

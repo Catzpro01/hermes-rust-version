@@ -1,0 +1,44 @@
+--- a/crates/hermes-cli/src/tui/welcome.rs
++++ b/crates/hermes-cli/src/tui/welcome.rs
+@@ -1334,6 +1334,41 @@
+     }
+ 
+     #[test]
++    fn banner_ansi_preserves_python_reference_layout() {
++        let theme = HermesTheme::dark_canonical();
++        let info = banner_info(Some("gpt-5"), Some(128_000), &[], &[], None);
++        for (width, reference) in [
++            (100, REF_W100_PRIMARY),
++            (80, REF_W80_PRIMARY),
++            (94, REF_W94_PRIMARY),
++            (95, REF_W95_PRIMARY),
++        ] {
++            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
++                let mut bytes = Vec::new();
++                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
++                // This public writer emits only SGR escapes. Strip colors, not
++                // spaces: the independent Python rows pin terminal geometry.
++                let mut plain = String::new();
++                let mut escape = false;
++                for ch in String::from_utf8(bytes).unwrap().chars() {
++                    if ch == '\x1b' {
++                        escape = true;
++                    } else if escape {
++                        if ch == 'm' {
++                            escape = false;
++                        }
++                    } else {
++                        plain.push(ch);
++                    }
++                }
++                assert!(!escape, "unterminated SGR");
++                let actual: Vec<String> = plain.lines().map(|line| line.trim_end().to_owned()).collect();
++                assert_eq!(actual, ref_lines(reference), "ANSI geometry at {width} columns");
++            }
++        }
++    }
++
++    #[test]
+     fn banner_respects_min_width_60() {
+         let theme = HermesTheme::dark_canonical();
+         let buf = compose_banner(40, &BannerInfo::default(), &theme);

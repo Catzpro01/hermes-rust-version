@@ -543,3 +543,17 @@ performed.** The Python installation was not modified.
   state was not inspected or assumed. No PR, approval, merge, Rust correction,
   or new capture occurred. Reconnect GitHub in Arena; if already done, escalate
   the persistent dispatch denial to the integration owner/Arena support.
+
+## 2026-09-14: Continue ANSI correction via authorized push-triggered validation
+
+- User requested continuation. Use the already-working push CI path, not
+  another denied dispatch request. No connector permission, token scope, or
+  repository policy is changed. The runner retains contents: read and the
+  same assigned-branch restriction; it cannot commit/push or merge.
+- Checked in a transparent test-only candidate patch (not applied Rust source)
+  and a digest-bound RED request. The runner verifies source/patch hashes,
+  applies only welcome.rs, runs fmt/check, and requires the named test to fail.
+  Actual Rust source remains unchanged until a verified GREEN candidate exists.
+- Push trigger is limited to the candidate request directory. This is proposed
+  patch transport for remote pre-commit checks, not a claim of dispatch recovery.
+  No RED execution or correction success is claimed before the run is observed.
