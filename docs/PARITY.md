@@ -239,8 +239,34 @@ stdout; Python reference outputs at `/tmp/t06_py_help.txt` and
 | `status` / `config` | `info` | line 1 == REPL `/info`; then home, provider, counts | ✅ (subset) |
 | `mcp` | `mcp [list\|restart <name>]` | REPL `/mcp` row layout from config; shell never spawns servers | ✅ (config-only) |
 | `--version` / `version` | `--version` / `-V` / `version` | banner `VERSION_LABEL` + install facts | ✅ |
-| `setup` | `setup` | Spec 017 wizard | 🚧 Spec 017 |
+| `sessions browse` (curses) | `sessions browse` (crossterm) | §F frame verbatim; Enter/↓/j/k/filter/`d`+`y`/Esc; `--resume-id`; startup matrix | ✅ |
+| `setup` | `setup` | Spec 017 wizard (verbatim strings, atomic + backup) | ✅ |
 | `chat`, `gateway`, `cron`, `skills`, `doctor`, … | — | not implemented; not listed in `--help` | ❌ (later specs) |
+
+## Spec 017 — total v0.21.0 parity
+
+| Area | Python v0.21.0 | Hermes-RS | Status |
+|---|---|---|---|
+| Banner panel | Rich Panel: title `HERMES AGENT v0.21.0`, version line, grid (cwd/auth/sandbox/memory/model) | Same title/version/grid, ratatui buffer + raw ANSI; byte-verified by `banner_e2e` PTY | ✅ |
+| Version label | `Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301` | `Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301` (T02) | ✅ (brand intentional) |
+| Info line | model line + summary line in banner; nothing after banner (`●`/`provider:`/`✦ Tip:` gone) | Same (T03) | ✅ |
+| Setup wizard | curses multi-step (terminal/backend/provider/model) | `inquire` wizard, verbatim strings, atomic write + timestamped backup, ESC rollback (`wizard_e2e` PTY) | ✅ (terminal backends ≠ local/docker + egress = explicit "not wired" notices) |
+| Provider catalog | 39 providers (§G) | Verbatim static catalog; `hermes model` picker; unit cross-check vs verbatim file | ✅ (live per-provider model list = manual entry; follow-up) |
+| Toolset catalog | 26 toolsets + 8 default-off (§G.5) | Verbatim static catalog; `hermes tools`; `tools.enabled_toolsets` stored | ✅ (registry wiring = follow-up) |
+| Autocomplete | prompt_toolkit completer + AutoSuggest ghost | rustyline completer + hinter, 101-entry registry (87 verbatim + 14 marked RS extensions) | ✅ (behavior parity; RS extensions labeled) |
+| Tips | 380 startup strings (dead code) + 11 composer placeholders | Ported verbatim as data + selectors; startup shows nothing (parity-faithful); placeholder shown TUI-only | ✅ |
+| Session picker | curses browser (§F) | crossterm browser, §F frame verbatim (`session_picker_e2e` PTY: 7 tests) | ✅ (documented adaptations below) |
+| Startup/resume | bare = new, `-c` = resume | Same + `--resume-id`; resume-latest (oldest-resume bugfix T09); piped bare resumes latest for scripted stability | ✅ |
+| Session delete | `d` + `[y/N]` in picker | Same, default-deny, cascade delete | ✅ |
+
+Documented picker adaptations (§F): 8-char `sid` (vs 6) for UUIDv7
+collision headroom; `done`/`empty` status words (Python has no status —
+T09 decision, session has no titles); preview shows source/row names;
+Active shown as relative time; ↑/k wraps below ↓/j (reverse-cursor
+fidelity); `q` = filter key; `TOO_SMALL` floor 60×8. Explicitly not
+ported: §H resume display, `sessions list/stats/prune/export/rename/
+delete`, Nous Portal OAuth, egress firewall, Ctrl+P palette (upstream
+implementation not found), TUI picker.
 
 ## Differences ⚠️
 

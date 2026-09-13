@@ -20,7 +20,7 @@ Status of the staged rewrite described in [`CONTEXT.md`](../CONTEXT.md).
 | 5 — Ecosystem | 012 | TUI dashboard (ratatui) | Done |
 | 5 — Ecosystem | 013 | Hermes Python UI parity (visual) | Done |
 | 6 — CLI surface | 014 | CLI subcommands parity (shell access) | Done |
-| 7 — Total parity | 017 | Hermes Python v0.21.0 total byte-level parity (wizard, katalog, UX) | Fase 0 re-archaeology — menunggu review Matt |
+| 7 — Total parity | 017 | Hermes Python v0.21.0 total byte-level parity (wizard, katalog, UX) | Done |
 
 ## Spec 004 closure
 
@@ -330,6 +330,44 @@ with quotes/`$1` cannot escape the `ulimit` wrapper. CLI E2E
 (`subcommands_e2e.rs`) covers `hermes info` / `/sandbox` reporting and
 load-time rejection of `network: dney`.
 
+## Spec 017 — total v0.21.0 parity closure
+
+Spec 017 ports the entire Hermes Python v0.21.0 interactive surface
+(wizard, banner, tips, provider/toolset catalogs, autocomplete, session
+picker) to Rust with byte-level fidelity where it matters and documented
+adaptations where the stacks diverge (curses→inquire/crossterm,
+prompt_toolkit→rustyline, Rich→ratatui/ANSI). Ground truth:
+`docs/HERMES_UI_SPEC.md` §A–§K and the 11 verbatim files under
+`.scratch/hermes-rs-total-parity/reference/`.
+
+| Ticket | Scope | Landed |
+|---|---|---|
+| Fase 0 | Re-archaeology: spec pass-1 healing + verbatim evidence (11 files) | APPROVED Matt |
+| T01 | `inquire` dependency + wizard skeleton (`run_setup_wizard`) | `fa69b80` |
+| T02 | Banner panel v0.21.0 (Rich Panel + grid, byte-identical) | Approved per `/ask-matt` |
+| T03 | Info line after banner (model line + summary line; no `●`/`provider:`/`✦ Tip:`) | PR #1 (`07093dc`) |
+| T04 | Tips catalog: 380 startup + 11 TUI placeholder verbatim + selectors; display = opsi 1 (skip, parity murni) + opsi 3 via T08 (TUI-only placeholder) | T09 slice (no code change needed — module pre-exists) |
+| T05 | Setup wizard multi-step `hermes setup` (atomic write + backup, ESC rollback) | PR #1 (`07093dc`) |
+| T06 | Provider catalog: 39 entries verbatim + `hermes model` picker + resolution | PR #2 (`319d719`) |
+| T07 | Toolsets catalog: 26 entries + 8 default-off + `hermes tools` + `enabled_toolsets` | PR #2 (`319d719`) |
+| 007b | Sandbox default-on (ADR 0006 amendment) | PR #2 (`319d719`) |
+| T08 | Autocomplete + ghost text (101-entry registry, rustyline completer/hinter) | PR #3 (`8d66bbb`) |
+| 013-07 | TUI race drain (spinner/summary/event gate) | PR #4 (`82bf018`) |
+| T09 | Session picker `sessions browse` + `/sessions` (§F verbatim frame), startup bare = new, `--resume-id`, resume-latest bugfix | PR #6 |
+| T10 | This closure (docs only) | this PR |
+
+Closure proof: CI `fmt + clippy + test` on PR #6 —
+`clippy --workspace --all-targets -D warnings` clean, `cargo test
+--workspace` 576 passed / 0 failed (incl. PTY E2E suites
+`banner_e2e`, `wizard_e2e`, `session_picker_e2e`, which assert real
+terminal bytes element-by-element per §J.7). Non-negotiables held:
+Python install untouched, `state.db` canonical, SIGINT exit 130,
+redaction on every output path, sanitizer at render boundary only,
+TTY-only ANSI, explicit `[y/N]`, atomic config writes with backup.
+Follow-ups (§H resume display, `sessions` subcommands, live model
+list, Nous OAuth, egress firewall, toolset wiring, Ctrl+P palette,
+TUI picker) are tracked in the T10 ticket and explicitly unclaimed.
+
 ## Verification
 
 Last full run (2026-09-05, Spec 013 closure): `cargo test --workspace` — 400
@@ -339,6 +377,13 @@ Last full run (2026-09-13, Spec 014 + Spec 007 closure, GitHub Actions
 `CI` workflow on `ubuntu-latest`, stable toolchain): `cargo test --workspace`
 — 509 passed, 0 failed; `clippy --workspace --all-targets -D warnings` clean.
 CI (`.github/workflows/ci.yml`) runs fmt/clippy/test on every push to `main`
+and `arena/**` and on pull requests; diagnostics are published as check-run
+annotations.
+
+Last full run (2026-09-13, Spec 017 closure, GitHub Actions `fmt + clippy +
+test` workflow on `ubuntu-latest`, stable toolchain, PR #6): `cargo test
+--workspace` — 576 passed, 0 failed; `clippy --workspace --all-targets -D
+warnings` clean; `cargo fmt --check` clean. CI runs on every push to `main`
 and `arena/**` and on pull requests; diagnostics are published as check-run
 annotations.
 
