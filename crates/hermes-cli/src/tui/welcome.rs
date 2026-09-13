@@ -761,8 +761,8 @@ pub fn write_banner(
     write_buffer_ansi(w, &buf, depth)
 }
 
-/// Writes a composed buffer as an SGR ANSI stream (Spec 013 T02): one reset
-/// at the end, SGR changes only when a cell's style changes, and no
+/// Writes a composed buffer as an SGR ANSI stream (Spec 013 T02): reset before
+/// changing an active style and at line ends, with no
 /// positioning escapes — the stream is written to stdout where the cursor
 /// sits at column 0.
 pub fn write_buffer_ansi(w: &mut impl Write, buf: &Buffer, depth: ColorDepth) -> io::Result<()> {
@@ -777,10 +777,11 @@ pub fn write_buffer_ansi(w: &mut impl Write, buf: &Buffer, depth: ColorDepth) ->
             let sgr = sgr_for(cell, depth);
             // Unstyled spaces still advance the terminal cursor. Omitting
             // them collapses padding, columns, and the panel's right border.
-            if sgr.is_empty() && !current.is_empty() {
-                w.write_all(b"\x1b[0m")?;
-                current.clear();
-            } else if sgr != current {
+            if sgr != current {
+                // SGR adds attributes; a new color alone cannot clear bold/dim.
+                if !current.is_empty() {
+                    w.write_all(b"\x1b[0m")?;
+                }
                 w.write_all(sgr.as_bytes())?;
                 current = sgr;
             }
@@ -1468,6 +1469,114 @@ mod tests {
                         usize::from(width),
                         "panel border column"
                     );
+                }
+            }
+        }
+    }
+
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    struct ObservedAnsiStyle {
+        foreground: Color,
+        bold: bool,
+        dim: bool,
+    }
+
+    // Decode the public SGR stream, not the private Ratatui buffer. Color
+    // parameters are consumed as a group so RGB values 1/2 aren't modifiers.
+    fn observed_banner_cells(bytes: &[u8]) -> Vec<(char, ObservedAnsiStyle)> {
+        let reset = ObservedAnsiStyle {
+            foreground: Color::Reset,
+            bold: false,
+            dim: false,
+        };
+        let mut style = reset;
+        let text = std::str::from_utf8(bytes).unwrap();
+        let mut chars = text.chars();
+        let mut cells = Vec::new();
+        while let Some(ch) = chars.next() {
+            if ch != '\x1b' {
+                cells.push((ch, style));
+                continue;
+            }
+            assert_eq!(chars.next(), Some('['), "expected CSI");
+            let mut params = String::new();
+            loop {
+                let ch = chars.next().expect("unterminated SGR");
+                if ch == 'm' {
+                    break;
+                }
+                params.push(ch);
+            }
+            let codes: Vec<u16> = params
+                .split(';')
+                .map(|p| if p.is_empty() { 0 } else { p.parse().unwrap() })
+                .collect();
+            let mut i = 0;
+            while i < codes.len() {
+                match codes[i] {
+                    0 => style = reset,
+                    1 => style.bold = true,
+                    2 => style.dim = true,
+                    22 => {
+                        style.bold = false;
+                        style.dim = false;
+                    }
+                    39 => style.foreground = Color::Reset,
+                    30..=37 => style.foreground = Color::Indexed((codes[i] - 30) as u8),
+                    90..=97 => style.foreground = Color::Indexed((codes[i] - 90 + 8) as u8),
+                    38 | 48 => {
+                        let foreground = codes[i] == 38;
+                        let color = match codes[i + 1] {
+                            2 => {
+                                let color = Color::Rgb(
+                                    codes[i + 2].try_into().unwrap(),
+                                    codes[i + 3].try_into().unwrap(),
+                                    codes[i + 4].try_into().unwrap(),
+                                );
+                                i += 4;
+                                color
+                            }
+                            5 => {
+                                let color = Color::Indexed(codes[i + 2].try_into().unwrap());
+                                i += 2;
+                                color
+                            }
+                            mode => panic!("unsupported color mode {mode}"),
+                        };
+                        if foreground {
+                            style.foreground = color;
+                        }
+                    }
+                    // These don't affect the foreground/intensity under test.
+                    3 | 4 | 23 | 24 | 40..=47 | 49 | 100..=107 => {}
+                    code => panic!("unsupported SGR {code}"),
+                }
+                i += 1;
+            }
+        }
+        cells
+    }
+
+    #[test]
+    fn banner_ansi_border_does_not_inherit_title_bold() {
+        // Python's captured title is bold; both bronze corners are not.
+        let theme = HermesTheme::dark_canonical();
+        for width in [100, 80, 94, 95] {
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &BannerInfo::default(), depth).unwrap();
+                let cells = observed_banner_cells(&bytes);
+                let title = cells.iter().find(|(ch, _)| *ch == 'H').unwrap().1;
+                assert!(title.bold, "title must remain bold");
+                for corner in ['╭', '╮'] {
+                    let style = cells.iter().find(|(ch, _)| *ch == corner).unwrap().1;
+                    assert!(
+                        !style.bold && !style.dim,
+                        "border {corner}, width={width}, depth={depth:?}: {style:?}"
+                    );
+                    if depth == ColorDepth::Truecolor {
+                        assert_eq!(style.foreground, Color::Rgb(205, 127, 50));
+                    }
                 }
             }
         }

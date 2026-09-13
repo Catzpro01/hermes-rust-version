@@ -731,3 +731,14 @@ performed.** The Python installation was not modified.
   style, preserving the new style's own bold/color. No dim/theme/tool changes.
   This fixes attribute carry-over rather than changing border composition.
 - Production source is still the verified layout-only correction; pending GREEN.
+
+## 2026-09-14: Apply verified border-style fix; submit secondary-text dim RED
+
+- GREEN 34784316150 / 3dffb6c passed regression, fmt/check, clippy/full tests.
+  Verified/applied exact 6319-byte delta, SHA-256
+  7859e9d849c6f5eec26f69e98570514d1751c05f87d92ab77dfee3962f9bfe2c.
+  Local Rust diff equals the runner export; no unverified Rust edits committed.
+- Separate test-only dim proposal uses the captured fixture: secondary labels,
+  cwd/session and width-80 cropped ellipsis stay dim; primary model/tool names
+  do not. Python cropped session ellipsis also retains session foreground.
+  No dim implementation changes until observed RED. Review/capture remain pending.
