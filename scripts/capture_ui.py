@@ -54,6 +54,8 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
     output = bytearray()
     events, inputs, completed = [], [], []
     index = cursor = 0
+    stable_since = begin
+    previous_screen = None
     error = None
     import pyte
     screen = pyte.Screen(width, 30)
@@ -86,6 +88,11 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
                         break
                     # Respond using terminal state, never hard-code cursor 1,1.
                     terminal.feed(data)
+                    state = (screen.cursor.x, screen.cursor.y,
+                             tuple(tuple(screen.buffer[y][x] for x in range(width)) for y in range(30)))
+                    if state != previous_screen:
+                        previous_screen = state
+                        stable_since = time.monotonic()
                 else:
                     eof = True
             elif eof:
@@ -97,7 +104,7 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
             if code is not None and code != 0:
                 error = f'process exit {code} at stage {index}'
                 break
-            if ready and (time.monotonic()-last >= 0.3 or code is not None):
+            if ready and (time.monotonic()-last >= 0.3 or time.monotonic()-stable_since >= 0.3 or code is not None):
                 completed.append({'marker': marker, 'end_byte': len(output)})
                 index += 1
                 if key is not None:
@@ -105,7 +112,7 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
                     os.write(master, data)
                     inputs.append([round(time.monotonic()-begin, 6), base64.b64encode(data).decode(), 'scenario key'])
                     cursor = len(output)
-                    stage_begin = last = time.monotonic()
+                    stage_begin = last = stable_since = time.monotonic()
             elif code is not None:
                 error = f'missing readiness at stage {index}: {marker}'
                 break
@@ -113,7 +120,7 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
                 'width': width, 'height': 30, 'events_base64': events,
                 'inputs_base64': inputs, 'raw_base64': base64.b64encode(output).decode(),
                 'raw_sha256': hashlib.sha256(output).hexdigest(),
-                'snapshot_end_byte': len(output), 'snapshot_rule': 'observed readiness + 300ms output quiet, or explicit exit',
+                'snapshot_end_byte': len(output), 'snapshot_rule': 'observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit',
                 'terminal_responder': 'pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)', 'steps': steps, 'completed_steps': completed, 'error': error,
                 'exit_code_at_snapshot': proc.poll(), 'termination': 'SIGTERM after snapshot if still running'}
     finally:
@@ -147,7 +154,7 @@ def steps_for(name, side):
     if name == 'wizard-gateway-empty': return [(gateway, '\r'), ('@exit', None)]
     if name == 'wizard-gateway-token': return [(gateway, ' \r'), ('Server URL', 'https://fixture.invalid\r'), ('Bot token', None)]
     if name == 'wizard-tools': return [(tools, None)]
-    if name == 'wizard-tools-toggle': return [(tools, '\r' if py else ' '), ('Tools for' if py else 'Select toolsets to enable:', None)]
+    if name == 'wizard-tools-toggle': return ([(tools, '\r'), ('Tools for', ' '), ('Tools for', None)] if py else [(tools, ' '), (tools, None)])
     if name == 'wizard-cancel': return [(terminal, '\x1b'), ('@exit', None)]
     if name == 'picker-empty': return [('No sessions found.', None)]
     if name == 'picker-normal': return [('Browse sessions', None)]
@@ -197,9 +204,12 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES, w
                 else:
                     command = [sys.executable,str(Path(__file__).resolve()),'python-child',str(reference),name,str(width)]
                     extra = {'PYTHONPATH': os.environ.get('PYTHONPATH','')}
+                if name == 'wizard-docker':
+                    (home/'empty-bin').mkdir()
+                    extra['PATH'] = str(home/'empty-bin')
                 result = record(command,home,width,steps_for(name,side),extra)
                 print(side,name,width,result['error'] or 'CAPTURED_NOT_REVIEWED',file=sys.stderr)
-                cases.append({'id':f'{name}-{width}x30','scenario':name,side:result})
+                cases.append({'id':f'{name}-{width}x30','scenario':name,'fixture':{'home':'isolated fresh temporary directory', 'credentials':'none supplied', 'docker_available':False if name=='wizard-docker' else 'not controlled', 'picker_seed':[SID_A,SID_B] if name.startswith('picker') and name!='picker-empty' else [], 'picker_timestamp_base':1700000000 if name.startswith('picker') else None},side:result})
     return cases
 
 
@@ -251,10 +261,31 @@ def export(path, group):
         print(f'::notice title=visual bundle {i+1}/{len(chunks)}::{chunks[i]}')
 
 
+def validate_bundle(bundle):
+    expected = {f'{name}-{width}x30' for name in CASES for width in (100, 80)}
+    assert len(bundle['cases']) == len(expected), 'missing or duplicate cases'
+    assert {c['id'] for c in bundle['cases']} == expected, 'case matrix mismatch'
+    assert not bundle['errors'], 'unreached UI cases'
+    for c in bundle['cases']:
+        for side in ('python', 'rust'):
+            if side not in c:
+                continue
+            r = c[side]
+            assert r['error'] is None
+            assert len(r['completed_steps']) == len(r['steps'])
+            raw = base64.b64decode(r['raw_base64'], validate=True)
+            assert hashlib.sha256(raw).hexdigest() == r['raw_sha256']
+            assert b''.join(base64.b64decode(e[1], validate=True) for e in r['events_base64']) == raw
+            assert r['snapshot_end_byte'] == len(raw)
+
+
 def main():
     mode,*args=sys.argv[1:]
     if mode=='python-child': return python_child(Path(args[0]),args[1],int(args[2]))
     if mode=='export': return export(args[0],int(args[1]))
+    if mode=='check':
+        validate_bundle(json.loads(Path(args[0]).read_text()))
+        return
     output=Path(args[-1])
     if output.exists(): raise RuntimeError('Refusing to overwrite evidence')
     if mode=='rust':
@@ -283,6 +314,8 @@ def main():
         bundle['python_version']=py['python_version'];bundle['python_source_sha256']=py['source_sha256']
     else: raise ValueError(mode)
     bundle['errors']=[{'id':c['id'],'side':s,'error':c[s]['error']} for c in bundle['cases'] for s in ('python','rust') if s in c and c[s]['error']]
+    bundle['status'] = 'CAPTURE_INCOMPLETE' if bundle['errors'] else 'CAPTURED_NOT_REVIEWED'
+    bundle['capture_driver_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     output.parent.mkdir(parents=True,exist_ok=True)
     output.write_text(json.dumps(bundle,indent=2)+'\n')
 

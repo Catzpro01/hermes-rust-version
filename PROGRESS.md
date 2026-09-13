@@ -964,3 +964,17 @@ cases; filter 'deploy' accidentally invokes the existing d-delete key binding.
 Use 'topic' instead as the ordinary filter fixture, leaving delete separate.
 Shared renderer now supports UI case IDs; eight previous banner PNGs replayed
 byte-identically, with immutable originals untouched. No parity PASS inferred.
+
+### First real Rust matrix retained as diagnostic; fix capture boundaries
+
+Run 34787158552/f7f14fb transport succeeded, but 10/48 Rust case boundaries
+failed: picker continuously redraws before 300ms quiet, and runner has Docker
+installed. Python reached all 48. Do NOT call this complete evidence.
+Observed recorder RED for repeating identical READY frames (timeout), then
+minimal GREEN: accept 300ms unchanged terminal screen incl. style/cursor,
+while retaining every original byte. Four recorder tests PASS. Force Docker
+absent via per-case empty PATH on both sides; no real Docker install changed.
+Tool-toggle now toggles on both sides after Python's extra platform menu.
+Added explicit per-case fixture metadata, CAPTURE_INCOMPLETE status and a
+post-export all-case/raw-integrity gate; successful transport alone is not
+complete capture. Recapture from the next committed driver, no runtime fix yet.

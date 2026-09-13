@@ -80,7 +80,7 @@ async function main() {
         }, {side,c,data:raw.subarray(0,c.snapshot_end_byte).toString('base64')});
       }
       const images=[];
-      for (const position of ['top','bottom']) {
+      for (const position of (mode === 'ui' ? ['bottom'] : ['top','bottom'])) {
         await page.evaluate(position => {for(const t of Object.values(window.terminals)) position==='top'?t.scrollToTop():t.scrollToBottom();}, position);
         await page.evaluate(() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
         const file=`${entry.id}-${position}.png`;

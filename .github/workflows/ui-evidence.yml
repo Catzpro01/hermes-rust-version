@@ -69,6 +69,9 @@ jobs:
       - name: Export UI recordings group four
         if: steps.plan.outputs.phase == 'capture'
         run: python3 scripts/capture_ui.py export evidence/ui-rust.json 3
+      - name: Require every requested UI case reached
+        if: steps.plan.outputs.phase == 'capture'
+        run: python3 scripts/capture_ui.py check evidence/ui-rust.json
       - name: Report adapter validation failure
         if: failure()
         run: |
