@@ -1,8 +1,8 @@
 diff --git a/crates/hermes-cli/src/session_picker.rs b/crates/hermes-cli/src/session_picker.rs
-index 90bcd93..9996506 100644
+index 90bcd93..bb1d8ea 100644
 --- a/crates/hermes-cli/src/session_picker.rs
 +++ b/crates/hermes-cli/src/session_picker.rs
-@@ -53,40 +53,40 @@ pub fn hint_filter(search: &str) -> String {
+@@ -53,23 +53,30 @@ pub fn hint_filter(search: &str) -> String {
      format!("  Browse sessions — filter: {search}█")
  }
  
@@ -34,39 +34,26 @@ index 90bcd93..9996506 100644
 -/// One session row (spec §F, verbatim shape). The f-string in L1387 carries
 -/// no leading indent but curses draws it under the indented header, so the
 -/// two spaces are part of the rendered row.
--pub fn format_row(
--    name: &str,
--    status: &str,
--    msgs: usize,
--    last_active: &str,
--    source: &str,
--    sid: &str,
--    name_width: usize,
--) -> String {
 +/// One session row (spec §F, verbatim shape). The f-string in L1387 carries no
 +/// leading indent, but curses draws it behind the three-cell cursor column the
 +/// reference shows (` → ` on the cursor row, three spaces otherwise).
-+pub fn format_row(row: &SessionRow, name_width: usize, selected: bool) -> String {
+ pub fn format_row(
+     name: &str,
+     status: &str,
+@@ -78,9 +85,11 @@ pub fn format_row(
+     source: &str,
+     sid: &str,
+     name_width: usize,
++    selected: bool,
+ ) -> String {
      format!(
 -        "  {:<nw$}  {:<5}  {:>5}  {:<10}  {:<5} {}",
--        truncate_chars(name, name_width),
--        status,
--        msgs,
--        last_active,
--        source,
--        sid,
 +        "{}{:<nw$}  {:<5}  {:>5}  {:<10}  {:<5} {}",
 +        row_prefix(selected),
-+        truncate_chars(&row.name, name_width),
-+        row.status,
-+        row.msgs,
-+        row.last_active,
-+        row.source,
-+        row.sid,
-         nw = name_width,
-     )
- }
-@@ -111,11 +111,22 @@ pub fn delete_prompt(label: &str) -> String {
+         truncate_chars(name, name_width),
+         status,
+         msgs,
+@@ -111,11 +120,22 @@ pub fn delete_prompt(label: &str) -> String {
      format!("  Delete session '{label}'? [y/N]")
  }
  
@@ -93,7 +80,7 @@ index 90bcd93..9996506 100644
  }
  
  fn truncate_chars(text: &str, max: usize) -> String {
-@@ -272,14 +283,15 @@ pub enum BrowseOutcome {
+@@ -272,14 +292,15 @@ pub enum BrowseOutcome {
  }
  
  /// Pure frame builder for the curses-style browser (no SGR; the interactive
@@ -112,7 +99,7 @@ index 90bcd93..9996506 100644
      max_rows: usize,
  ) -> Vec<String> {
      let mut lines = Vec::new();
-@@ -288,7 +300,8 @@ pub fn frame_lines(
+@@ -288,7 +309,8 @@ pub fn frame_lines(
      } else {
          lines.push(hint_filter(filter));
      }
@@ -122,28 +109,26 @@ index 90bcd93..9996506 100644
      if shown.is_empty() {
          lines.push(NO_MATCH.to_owned());
      } else {
-@@ -297,17 +310,10 @@ pub fn frame_lines(
+@@ -297,6 +319,8 @@ pub fn frame_lines(
          } else {
              0
          };
 +        let nw = name_width(term_width);
 +        let selected = shown.get(cursor).copied();
          for &i in shown.iter().skip(start).take(max_rows) {
--            let r = &rows[i];
--            lines.push(format_row(
--                &r.name,
--                r.status,
--                r.msgs,
--                &r.last_active,
--                &r.source,
--                &r.sid,
+             let r = &rows[i];
+             lines.push(format_row(
+@@ -306,7 +330,8 @@ pub fn frame_lines(
+                 &r.last_active,
+                 &r.source,
+                 &r.sid,
 -                name_width,
--            ));
-+            lines.push(format_row(&rows[i], nw, selected == Some(i)));
++                nw,
++                selected == Some(i),
+             ));
          }
      }
-     let cursor_one_based = if shown.is_empty() { 0 } else { cursor + 1 };
-@@ -338,21 +344,14 @@ pub fn browse_numbered<R: BufRead, W: Write>(
+@@ -338,11 +363,12 @@ pub fn browse_numbered<R: BufRead, W: Write>(
          output.flush()?;
          return Ok(BrowseOutcome::Empty);
      }
@@ -156,20 +141,17 @@ index 90bcd93..9996506 100644
 -    writeln!(output, "       {}", column_header(nw).trim_start())?;
 +    writeln!(output, "       {}", column_header(term_width).trim_start())?;
      for (n, r) in rows.iter().enumerate() {
--        let body = format_row(
--            &r.name,
--            r.status,
--            r.msgs,
--            &r.last_active,
--            &r.source,
--            &r.sid,
--            nw,
--        );
-+        let body = format_row(r, nw, false);
+         let body = format_row(
+             &r.name,
+@@ -352,6 +378,7 @@ pub fn browse_numbered<R: BufRead, W: Write>(
+             &r.source,
+             &r.sid,
+             nw,
++            false,
+         );
          writeln!(output, "  [{:>2}] {}", n + 1, body.trim_start())?;
      }
-     loop {
-@@ -394,14 +393,12 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+@@ -394,14 +421,12 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
          println!("{NO_SESSIONS}");
          return Ok(BrowseOutcome::Empty);
      }
@@ -185,7 +167,7 @@ index 90bcd93..9996506 100644
      let max_rows = (term_rows as usize).saturating_sub(4).max(1);
  
      let outcome = loop {
-@@ -412,7 +409,7 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+@@ -412,7 +437,7 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
              use crossterm::terminal::ClearType;
              let mut out = std::io::stdout();
              execute!(out, cursor::MoveTo(0, 0), terminal::Clear(ClearType::All))?;
@@ -194,7 +176,7 @@ index 90bcd93..9996506 100644
              let start = if cursor_idx >= max_rows {
                  cursor_idx + 1 - max_rows
              } else {
-@@ -423,11 +420,11 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+@@ -423,11 +448,11 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                  if is_footer {
                      execute!(out, cursor::MoveTo(0, term_rows - 1))?;
                  }
@@ -210,7 +192,7 @@ index 90bcd93..9996506 100644
                      && n < frame.len() - 1;
                  if n == 0 {
                      use crossterm::style::{
-@@ -445,6 +442,14 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+@@ -445,6 +470,14 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                          Print(line),
                          SetAttribute(Attribute::Reset)
                      )?;
@@ -225,32 +207,7 @@ index 90bcd93..9996506 100644
                  } else if is_cursor_row {
                      use crossterm::style::{Attribute, Print, SetAttribute};
                      execute!(
-@@ -592,6 +597,24 @@ mod tests {
-         ]
-     }
- 
-+    fn row(
-+        name: &str,
-+        status: &'static str,
-+        msgs: usize,
-+        last_active: &str,
-+        sid: &str,
-+    ) -> SessionRow {
-+        SessionRow {
-+            id: "550e8400-e29b-41d4-a716-446655440000".parse().unwrap(),
-+            name: name.into(),
-+            status,
-+            msgs,
-+            last_active: last_active.into(),
-+            source: "cli".into(),
-+            sid: sid.into(),
-+        }
-+    }
-+
-     #[test]
-     fn picker_no_match_counter_preserves_total() {
-         let rows = fixture_rows();
-@@ -627,12 +650,12 @@ mod tests {
+@@ -627,12 +660,12 @@ mod tests {
          );
          assert_eq!(hint_filter("dep"), "  Browse sessions — filter: dep█");
          assert_eq!(
@@ -262,31 +219,19 @@ index 90bcd93..9996506 100644
          assert_eq!(
 -            format_row("deploy", "done", 12, "2h ago", "cli", "550e8400", 20),
 -            "  deploy                done      12  2h ago      cli   550e8400"
-+            format_row(&row("deploy", "done", 12, "2h ago", "550e8400"), 20, false),
++            format_row("deploy", "done", 12, "2h ago", "cli", "550e8400", 20, false),
 +            "   deploy                done      12  2h ago      cli   550e8400"
          );
          assert_eq!(footer(1, 2, 2, true), "  1/2 sessions   d delete");
          assert_eq!(footer(1, 1, 2, false), "  1/1 sessions (filtered from 2)");
-@@ -648,25 +671,34 @@ mod tests {
- 
-     #[test]
-     fn row_truncates_long_names_to_the_column() {
--        let row = format_row(
--            "abcdefghijklmnopqrstuvwxyz",
--            "done",
--            1,
--            "now",
--            "cli",
--            "abcdef01",
-+        let line = format_row(
-+            &row("abcdefghijklmnopqrstuvwxyz", "done", 1, "now", "abcdef01"),
+@@ -656,17 +689,36 @@ mod tests {
+             "cli",
+             "abcdef01",
              10,
 +            false,
          );
--        assert!(row.contains("abcdefghij"), "{row}");
--        assert!(!row.contains("klmnop"), "{row}");
-+        assert!(line.contains("abcdefghij"), "{line}");
-+        assert!(!line.contains("klmnop"), "{line}");
+         assert!(row.contains("abcdefghij"), "{row}");
+         assert!(!row.contains("klmnop"), "{row}");
      }
  
      #[test]
@@ -305,7 +250,12 @@ index 90bcd93..9996506 100644
 +        assert_eq!(header_name_width(80), 21);
 +        assert_eq!(
 +            format_row(
-+                &row("second topic", "done", 1, "2023-11-14", "660f8400"),
++                "second topic",
++                "done",
++                1,
++                "2023-11-14",
++                "cli",
++                "660f8400",
 +                name_width(100),
 +                true,
 +            ),
@@ -316,7 +266,7 @@ index 90bcd93..9996506 100644
      }
  
      #[test]
-@@ -703,8 +735,9 @@ mod tests {
+@@ -703,8 +755,9 @@ mod tests {
          let frame = frame_lines(&rows, &shown, 0, "", 20, 10);
          assert_eq!(frame[0], HINT_BROWSE);
          assert_eq!(frame[1], column_header(20));
