@@ -1393,3 +1393,17 @@ Spec color slice passes, broader picker/wizard/completion gaps remain open.
 User-facing `docs/hermes-ui-spec/017/MILESTONES.md` now marks M1–M5 complete for
 color ONLY; four picker correction milestones verified. No invented whole-project
 percentage, final acceptance, resize/long-list/clear-filter claims, or merge.
+
+### Next-step checkpoint after footer-color delivery
+
+User asks what can be done next; this is guidance, not a new implementation
+request. Rechecked clean worktree at7b8ff84 and observed delivery CI34834196724
+SUCCESS on7b8ff84ad24fadc75cec64f04a5d5e87d827e4c0. Runtimeae220ff capture/CI
+remain GREEN. Recommend completing the remaining picker presentation milestone,
+starting with the normal-mode `Browse sessions` help header at the actual CLI/PTy
+seam. Filter header, selected row, delete/no-match styling and remaining body
+layout follow as separate behavioral slices, each with evidence and review.
+Then resolve T12 wizard nested-field/full-Python-CLI and completion coverage;
+only afterwards consider the complete Spec017 acceptance review. No need to
+reopen completed footer fixes or start a new spec/architecture project now.
+No new test, patch, personal review, acceptance or merge performed here.

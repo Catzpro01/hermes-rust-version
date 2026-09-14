@@ -30,6 +30,11 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Post-delivery guidance: observed CI34834196724/7b8ff84 SUCCESS, clean tree.
+  Recommended next slice is normal-mode `Browse sessions` help-header styling
+  through real CLI/PTy, then remaining picker presentation, then T12/wizard/
+  completion coverage. Guidance only; no new test or runtime change started.
+
 - Footer-color cycle complete: runtimeae220ff; source capture34833465322 and
   CI34833465347 SUCCESS. RED34832948842/5515789 → GREEN34833157938/f633f59 →
   exact916-byte patch ea56c272de0cf151168aee03e85803662f9ffe12bc563de97e6e512e73b941a3.
