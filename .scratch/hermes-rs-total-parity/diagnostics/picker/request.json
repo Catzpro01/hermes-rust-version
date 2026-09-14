@@ -1,5 +1,6 @@
 {
-  "phase": "red",
+  "phase": "green",
   "test": "picker_message_style",
-  "source_sha256": "caf8336df522eccb1981e372999fc12c5ff5bfce5ca605d4523e01ff6989b616"
+  "source_sha256": "caf8336df522eccb1981e372999fc12c5ff5bfce5ca605d4523e01ff6989b616",
+  "patch_sha256": "d1ed7f9962dcd45a306f1c3bbafdcf9b3c820eadbb90a39822d917078862ab07"
 }
