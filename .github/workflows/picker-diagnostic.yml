@@ -95,10 +95,11 @@ jobs:
             status=$?
             set -e
             cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
             if [ "$PHASE" = red ]; then
               test "$status" -ne 0
               grep -F 'FAIL: test_footer_is_on_terminal_last_row' "regression-$attempt.log"
-              ! grep -F 'ERROR:' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
             else
               test "$status" -eq 0
               grep -F 'test_footer_is_on_terminal_last_row' "regression-$attempt.log"

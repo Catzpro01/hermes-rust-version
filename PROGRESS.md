@@ -1258,3 +1258,8 @@ exact geometry FAIL required three times. GREEN still needs official fmt/check,
 clippy/full suite before applying Rust. Broaden capture helper to ten picker
 states so anchoring cannot silently collide with bottom-row delete confirmation.
 No palette/header/body-row or resize feature change authorized by this slice.
+
+Validation follow-up: a negative policy test demonstrated that Bash `! grep`
+can bypass errexit for mixed FAIL+ERROR logs. Replaced it with explicit exit1
+and required exactly one test execution. Local policy RED→GREEN (11 tests).
+Live geometry RED34829070839/eedd9a0 is in progress; no Rust fix proposed yet.

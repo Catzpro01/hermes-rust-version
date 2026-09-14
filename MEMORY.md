@@ -30,6 +30,16 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Active footer-position TDD: test-first eedd9a0; one real CLI/PTy normal100x30
+  regression requires footer row30. Historical Python10/10 geometry PASS,
+  historical Rust6 footer FAIL (rows4/5), delete/empty4 PASS. Live official
+  RED34829070839 is running; no production footer fix proposed/applied yet.
+  Allowlisted runner now supports `picker_footer_position`; capture grows to
+  ten normal/filter/no-match/delete/empty cases. A local policy negative test
+  exposed Bash `! grep`/errexit bypass for mixed FAIL+ERROR; explicit exit fixes
+  that, with11 policy tests. This does not count as the live product RED.
+
+
 - Latest counter correction a8d5e8c: no-match footer now `0/2 sessions` for
   two original rows; delete-hint behavior preserved. User `/tdd` + continued
   the recommended public frame_lines seam. RED34826295910/f232480 (3 exact
