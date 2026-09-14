@@ -635,6 +635,21 @@ class CiGateTests(unittest.TestCase):
                     self.assertIn(f"::error title=cargo check failed::{expected}", result.stdout)
                 self.assertEqual((Path(tmp) / "picker-check.log").read_text(), log)
 
+    def test_capture_scripts_get_the_qa_path(self):
+        # Cycle-7 capture attempt 1 (run 34880380735) died with `No module named
+        # 'pyte'`: the size capture calls were the only capture invocations missing
+        # the venv prefix, and `capture_ui.record` imports pyte at that point.
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        steps = workflow["jobs"]["diagnose"]["steps"]
+        seen = 0
+        for step in steps:
+            for line in str(step.get("run", "")).splitlines():
+                for script in ("capture_picker_sizes.py", "capture_picker_diagnostic.py"):
+                    if f"scripts/{script}" in line:
+                        seen += 1
+                        self.assertIn('PYTHONPATH="$QA" python3', line, f"{step['name']}: {line.strip()}")
+        self.assertGreaterEqual(seen, 4, "the capture invocations disappeared")
+
     def test_diagnostics_still_report_a_real_test_build_failure(self):
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / "test.log").write_text("error[E0425]: unknown value\n")

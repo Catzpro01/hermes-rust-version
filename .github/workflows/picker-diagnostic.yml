@@ -589,8 +589,8 @@ jobs:
               PYTHONPATH="$QA" python3 scripts/check_picker_redraw_on_input.py evidence/picker.json --side rust
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_terminal_size ]; then
-              python3 scripts/capture_picker_sizes.py rust target/debug/hermes-rs evidence/picker-size-rust.json
-              python3 scripts/capture_picker_sizes.py pair evidence/picker-size-rust.json docs/hermes-ui-spec/017/evidence/picker-size-reference/picker-size-reference.json evidence/picker-size-paired.json
+              PYTHONPATH="$QA" python3 scripts/capture_picker_sizes.py rust target/debug/hermes-rs evidence/picker-size-rust.json
+              PYTHONPATH="$QA" python3 scripts/capture_picker_sizes.py pair evidence/picker-size-rust.json docs/hermes-ui-spec/017/evidence/picker-size-reference/picker-size-reference.json evidence/picker-size-paired.json
               PYTHONPATH="$QA" python3 scripts/check_picker_terminal_size.py evidence/picker-size-paired.json --side python
               PYTHONPATH="$QA" python3 scripts/check_picker_terminal_size.py evidence/picker-size-paired.json --side rust
             fi
