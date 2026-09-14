@@ -40,9 +40,9 @@ implementasi fitur baru.
   test=success picker=success`, **584 tes Rust lulus / 0 gagal** (28 binary tes).
 - Branch kerja sesi: `arena/01a0a052-hermes-rust-version` (berbasis `baa7158`).
   Commit paket terakhir `8b89b12` → CI `34862320398` **SUCCESS**.
-- CI biasa menjalankan 5 gate live PTY picker (posisi footer, warna footer,
-  header normal, header filter, tata letak kolom); siklus aktif menambah gate
-  ke-6 (prompt hapus + pesan no-match).
+- CI biasa menjalankan 6 gate live PTY picker (posisi footer, warna footer,
+  header normal, header filter, tata letak kolom, prompt hapus + pesan no-match);
+  setiap perilaku baru menambah satu gate sebelum siklusnya ditutup.
 - **Tidak ada toolchain Rust di sandbox** — setiap perubahan Rust diverifikasi di
   GitHub Actions (RED → GREEN → capture), lalu diangkut sebagai patch ber-checksum
   lewat anotasi run. Tidak ada klaim `cargo` lokal.
@@ -53,7 +53,7 @@ implementasi fitur baru.
 |---|---|---|---|
 | 1 | Banner panel (judul + grid) | 🟡 Sebagian | Bukti berpasangan terakhir `banner-5a8e12c` (8 PNG diperiksa, kolom `Available Tools` 51/41/48/49 dan `Session` 4/17/21/21 cocok); bukan klaim pixel/raw identity seluruh variasi |
 | 2 | Wizard tiap step | ⏳ V1 | 14 skenario × 2 lebar sudah di-capture; palette, geometri, hint, label, checklist tools masih berbeda |
-| 3 | Session picker frame | 🔄 V2 berjalan | 7 siklus selesai, siklus ke-8 berjalan (lihat §4) |
+| 3 | Session picker frame | 🔄 V2 berjalan | 8 siklus selesai; seluruh region piksel yang dipatok kini identik, sisa 4 perilaku (lihat §4) |
 | 4 | Completion dropdown | ⏳ Butuh keputusan | Python (`prompt_toolkit`) menampilkan daftar alternatif; Rust melakukan cycling inline — perlu keputusan produk: bangun dropdown atau amandemen §J.7 |
 | 5 | Summary line | 🟡 Sebagian | Kasus 0/3 tool sudah cocok (teks counter, posisi, gaya); variasi non-nol (skills/MCP) belum ada buktinya |
 
@@ -68,8 +68,8 @@ implementasi fitur baru.
 | 5 | Header bantuan mode normal = palette3 + bold | ✅ | `7fef514` |
 | 6 | Header filter = palette6 + bold | ✅ | `9cc5cb4` |
 | 7 | Tata letak kolom (kolom kursor, baris pemisah, medan nama, tinta header) | ✅ | `b732d22` + paket `picker-column-layout-b732d22` |
-| 8 | Prompt hapus (merah + bold) + pesan no-match (atribut **dim**) | 🔄 aktif | gate `picker_message_style`; referensi Python lulus 6/6, Rust masih gagal 6/6 |
-| 9 | Baris terpilih ` → ` hijau + bold (mengganti reverse video) | ⏳ | ditemukan dari perbandingan piksel paket kolom |
+| 8 | Prompt hapus (merah + bold) + pesan no-match (atribut **dim**) | ✅ | `549fc8d` + paket `picker-message-style-fd674dc` (28/28 region piksel identik) |
+| 9 | Baris terpilih ` → ` hijau + bold (mengganti reverse video) | 🔄 berikutnya | ditemukan dari perbandingan piksel paket kolom |
 | 10 | Warna kolom status | ⏳ | referensi memakai `intr` (brown); belum ada bukti terpinn untuk nilai `done` di sisi Rust — jangan diwarnai tanpa bukti |
 | 11 | Konten kolom `Active` / `ID` | 🅿️ adaptasi | `8`-karakter sid dan format `Active` adalah adaptasi terdokumentasi di `docs/PARITY.md` |
 | 12 | Resize, daftar panjang, clear-filter | ⏳ | belum dibuktikan oleh fixture ukuran tetap ini |
