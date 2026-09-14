@@ -1275,3 +1275,15 @@ Only now proposing final-frame MoveTo(0, term_rows-1) and skipping its newline.
 Text/filter/counter/selection style and other body geometry remain unchanged.
 Rust source is still unchanged locally; bounded official GREEN precedes exact
 source application, ordinary CI integration and fresh ten-case capture.
+
+### Footer candidate GREEN → exact source application
+
+GREEN34829279773/984b92f SUCCESS: fmt/check/build, exact actual CLI test3 PASS,
+clippy/full workspace PASS. Retrieved/tested1199-byte patch SHA
+ e7ad21d2a7baab771e3b0a5742d5d741720302c1ed082e70448911406208fede
+and applied; local full Rust diff compares byte-identically. No local cargo.
+Added primary actual PTY test to ordinary CI as a required fourth final-gate
+outcome (all625 combinations checked), with raw trace/log retained. Four
+supporting geometry checker tests cover historical reference/failures and
+missing/corrupt/mismatched evidence. Request fresh committed-source ten-case
+capture; no visual PASS claim before replay and direct inspection.

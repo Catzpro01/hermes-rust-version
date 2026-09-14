@@ -39,6 +39,8 @@ def check(bundle, side):
     failures = []
     for case in cases:
         record = case[side]
+        if case['id'] != f'{case["scenario"]}-{record["width"]}x{record["height"]}':
+            raise RuntimeError('Terminal dimensions do not match case id')
         screen = screen_for(record)
         if case['scenario'] == 'picker-empty':
             passed = screen.display[0].strip() == 'No sessions found.'

@@ -29,6 +29,7 @@ jobs:
         run: |
           python3 scripts/test_ci_workflow.py
           python3 scripts/test_capture_ui.py
+          python3 scripts/test_picker_footer_position_checks.py
       - run: python3 scripts/test_audit_ui_evidence.py
 
   test:
@@ -66,6 +67,16 @@ jobs:
           cargo test --workspace --no-fail-fast 2>&1 | tee test.log
         continue-on-error: true
 
+      - name: Picker footer terminal regression
+        id: picker
+        if: steps.test.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo build --locked -p hermes-rs --bin hermes-rs 2>&1 | tee picker-position.log
+          python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3 2>&1 | tee -a picker-position.log
+          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-position.json python3 scripts/test_picker_footer_position.py 2>&1 | tee -a picker-position.log
+
       # Diagnostics are emitted as check-run annotations (readable via the
       # REST API even where raw logs/artifacts are not reachable) and as a
       # job summary.
@@ -96,6 +107,10 @@ jobs:
           except FileNotFoundError: fmt = ''
           if os.environ.get('FMT') != 'success':
               emit('error', 'rustfmt', fmt.splitlines() or ['Formatting check did not succeed.'])
+          if os.environ.get('PICKER') != 'success':
+              try: picker_log = open('picker-position.log').read().splitlines()
+              except FileNotFoundError: picker_log = ['CLI terminal regression did not succeed.']
+              emit('error', 'picker position', picker_log[-30:])
           n = 0
           for b in blocks('clippy.log', r'^(error|warning)(\[|:)'):
               if n >= 45: break
@@ -113,7 +128,7 @@ jobs:
               emit('error', f'test failed: {m.group(1)}', m.group(2).splitlines(), 25); n += 1
           results = re.findall(r'^test result: .*$', t, re.M)
           fails = re.findall(r'^    (\S+)$', t.split('failures:')[-1], re.M) if 'failures:' in t else []
-          emit('notice', 'summary', [f"fmt={os.environ.get('FMT')} clippy={os.environ.get('CLIPPY')} test={os.environ.get('TEST')}"] + results + (["FAILED: " + ", ".join(fails)] if fails else []), 60)
+          emit('notice', 'summary', [f"fmt={os.environ.get('FMT')} clippy={os.environ.get('CLIPPY')} test={os.environ.get('TEST')} picker={os.environ.get('PICKER')}"] + results + (["FAILED: " + ", ".join(fails)] if fails else []), 60)
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
               f.write("```\n" + "\n".join(results) + "\n" + "\n".join(fails) + "\n```\n")
           PY
@@ -121,6 +136,7 @@ jobs:
           FMT: ${{ steps.fmt.outcome }}
           CLIPPY: ${{ steps.clippy.outcome }}
           TEST: ${{ steps.test.outcome }}
+          PICKER: ${{ steps.picker.outcome }}
 
       # Offer a verified, reviewable patch when the sandbox has no Rust
       # toolchain. This never commits/pushes and never changes the failed
@@ -163,7 +179,9 @@ jobs:
             test.log
             format-recovery-check.log
             fmt.patch
+            picker-position.log
+            picker-position.json
 
       - name: Fail if any step failed
-        if: always() && (steps.fmt.outcome != 'success' || steps.clippy.outcome != 'success' || steps.test.outcome != 'success')
+        if: always() && (steps.fmt.outcome != 'success' || steps.clippy.outcome != 'success' || steps.test.outcome != 'success' || steps.picker.outcome != 'success')
         run: exit 1

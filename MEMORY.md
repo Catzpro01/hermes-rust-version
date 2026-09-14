@@ -36,7 +36,12 @@ user's private Python installation.
   RED34829070839/eedd9a0 verified three actual row5 !=30 failures (no ERROR).
   Trace24779 bytes SHAfc71b1f359b1ea7d40ee06e359b26d8a3308340db9298dfd1163b8aa2c6c43c7.
   Minimal GREEN proposal now anchors final frame line, omits its next-line move;
-  source remains unchanged pending official full GREEN.
+  GREEN34829279773/984b92f: fmt/check/build, exact CLI3, clippy/full suite PASS.
+  Tested1199-byte patch e7ad21d2a7baab771e3b0a5742d5d741720302c1ed082e70448911406208fede
+  applied byte-identically; committed-source ten-case capture is next.
+  Primary real PTY regression is now required in ordinary CI too (four-outcome
+  final gate,625 combinations tested). Four supplemental checker tests retain
+  historical geometry plus corrupt/missing/mismatched evidence error controls.
   Allowlisted runner now supports `picker_footer_position`; capture grows to
   ten normal/filter/no-match/delete/empty cases. A local policy negative test
   exposed Bash `! grep`/errexit bypass for mixed FAIL+ERROR; explicit exit fixes

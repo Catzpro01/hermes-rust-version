@@ -419,6 +419,10 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                 0
             };
             for (n, line) in frame.iter().enumerate() {
+                let is_footer = n == frame.len() - 1;
+                if is_footer {
+                    execute!(out, cursor::MoveTo(0, term_rows - 1))?;
+                }
                 // Row lines sit between header (1) and footer (last); the
                 // cursor row gets reverse video.
                 let is_cursor_row = !shown.is_empty()
@@ -437,7 +441,9 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                     use crossterm::style::Print;
                     execute!(out, Print(line))?;
                 }
-                execute!(out, cursor::MoveToNextLine(1))?;
+                if !is_footer {
+                    execute!(out, cursor::MoveToNextLine(1))?;
+                }
             }
             out.flush()?;
         }

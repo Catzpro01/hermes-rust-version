@@ -190,21 +190,22 @@ class CiGateTests(unittest.TestCase):
         self.assertEqual(
             step["if"],
             "always() && (steps.fmt.outcome != 'success' || "
-            "steps.clippy.outcome != 'success' || steps.test.outcome != 'success')",
+            "steps.clippy.outcome != 'success' || steps.test.outcome != 'success' || "
+            "steps.picker.outcome != 'success')",
         )
         statuses = ("success", "failure", "cancelled", "skipped", "")
-        for outcomes in itertools.product(statuses, repeat=3):
+        for outcomes in itertools.product(statuses, repeat=4):
             with self.subTest(outcomes=outcomes):
                 # The pinned expression uses only !=, && and ||, so evaluate
-                # its equivalent Bash condition against 125 outcome tuples.
+                # its equivalent Bash condition against 625 outcome tuples.
                 condition = step["if"].replace("always()", "true")
-                for name, value in zip(("fmt", "clippy", "test"), outcomes):
+                for name, value in zip(("fmt", "clippy", "test", "picker"), outcomes):
                     condition = condition.replace(f"steps.{name}.outcome", f"'{value}'")
                 result = subprocess.run(
                     ["bash", "-c", f"if [[ {condition} ]]; then {step['run']}; fi"],
                     capture_output=True, text=True, check=False,
                 )
-                self.assertEqual(result.returncode, int(outcomes != ("success",) * 3))
+                self.assertEqual(result.returncode, int(outcomes != ("success",) * 4))
 
     def test_diagnostics_report_format_outcome_even_without_log(self):
         step = STEPS["Publish diagnostics"]
@@ -217,7 +218,7 @@ class CiGateTests(unittest.TestCase):
                     "error: interrupted\ntest smoke_sigint_returns_130 ... ok\n"
                     "test result: ok. 1 passed; 0 failed;\n"
                 )
-                env = dict(os.environ, FMT=status, CLIPPY="success", TEST="success",
+                env = dict(os.environ, FMT=status, CLIPPY="success", TEST="success", PICKER="success",
                            GITHUB_STEP_SUMMARY=str(Path(tmp) / "summary.md"))
                 result = subprocess.run(
                     ["bash", "-e", "-c", step["run"]],
@@ -236,7 +237,7 @@ class CiGateTests(unittest.TestCase):
     def test_diagnostics_still_report_a_real_test_build_failure(self):
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / "test.log").write_text("error[E0425]: unknown value\n")
-            env = dict(os.environ, FMT="success", CLIPPY="success", TEST="failure",
+            env = dict(os.environ, FMT="success", CLIPPY="success", TEST="failure", PICKER="success",
                        GITHUB_STEP_SUMMARY=str(Path(tmp) / "summary.md"))
             result = subprocess.run(
                 ["bash", "-e", "-c", STEPS["Publish diagnostics"]["run"]],
