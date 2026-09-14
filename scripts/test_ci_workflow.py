@@ -73,6 +73,29 @@ class CiGateTests(unittest.TestCase):
                 self.assertIn(selected, args)
                 self.assertEqual(args[-2:], ["--", "--exact"])
 
+    def test_picker_plan_allows_only_named_regressions(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        steps = workflow["jobs"]["diagnose"]["steps"]
+        plan = next(s for s in steps if s.get("id") == "plan")
+        regression = next(s for s in steps if s.get("id") == "regression")
+        self.assertEqual(regression["env"]["TEST"], "session_picker::tests::${{ steps.plan.outputs.test }}")
+        for selected, accepted in [
+            ("picker_footer_tracks_delete_availability", True),
+            ("picker_no_match_counter_preserves_total", True),
+            ("unknown_test", False),
+        ]:
+            with self.subTest(selected=selected), tempfile.TemporaryDirectory() as tmp:
+                folder = Path(tmp) / ".scratch/hermes-rs-total-parity/diagnostics/picker"
+                folder.mkdir(parents=True)
+                (folder / "request.json").write_text(json.dumps({"phase": "capture", "test": selected}))
+                output = Path(tmp) / "output"
+                env = dict(os.environ, GITHUB_OUTPUT=str(output))
+                result = subprocess.run(["bash", "-e", "-c", plan["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
+                if accepted:
+                    self.assertIn(f"test={selected}\n", output.read_text())
+
     def test_picker_gate_rejects_compile_errors_and_missing_regression(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
         step = next(s for s in workflow["jobs"]["diagnose"]["steps"] if s.get("id") == "regression")

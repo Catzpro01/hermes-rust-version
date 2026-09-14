@@ -27,9 +27,14 @@ jobs:
           folder = Path('.scratch/hermes-rs-total-parity/diagnostics/picker')
           request = json.loads((folder/'request.json').read_text())
           phase = request['phase']
+          tests = {'picker_footer_tracks_delete_availability': '',
+                   'picker_no_match_counter_preserves_total': 'counter'}
+          test = request.get('test', 'picker_footer_tracks_delete_availability')
+          assert test in tests, 'non-allowlisted regression'
+          folder = folder/tests[test]
           assert phase in ('red', 'green', 'capture')
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write(f'phase={phase}\n')
+              f.write(f'phase={phase}\ntest={test}\n')
           if phase != 'capture':
               source = Path('crates/hermes-cli/src/session_picker.rs')
               patch = folder/(phase+'.patch')
@@ -50,7 +55,7 @@ jobs:
         id: regression
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
-          TEST: session_picker::tests::picker_footer_tracks_delete_availability
+          TEST: session_picker::tests::${{ steps.plan.outputs.test }}
         run: |
           for attempt in 1 2 3; do
             set +e
@@ -87,6 +92,9 @@ jobs:
           python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
           PYTHONPATH=/tmp/picker-qa python3 scripts/capture_picker_diagnostic.py target/debug/hermes-rs evidence/picker.json
           PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_filter_hint.py evidence/picker.json --side rust
+          if [ "${{ steps.plan.outputs.test }}" = picker_no_match_counter_preserves_total ]; then
+            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_counter.py evidence/picker.json --side rust
+          fi
           python3 scripts/capture_banner.py export evidence/picker.json
       - name: Export exact regression log
         if: always()

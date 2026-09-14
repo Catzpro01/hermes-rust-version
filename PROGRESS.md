@@ -1181,3 +1181,21 @@ CLI/PTy as the primary regression seam. Preserve delete-hint and normal/filtered
 controls, immutable originals, official remote validation before Rust application,
 and no merge/closure. This confirms test placement only, not a new Q1–Q8 interview.
 No new test or runtime change written while awaiting that seam selection.
+
+### Counter `/tdd` — user continued, frame seam selected, actual replay RED
+
+User `/tdd` + repeated `Lanjutkan` continues the proposed recommended public
+frame_lines seam; announced that selection, with real CLI/PTy acceptance after.
+Read TDD/tests/mocking, context and compatibility ADR. No new Q1–Q8 interview.
+The new counter replay on picker-hint-c07f0c5 goes RED at both no-match widths:
+actual `0/0 sessions (filtered from 2)`, independent Python expected `0/2 sessions`.
+Normal/filtered counters and all six delete hints pass; Python controls all pass.
+New proposed frame regression uses two rows, real apply_filter/frame_lines and
+literal Python footer; no internals mocked. No implementation written yet.
+
+Extend the existing bounded official runner with an allowlist selecting the old
+hint or new counter regression. Counter proposals live in a separate subdirectory;
+old hint proposals remain unchanged. Ten workflow policy tests PASS including
+selection rejection. RED must be the exact named failure three times after
+fmt/check; compilation errors or zero selected tests are not RED. Only after
+that result will the minimal implementation be proposed. No local Rust or merge.

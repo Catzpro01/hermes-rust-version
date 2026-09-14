@@ -1,0 +1,18 @@
+--- a/crates/hermes-cli/src/session_picker.rs
++++ b/crates/hermes-cli/src/session_picker.rs
+@@ -560,6 +560,15 @@
+     }
+ 
+     #[test]
++    fn picker_no_match_counter_preserves_total() {
++        let rows = fixture_rows();
++        let shown = apply_filter(&rows, "zzzz");
++        let frame = frame_lines(&rows, &shown, 0, "zzzz", 20, 10);
++        // Independent pinned Python two-session fixture, not a recomputed count.
++        assert_eq!(frame.last().unwrap(), "  0/2 sessions");
++    }
++
++    #[test]
+     fn picker_footer_tracks_delete_availability() {
+         let mut rows = fixture_rows();
+         rows.truncate(1);
