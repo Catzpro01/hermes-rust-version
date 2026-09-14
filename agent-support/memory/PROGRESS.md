@@ -1900,3 +1900,31 @@ head `main`; working tree bersih saat mulai).
   pada `c731a14` **SUCCESS** (kedua job: fmt+clippy+test dan gate regression).
   Ini run verifikasi baru untuk commit sesi ini, bukan hasil historis.
   Warning nonblocking tetap sama: pin actions Node20 dipaksa Node24 oleh runner.
+
+### Slice lingkungan CI: hilangkan warning Node.js 20 di runner self-hosted (selesai)
+
+**Request:** selesaikan semua error; pengguna menjalankan GitHub Actions pada
+runner self-hosted VPS (2 core, 2 GB RAM, 38 GB disk).
+
+- Analisis menyeluruh: tidak ada kegagalan terbuka pada keempat workflow
+  (ci, picker-diagnostic, ui-evidence, visual-evidence) — semua failure historis
+  pada 100 run terakhir sudah disusul commit perbaikan di branch yang sama dan
+  ikut ter-merge lewat PR #7/#8; check-runs head hijau.
+- Satu-satunya anotasi berulang di setiap run: `Node.js 20 is deprecated` dari
+  pin actions major lama. Ini yang dibetulkan.
+- Perubahan (SHA commit diverifikasi via GitHub API; `action.yml` menyatakan
+  `using: node24`): checkout v4→v5.1.0 `fbc6f399…`, setup-python v5→v6.3.0
+  `ece7cb06…`, upload-artifact v4→v6.0.0 `b7c566a7…` pada keempat workflow.
+  Syarat runner ≥ v2.327.1 terpenuhi (runner sudah memaksa Node24).
+- Validasi lokal sebelum push: suite scripts 134 tes → 124 PASS dengan 10 error
+  `HERMES_PICKER_BINARY` yang sama seperti baseline (tes PTY binary CI-only,
+  bukan regresi dari perubahan ini); `verify.py` PASS; 8 tes checkpoint PASS.
+- Commit `9bf9b8c6fa27` ter-push otomatis; receipt PASS. CI run
+  [34886701339](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34886701339)
+  **SUCCESS** kedua job pada runner self-hosted; anotasi check-run kini hanya
+  notice ringkasan `fmt=success clippy=success test=success picker=success` —
+  warning Node20 hilang. Ini run verifikasi baru, bukan historis.
+- Sisa yang dinyatakan apa adanya: 10 tes PTY lokal tetap membutuhkan binary
+  hasil `cargo build`; tidak ada toolchain Rust di sandbox (unduhan TLS-blocked,
+  diverifikasi ulang 2026-09-14) dan ingress artifact juga blocked, jadi tes itu
+  tercakup oleh CI yang hijau pada setiap commit — termasuk `9bf9b8c`.

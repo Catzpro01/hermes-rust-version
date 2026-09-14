@@ -111,3 +111,23 @@ Fresh clone Git dari commit itu: verifier7/37/164/9 PASS dan8 automation tests P
 Hook/state tidak ikut clone, sesuai desain. CI lama bf0fd81/34838109837 dan
 4785700/34839170321 juga dikonfirmasi SUCCESS, bukan lagi status unknown.
 Catatan hasil ini ada pada commit lanjutan; cek Actions untuk head terbaru.
+
+## Bump actions ke Node24 — 2026-09-15
+
+Peringatan berulang `Node.js 20 is deprecated` pada setiap run sudah
+dihilangkan atas permintaan pengguna. Pin dinaikkan ke major node24 terkecil,
+SHA commit diverifikasi lewat GitHub API dan `action.yml` menyatakan
+`using: node24`:
+
+- `actions/checkout` v4 → v5.1.0 (`fbc6f399…`)
+- `actions/setup-python` v5 → v6.3.0 (`ece7cb06…`)
+- `actions/upload-artifact` v4 → v6.0.0 (`b7c566a7…`)
+
+Syarat node24 adalah runner ≥ v2.327.1; runner self-hosted repo ini sudah
+memenuhinya (sebelumnya sudah memaksa Node20 ke Node24). Input yang dipakai
+(`name`, `path`, `retention-days`, `if-no-files-found`) tidak berubah antar
+major tersebut. Validasi lokal: suite scripts 124/134 (10 sisanya tes PTY
+binary CI-only, tak berubah), verifier paket PASS, 8 tes checkpoint PASS.
+CI run 34886701339 pada `9bf9b8c` SUCCESS di kedua job pada runner
+self-hosted (VPS 2 core/2 GB), anotasi hanya ringkasan
+`fmt=success clippy=success test=success picker=success` — tanpa warning.
