@@ -1199,3 +1199,14 @@ old hint proposals remain unchanged. Ten workflow policy tests PASS including
 selection rejection. RED must be the exact named failure three times after
 fmt/check; compilation errors or zero selected tests are not RED. Only after
 that result will the minimal implementation be proposed. No local Rust or merge.
+
+Counter RED34826295910/f232480 confirmed the exact named frame test failed
+three times after formatting/typecheck. Actual `0/0 sessions (filtered from 2)`
+vs expected `0/2 sessions`. Verified tested test-only patch749 bytes,
+SHA7d6ce8b95aea21d9c4dc88c4370f78d905d1f5b6de387fa1ccf492cab763f1f1.
+Only now propose the minimal formatter branch: no shown rows -> `0/{total}
+sessions`, no redundant filtered-from suffix or delete hint. Normal/filtered
+paths and eligibility predicate unchanged. Update the two old no-match literal
+expectations to the corrected contract, retaining all assertions including
+empty store/frame and existing hint controls. No runtime source applied yet.
+GREEN must pass exact regression3 times, fmt/check/clippy/full suite remotely.

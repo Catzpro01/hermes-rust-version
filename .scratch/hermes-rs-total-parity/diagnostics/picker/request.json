@@ -1,6 +1,7 @@
 {
-  "phase": "red",
+  "phase": "green",
   "test": "picker_no_match_counter_preserves_total",
   "source_sha256": "85a74b91fda3a2770da736e4bd933780e0715347ba2926b134a11f83f5ec4c23",
-  "patch_sha256": "35a4bff63abf0f12b9d652a7fcd496c179fc49139b0fa45815d0041a6efd9f26"
+  "patch_sha256": "2f552d377204fb1d8d10c87935a0da15b32ce81fd698bf86a829b589ea2b42f6",
+  "red_run": 34826295910
 }
