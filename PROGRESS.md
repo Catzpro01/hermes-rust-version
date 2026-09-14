@@ -1407,3 +1407,16 @@ Then resolve T12 wizard nested-field/full-Python-CLI and completion coverage;
 only afterwards consider the complete Spec017 acceptance review. No need to
 reopen completed footer fixes or start a new spec/architecture project now.
 No new test, patch, personal review, acceptance or merge performed here.
+
+### `/tdd header bantuan picker mode normal` — H1 complete, H2 test-first
+
+User continues the recommended real CLI/PTy seam; one primary normal100x30 test
+checks observable normal-help-header styling. Independent Python records show
+palette3 + bold=true (not bright-palette11); normal/delete at both widths. Pyte
+aliases brown/cdcd00 accepted, final xterm audit must prove indexed3, bold=true
+and other attributes unchanged. Header literal/row1 are capture prerequisites.
+Historical Python4/4 PASS and Rust4/4 style FAIL, not fresh live RED.14 workflow
+policy tests PASS. No Rust change/proposal yet. Allowlisted header runner rejects
+zero-test/setup errors and repeats the exact primary3 times. Preserve all prior
+footer fixes, filter/column header, selection and delete prompt styles. Capture10
+cases and update the user's milestone page. No merge or closure.

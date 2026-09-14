@@ -1,6 +1,6 @@
 # Milestone Hermes — visual parity Spec017
 
-**Pembaruan: 14 September 2026 · Warna footer picker selesai diverifikasi.**
+**Pembaruan: 14 September 2026 · Aktif: header bantuan picker mode normal.**
 
 Halaman ini melacak pekerjaan visual parity yang sedang aktif, **bukan persentase
 seluruh proyek Hermes**. “Terverifikasi” berlaku untuk scope yang disebutkan;
@@ -15,9 +15,24 @@ bukan berarti seluruh layar identik atau Spec017 sudah diterima pengguna.
 | Counter tanpa hasil tetap menunjukkan total sesi | ✅ Terverifikasi | [a8d5e8c](evidence/picker-counter-a8d5e8c/REPORT.md) |
 | Footer berada di baris terakhir terminal | ✅ Terverifikasi | [0c0704d: 10 pasangan diperiksa](evidence/picker-position-0c0704d/REPORT.md) |
 | Warna footer sesuai Python | ✅ Terverifikasi | [ae220ff: 10 gambar, 6 footer pixel-identik](evidence/picker-color-ae220ff/REPORT.md) |
-| Header, seleksi, konfirmasi hapus, sisa tata letak picker | ⏳ Belum selesai | Siklus terpisah; tidak ikut dianggap selesai oleh warna footer |
+| Header bantuan mode normal | 🔄 TDD dimulai | Referensi palette3 + bold; bukan header kolom atau header filter |
+| Header filter, seleksi, konfirmasi hapus, sisa tata letak picker | ⏳ Belum selesai | Siklus terpisah; tidak ikut dianggap selesai oleh warna footer |
 | Sisa perbedaan wizard/completion dan kelengkapan bukti | ⏳ Belum selesai | T12/T13 tetap terbuka |
 | Penerimaan akhir Spec017 | 🔒 Belum siap | Memerlukan bukti lengkap, CI relevan GREEN, dan persetujuan eksplisit pengguna |
+
+## Milestone aktif — header bantuan mode normal
+
+Scope: baris bantuan `Browse sessions` ketika filter kosong, **palette3 + bold**.
+Header yang sama juga tampak saat konfirmasi hapus. Warna prompt hapus sendiri,
+header filter/kolom, seleksi, footer dan posisi teks tidak ikut diubah.
+
+| Tahap | Status | Bukti / kriteria |
+|---|---|---|
+| H1 · Kontrak dan referensi | ✅ Selesai | CLI/PTY nyata normal100×30 disepakati; referensi Python4/4 normal/delete pada100/80 memakai palette3 + bold |
+| H2 · RED nyata | 🔄 Disiapkan | Tes primer dibuat; replay Rust lama4/4 gagal. Belum dihitung sebagai RED live |
+| H3 · Perubahan minimal | ⏳ Menunggu H2 | Belum ada proposal/perubahan Rust |
+| H4 · GREEN resmi | ⏳ Menunggu H3 | Tes primer, fmt/check/clippy/full workspace sebelum patch diterapkan |
+| H5 · Capture dan review | ⏳ Menunggu H4 | 10 pasangan normal/filter/no-match/delete/empty; style header dan isolasi perubahan, semua perbaikan footer tetap benar |
 
 ## Milestone warna footer picker — M1–M5 selesai
 

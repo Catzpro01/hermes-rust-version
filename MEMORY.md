@@ -30,6 +30,13 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Active normal-help-header `/tdd`: agreed real CLI/PTy normal100x30 seam.
+  Python target indexed3 + bold=true; pyte brown/cdcd00 aliases (NOT palette11).
+  Primary test written; no live RED/proposed Rust patch yet. Historical normal/
+  delete4 header checks fail for Rust, Python4 PASS;14 policy tests PASS.
+  `MILESTONES.md` H1 done/H2 test-first. Preserve other rows, filter header and
+  all four completed footer fixes. Final ten-case capture/xterm audit required.
+
 - Post-delivery guidance: observed CI34834196724/7b8ff84 SUCCESS, clean tree.
   Recommended next slice is normal-mode `Browse sessions` help-header styling
   through real CLI/PTy, then remaining picker presentation, then T12/wizard/
