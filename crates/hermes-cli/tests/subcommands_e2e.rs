@@ -40,14 +40,12 @@ fn model_lists_configured_providers_with_active_marker() {
         .success()
         .stdout(predicate::str::contains("Providers:"))
         .stdout(predicate::str::contains("* anthropic (active)"))
-        .stdout(predicate::str::contains(
-            "models: claude-sonnet-4-5",
-        ))
+        .stdout(predicate::str::contains("models: claude-sonnet-4-5"))
         .stdout(predicate::str::contains("openai (OpenAI)"))
         .stdout(predicate::str::contains("models: gpt-4o"))
         .stdout(predicate::str::contains("❯ ").not()) // no REPL prompt
         .stdout(predicate::str::contains("\u{1b}").not()); // piped -> ANSI-free
-    // model is read-only: it must not create or touch the canonical store.
+                                                           // model is read-only: it must not create or touch the canonical store.
     assert!(!home.path().join("state.db").exists());
 }
 
@@ -137,7 +135,10 @@ fn mcp_list_renders_configured_servers_without_spawning_or_leaking() {
             "MCP servers:\n  auto         configured ? tool(s) (auto mode)\n  files        configured ? tool(s) (confirm mode)\n",
             "{args:?}"
         );
-        assert!(!stdout.contains("sk-proj-mcp-secret"), "env leaked: {stdout}");
+        assert!(
+            !stdout.contains("sk-proj-mcp-secret"),
+            "env leaked: {stdout}"
+        );
     }
     // The shell never creates the store or spawns anything that writes home.
     assert!(!home.path().join("state.db").exists());
@@ -230,11 +231,17 @@ fn info_first_line_matches_live_repl_info_on_a_fresh_session() {
         .stdout(predicate::str::contains("Providers configured: 1\n"))
         .stdout(predicate::str::contains("Sessions: 1\n")); // the REPL run above created one
     let stdout = String::from_utf8_lossy(&out.get_output().stdout);
-    assert_eq!(stdout.lines().next().unwrap(), repl_line, "shell `info` line 1 == REPL `/info`");
+    assert_eq!(
+        stdout.lines().next().unwrap(),
+        repl_line,
+        "shell `info` line 1 == REPL `/info`"
+    );
     assert!(repl_line.contains("limit: 4096"), "{repl_line}");
-    assert!(repl_line.contains("compression: on (target ~2048 tokens)"), "{repl_line}");
+    assert!(
+        repl_line.contains("compression: on (target ~2048 tokens)"),
+        "{repl_line}"
+    );
 }
-
 
 #[test]
 fn tool_calls_subcommand_parses_kebab_case() {
@@ -246,7 +253,9 @@ fn tool_calls_subcommand_parses_kebab_case() {
         .assert()
         .failure()
         .code(1)
-        .stderr(predicate::str::contains("invalid session id 'abc' (expected a UUID)"));
+        .stderr(predicate::str::contains(
+            "invalid session id 'abc' (expected a UUID)",
+        ));
 }
 
 #[test]
@@ -258,7 +267,9 @@ fn messages_subcommand_parses_and_validates() {
         .assert()
         .failure()
         .code(1)
-        .stderr(predicate::str::contains("invalid session id 'not-a-uuid' (expected a UUID)"));
+        .stderr(predicate::str::contains(
+            "invalid session id 'not-a-uuid' (expected a UUID)",
+        ));
 }
 
 #[test]
@@ -273,7 +284,9 @@ fn tool_calls_and_messages_unknown_id_is_clear_error() {
         .assert()
         .failure()
         .code(1)
-        .stderr(predicate::str::contains(format!("session not found: {missing}")));
+        .stderr(predicate::str::contains(format!(
+            "session not found: {missing}"
+        )));
     hermes_cmd()
         .env("HERMES_HOME", home.path())
         .args(["messages", missing])
@@ -281,7 +294,9 @@ fn tool_calls_and_messages_unknown_id_is_clear_error() {
         .assert()
         .failure()
         .code(1)
-        .stderr(predicate::str::contains(format!("session not found: {missing}")));
+        .stderr(predicate::str::contains(format!(
+            "session not found: {missing}"
+        )));
 }
 
 #[test]
@@ -369,7 +384,9 @@ fn messages_and_tool_calls_match_live_repl_and_write_nothing() {
     let repl = hermes_cmd()
         .env("HERMES_HOME", home.path())
         .args(["--provider", "fake"])
-        .write_stdin(format!("/messages {SEED_ID_B}\n/tool-calls {SEED_ID_B}\n/exit\n"))
+        .write_stdin(format!(
+            "/messages {SEED_ID_B}\n/tool-calls {SEED_ID_B}\n/exit\n"
+        ))
         .output()
         .unwrap();
     assert!(repl.status.success());
@@ -398,8 +415,15 @@ fn messages_and_tool_calls_match_live_repl_and_write_nothing() {
         .stdout(predicate::str::contains("❯ ").not())
         .stdout(predicate::str::contains("\u{1b}").not());
     let stdout = String::from_utf8_lossy(&out.get_output().stdout);
-    assert_eq!(stdout, "[1] user: parity check B\n[2] assistant: reply red done\n");
-    assert_eq!(stdout, format!("{}\n", repl_msgs.join("\n")), "messages: shell == REPL");
+    assert_eq!(
+        stdout,
+        "[1] user: parity check B\n[2] assistant: reply red done\n"
+    );
+    assert_eq!(
+        stdout,
+        format!("{}\n", repl_msgs.join("\n")),
+        "messages: shell == REPL"
+    );
 
     let out = hermes_cmd()
         .env("HERMES_HOME", home.path())
@@ -410,7 +434,11 @@ fn messages_and_tool_calls_match_live_repl_and_write_nothing() {
         .stdout(predicate::str::contains("\u{1b}").not());
     let stdout = String::from_utf8_lossy(&out.get_output().stdout);
     assert_eq!(stdout, "tc-b-1 [success] fixture_tool args={} result=ok\n");
-    assert_eq!(stdout, format!("{}\n", repl_calls.join("\n")), "tool-calls: shell == REPL");
+    assert_eq!(
+        stdout,
+        format!("{}\n", repl_calls.join("\n")),
+        "tool-calls: shell == REPL"
+    );
 
     // A session with no tool calls prints nothing and exits 0.
     hermes_cmd()
@@ -438,7 +466,12 @@ const VERSION_LABEL: &str = "Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301"
 fn version_flag_and_subcommand_render_the_banner_label() {
     let home = TempDir::new().unwrap();
     let mut outputs = Vec::new();
-    for args in [vec!["--version"], vec!["-V"], vec!["version"], vec!["info", "--version"]] {
+    for args in [
+        vec!["--version"],
+        vec!["-V"],
+        vec!["version"],
+        vec!["info", "--version"],
+    ] {
         let out = hermes_cmd()
             .env("HERMES_HOME", home.path())
             .args(&args)
@@ -453,7 +486,10 @@ fn version_flag_and_subcommand_render_the_banner_label() {
             .stdout(predicate::str::contains("\u{1b}").not());
         outputs.push(String::from_utf8_lossy(&out.get_output().stdout).into_owned());
     }
-    assert!(outputs.windows(2).all(|w| w[0] == w[1]), "all forms identical: {outputs:?}");
+    assert!(
+        outputs.windows(2).all(|w| w[0] == w[1]),
+        "all forms identical: {outputs:?}"
+    );
     assert!(!home.path().join("state.db").exists());
 }
 
@@ -496,18 +532,38 @@ fn help_lists_every_subcommand_and_global_flags() {
         .stdout(predicate::str::contains("\u{1b}").not());
     let stdout = String::from_utf8_lossy(&out.get_output().stdout);
     for cmd in [
-        "setup", "version", "model", "tools", "sessions", "inspect", "messages", "tool-calls", "search",
-        "info", "mcp", "help",
+        "setup",
+        "version",
+        "model",
+        "tools",
+        "sessions",
+        "inspect",
+        "messages",
+        "tool-calls",
+        "search",
+        "info",
+        "mcp",
+        "help",
     ] {
         assert!(
             stdout.lines().any(|l| l.trim_start().starts_with(cmd)),
             "help must list `{cmd}`: {stdout}"
         );
     }
-    for flag in ["--hermes-home", "--provider", "--api-url", "--tui", "--version", "--help"] {
+    for flag in [
+        "--hermes-home",
+        "--provider",
+        "--api-url",
+        "--tui",
+        "--version",
+        "--help",
+    ] {
         assert!(stdout.contains(flag), "help must list `{flag}`: {stdout}");
     }
-    assert!(!stdout.contains("--setup-skeleton"), "hidden flag must stay hidden");
+    assert!(
+        !stdout.contains("--setup-skeleton"),
+        "hidden flag must stay hidden"
+    );
     // Subcommand help is also available.
     hermes_cmd()
         .args(["mcp", "--help"])
@@ -517,7 +573,6 @@ fn help_lists_every_subcommand_and_global_flags() {
         .stdout(predicate::str::contains("restart"))
         .stdout(predicate::str::contains("list"));
 }
-
 
 #[test]
 fn inspect_requires_an_id() {
@@ -807,7 +862,9 @@ fn inspect_unknown_id_is_a_clear_error() {
         .assert()
         .failure()
         .code(1)
-        .stderr(predicate::str::contains(format!("session not found: {missing}")));
+        .stderr(predicate::str::contains(format!(
+            "session not found: {missing}"
+        )));
     // No store at all: same clear error, still no file created.
     let empty = TempDir::new().unwrap();
     let out = hermes_cmd()
@@ -817,7 +874,9 @@ fn inspect_unknown_id_is_a_clear_error() {
         .assert()
         .failure()
         .code(1)
-        .stderr(predicate::str::contains(format!("session not found: {missing}")));
+        .stderr(predicate::str::contains(format!(
+            "session not found: {missing}"
+        )));
     let _ = out;
     assert!(!empty.path().join("state.db").exists());
 }
@@ -844,11 +903,7 @@ fn sessions_accepts_hermes_home_flag_after_subcommand() {
     // No HERMES_HOME env: the global flag (after the subcommand) resolves
     // the home instead — position-independent flags (Spec 014 principle).
     hermes_cmd()
-        .args([
-            "sessions",
-            "--hermes-home",
-            home.path().to_str().unwrap(),
-        ])
+        .args(["sessions", "--hermes-home", home.path().to_str().unwrap()])
         .write_stdin("")
         .assert()
         .success()
@@ -893,7 +948,10 @@ fn sandbox_config_is_reported_by_info_and_repl_sandbox_command() {
     assert!(repl.status.success());
     let stdout = String::from_utf8_lossy(&repl.stdout);
     assert!(
-        stdout.lines().map(strip_prompt).any(|l| l.starts_with("sandbox: on | cwd=") && l.contains("cpu=5s")),
+        stdout
+            .lines()
+            .map(strip_prompt)
+            .any(|l| l.starts_with("sandbox: on | cwd=") && l.contains("cpu=5s")),
         "{stdout}"
     );
 }
@@ -901,7 +959,11 @@ fn sandbox_config_is_reported_by_info_and_repl_sandbox_command() {
 #[test]
 fn invalid_sandbox_config_fails_at_load_time() {
     let home = TempDir::new().unwrap();
-    std::fs::write(home.path().join("config.yaml"), "sandbox:\n  enabled: true\n  network: dney\n").unwrap();
+    std::fs::write(
+        home.path().join("config.yaml"),
+        "sandbox:\n  enabled: true\n  network: dney\n",
+    )
+    .unwrap();
     hermes_cmd()
         .env("HERMES_HOME", home.path())
         .args(["info"])
@@ -909,7 +971,9 @@ fn invalid_sandbox_config_fails_at_load_time() {
         .assert()
         .failure()
         .code(1)
-        .stderr(predicate::str::contains("invalid sandbox config field `network`"));
+        .stderr(predicate::str::contains(
+            "invalid sandbox config field `network`",
+        ));
     // `version` is still fine (never loads config).
     hermes_cmd()
         .env("HERMES_HOME", home.path())
@@ -948,11 +1012,18 @@ fn no_sandbox_flag_and_enabled_false_yield_inherit() {
     assert!(repl.status.success());
     let stdout = String::from_utf8_lossy(&repl.stdout);
     assert!(
-        stdout.lines().map(strip_prompt).any(|l| l == "sandbox: off (inherit)"),
+        stdout
+            .lines()
+            .map(strip_prompt)
+            .any(|l| l == "sandbox: off (inherit)"),
         "{stdout}"
     );
 
-    std::fs::write(home.path().join("config.yaml"), "sandbox:\n  enabled: false\n").unwrap();
+    std::fs::write(
+        home.path().join("config.yaml"),
+        "sandbox:\n  enabled: false\n",
+    )
+    .unwrap();
     hermes_cmd()
         .env("HERMES_HOME", home.path())
         .args(["info"])
@@ -961,7 +1032,11 @@ fn no_sandbox_flag_and_enabled_false_yield_inherit() {
         .success()
         .stdout(predicate::str::contains("sandbox: off (inherit)\n"));
     // A `sandbox:` section without `enabled` is still on.
-    std::fs::write(home.path().join("config.yaml"), "sandbox:\n  cpu_seconds: 2\n").unwrap();
+    std::fs::write(
+        home.path().join("config.yaml"),
+        "sandbox:\n  cpu_seconds: 2\n",
+    )
+    .unwrap();
     hermes_cmd()
         .env("HERMES_HOME", home.path())
         .args(["info"])
@@ -996,7 +1071,10 @@ fn sessions_browse_fallback_selects_cancels_and_writes_nothing() {
         stdout.contains("  Browse sessions  (enter number to resume, q to cancel)"),
         "verbatim fallback header: {stdout}"
     );
-    assert!(stdout.contains("Title / Preview"), "column header: {stdout}");
+    assert!(
+        stdout.contains("Title / Preview"),
+        "column header: {stdout}"
+    );
     assert!(
         stdout.contains(&format!("Selected session {SEED_ID_B}")),
         "1 = newest first: {stdout}"
@@ -1018,7 +1096,10 @@ fn sessions_browse_fallback_selects_cancels_and_writes_nothing() {
             .stdout
             .clone();
         let stdout = String::from_utf8_lossy(&out);
-        assert!(!stdout.contains("Selected session"), "cancelled: {stdout:?}");
+        assert!(
+            !stdout.contains("Selected session"),
+            "cancelled: {stdout:?}"
+        );
     }
     drop(c);
     assert_eq!(
@@ -1080,7 +1161,12 @@ fn resume_id_opens_the_named_session() {
 
     hermes_cmd()
         .env("HERMES_HOME", home.path())
-        .args(["--provider", "fake", "--resume-id", "00000000-0000-4000-8000-000000000000"])
+        .args([
+            "--provider",
+            "fake",
+            "--resume-id",
+            "00000000-0000-4000-8000-000000000000",
+        ])
         .write_stdin("/exit\n")
         .assert()
         .failure()

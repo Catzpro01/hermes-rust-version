@@ -37,7 +37,9 @@ where
                     continue;
                 }
                 // Unterminated brace: treat literally (or error). Be strict.
-                return Err(McpError::Protocol("unterminated ${ in MCP env value".into()));
+                return Err(McpError::Protocol(
+                    "unterminated ${ in MCP env value".into(),
+                ));
             }
             // $NAME (up to non-name char). A variable name must start with a
             // letter or underscore, so `$5`, `$2x`, and a lone `$` are kept
@@ -109,7 +111,12 @@ mod tests {
     use super::*;
 
     fn env<'a>(names: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {
-        move |k| names.iter().find(|(n, _)| *n == k).map(|(_, v)| v.to_string())
+        move |k| {
+            names
+                .iter()
+                .find(|(n, _)| *n == k)
+                .map(|(_, v)| v.to_string())
+        }
     }
 
     #[test]
@@ -140,6 +147,9 @@ mod tests {
     fn utf8_passthrough_is_char_safe() {
         let e = env(&[("HOME", "/root")]);
         // CJK between expansions must not be mangled.
-        assert_eq!(expand_env_value("${HOME}/你/好", &e).unwrap(), "/root/你/好");
+        assert_eq!(
+            expand_env_value("${HOME}/你/好", &e).unwrap(),
+            "/root/你/好"
+        );
     }
 }

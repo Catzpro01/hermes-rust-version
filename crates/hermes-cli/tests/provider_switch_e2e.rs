@@ -23,7 +23,12 @@ fn spawn(home: &TempDir) -> std::process::Output {
     Command::cargo_bin("hermes-rs")
         .unwrap()
         .env_remove(UNSET_ENV)
-        .args(["--provider", "fake", "--hermes-home", home.path().to_str().unwrap()])
+        .args([
+            "--provider",
+            "fake",
+            "--hermes-home",
+            home.path().to_str().unwrap(),
+        ])
         .write_stdin("/provider\n/provider p\n/provider nope\nhello\n/exit\n")
         .output()
         .unwrap()
@@ -43,7 +48,10 @@ fn provider_command_lists_marks_and_rolls_back_on_failure() {
 
     // Listing marks the active provider and shows the configured one.
     assert!(stdout.contains("fake (active)"), "stdout={stdout:?}");
-    assert!(stdout.contains("\n  p\n"), "configured provider listed: {stdout:?}");
+    assert!(
+        stdout.contains("\n  p\n"),
+        "configured provider listed: {stdout:?}"
+    );
 
     // A provider that cannot be constructed must roll back, keeping `fake`
     // active instead of leaving a half-finished switch.
@@ -69,7 +77,12 @@ fn provider_switch_to_an_available_provider_keeps_session_running() {
     let out = Command::cargo_bin("hermes-rs")
         .unwrap()
         .env_remove(UNSET_ENV)
-        .args(["--provider", "fake", "--hermes-home", home.path().to_str().unwrap()])
+        .args([
+            "--provider",
+            "fake",
+            "--hermes-home",
+            home.path().to_str().unwrap(),
+        ])
         .write_stdin("/provider fake\nhello after switch\n/exit\n")
         .output()
         .unwrap();

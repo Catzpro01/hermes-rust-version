@@ -79,7 +79,10 @@ pub fn parse_inbound(line: &str) -> Option<Inbound> {
     let has_method = obj.get("method").and_then(Value::as_str);
     let id = obj.get("id").cloned();
     match has_method {
-        Some(method) => Some(Inbound::PeerMessage { method: method.to_owned(), id }),
+        Some(method) => Some(Inbound::PeerMessage {
+            method: method.to_owned(),
+            id,
+        }),
         None => {
             let id = id?;
             if let Some(err) = obj.get("error") {
@@ -92,11 +95,18 @@ pub fn parse_inbound(line: &str) -> Option<Inbound> {
                 let data = err.get("data").cloned();
                 Some(Inbound::Response {
                     id,
-                    reply: Reply::Error(RpcError { code, message, data }),
+                    reply: Reply::Error(RpcError {
+                        code,
+                        message,
+                        data,
+                    }),
                 })
             } else {
                 let result = obj.get("result").cloned().unwrap_or(Value::Null);
-                Some(Inbound::Response { id, reply: Reply::Result(result) })
+                Some(Inbound::Response {
+                    id,
+                    reply: Reply::Result(result),
+                })
             }
         }
     }

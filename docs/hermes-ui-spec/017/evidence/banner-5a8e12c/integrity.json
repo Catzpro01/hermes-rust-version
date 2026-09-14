@@ -1,0 +1,176 @@
+{
+  "status": "BANNER_FIXTURE_MATCH_WITH_DOCUMENTED_BRANDING_NOT_CLOSED",
+  "review": "direct image/cell inspection; not independent code-review or user acceptance",
+  "normalization": "none",
+  "python_version": "3.11.2 (main, Apr  8 2026, 01:58:00) [GCC 12.2.0]",
+  "node_version": "v22.22.3",
+  "rust_run": 34785921221,
+  "rust_job": 103801264070,
+  "rust_commit": "5a8e12c97dd760bf05f411a5d59585a97f0b5ad6",
+  "rustc_version": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "cargo_version": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+  "rust_worktree_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "transport": {
+    "parts": 4,
+    "bytes": 81053,
+    "sha256": "705a6aee68b0a346e8f696a06bbe5b4f2af562220b7dca3ad4e95afbe24bbf93"
+  },
+  "available_tools_columns_1_based": {
+    "100": {
+      "python": 51,
+      "rust": 51
+    },
+    "80": {
+      "python": 41,
+      "rust": 41
+    },
+    "94": {
+      "python": 48,
+      "rust": 48
+    },
+    "95": {
+      "python": 49,
+      "rust": 49
+    }
+  },
+  "scripts": {
+    "scripts/capture_banner.py": "e1bbee9b09c08a50543bafc098cd11c12f7b0c725cbbd9e9756e15c7bd54c7ba",
+    "scripts/visual-renderer/render.cjs": "b551071769c1cd15d2ba3fe88cf15b1b9ce5b4716357fb81c9c9ac84ca29d3a2",
+    "Cargo.lock": "29ab377d2f8c1f3f783699a430923e5d794ed01ad32b873583c889c6b4c4d3f4",
+    ".github/workflows/visual-evidence.yml": "a584de70b58aef1f78d4b8dd33714c5d4421beef8053dd7cf26ec24c6d9bd6c2"
+  },
+  "files": {
+    "REPORT.md": {
+      "sha256": "57fb92611cef47a13a1cfedca7721abb08ea9050fbea3499d3b34960954249d1",
+      "bytes": 4069
+    },
+    "banner-100x30-bottom.png": {
+      "sha256": "7dae87a704cf75479991881c82e7ac0b015ea6918ac67917df8350dad4c53e9e",
+      "bytes": 50201
+    },
+    "banner-100x30-cells.json.gz": {
+      "sha256": "1b6916c6a45e1cf1110a16e7c31d45b20e7a3f4109b2a4ffaf8fb7bac723e32c",
+      "bytes": 10308
+    },
+    "banner-100x30-python.ansi": {
+      "sha256": "92a7d6e15c7130d5f8947d11d7f1e4f3c5c4e624a0ecb77dc2bde2ffa7f6e8db",
+      "bytes": 7000
+    },
+    "banner-100x30-python.cast": {
+      "sha256": "d547b8ecbafe149a4cf64dcf036f7ba0b2d02fac0ebde0f1d6fa49b2ad4896a4",
+      "bytes": 8105
+    },
+    "banner-100x30-rust.ansi": {
+      "sha256": "82ac2185de169906b697a95e3efb9453df510d1944034bf146094bdcf20e6e1d",
+      "bytes": 7367
+    },
+    "banner-100x30-rust.cast": {
+      "sha256": "d977c9a4f1bb037dc0bac983158e259ad43d98dd5f6345d63f047b1c6036c6a7",
+      "bytes": 8902
+    },
+    "banner-100x30-top.png": {
+      "sha256": "bd57d5e0c96dd07a9835ca5f33e1a5ce3dd7fa647626845fdcf34e015598f01e",
+      "bytes": 46353
+    },
+    "banner-80x30-bottom.png": {
+      "sha256": "b3e9b2aed7835c2b5b0a08ca9fa56ef5cdd797a58e4747a71b11f7acebb34fb9",
+      "bytes": 46002
+    },
+    "banner-80x30-cells.json.gz": {
+      "sha256": "4c762a131524109a09ada0350da7e7c60773def246b149bd35bff246c2da1ec2",
+      "bytes": 7386
+    },
+    "banner-80x30-python.ansi": {
+      "sha256": "761ea865106e47eaa1d2ecd50542024e06038f254bb27d0c27f6d64c42128bdd",
+      "bytes": 4877
+    },
+    "banner-80x30-python.cast": {
+      "sha256": "31072022f4f22d780cdb05798f6a251966ed816b73f4335bbf5101f8b6029a08",
+      "bytes": 5888
+    },
+    "banner-80x30-rust.ansi": {
+      "sha256": "ec64088d14b02a43588fd7aa3b7e596068c1ca3246ef1053b5ce3ac43e0f4550",
+      "bytes": 4918
+    },
+    "banner-80x30-rust.cast": {
+      "sha256": "e64403d84c844cac7ed29f457b8dc33bed93eac56584a1a2d5f281ec73b447c3",
+      "bytes": 6237
+    },
+    "banner-80x30-top.png": {
+      "sha256": "b3e9b2aed7835c2b5b0a08ca9fa56ef5cdd797a58e4747a71b11f7acebb34fb9",
+      "bytes": 46002
+    },
+    "banner-94x30-bottom.png": {
+      "sha256": "fb4b27e867c1bc0d25ff58aeb91eb2260584d8847762fd4a55f423125f6ac17f",
+      "bytes": 45766
+    },
+    "banner-94x30-cells.json.gz": {
+      "sha256": "665babc3836e21cb9d270cd247c70685d353c14017948bb9ce35c40a383a0560",
+      "bytes": 7742
+    },
+    "banner-94x30-python.ansi": {
+      "sha256": "c1fc23c41ce659140986bfbc671099551703c4909a5d25da41655055dab8def8",
+      "bytes": 5229
+    },
+    "banner-94x30-python.cast": {
+      "sha256": "c94e7f5ebdcf5e54b36de324d7d0e76e46a5cfc113436c944a8106f9befb70ab",
+      "bytes": 6248
+    },
+    "banner-94x30-rust.ansi": {
+      "sha256": "8c8d1a3641733e6238b02895979e0a18845b6ee0cdb9fcfaf89d8dc0c4d739db",
+      "bytes": 5284
+    },
+    "banner-94x30-rust.cast": {
+      "sha256": "a996003285e78d049c9cfad0d871166d081de5ebabb4de92c38e153e45f2a9c9",
+      "bytes": 6613
+    },
+    "banner-94x30-top.png": {
+      "sha256": "fb4b27e867c1bc0d25ff58aeb91eb2260584d8847762fd4a55f423125f6ac17f",
+      "bytes": 45766
+    },
+    "banner-95x30-bottom.png": {
+      "sha256": "7345eacab606258d18736f7e329be7242b0ba24eebbc194c5a5fb850ed2ead2f",
+      "bytes": 47282
+    },
+    "banner-95x30-cells.json.gz": {
+      "sha256": "bc148c6256240143f6965653fb9eaa39cf56e9579fe4e0fa7f627fa7f14a0e09",
+      "bytes": 10675
+    },
+    "banner-95x30-python.ansi": {
+      "sha256": "d509601b49991993ff1d08d1ad0fb6973e33decd69783ad9555e372bee9d01a7",
+      "bytes": 7134
+    },
+    "banner-95x30-python.cast": {
+      "sha256": "8a3de486c26f7a92db12465ce376e54df35becd0a5e2670e7ae336ba2541e4f9",
+      "bytes": 8317
+    },
+    "banner-95x30-rust.ansi": {
+      "sha256": "9d33c54a4e8d6afd6392857af347875f1d4e3c721c61da8b9bbe424acc045c73",
+      "bytes": 7831
+    },
+    "banner-95x30-rust.cast": {
+      "sha256": "cf5a0fa2503ae5d5939eb77cdf19f79c0e70eb2981f614754871b81a21b26f00",
+      "bytes": 9537
+    },
+    "banner-95x30-top.png": {
+      "sha256": "a123a8cc6a07fbbc222044c6d048c275e758502ac78f5f6f078a0666b5fbc8a4",
+      "bytes": 38830
+    },
+    "comparison.json": {
+      "sha256": "5f64200960b933415a545339232787c649dcd48216ccdf73c142e897a924366e",
+      "bytes": 12311
+    },
+    "paired-bundle.json": {
+      "sha256": "b52521002876affaef9cb3ecaa83272a5526dc273e0008bcff6db068b85cbf19",
+      "bytes": 151551
+    },
+    "renderer.json": {
+      "sha256": "b72c23d2a278847e7357d00d34647fc24d739d2187f10029faa67081cc2e28e3",
+      "bytes": 2771
+    },
+    "rust-bundle.json": {
+      "sha256": "705a6aee68b0a346e8f696a06bbe5b4f2af562220b7dca3ad4e95afbe24bbf93",
+      "bytes": 81053
+    }
+  }
+}

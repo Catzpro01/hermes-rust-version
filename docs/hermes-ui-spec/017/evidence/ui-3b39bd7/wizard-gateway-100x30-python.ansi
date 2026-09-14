@@ -1,0 +1,10 @@
+
+[35m┌─────────────────────────────────────────────────────────┐[0m
+[35m│     ⚕ Hermes Setup — Messaging Platforms (Gateway)      │[0m
+[35m└─────────────────────────────────────────────────────────┘[0m
+
+[36m[1m◆ Messaging Platforms[0m
+[2m  Connect to messaging platforms to chat with Hermes from anywhere.[0m
+[2m  Toggle with Space, confirm with Enter.[0m
+
+[?1049h[22;0;0t[1;30r(B[m[4l[?7h[?1h=[39;49m[?25l[39;49m(B[m[H[2J(B[0;1m[33mSelect platforms to configure:[2d[39m(B[0;2m  ↑↓ navigate  SPACE toggle  ENTER confirm  ESC cancel[4d(B[0;1m[32m → [ ] 💬 Mattermost  (not configured)[5;4H[39m(B[m[ ] 📡 Signal  (not configured)[6;4H[ ] 💬 Weixin / WeChat  (not configured)[7;4H[ ] 💬 BlueBubbles (iMessage)  (not configured)[8;4H[ ] 🐧 QQ Bot  (not configured)[9;4H[ ] 💎 Yuanbao  (not configured)[10;4H[ ] 🧩 A2A  (not configured)[11;4H[ ] 🐝 Buzz  (not configured)[12;4H[ ] 🐳 DingTalk  (not configured)[13;4H[ ] 🎮 Discord  (not configured)[14;4H[ ] 📧 Email  (not configured)[15;4H[ ]   Feishu / Lark  (not configured)[16;4H[ ] 💬 Google Chat  (not configured)[17;4H[ ] 🏠 Home Assistant  (not configured)[18;4H[ ] 💬 IRC  (not configured)[19;4H[ ] 💚 LINE  (not configured)[20;4H[ ] 🔐 Matrix  (not configured)[21;4H[ ] 🔔 ntfy  (not configured)[22;4H[ ] 📱 iMessage via Photon  (not configured)[23;4H[ ] 🔔 Raft  (not configured)[24;4H[ ] 🔒 SimpleX Chat  (not configured)[25;4H[ ] 💼 Slack  (not configured)[26;4H[ ] 📱 SMS (Twilio)  (not configured)[27;4H[ ] 💼 Microsoft Teams  (not configured)[28;4H[ ] ✈️ Telegram  (not configured)[29;4H[ ] 💼 WeCom (Enterprise WeChat)  (not configured)

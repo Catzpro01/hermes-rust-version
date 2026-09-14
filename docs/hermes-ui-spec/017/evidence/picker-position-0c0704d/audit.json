@@ -1,0 +1,79 @@
+{
+  "status": "FOOTER_POSITION_FIXED_NOT_WHOLE_SCREEN_PARITY",
+  "source": "0c0704d08d367444e780a0951506ba28ce125b2d",
+  "raw_cast_roundtrips": 20,
+  "png_hash_checks": 10,
+  "python_records_and_cells_unchanged": true,
+  "renderer_script_sha256": "201091eef5007e9a45889da7b4725b658ce39df1bf977a48677e435df9f9c074",
+  "renderer_settings_match_prior": true,
+  "footer_cells_moved_without_style_change": true,
+  "unchanged_paired_pngs": [
+    "picker-empty-100x30-bottom.png",
+    "picker-empty-80x30-bottom.png"
+  ],
+  "rust_cell_changes": {
+    "picker-normal-100x30": {
+      "baseline": "picker-counter-a8d5e8c",
+      "rows_1_based": [
+        5,
+        30
+      ]
+    },
+    "picker-filter-100x30": {
+      "baseline": "picker-counter-a8d5e8c",
+      "rows_1_based": [
+        4,
+        30
+      ]
+    },
+    "picker-no-match-100x30": {
+      "baseline": "picker-counter-a8d5e8c",
+      "rows_1_based": [
+        4,
+        30
+      ]
+    },
+    "picker-delete-100x30": {
+      "baseline": "ui-3b39bd7",
+      "rows_1_based": [
+        5
+      ]
+    },
+    "picker-empty-100x30": {
+      "baseline": "ui-3b39bd7",
+      "rows_1_based": []
+    },
+    "picker-normal-80x30": {
+      "baseline": "picker-counter-a8d5e8c",
+      "rows_1_based": [
+        5,
+        30
+      ]
+    },
+    "picker-filter-80x30": {
+      "baseline": "picker-counter-a8d5e8c",
+      "rows_1_based": [
+        4,
+        30
+      ]
+    },
+    "picker-no-match-80x30": {
+      "baseline": "picker-counter-a8d5e8c",
+      "rows_1_based": [
+        4,
+        30
+      ]
+    },
+    "picker-delete-80x30": {
+      "baseline": "ui-3b39bd7",
+      "rows_1_based": [
+        5
+      ]
+    },
+    "picker-empty-80x30": {
+      "baseline": "ui-3b39bd7",
+      "rows_1_based": []
+    }
+  },
+  "normalization": "none"
+}

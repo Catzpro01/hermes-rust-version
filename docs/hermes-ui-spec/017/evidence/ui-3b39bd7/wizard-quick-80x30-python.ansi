@@ -1,0 +1,30 @@
+
+[35m┌─────────────────────────────────────────────────────────┐[0m
+[35m│             ⚕ Hermes Agent Setup Wizard                │[0m
+[35m├─────────────────────────────────────────────────────────┤[0m
+[35m│  Let's configure your Hermes Agent installation.       │[0m
+[35m│  Press Ctrl+C at any time to exit.                     │[0m
+[35m└─────────────────────────────────────────────────────────┘[0m
+
+[?1049h[22;0;0t[1;30r(B[m[4l[?7h[?1h=[39;49m[?25l[39;49m(B[m[H[2J(B[0;1m[33mHow would you like to set up Hermes?[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4d(B[0;1m[32m → (●) Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools[5;4H[39m(B[m(○) Full setup — configure every provider, tool & option yourself (bring you[6;4H(○) Blank Slate — everything off except the bare minimum; opt in to each cap[?1l>[30;1H[?12l[?25h[?1049l[23;0;0t[?1l>[2m    Skipped (keeping current)[0m
+
+
+
+[36m[1m◆ Nous Portal[0m
+[2m  One subscription, 300+ models, plus the Tool Gateway:[0m
+[2m    web search, image generation, TTS, browser automation.[0m
+[2m  Sign up: https://portal.nousresearch.com/manage-subscription[0m
+
+Not logged into Nous Portal. Starting login...
+
+Starting Hermes login via Nous Portal...
+Portal: https://portal.nousresearch.com
+Login failed: network disabled for isolated visual evidence
+Login cancelled or failed.
+
+[36m[1m◆ Terminal Backend[0m
+[2m  Choose where Hermes runs shell commands and code.[0m
+[2m  This affects tool execution, file access, and isolation.[0m
+[2m     Guide: https://hermes-agent.nousresearch.com/docs/user-guide/configuration#terminal-backend-configuration[0m
+
+[?1049h[22;0;0t[1;30r[?25l[39;49m]104(B[m[4l[?7h[H[2J(B[0;1m[33mHow would you like to set up Hermes?[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4d(B[0;1m[32m → (●) Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools[5;4H[39m(B[m(○) Full setup — configure every provider, tool & option yourself (bring you[6;4H(○) Blank Slate — everything off except the bare minimum; opt in to each cap[?1h=[39;49m(B[m[H[2J(B[0;1m[33mSelect terminal backend:[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4;4H(B[m(○) Local - run directly on this machine (default)[5;4H(○) Docker - isolated container with configurable resources[6;4H(○) Modal - serverless cloud sandbox[7;4H(○) SSH - run on a remote machine[8;4H(○) Daytona - persistent cloud development environment[9;4H(○) Vercel Sandbox - cloud microVM with snapshot filesystem persistence[10;4H(○) Singularity/Apptainer - HPC-friendly container[11d(B[0;1m[32m → (●) Keep current (local)[39m(B[m

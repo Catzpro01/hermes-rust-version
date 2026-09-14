@@ -1,0 +1,8 @@
+test_footer_uses_reference_grey (__main__.PickerFooterColorTests.test_footer_uses_reference_grey) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 12.694s
+
+OK
+VERIFIED candidate patch 916 ea56c272de0cf151168aee03e85803662f9ffe12bc563de97e6e512e73b941a3

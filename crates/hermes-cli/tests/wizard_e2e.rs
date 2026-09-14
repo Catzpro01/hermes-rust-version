@@ -208,13 +208,22 @@ mod pty {
         w.wait_for(consts::TERMINAL_QUESTION).unwrap();
         w.send(b"\r");
         let out = w.wait_for(consts::SETUP_COMPLETE).unwrap();
-        assert!(!out.contains(consts::MODE_QUESTION), "section mode skips the mode question");
-        assert!(!out.contains(consts::BACKUP_NOTICE), "no backup without a previous file");
+        assert!(
+            !out.contains(consts::MODE_QUESTION),
+            "section mode skips the mode question"
+        );
+        assert!(
+            !out.contains(consts::BACKUP_NOTICE),
+            "no backup without a previous file"
+        );
         let status = w.child.wait().expect("child exits");
         assert!(status.success(), "exit: {status}");
 
         let cfg = std::fs::read_to_string(w.home.path().join("config.yaml")).unwrap();
-        assert!(cfg.contains("terminal:") && cfg.contains("backend: local"), "{cfg}");
+        assert!(
+            cfg.contains("terminal:") && cfg.contains("backend: local"),
+            "{cfg}"
+        );
         // Atomic write: no temp leftovers; wizard never creates the store.
         let names: Vec<String> = std::fs::read_dir(w.home.path())
             .unwrap()
@@ -234,10 +243,16 @@ mod pty {
         w.send(b"\x1b");
         let out = w.wait_for(consts::CANCELED_MESSAGE).unwrap();
         assert!(!out.contains(consts::SETUP_COMPLETE));
-        assert!(!out.contains(consts::FIRST_TIME), "existing config → no first-time notice");
+        assert!(
+            !out.contains(consts::FIRST_TIME),
+            "existing config → no first-time notice"
+        );
         let status = w.child.wait().expect("child exits");
         assert!(status.success(), "exit: {status}");
-        assert_eq!(std::fs::read_to_string(w.home.path().join("config.yaml")).unwrap(), CFG);
+        assert_eq!(
+            std::fs::read_to_string(w.home.path().join("config.yaml")).unwrap(),
+            CFG
+        );
         let names: Vec<String> = std::fs::read_dir(w.home.path())
             .unwrap()
             .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
@@ -254,11 +269,15 @@ mod pty {
         const CFG: &str = "custom: keep\nmodel:\n  provider: auto\n  name: my-model\n";
         let mut w = PtyWizard::spawn(&["setup", "model"], Some(CFG));
         let out = w.wait_for(consts::PROVIDER_QUESTION).unwrap();
-        assert!(out.contains("Choose how to connect to your main chat model."), "{out}");
+        assert!(
+            out.contains("Choose how to connect to your main chat model."),
+            "{out}"
+        );
         w.send(b"\r"); // provider: first entry (nous)
         w.wait_for("API base URL").unwrap();
         w.send(b"\r");
-        w.wait_for("Environment variable holding the API key").unwrap();
+        w.wait_for("Environment variable holding the API key")
+            .unwrap();
         w.send(b"\r");
         w.wait_for("Model name").unwrap();
         w.send(b"\r");
@@ -295,8 +314,13 @@ mod pty {
         w.send(b"\r"); // Quick Setup (first option)
         let out = w.wait_for(consts::PROVIDER_QUESTION).unwrap();
         let signup = out.find(consts::NOUS_SIGNUP).expect("portal notice");
-        let notice = out.find(consts::NOUS_NOT_AVAILABLE).expect("rust-only notice");
-        assert!(signup < notice, "notice follows the verbatim portal block: {out}");
+        let notice = out
+            .find(consts::NOUS_NOT_AVAILABLE)
+            .expect("rust-only notice");
+        assert!(
+            signup < notice,
+            "notice follows the verbatim portal block: {out}"
+        );
         w.send(b"\x1b");
         w.wait_for(consts::CANCELED_MESSAGE).unwrap();
         let status = w.child.wait().expect("child exits");
@@ -319,7 +343,10 @@ mod pty {
         let parsed: hermes_core::config::HermesConfig = serde_yaml::from_str(&cfg).unwrap();
         let on = parsed.tools.expect("tools section").enabled_toolsets;
         assert!(!on.contains(&"web".to_owned()), "{on:?}");
-        assert!(on.contains(&"file".to_owned()) && on.contains(&"terminal".to_owned()), "{on:?}");
+        assert!(
+            on.contains(&"file".to_owned()) && on.contains(&"terminal".to_owned()),
+            "{on:?}"
+        );
         assert!(!on.contains(&"spotify".to_owned()), "{on:?}");
     }
 
@@ -329,8 +356,14 @@ mod pty {
     fn model_tty_is_the_provider_picker() {
         let mut w = PtyWizard::spawn(&["model"], None);
         let out = w.wait_for(consts::PROVIDER_QUESTION).unwrap();
-        assert!(out.contains("Choose how to connect to your main chat model."), "{out}");
-        assert!(out.contains("Nous Portal (Everything your agent needs"), "{out}");
+        assert!(
+            out.contains("Choose how to connect to your main chat model."),
+            "{out}"
+        );
+        assert!(
+            out.contains("Nous Portal (Everything your agent needs"),
+            "{out}"
+        );
         w.send(b"\x1b");
         w.wait_for(consts::CANCELED_MESSAGE).unwrap();
         let status = w.child.wait().expect("child exits");

@@ -12,8 +12,8 @@ use hermes_core::{
     session::SessionStore,
     tools::{
         sandbox::{OUTPUT_TRUNCATED_MARKER, SANDBOX_ENV_FLAG},
-        Confirmation, ResourceLimits, SandboxPolicy, ShellReadonlyTool, ShellTool, Tool,
-        ToolCall, ToolError, ToolExecutionStatus, ToolRegistry,
+        Confirmation, ResourceLimits, SandboxPolicy, ShellReadonlyTool, ShellTool, Tool, ToolCall,
+        ToolError, ToolExecutionStatus, ToolRegistry,
     },
 };
 use std::sync::{Arc, Mutex};
@@ -77,7 +77,13 @@ async fn spec007_sandboxed_shell_through_agentic_loop_hides_secrets_and_jails_cw
     let p = Scripted(Arc::new(Mutex::new(vec![script, "final".into()])));
     let mut r = ConversationRunner::new(p);
     let out = r
-        .chat_agentic("go", &registry, Some((&store, &id)), 5, CancellationToken::new())
+        .chat_agentic(
+            "go",
+            &registry,
+            Some((&store, &id)),
+            5,
+            CancellationToken::new(),
+        )
         .await
         .unwrap();
     assert!(matches!(out, AgenticResult::Done { .. }), "{out:?}");
@@ -108,7 +114,10 @@ async fn spec007_inherit_default_behaves_like_spec002() {
     assert!(!legacy.sandbox().enabled);
     let out = legacy
         .execute(
-            &call("shell_readonly", "printf \"$HERMES_E2E_INHERIT_007|$HERMES_SANDBOX\""),
+            &call(
+                "shell_readonly",
+                "printf \"$HERMES_E2E_INHERIT_007|$HERMES_SANDBOX\"",
+            ),
             CancellationToken::new(),
         )
         .await
@@ -131,10 +140,16 @@ async fn spec007_output_cap_and_rlimits_apply_to_both_shell_tools() {
 
     // Output cap (readonly tool: no redirect, so the blocklist passes).
     let out = ro
-        .execute(&call("shell_readonly", "printf '%032d' 7"), CancellationToken::new())
+        .execute(
+            &call("shell_readonly", "printf '%032d' 7"),
+            CancellationToken::new(),
+        )
         .await
         .unwrap();
-    assert_eq!(out.content, format!("{}{OUTPUT_TRUNCATED_MARKER}", "0".repeat(16)));
+    assert_eq!(
+        out.content,
+        format!("{}{OUTPUT_TRUNCATED_MARKER}", "0".repeat(16))
+    );
 
     // fsize rlimit (full shell: redirects allowed, still confined).
     let out = rw
@@ -147,7 +162,10 @@ async fn spec007_output_cap_and_rlimits_apply_to_both_shell_tools() {
     let size = std::fs::metadata(jail.path().join("big.bin"))
         .map(|m| m.len())
         .unwrap_or(0);
-    assert!(size <= 1024, "fsize limit must cap the file, got {size}: {out:?}");
+    assert!(
+        size <= 1024,
+        "fsize limit must cap the file, got {size}: {out:?}"
+    );
     // And the file landed inside the jail, not in the test's cwd.
     assert!(!std::path::Path::new("big.bin").exists());
 }
@@ -159,7 +177,10 @@ async fn spec007_gates_still_run_before_the_sandbox() {
     // Blocklist first.
     let ro = ShellReadonlyTool::new(Yes, Duration::from_secs(5)).with_sandbox(policy.clone());
     let e = ro
-        .execute(&call("shell_readonly", "curl http://x"), CancellationToken::new())
+        .execute(
+            &call("shell_readonly", "curl http://x"),
+            CancellationToken::new(),
+        )
         .await
         .unwrap_err();
     assert!(matches!(e, ToolError::Denied(_)));

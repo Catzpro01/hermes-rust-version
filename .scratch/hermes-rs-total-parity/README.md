@@ -13,14 +13,20 @@ autocomplete /slash, tips, session picker. Sumber ground truth:
 | T01 | [inquire + wizard skeleton](issues/01-wizard-skeleton.md) | DONE — APPROVED Matt (fa69b80) |
 | T02 | Banner v0.21.0 | APPROVED (per /ask-matt) — banner byte-identik dgn Python v0.21.0 (9 referensi) |
 | T03 | Info line | DONE — MERGED (PR #1, `07093dc`) |
-| T04 | Tips rotating | IN REVIEW — `issues/04-tips.md`; katalog 380+11 verbatim + selector, display menunggu Matt (§J.4) |
+| T04 | Tips rotating | DONE — `issues/04-tips.md`; katalog 380+11 verbatim + selector; display = opsi 1 (skip) + opsi 3 via T08 (TUI-only, approved) |
 | T05 | Setup wizard multi-step (`hermes setup`) | DONE — MERGED (PR #1, `07093dc`) |
 | T06 | Provider catalog (39 provider) | DONE — MERGED (PR #2, `319d719`) |
 | 007b | Sandbox default on + `--no-sandbox` | DONE — MERGED (PR #2, `319d719`) |
 | T07 | Toolsets catalog (26 toolset) | DONE — MERGED (PR #2, `319d719`) |
 | T08 | Autocomplete /slash + ghost text (parity perilaku prompt_toolkit) | DONE — MERGED (PR #3, `8d66bbb`); verdict /ask-matt 2026-09-13: cap 60 char, skill discovery best-effort, TUI-only placeholder — disetujui |
-| T09 | [Session picker](issues/T09-session-picker.md) | DONE — menunggu review Matt + CI (`sessions browse`, `/sessions` picker, startup bare = new, `--resume-id`, bugfix resume-oldest→latest) |
-| T10 | Parity, docs & closure | Not started |
+| T09 | [Session picker](issues/T09-session-picker.md) | DONE — MERGED (PR #6) |
+| T10 | [Parity, docs & closure](issues/T10-parity-closure.md) | Dokumen tersedia; closure belum disetujui — temuan review T11 |
+| T11 | [Closure review + CI gate](issues/T11-closure-review.md) | IN REVIEW — CI `34776992554` hijau; bukti/keputusan §J.7 + human sign-off masih terbuka |
+
+## Eksekusi bukti visual
+
+[T12 — Visual evidence](issues/T12-visual-evidence.md) menjalankan kesepakatan
+Q1-Q8 yang sudah dikonfirmasi. Tidak menggantikan sign-off closure T11.
 
 ## Artefak Fase 0
 

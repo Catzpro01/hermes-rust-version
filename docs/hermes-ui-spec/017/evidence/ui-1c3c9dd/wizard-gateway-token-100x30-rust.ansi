@@ -1,0 +1,49 @@
+No existing configuration found — running first-time setup.
+Configuration Location
+Config file:  /tmp/hermes-ui-rust-smr88sgn/config.yaml
+Secrets file: /tmp/hermes-ui-rust-smr88sgn/.env
+Data folder:  /tmp/hermes-ui-rust-smr88sgn
+Install dir:  /home/runner/work/hermes-rust-version/hermes-rust-version/crates/hermes-cli
+You can edit these files directly or use 'hermes config edit'
+
+Tip: jump straight to a section with 'hermes setup model|terminal|gateway|tools|agent', or fill only missing items with --quick.
+Press Enter to keep it, or type a new value to change it.
+
+
+Messaging Platforms
+Toggle with Space, confirm with Enter.
+[?25l[38;5;10m?[39m Select platforms to configure:  
+[38;5;14m>[39m [38;5;14m[ ][39m [38;5;14m💬 Mattermost  (not configured)[39m
+  [ ] 📡 Signal  (not configured)
+  [ ] 💬 Weixin / WeChat  (not configured)
+  [ ] 💬 BlueBubbles (iMessage)  (not configured)
+  [ ] 🐧 QQ Bot  (not configured)
+  [ ] 💎 Yuanbao  (not configured)
+[38;5;14m[[39m[38;5;14m↑↓ to move, space to select one, → to all, ← to none, type to filter[39m[38;5;14m][39m[7A[33C[?25h[?25l[33D
+[38;5;14m>[39m [38;5;14m[x][39m [38;5;14m💬 Mattermost  (not configured)[39m[K
+
+
+
+
+
+[7A[33C[?25h[?25l[33D[38;5;10m>[39m Select platforms to configure: [38;5;14m💬 Mattermost  (not configured)[39m[K
+[2K
+[2K
+[2K
+[2K
+[2K
+[2K
+[2K
+[?25h[7A[?25h
+1. In Mattermost: Integrations → Bot Accounts → Add Bot Account
+   (System Console → Integrations → Bot Accounts must be enabled)
+2. Give it a username (e.g. hermes) and copy the bot token
+3. Works with any self-hosted Mattermost instance — enter your server URL
+4. To find your user ID: click your avatar (top-left) → Profile
+   Your user ID is displayed there — click it to copy.
+   ⚠ This is NOT your username — it's a 26-character alphanumeric ID.
+5. To get a channel ID: click the channel name → View Info → copy the ID
+  Your Mattermost server URL. Works with any self-hosted instance.
+[?25l[38;5;10m?[39m Server URL (e.g. https://mm.example.com)  [43C[?25h[?25l[43D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) h [K[44C[?25h[?25l[44D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) ht [K[45C[?25h[?25l[45D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) htt [K[46C[?25h[?25l[46D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) http [K[47C[?25h[?25l[47D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https [K[48C[?25h[?25l[48D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https: [K[49C[?25h[?25l[49D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https:/ [K[50C[?25h[?25l[50D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https:// [K[51C[?25h[?25l[51D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://f [K[52C[?25h[?25l[52D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fi [K[53C[?25h[?25l[53D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fix [K[54C[?25h[?25l[54D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixt [K[55C[?25h[?25l[55D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixtu [K[56C[?25h[?25l[56D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixtur [K[57C[?25h[?25l[57D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixture [K[58C[?25h[?25l[58D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixture. [K[59C[?25h[?25l[59D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixture.i [K[60C[?25h[?25l[60D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixture.in [K[61C[?25h[?25l[61D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixture.inv [K[62C[?25h[?25l[62D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixture.inva [K[63C[?25h[?25l[63D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixture.inval [K[64C[?25h[?25l[64D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixture.invali [K[65C[?25h[?25l[65D[38;5;10m?[39m Server URL (e.g. https://mm.example.com) https://fixture.invalid [K[66C[?25h[?25l[66D[38;5;10m>[39m Server URL (e.g. https://mm.example.com) [38;5;14mhttps://fixture.invalid[39m[K
+[?25h[?25h  Paste the bot token from step 2 above.
+[?25l[38;5;10m?[39m Bot token  [12C[?25h

@@ -1,0 +1,172 @@
+name: Visual evidence (banner slice)
+
+on:
+  push:
+    branches: ["arena/01a09c1e-hermes-rust-version"]
+    paths:
+      - '.scratch/hermes-rs-total-parity/runner-candidate/**'
+  workflow_dispatch:
+    inputs:
+      candidate_patch_base64:
+        description: 'Optional pre-commit welcome.rs patch, tested before local application'
+        required: false
+        type: string
+      regression_phase:
+        description: 'Expected regression result; red requires the named test to fail'
+        type: choice
+        options: [none, red, green]
+        default: none
+
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    if: github.ref == 'refs/heads/arena/01a09c1e-hermes-rust-version'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install official Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+          rustup default stable
+          rustc --version
+          cargo --version
+      - name: Select validation phase
+        id: plan
+        env:
+          INPUT_PHASE: ${{ inputs.regression_phase }}
+          INPUT_CANDIDATE: ${{ inputs.candidate_patch_base64 }}
+        run: |
+          python3 - <<'PYCODE'
+          import os, json, pathlib, re
+          test = "banner_ansi_preserves_python_reference_layout"
+          capture = True
+          if os.environ['GITHUB_EVENT_NAME'] == 'push':
+              request = json.loads(pathlib.Path('.scratch/hermes-rs-total-parity/runner-candidate/request.json').read_text())
+              phase = request['phase']
+              test = request.get('test', test)
+              capture = request.get('capture', True)
+              candidate = phase != 'none'
+          else:
+              phase = os.environ['INPUT_PHASE'] or 'none'
+              candidate = bool(os.environ['INPUT_CANDIDATE'])
+          if phase not in ('none', 'red', 'green'):
+              raise SystemExit('Invalid validation phase')
+          if not isinstance(capture, bool):
+              raise SystemExit('capture must be a boolean')
+          if not re.fullmatch(r'banner_ansi_[a-z_]+', test):
+              raise SystemExit('Invalid regression test name')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write(f'phase={phase}\ncandidate={str(candidate).lower()}\ntest={test}\ncapture={str(capture).lower()}\n')
+          PYCODE
+      - name: Apply bounded pre-commit candidate
+        if: steps.plan.outputs.candidate == 'true'
+        env:
+          CANDIDATE: ${{ inputs.candidate_patch_base64 }}
+        run: |
+          python3 - <<'PYCODE'
+          import os, base64, pathlib, subprocess, json, hashlib
+          if os.environ['GITHUB_EVENT_NAME'] == 'push':
+              folder = pathlib.Path('.scratch/hermes-rs-total-parity/runner-candidate')
+              request = json.loads((folder / 'request.json').read_text())
+              patch = (folder / 'candidate.patch').read_bytes()
+              source = pathlib.Path('crates/hermes-cli/src/tui/welcome.rs').read_bytes()
+              if hashlib.sha256(source).hexdigest() != request['source_sha256'] or hashlib.sha256(patch).hexdigest() != request['patch_sha256']:
+                  raise SystemExit('Candidate/source digest mismatch')
+          else:
+              patch = base64.b64decode(os.environ['CANDIDATE'], validate=True)
+          if len(patch) > 40000:
+              raise SystemExit('Candidate too large')
+          p = pathlib.Path('/tmp/visual-candidate.patch')
+          p.write_bytes(patch)
+          names = subprocess.check_output(['git', 'apply', '--numstat', str(p)], text=True)
+          if not names.strip() or any(line.split('\t')[-1] != 'crates/hermes-cli/src/tui/welcome.rs' for line in names.splitlines()):
+              raise SystemExit('Candidate touches a non-allowlisted path')
+          subprocess.run(['git', 'apply', '--check', str(p)], check=True)
+          subprocess.run(['git', 'apply', str(p)], check=True)
+          PYCODE
+          cargo fmt --all
+          cargo fmt --all -- --check
+          cargo check --workspace --locked
+      - name: Exercise ANSI geometry regression
+        id: regression
+        if: steps.plan.outputs.phase != 'none'
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+          TEST: tui::welcome::tests::${{ steps.plan.outputs.test }}
+        run: |
+          set +e
+          cargo test --locked -p hermes-rs "$TEST" -- --exact > regression.log 2>&1
+          status=$?
+          set -e
+          cat regression.log
+          if [ "$PHASE" = red ]; then
+            test "$status" -ne 0
+            grep -F "test $TEST ... FAILED" regression.log
+            echo "::notice title=ANSI regression::RED: $TEST failed as expected; not a parity pass."
+          else
+            test "$status" -eq 0
+            grep -F "test $TEST ... ok" regression.log
+            echo "::notice title=ANSI regression::GREEN: $TEST passed."
+          fi
+      - name: Report exact regression difference
+        if: always() && steps.regression.outcome == 'failure'
+        run: |
+          python3 - <<'PYCODE'
+          import pathlib, re, json
+          text = pathlib.Path('regression.log').read_text()
+          try:
+              left = json.loads(re.search(r'^\s*left: (.*)$', text, re.M)[1])
+              right = json.loads(re.search(r'^\s*right: (.*)$', text, re.M)[1])
+              lines = [f'actual rows={len(left)}, expected rows={len(right)}']
+              for index, (a, b) in enumerate(zip(left, right)):
+                  if a != b:
+                      lines += [f'first differing row={index}', f'actual={a!r}', f'expected={b!r}']
+                      break
+              body = '\n'.join(lines)
+          except Exception:
+              body = '\n'.join(text.splitlines()[-20:])[:2500]
+          body = body.replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+          print('::error title=ANSI regression difference::' + body[:3500])
+          PYCODE
+      - name: Check complete corrected workspace
+        if: steps.plan.outputs.phase == 'green'
+        run: |
+          cargo clippy --workspace --all-targets -- -D warnings
+          cargo test --workspace --no-fail-fast
+      - name: Export exactly tested Rust delta
+        if: steps.plan.outputs.candidate == 'true'
+        run: |
+          mkdir -p evidence
+          git diff --binary -- '*.rs' > evidence/tested.patch
+          python3 scripts/capture_banner.py export evidence/tested.patch --label 'candidate patch'
+      - name: Export tested Rust delta group 2
+        if: steps.plan.outputs.candidate == 'true'
+        run: python3 scripts/capture_banner.py export evidence/tested.patch --label 'candidate patch' --group 1
+      - name: Build real CLI
+        if: steps.plan.outputs.phase != 'red' && steps.plan.outputs.capture == 'true'
+        run: cargo build --locked -p hermes-rs
+      - name: Capture offline startup at four terminal sizes
+        if: steps.plan.outputs.phase != 'red' && steps.plan.outputs.capture == 'true'
+        run: python3 scripts/capture_banner.py rust target/debug/hermes-rs evidence/banner-rust.json
+      - name: Export verifiable raw capture group 1
+        if: steps.plan.outputs.phase != 'red' && steps.plan.outputs.capture == 'true'
+        run: python3 scripts/capture_banner.py export evidence/banner-rust.json
+      - name: Export verifiable raw capture group 2
+        if: steps.plan.outputs.phase != 'red' && steps.plan.outputs.capture == 'true'
+        run: python3 scripts/capture_banner.py export evidence/banner-rust.json --group 1
+      - if: steps.plan.outputs.candidate == 'true' || steps.plan.outputs.capture == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: banner-raw-${{ github.sha }}
+          retention-days: 90
+          path: evidence/
+          if-no-files-found: error
+      - name: State evidence boundary
+        run: |
+          echo 'Diagnostic/capture slice only; no parity pass, full Python CLI proof, or closure sign-off.' >> "$GITHUB_STEP_SUMMARY"

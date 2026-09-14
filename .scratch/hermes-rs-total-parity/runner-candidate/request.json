@@ -1,0 +1,9 @@
+{
+  "phase": "none",
+  "capture": false,
+  "reason": "banner-fixture-recapture-complete-other-ui-evidence-pending",
+  "green_run": 34785789939,
+  "source_sha256": "3d0e27089738a606f145af83a9c67547b05f10fb074132a08c29be9a10611e75",
+  "capture_run": 34785921221,
+  "ci_run": 34785921216
+}

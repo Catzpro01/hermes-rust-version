@@ -13,9 +13,9 @@
 
 use std::collections::VecDeque;
 
-use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::Frame;
 
 use super::event::TuiEvent;
 use super::layout;
@@ -164,7 +164,10 @@ impl App {
     /// Applies a worker event to display state. All text is already clean.
     pub fn apply(&mut self, event: TuiEvent) {
         match event {
-            TuiEvent::StatusChanged { session_id, provider } => {
+            TuiEvent::StatusChanged {
+                session_id,
+                provider,
+            } => {
                 self.session_id = session_id;
                 self.provider = provider;
             }
@@ -445,12 +448,22 @@ impl App {
     /// `scroll == 0` follows the bottom (newest `cap` entries, plus a live
     /// streaming tail line). `scroll > 0` reveals older entries by excluding
     /// that many of the newest.
-    fn window_of(items: &VecDeque<String>, scroll: usize, streaming: Option<&str>, area: Rect) -> String {
+    fn window_of(
+        items: &VecDeque<String>,
+        scroll: usize,
+        streaming: Option<&str>,
+        area: Rect,
+    ) -> String {
         let cap = area.height.saturating_sub(2) as usize;
         let exclude_newest = scroll.min(items.len());
         let end = items.len().saturating_sub(exclude_newest);
         let start = end.saturating_sub(cap.max(1));
-        let mut out: Vec<&str> = items.iter().skip(start).take(end - start).map(String::as_str).collect();
+        let mut out: Vec<&str> = items
+            .iter()
+            .skip(start)
+            .take(end - start)
+            .map(String::as_str)
+            .collect();
         if scroll == 0 {
             if let Some(s) = streaming {
                 if !s.is_empty() {
@@ -468,7 +481,11 @@ impl App {
             None
         };
         let body = Self::window_of(&self.messages, self.transcript_scroll, streaming, area);
-        let title = if self.awaiting { "Transcript (…)" } else { "Transcript" };
+        let title = if self.awaiting {
+            "Transcript (…)"
+        } else {
+            "Transcript"
+        };
         let block = Block::default().borders(Borders::ALL).title(title);
         let paragraph = Paragraph::new(body).block(block).wrap(Wrap { trim: false });
         frame.render_widget(paragraph, area);
@@ -497,10 +514,7 @@ impl App {
                 ratatui::text::Span::styled(self.placeholder.clone(), theme.placeholder()),
             ])
         } else {
-            ratatui::text::Line::from(format!(
-                "{}{input}",
-                crate::tui::welcome::PROMPT_SYMBOL
-            ))
+            ratatui::text::Line::from(format!("{}{input}", crate::tui::welcome::PROMPT_SYMBOL))
         };
         let block = Block::default().borders(Borders::ALL).title("Input");
         let paragraph = Paragraph::new(line).block(block);
@@ -667,9 +681,7 @@ mod tests {
         let backend = TestBackend::new(w, h);
         let mut terminal = Terminal::new(backend).unwrap();
         let app = app_with_a_turn();
-        terminal
-            .draw(|frame| app.render(frame))
-            .unwrap();
+        terminal.draw(|frame| app.render(frame)).unwrap();
         app
     }
 
@@ -725,9 +737,8 @@ mod tests {
     fn placeholder_rolls_and_stays_in_catalog() {
         use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
         let mut app = App::new();
-        let in_catalog = |app: &App| {
-            crate::tui::tips::COMPOSER_PLACEHOLDERS.contains(&app.placeholder())
-        };
+        let in_catalog =
+            |app: &App| crate::tui::tips::COMPOSER_PLACEHOLDERS.contains(&app.placeholder());
         assert!(in_catalog(&app));
         app.handle_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE));
         let action = app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));

@@ -1,0 +1,10 @@
+FAIL rust picker-normal-100x30: footer row=5; expected=30
+PASS rust picker-empty-100x30: empty-store message at row1
+FAIL rust picker-filter-100x30: footer row=4; expected=30
+FAIL rust picker-no-match-100x30: footer row=4; expected=30
+PASS rust picker-delete-100x30: delete prompt rows=[30]
+FAIL rust picker-normal-80x30: footer row=5; expected=30
+PASS rust picker-empty-80x30: empty-store message at row1
+FAIL rust picker-filter-80x30: footer row=4; expected=30
+FAIL rust picker-no-match-80x30: footer row=4; expected=30
+PASS rust picker-delete-80x30: delete prompt rows=[30]

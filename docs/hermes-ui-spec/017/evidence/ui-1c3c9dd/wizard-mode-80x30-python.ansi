@@ -1,0 +1,9 @@
+
+[35m┌─────────────────────────────────────────────────────────┐[0m
+[35m│             ⚕ Hermes Agent Setup Wizard                │[0m
+[35m├─────────────────────────────────────────────────────────┤[0m
+[35m│  Let's configure your Hermes Agent installation.       │[0m
+[35m│  Press Ctrl+C at any time to exit.                     │[0m
+[35m└─────────────────────────────────────────────────────────┘[0m
+
+[?1049h[22;0;0t[1;30r(B[m[4l[?7h[?1h=[39;49m[?25l[39;49m(B[m[H[2J(B[0;1m[33mHow would you like to set up Hermes?[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4d(B[0;1m[32m → (●) Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools[5;4H[39m(B[m(○) Full setup — configure every provider, tool & option yourself (bring you[6;4H(○) Blank Slate — everything off except the bare minimum; opt in to each cap

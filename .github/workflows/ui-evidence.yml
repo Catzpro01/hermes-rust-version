@@ -1,0 +1,92 @@
+name: Visual evidence (remaining UI)
+on:
+  push:
+    branches: ["arena/01a09c1e-hermes-rust-version"]
+    paths:
+      - '.scratch/hermes-rs-total-parity/ui-capture/request.json'
+permissions:
+  contents: read
+jobs:
+  capture:
+    if: github.ref == 'refs/heads/arena/01a09c1e-hermes-rust-version'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install official Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+          rustup default stable
+      - name: Select plan
+        id: plan
+        run: |
+          python3 - <<'PY'
+          import json, os
+          p=json.load(open('.scratch/hermes-rs-total-parity/ui-capture/request.json'))
+          assert p['phase'] in ('validate-summary-adapter','capture','none')
+          assert isinstance(p['capture'], bool)
+          assert p['capture'] == (p['phase']=='capture')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write(f"phase={p['phase']}\n")
+          PY
+      - name: Validate unapplied summary adapter
+        if: steps.plan.outputs.phase == 'validate-summary-adapter'
+        run: |
+          exec > >(tee validation.log) 2>&1
+          mkdir -p crates/hermes-cli/examples evidence
+          cp .scratch/hermes-rs-total-parity/ui-capture/summary-example.rs.txt crates/hermes-cli/examples/visual_summary.rs
+          cargo fmt --all
+          cargo fmt --all -- --check
+          cargo check --workspace --all-targets --locked
+          cargo clippy --workspace --all-targets -- -D warnings
+          cargo test --workspace --no-fail-fast
+          git add -N crates/hermes-cli/examples/visual_summary.rs
+          git diff --binary -- crates/hermes-cli/examples/visual_summary.rs > evidence/summary.patch
+          python3 scripts/capture_banner.py export evidence/summary.patch --label 'candidate patch'
+      - name: Build committed UI and adapter
+        if: steps.plan.outputs.phase == 'capture'
+        run: |
+          cargo fmt --all -- --check
+          cargo check --workspace --all-targets --locked
+          cargo build --locked -p hermes-rs --bin hermes-rs --example visual_summary
+      - name: Capture actual UI cases
+        if: steps.plan.outputs.phase == 'capture'
+        run: |
+          python3 -m pip install --target /tmp/hermes-ui-qa pyte==0.8.2 wcwidth==0.8.3
+          PYTHONPATH=/tmp/hermes-ui-qa python3 scripts/test_capture_ui.py
+          PYTHONPATH=/tmp/hermes-ui-qa python3 scripts/capture_ui.py rust target/debug/hermes-rs target/debug/examples/visual_summary evidence/ui-rust.json
+      - name: Export UI recordings group one
+        if: steps.plan.outputs.phase == 'capture'
+        run: python3 scripts/capture_ui.py export evidence/ui-rust.json 0
+      - name: Export UI recordings group two
+        if: steps.plan.outputs.phase == 'capture'
+        run: python3 scripts/capture_ui.py export evidence/ui-rust.json 1
+      - name: Export UI recordings group three
+        if: steps.plan.outputs.phase == 'capture'
+        run: python3 scripts/capture_ui.py export evidence/ui-rust.json 2
+      - name: Export UI recordings group four
+        if: steps.plan.outputs.phase == 'capture'
+        run: python3 scripts/capture_ui.py export evidence/ui-rust.json 3
+      - name: Require every requested UI case reached
+        if: steps.plan.outputs.phase == 'capture'
+        run: python3 scripts/capture_ui.py check evidence/ui-rust.json
+      - name: Report adapter validation failure
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('validation.log')
+          text=p.read_text() if p.exists() else 'No adapter validation log'
+          lines=text.splitlines()
+          for n in range(0,min(len(lines),60),15):
+              body='\n'.join(lines[-60:][n:n+15])
+              body=body.replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+              print('::error title=adapter diagnostics::'+body[:3500])
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: remaining-ui-${{ github.sha }}
+          path: evidence/
+          retention-days: 90

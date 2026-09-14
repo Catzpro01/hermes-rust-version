@@ -1,0 +1,45 @@
+[?12l[?25h[6n[?2004h[?1l[?25l[0m[?7l[0m[J[0m❯[2C[?7h[0m[?12l[?25h[?25l[?7l[2D[0m❯[0m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[0m [29A[2C[?7h[0m[?12l[?25h[?25l[?7l[0m/s[0m
+[0;38;5;16;48;5;250m /save         [0;38;5;16;48;5;246m Export the current conversation (bare /save shows usage) (usage: /save <json|md... [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /snapshot     [0;38;5;16;48;5;246m Create or restore state snapshots of Hermes config/state (usage: /snapshot [cre... [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /snap         [0;38;5;16;48;5;246m Create or restore state snapshots of Hermes config/state (alias for /snapshot)     [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /stop         [0;38;5;16;48;5;246m Kill all running background processes                                              [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /steer        [0;38;5;16;48;5;246m Inject a message after the next tool call without interrupting (usage: /steer <... [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /subgoal      [0;38;5;16;48;5;246m Add or manage extra criteria on the active goal (usage: /subgoal [text | remove... [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /status       [0;38;5;16;48;5;246m Show session, model, token, and context info                                       [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /sessions     [0;38;5;16;48;5;246m Browse and resume previous sessions                                                [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /statusbar    [0;38;5;16;48;5;246m Toggle the context/model status bar                                                [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /sb           [0;38;5;16;48;5;246m Toggle the context/model status bar (alias for /statusbar)                         [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /skin         [0;38;5;16;48;5;246m Show or change the display skin/theme (usage: /skin [name])                        [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /skills       [0;38;5;16;48;5;246m Search, install, inspect, or manage skills                                         [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /suggestions  [0;38;5;16;48;5;246m Review suggested automations (accept/dismiss) (usage: /suggestions [accept|dism... [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /suggest      [0;38;5;16;48;5;246m Review suggested automations (accept/dismiss) (alias for /suggestions)             [99C[0;38;5;16;48;5;238m [0m
+[0;38;5;16;48;5;250m /subscription [0;38;5;16;48;5;246m View your Nous plan and change it in the browser                                   [99C[0;38;5;16;48;5;238m [15A[4C[?7h[0m[?12l[?25h

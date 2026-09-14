@@ -1,0 +1,154 @@
+{
+  "status": "CAPTURED_NOT_REVIEWED",
+  "browser": "138.0.7204.0",
+  "xterm": "5.5.0",
+  "font": "DejaVu Mono @fontsource 5.2.5",
+  "fontSize": 16,
+  "deviceScaleFactor": 1,
+  "normalization": "none",
+  "input_sha256": "8ce053bec83633d81519ab65ed69f370f434a34d51f518628314c93c9b4087a3",
+  "fonts": [
+    {
+      "weight": 400,
+      "style": "normal",
+      "sha256": "6242d5eac0a8e83fc2668f1e219b1eaa276a97ba9945747cc9a2918eab209580"
+    },
+    {
+      "weight": 700,
+      "style": "normal",
+      "sha256": "d118121ca2f1629c66c9709ac99649248f696ddf6d432bb4cca53a0f5bf0f49c"
+    },
+    {
+      "weight": 400,
+      "style": "italic",
+      "sha256": "59bcbc3678d621937a63c4b47b7d3b2118a707565c75c7c7664797db6f024c7b"
+    },
+    {
+      "weight": 700,
+      "style": "italic",
+      "sha256": "517464d76704e1c94d8066f9c01ebce165b7d3bd2ca25fc3e41f034d61cf3c49"
+    }
+  ],
+  "cases": [
+    {
+      "id": "picker-normal-100x30",
+      "width": 100,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-normal-100x30-bottom.png",
+          "sha256": "e8c2b105f6167a523d2e5cd95f0eb2a7b0c8be10391ae13104851aa03029a3ba",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-filter-100x30",
+      "width": 100,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-filter-100x30-bottom.png",
+          "sha256": "33cc6bab71cbf4a792a51afbc38a0d902fbd6c26069cc4375cb88440716afdd1",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-no-match-100x30",
+      "width": 100,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-no-match-100x30-bottom.png",
+          "sha256": "5b2aadfaa597eb0ade2ba369446ba43b10b491f867aac76909144184f8352602",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-delete-100x30",
+      "width": 100,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-delete-100x30-bottom.png",
+          "sha256": "df4128e4e4a6d2f869d3c327eeaeb0a384f1aa872cccee5120d36161617ceb00",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-empty-100x30",
+      "width": 100,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-empty-100x30-bottom.png",
+          "sha256": "1039a46c61fe388e1790a30c3557676553cc8afe7b0db769e6cda7b627af6192",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-normal-80x30",
+      "width": 80,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-normal-80x30-bottom.png",
+          "sha256": "42b85cbf007316911a4cb5474bd6050c262159f02c1f7822b1a02650d04cdc2c",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-filter-80x30",
+      "width": 80,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-filter-80x30-bottom.png",
+          "sha256": "e494c31cd71be6d619342197e3562b5672be4052ca2dbc5f37362a4e1bd107c2",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-no-match-80x30",
+      "width": 80,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-no-match-80x30-bottom.png",
+          "sha256": "ff719dbe281681695bf63daad1b340daf05242ff8b3c1235e43408d2330e4a0f",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-delete-80x30",
+      "width": 80,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-delete-80x30-bottom.png",
+          "sha256": "2fa04277864d41f287d6cf5f8e8e8241662724f17db2bdf1bd7d8e59dc334903",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-empty-80x30",
+      "width": 80,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-empty-80x30-bottom.png",
+          "sha256": "3160c71d1176df2835ab36d472438cd40e1f3d94cf37bd36e7859d2fee7ad1e7",
+          "viewport": "bottom"
+        }
+      ]
+    }
+  ]
+}

@@ -45,19 +45,39 @@ impl ProviderRegistry {
             let fallback_key = config.model.api_key.clone();
             factories.insert(
                 name.clone(),
-                Box::new(move || build_configured(&owned_name, &owned_provider, fallback_key.clone())),
+                Box::new(move || {
+                    build_configured(&owned_name, &owned_provider, fallback_key.clone())
+                }),
             );
         }
-        if config.model.provider.as_deref() == Some("opencode-free") || config.model.provider.as_deref() == Some("opencode") {
+        if config.model.provider.as_deref() == Some("opencode-free")
+            || config.model.provider.as_deref() == Some("opencode")
+        {
             let fallback_key = config.model.api_key.clone();
-            let default_model = config.model.default.clone().unwrap_or_else(|| "laguna-s-2.1-free".into());
-            let base_url = config.model.base_url.clone().unwrap_or_else(|| "https://opencode.ai/zen/v1".into());
-            let p_name = config.model.provider.as_deref().unwrap_or("opencode-free").to_owned();
+            let default_model = config
+                .model
+                .default
+                .clone()
+                .unwrap_or_else(|| "laguna-s-2.1-free".into());
+            let base_url = config
+                .model
+                .base_url
+                .clone()
+                .unwrap_or_else(|| "https://opencode.ai/zen/v1".into());
+            let p_name = config
+                .model
+                .provider
+                .as_deref()
+                .unwrap_or("opencode-free")
+                .to_owned();
             factories.insert(
                 p_name.clone(),
                 Box::new(move || {
-                    let url = Url::parse(&base_url).map_err(|e| fail(&p_name, &format!("invalid base URL: {e}")))?;
-                    let key = fallback_key.clone().unwrap_or_else(|| SecretString::from("anonymous"));
+                    let url = Url::parse(&base_url)
+                        .map_err(|e| fail(&p_name, &format!("invalid base URL: {e}")))?;
+                    let key = fallback_key
+                        .clone()
+                        .unwrap_or_else(|| SecretString::from("anonymous"));
                     Ok(Box::new(HttpProvider::new(url, key, default_model.clone())))
                 }),
             );
@@ -161,12 +181,7 @@ impl ProviderRegistry {
         // Fallback is a per-`providers:` strategy: only engage when the active
         // provider is a registered name. Otherwise behave exactly like `select`.
         if !self.contains(active) {
-            return self.select(
-                cli_provider,
-                config_provider,
-                base_url_override,
-                config,
-            );
+            return self.select(cli_provider, config_provider, base_url_override, config);
         }
         let fallback_chain: Vec<String> = config
             .map(|c| c.model.fallback_chain.clone())
@@ -216,13 +231,24 @@ fn model_level_fallback(
         .unwrap_or("https://api.openai.com/");
     let base_url =
         Url::parse(raw_url).map_err(|e| fail(name, &format!("invalid base URL: {e}")))?;
-    let model = config.model.default.clone().unwrap_or_else(|| name.to_owned());
+    let model = config
+        .model
+        .default
+        .clone()
+        .unwrap_or_else(|| name.to_owned());
 
     let mut key = ["OPENAI_API_KEY", "HERMES_API_KEY"]
         .iter()
         .find_map(|var| std::env::var(var).ok().filter(|v| !v.is_empty()))
         .or_else(|| config.model.api_key.as_ref().map(|k| k.expose().to_owned()));
-    if key.is_none() && (name == "opencode-free" || name == "opencode" || raw_url.contains("opencode.ai") || raw_url.contains("localhost") || raw_url.contains("127.0.0.1") || config.model.provider.as_deref() == Some("opencode-free")) {
+    if key.is_none()
+        && (name == "opencode-free"
+            || name == "opencode"
+            || raw_url.contains("opencode.ai")
+            || raw_url.contains("localhost")
+            || raw_url.contains("127.0.0.1")
+            || config.model.provider.as_deref() == Some("opencode-free"))
+    {
         key = Some("anonymous".to_string());
     }
     let Some(key) = key else {
@@ -259,7 +285,8 @@ fn build_configured(
         .api
         .as_deref()
         .ok_or_else(|| fail(name, "missing 'api' base URL"))?;
-    let base_url = Url::parse(raw_url).map_err(|e| fail(name, &format!("invalid 'api' URL: {e}")))?;
+    let base_url =
+        Url::parse(raw_url).map_err(|e| fail(name, &format!("invalid 'api' URL: {e}")))?;
 
     Ok(Box::new(
         HttpProvider::new(
@@ -367,8 +394,12 @@ mod tests {
     #[test]
     fn select_prefers_cli_over_config_then_fake() {
         let registry = ProviderRegistry::offline();
-        assert!(registry.select(Some(FAKE_PROVIDER), Some("nope"), None, None).is_ok());
-        assert!(registry.select(None, Some(FAKE_PROVIDER), None, None).is_ok());
+        assert!(registry
+            .select(Some(FAKE_PROVIDER), Some("nope"), None, None)
+            .is_ok());
+        assert!(registry
+            .select(None, Some(FAKE_PROVIDER), None, None)
+            .is_ok());
         assert!(registry.select(None, None, None, None).is_ok());
         assert!(matches!(
             registry.select(Some("nope"), None, None, None),
@@ -392,7 +423,10 @@ mod tests {
             "providers:\n  p:\n    api: http://localhost:9/\n    key_env: HERMES_TEST_UNSET_C\n    models:\n      m: {}\n",
         ));
         let err = err_message(registry.build("p"));
-        assert!(err.contains("HERMES_TEST_UNSET_C"), "must name the var: {err}");
+        assert!(
+            err.contains("HERMES_TEST_UNSET_C"),
+            "must name the var: {err}"
+        );
         assert!(!err.contains("***REDACTED***"), "nothing to redact: {err}");
     }
 
@@ -470,8 +504,14 @@ mod tests {
         )
         .unwrap_err()
         .to_string();
-        assert!(err.contains("stream_magic"), "must echo the bad value: {err}");
-        assert!(err.contains("chat_completions"), "must list chat_completions: {err}");
+        assert!(
+            err.contains("stream_magic"),
+            "must echo the bad value: {err}"
+        );
+        assert!(
+            err.contains("chat_completions"),
+            "must list chat_completions: {err}"
+        );
         assert!(err.contains("completions"), "must list completions: {err}");
     }
 
@@ -513,7 +553,9 @@ mod tests {
     #[test]
     fn select_with_fallback_resolves_offline_fake_single() {
         let registry = ProviderRegistry::offline();
-        assert!(registry.select_with_fallback(None, None, None, None).is_ok());
+        assert!(registry
+            .select_with_fallback(None, None, None, None)
+            .is_ok());
     }
 
     #[test]

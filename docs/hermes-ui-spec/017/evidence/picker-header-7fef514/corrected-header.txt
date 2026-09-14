@@ -1,0 +1,4 @@
+PASS rust picker-normal-100x30: style=[('cdcd00', True)]; reference=palette3+bold
+PASS rust picker-delete-100x30: style=[('cdcd00', True)]; reference=palette3+bold
+PASS rust picker-normal-80x30: style=[('cdcd00', True)]; reference=palette3+bold
+PASS rust picker-delete-80x30: style=[('cdcd00', True)]; reference=palette3+bold

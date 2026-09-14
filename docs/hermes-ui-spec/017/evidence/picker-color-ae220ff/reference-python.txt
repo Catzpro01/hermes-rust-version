@@ -1,0 +1,6 @@
+PASS python picker-normal-100x30: foreground=['brightblack']; reference=palette8
+PASS python picker-filter-100x30: foreground=['brightblack']; reference=palette8
+PASS python picker-no-match-100x30: foreground=['brightblack']; reference=palette8
+PASS python picker-normal-80x30: foreground=['brightblack']; reference=palette8
+PASS python picker-filter-80x30: foreground=['brightblack']; reference=palette8
+PASS python picker-no-match-80x30: foreground=['brightblack']; reference=palette8

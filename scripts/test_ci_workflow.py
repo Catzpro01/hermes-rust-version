@@ -1,0 +1,350 @@
+"""CI gate regression checks, without a Rust toolchain or GitHub writes.
+
+Run: python3 -m pip install PyYAML && python3 scripts/test_ci_workflow.py
+PyYAML is a review/test dependency only, not a Hermes runtime dependency.
+"""
+
+import base64
+import gzip
+import hashlib
+import itertools
+import json
+import re
+import random
+import string
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+WORKFLOW = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+STEPS = {step["name"]: step for step in WORKFLOW["jobs"]["test"]["steps"] if "name" in step}
+
+
+class CiGateTests(unittest.TestCase):
+    def test_visual_capture_can_wait_for_review(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/visual-evidence.yml").read_text())
+        steps = workflow["jobs"]["capture"]["steps"]
+        plan = next(s for s in steps if s.get("id") == "plan")
+        for capture in (False, True, "false"):
+            with self.subTest(capture=capture), tempfile.TemporaryDirectory() as tmp:
+                folder = Path(tmp) / ".scratch/hermes-rs-total-parity/runner-candidate"
+                folder.mkdir(parents=True)
+                (folder / "request.json").write_text(json.dumps({"phase": "none", "capture": capture}))
+                output = Path(tmp) / "output"
+                env = dict(os.environ, GITHUB_EVENT_NAME="push", GITHUB_OUTPUT=str(output))
+                run = subprocess.run(["bash", "-e", "-c", plan["run"]], cwd=tmp, env=env,
+                                     capture_output=True, text=True, check=False)
+                self.assertEqual(run.returncode == 0, isinstance(capture, bool), run.stderr)
+                if isinstance(capture, bool):
+                    self.assertIn(f"capture={str(capture).lower()}\n", output.read_text())
+        for step in steps:
+            if step.get("name") in ("Build real CLI", "Capture offline startup at four terminal sizes",
+                                    "Export verifiable raw capture group 1", "Export verifiable raw capture group 2"):
+                self.assertEqual(step["if"], "steps.plan.outputs.phase != 'red' && steps.plan.outputs.capture == 'true'")
+
+    def test_visual_gate_requires_exact_selected_regression(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/visual-evidence.yml").read_text())
+        step = next(s for s in workflow["jobs"]["capture"]["steps"] if s.get("id") == "regression")
+        self.assertEqual(step["env"]["TEST"], "tui::welcome::tests::${{ steps.plan.outputs.test }}")
+        selected = "tui::welcome::tests::banner_ansi_long_session_columns_match_python"
+        for phase, name, result, code, accepted in [
+            ("red", selected, "FAILED", 101, True),
+            ("red", "other_test", "FAILED", 101, False),
+            ("red", "no_matching_test", "ok", 0, False),
+            ("green", selected, "ok", 0, True),
+            ("green", "other_test", "ok", 0, False),
+            ("green", selected, "FAILED", 101, False),
+        ]:
+            with self.subTest(phase=phase, name=name, result=result), tempfile.TemporaryDirectory() as tmp:
+                cargo = Path(tmp) / "cargo"
+                cargo.write_text('#!/bin/bash\nprintf "%s\\n" "$@" > args\nprintf "test %s ... %s\\n" "$CASE_NAME" "$CASE_RESULT"\nexit "$CASE_CODE"\n')
+                cargo.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}", TEST=selected,
+                           PHASE=phase, CASE_NAME=name, CASE_RESULT=result, CASE_CODE=str(code))
+                run = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp, env=env,
+                                     capture_output=True, text=True, check=False)
+                self.assertEqual(run.returncode == 0, accepted, run.stdout + run.stderr)
+                args = (Path(tmp) / "args").read_text().splitlines()
+                self.assertIn(selected, args)
+                self.assertEqual(args[-2:], ["--", "--exact"])
+
+    def test_picker_plan_allows_only_named_regressions(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        steps = workflow["jobs"]["diagnose"]["steps"]
+        plan = next(s for s in steps if s.get("id") == "plan")
+        regression = next(s for s in steps if s.get("id") == "regression")
+        self.assertEqual(regression["env"]["TEST"], "session_picker::tests::${{ steps.plan.outputs.test }}")
+        for selected, accepted in [
+            ("picker_footer_tracks_delete_availability", True),
+            ("picker_no_match_counter_preserves_total", True),
+            ("picker_footer_position", True),
+            ("picker_footer_color", True),
+            ("picker_normal_header", True),
+            ("unknown_test", False),
+        ]:
+            with self.subTest(selected=selected), tempfile.TemporaryDirectory() as tmp:
+                folder = Path(tmp) / ".scratch/hermes-rs-total-parity/diagnostics/picker"
+                folder.mkdir(parents=True)
+                (folder / "request.json").write_text(json.dumps({"phase": "capture", "test": selected}))
+                output = Path(tmp) / "output"
+                env = dict(os.environ, GITHUB_OUTPUT=str(output))
+                result = subprocess.run(["bash", "-e", "-c", plan["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
+                if accepted:
+                    self.assertIn(f"test={selected}\n", output.read_text())
+
+    def test_picker_position_gate_rejects_setup_errors(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        step = next(s for s in workflow["jobs"]["diagnose"]["steps"] if s.get("id") == "position")
+        failure = "FAIL: test_footer_is_on_terminal_last_row\nRan 1 test in 0.1s\nFAILED (failures=1)"
+        success = "test_footer_is_on_terminal_last_row ... ok\nRan 1 test in 0.1s\nOK"
+        for phase, output, code, accepted in [
+            ("red", failure, 1, True),
+            ("red", "ERROR: missing dependency", 1, False),
+            ("red", failure + "\nERROR: setup also failed", 1, False),
+            ("green", success, 0, True),
+            ("green", "Ran 0 tests\nOK", 0, False),
+        ]:
+            with self.subTest(phase=phase, output=output), tempfile.TemporaryDirectory() as tmp:
+                python = Path(tmp) / "python3"
+                python.write_text('#!/bin/bash\nprintf "%s\\n" "$FAKE_OUTPUT"\nexit "$FAKE_CODE"\n')
+                python.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}", PHASE=phase,
+                           FAKE_OUTPUT=output, FAKE_CODE=str(code))
+                result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
+
+    def test_ordinary_picker_gate_requires_all_live_tests(self):
+        step = STEPS["Picker terminal regressions"]
+        for position, color, header in [(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)]:
+            with self.subTest(position=position, color=color, header=header), tempfile.TemporaryDirectory() as tmp:
+                cargo = Path(tmp) / "cargo"
+                cargo.write_text("#!/bin/sh\necho build-ok\n")
+                cargo.chmod(0o700)
+                python = Path(tmp) / "python3"
+                python.write_text('#!/bin/bash\ncase "$*" in\n  *test_picker_footer_position.py*) echo position-test; exit "$POSITION";;\n  *test_picker_footer_color.py*) echo color-test; exit "$COLOR";;\n  *test_picker_normal_header.py*) echo header-test; exit "$HEADER";;\n  *) exit 0;;\nesac\n')
+                python.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}",
+                           POSITION=str(position), COLOR=str(color), HEADER=str(header))
+                result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True)
+                self.assertEqual(result.returncode, int(bool(position or color or header)), result.stdout + result.stderr)
+                log = (Path(tmp) / "picker-position.log").read_text()
+                self.assertIn("position-test", log)
+                if not position:
+                    self.assertIn("color-test", log)
+                    if not color:
+                        self.assertIn("header-test", log)
+
+    def test_picker_color_gate_rejects_setup_errors(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        step = next(s for s in workflow["jobs"]["diagnose"]["steps"] if s.get("id") == "color")
+        failure = "FAIL: test_footer_uses_reference_grey\nRan 1 test in 0.1s\nFAILED (failures=1)"
+        success = "test_footer_uses_reference_grey ... ok\nRan 1 test in 0.1s\nOK"
+        for phase, output, code, accepted in [
+            ("red", failure, 1, True),
+            ("red", "ERROR: missing dependency", 1, False),
+            ("red", failure + "\nERROR: setup also failed", 1, False),
+            ("green", success, 0, True),
+            ("green", "Ran 0 tests\nOK", 0, False),
+        ]:
+            with self.subTest(phase=phase, output=output), tempfile.TemporaryDirectory() as tmp:
+                python = Path(tmp) / "python3"
+                python.write_text('#!/bin/bash\nprintf "%s\\n" "$FAKE_OUTPUT"\nexit "$FAKE_CODE"\n')
+                python.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}", PHASE=phase,
+                           FAKE_OUTPUT=output, FAKE_CODE=str(code))
+                result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
+
+    def test_picker_header_gate_rejects_setup_errors(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        step = next(s for s in workflow["jobs"]["diagnose"]["steps"] if s.get("id") == "header")
+        failure = "FAIL: test_normal_help_header_matches_reference_style\nRan 1 test in 0.1s\nFAILED (failures=1)"
+        success = "test_normal_help_header_matches_reference_style ... ok\nRan 1 test in 0.1s\nOK"
+        for phase, output, code, accepted in [
+            ("red", failure, 1, True),
+            ("red", "ERROR: missing dependency", 1, False),
+            ("red", failure + "\nERROR: setup also failed", 1, False),
+            ("green", success, 0, True),
+            ("green", "Ran 0 tests\nOK", 0, False),
+        ]:
+            with self.subTest(phase=phase, output=output), tempfile.TemporaryDirectory() as tmp:
+                python = Path(tmp) / "python3"
+                python.write_text('#!/bin/bash\nprintf "%s\\n" "$FAKE_OUTPUT"\nexit "$FAKE_CODE"\n')
+                python.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}", PHASE=phase,
+                           FAKE_OUTPUT=output, FAKE_CODE=str(code))
+                result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
+
+    def test_picker_gate_rejects_compile_errors_and_missing_regression(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        step = next(s for s in workflow["jobs"]["diagnose"]["steps"] if s.get("id") == "regression")
+        selected = "session_picker::tests::picker_footer_tracks_delete_availability"
+        for phase, output, code, accepted in [
+            ("red", f"test {selected} ... FAILED", 101, True),
+            ("red", "error: could not compile", 101, False),
+            ("red", "0 tests", 0, False),
+            ("green", f"test {selected} ... ok", 0, True),
+            ("green", "0 tests", 0, False),
+            ("capture", f"test {selected} ... ok", 0, True),
+        ]:
+            with self.subTest(phase=phase, output=output), tempfile.TemporaryDirectory() as tmp:
+                cargo = Path(tmp) / "cargo"
+                cargo.write_text('#!/bin/bash\nprintf "%s\\n" "$FAKE_OUTPUT"\nexit "$FAKE_CODE"\n')
+                cargo.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}", PHASE=phase,
+                           TEST=selected, FAKE_OUTPUT=output, FAKE_CODE=str(code))
+                run = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                                     env=env, capture_output=True, text=True)
+                self.assertEqual(run.returncode == 0, accepted, run.stdout + run.stderr)
+
+    def test_workflows_use_approved_readonly_artifact_policy(self):
+        allowed = {
+            "actions/checkout", "actions/setup-python", "actions/upload-artifact",
+            "dtolnay/rust-toolchain", "Swatinem/rust-cache",
+        }
+        for name in ("ci.yml", "visual-evidence.yml", "ui-evidence.yml", "picker-diagnostic.yml"):
+            with self.subTest(workflow=name):
+                workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+                self.assertEqual(workflow.get("permissions"), {"contents": "read"})
+                uploads = 0
+                for job in workflow["jobs"].values():
+                    if "permissions" in job:
+                        self.assertEqual(job["permissions"], {"contents": "read"})
+                    for step in job["steps"]:
+                        if "uses" not in step:
+                            continue
+                        self.assertRegex(step["uses"], r"^[^@]+@[0-9a-f]{40}$")
+                        action = step["uses"].split("@", 1)[0]
+                        self.assertIn(action, allowed)
+                        if action == "actions/upload-artifact":
+                            uploads += 1
+                            self.assertEqual(step.get("with", {}).get("retention-days"), 90)
+                self.assertGreater(uploads, 0, "Artifact policy must cover an actual upload")
+
+    def test_format_pipeline_preserves_exit_status_and_log(self):
+        step = STEPS["cargo fmt --check"]
+        self.assertEqual(step["id"], "fmt")
+        self.assertTrue(step["continue-on-error"])
+        for code in (0, 1, 42):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as tmp:
+                cargo = Path(tmp) / "cargo"
+                cargo.write_text(f"#!/bin/sh\necho format-check-output\nexit {code}\n")
+                cargo.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}")
+                result = subprocess.run(
+                    ["bash", "-e", "-c", step["run"]],
+                    cwd=tmp, env=env, capture_output=True, text=True, check=False,
+                )
+                self.assertEqual(result.returncode, code, result.stderr)
+                self.assertIn("format-check-output", (Path(tmp) / "fmt.log").read_text())
+
+    def test_final_gate_rejects_every_non_success_outcome(self):
+        step = STEPS["Fail if any step failed"]
+        # Pin the GitHub expression's grammar rather than implement a partial
+        # Actions expression interpreter. This also guards against accidentally
+        # restoring the implicit success() guard after a prior step failure.
+        self.assertEqual(
+            step["if"],
+            "always() && (steps.fmt.outcome != 'success' || "
+            "steps.clippy.outcome != 'success' || steps.test.outcome != 'success' || "
+            "steps.picker.outcome != 'success')",
+        )
+        statuses = ("success", "failure", "cancelled", "skipped", "")
+        for outcomes in itertools.product(statuses, repeat=4):
+            with self.subTest(outcomes=outcomes):
+                # The pinned expression uses only !=, && and ||, so evaluate
+                # its equivalent Bash condition against 625 outcome tuples.
+                condition = step["if"].replace("always()", "true")
+                for name, value in zip(("fmt", "clippy", "test", "picker"), outcomes):
+                    condition = condition.replace(f"steps.{name}.outcome", f"'{value}'")
+                result = subprocess.run(
+                    ["bash", "-c", f"if [[ {condition} ]]; then {step['run']}; fi"],
+                    capture_output=True, text=True, check=False,
+                )
+                self.assertEqual(result.returncode, int(outcomes != ("success",) * 4))
+
+    def test_diagnostics_report_format_outcome_even_without_log(self):
+        step = STEPS["Publish diagnostics"]
+        self.assertEqual(step["env"]["FMT"], "${{ steps.fmt.outcome }}")
+        for status, log in (("success", ""), ("failure", "Diff in file: 100%\n"), ("skipped", None)):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as tmp:
+                if log is not None:
+                    (Path(tmp) / "fmt.log").write_text(log)
+                (Path(tmp) / "test.log").write_text(
+                    "error: interrupted\ntest smoke_sigint_returns_130 ... ok\n"
+                    "test result: ok. 1 passed; 0 failed;\n"
+                )
+                env = dict(os.environ, FMT=status, CLIPPY="success", TEST="success", PICKER="success",
+                           GITHUB_STEP_SUMMARY=str(Path(tmp) / "summary.md"))
+                result = subprocess.run(
+                    ["bash", "-e", "-c", step["run"]],
+                    cwd=tmp, env=env, capture_output=True, text=True, check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertNotIn("::error title=test-build::", result.stdout)
+                self.assertIn(f"fmt={status} clippy=success test=success", result.stdout)
+                self.assertEqual("::error title=rustfmt::" in result.stdout, status != "success")
+                if status == "failure":
+                    self.assertIn("100%25", result.stdout)
+                if status == "skipped":
+                    self.assertIn("Formatting check did not succeed.", result.stdout)
+
+
+    def test_diagnostics_still_report_a_real_test_build_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "test.log").write_text("error[E0425]: unknown value\n")
+            env = dict(os.environ, FMT="success", CLIPPY="success", TEST="failure", PICKER="success",
+                       GITHUB_STEP_SUMMARY=str(Path(tmp) / "summary.md"))
+            result = subprocess.run(
+                ["bash", "-e", "-c", STEPS["Publish diagnostics"]["run"]],
+                cwd=tmp, env=env, capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("::error title=test-build::error[E0425]", result.stdout)
+
+    def test_format_patch_roundtrip_excludes_non_rust_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(["git", "init", "--quiet", tmp], check=True)
+            root = Path(tmp)
+            (root / "main.rs").write_text("fn main(){}\n")
+            (root / "config.yaml").write_text("old: value\n")
+            subprocess.run(["git", "add", "."], cwd=tmp, check=True)
+            # Force several incompressible chunks to catch annotation/API
+            # truncation that a tiny one-line formatting fixture misses.
+            noise = "".join(random.Random(42).choices(string.ascii_letters, k=30000))
+            (root / "main.rs").write_text("fn main() {}\n// " + noise + "\n")
+            (root / "config.yaml").write_text("private: do-not-export\n")
+            output = ""
+            for group in range(5):
+                result = subprocess.run(
+                    ["python3", str(ROOT / "scripts/export_format_patch.py"), "--group", str(group)],
+                    cwd=tmp, capture_output=True, text=True, check=True,
+                )
+                self.assertLessEqual(result.stdout.count("::notice"), 9)
+                output += result.stdout
+            chunks = re.findall(r"::notice title=rustfmt patch \d+/\d+::(.*)", output)
+            self.assertGreater(len(chunks), 8)
+            self.assertTrue(all(len(chunk) <= 3000 for chunk in chunks))
+            patch = gzip.decompress(base64.b64decode("".join(chunks)))
+            self.assertEqual(patch, (root / "fmt.patch").read_bytes())
+            self.assertIn(hashlib.sha256(patch).hexdigest(), output)
+            self.assertIn(b"main.rs", patch)
+            self.assertNotIn(b"config.yaml", patch)
+            self.assertNotIn(b"do-not-export", patch)
+            subprocess.run(["git", "apply", "--check", "--reverse", "fmt.patch"], cwd=tmp, check=True)
+
+
+if __name__ == "__main__":
+    unittest.main()

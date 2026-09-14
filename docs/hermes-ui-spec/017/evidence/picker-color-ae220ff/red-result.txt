@@ -1,0 +1,16 @@
+test_footer_uses_reference_grey (__main__.PickerFooterColorTests.test_footer_uses_reference_grey) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+FAIL
+
+======================================================================
+FAIL: test_footer_uses_reference_grey (__main__.PickerFooterColorTests.test_footer_uses_reference_grey)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/work/hermes-rust-version/hermes-rust-version/scripts/test_picker_footer_color.py", line 34, in test_footer_uses_reference_grey
+    self.assertIn(colors, ({'brightblack'}, {'7f7f7f'}),
+AssertionError: {'default'} not found in ({'brightblack'}, {'7f7f7f'}) : Python reference: footer uses terminal palette index8, not default
+
+----------------------------------------------------------------------
+Ran 1 test in 6.943s
+
+FAILED (failures=1)
+VERIFIED color trace 85502 f14e3920154956dd0d68cf072166b8044ad621b751c0e8e4c6abb6884d977f97

@@ -164,16 +164,15 @@ fn pinned_turn_survives_window_and_still_lands_in_state_db() {
     let sent = runner.turns_to_send();
     assert!(estimate_turns_tokens(&sent) <= 150);
     assert!(
-        sent.iter().any(|t| matches!(t, Turn::User { content } if content == "PINNED-FACT")),
+        sent.iter()
+            .any(|t| matches!(t, Turn::User { content } if content == "PINNED-FACT")),
         "pinned turn must always be in the sent window"
     );
     // Nothing pinned appears in dropped.
-    assert!(
-        !runner
-            .dropped_turns()
-            .iter()
-            .any(|t| matches!(t, Turn::User { content } if content == "PINNED-FACT"))
-    );
+    assert!(!runner
+        .dropped_turns()
+        .iter()
+        .any(|t| matches!(t, Turn::User { content } if content == "PINNED-FACT")));
 
     // Persist the FULL history (REPL persists runner.turns(), the canonical
     // storage), then resume shows all 100 turns including the pinned one.
@@ -184,12 +183,10 @@ fn pinned_turn_survives_window_and_still_lands_in_state_db() {
     let store2 = SessionStore::open(&db).unwrap();
     let resumed = store2.resume(&id).unwrap();
     assert_eq!(resumed.turns.len(), 100, "state.db keeps full history");
-    assert!(
-        resumed
-            .turns
-            .iter()
-            .any(|t| matches!(t, Turn::User { content } if content == "PINNED-FACT"))
-    );
+    assert!(resumed
+        .turns
+        .iter()
+        .any(|t| matches!(t, Turn::User { content } if content == "PINNED-FACT")));
     // /messages reads the same full set.
     assert_eq!(store2.list_messages(&id).unwrap().len(), 100);
 }
@@ -212,10 +209,7 @@ fn spec008_long_conversation_compresses_send_but_keeps_canonical_and_protects_pi
     // so we can prove exactly which turns reach the model.
     let mut history: Vec<Turn> = (0..120)
         .map(|i| Turn::User {
-            content: format!(
-                "{i}-UNIQ-{}",
-                "x".repeat(36 - format!("{i}").len().min(36))
-            ),
+            content: format!("{i}-UNIQ-{}", "x".repeat(36 - format!("{i}").len().min(36))),
         })
         .collect();
     // An early, distinctive "fact" the user pins so it must survive.
@@ -233,9 +227,15 @@ fn spec008_long_conversation_compresses_send_but_keeps_canonical_and_protects_pi
     // oldest turns are reported dropped (so /info would show a summary).
     let sent = runner.turns_to_send();
     let sent_est = estimate_turns_tokens(&sent) as u64;
-    assert!(sent_est <= limit, "send window must fit limit, got {sent_est}");
+    assert!(
+        sent_est <= limit,
+        "send window must fit limit, got {sent_est}"
+    );
     let dropped = runner.dropped_turns();
-    assert!(!dropped.is_empty(), "long conversation must drop from the send side");
+    assert!(
+        !dropped.is_empty(),
+        "long conversation must drop from the send side"
+    );
     // Summary of the dropped turns is available for /info visibility.
     let summary = summarize_dropped(&dropped);
     assert!(!summary.is_empty());
@@ -244,7 +244,8 @@ fn spec008_long_conversation_compresses_send_but_keeps_canonical_and_protects_pi
     assert_eq!(sent.last(), history.last(), "newest turn always sent");
     // (c2) The pinned early fact is always sent and never dropped.
     assert!(
-        sent.iter().any(|t| matches!(t, Turn::User { content } if content == "PINNED-EARLY-FACT")),
+        sent.iter()
+            .any(|t| matches!(t, Turn::User { content } if content == "PINNED-EARLY-FACT")),
         "pinned fact must be sent"
     );
     assert!(
@@ -263,7 +264,9 @@ fn spec008_long_conversation_compresses_send_but_keeps_canonical_and_protects_pi
         );
     }
     assert!(
-        !sent.iter().any(|t| matches!(t, Turn::Assistant { .. }) || matches!(t, Turn::Tool { .. })),
+        !sent
+            .iter()
+            .any(|t| matches!(t, Turn::Assistant { .. }) || matches!(t, Turn::Tool { .. })),
         "no assistant/tool turns were fabricated for this send"
     );
 
@@ -278,15 +281,16 @@ fn spec008_long_conversation_compresses_send_but_keeps_canonical_and_protects_pi
     let store2 = SessionStore::open(&db).unwrap();
     let resumed = store2.resume(&id).unwrap();
     assert_eq!(resumed.turns.len(), 120, "state.db keeps the full history");
-    assert!(
-        resumed
-            .turns
-            .iter()
-            .any(|t| matches!(t, Turn::User { content } if content == "PINNED-EARLY-FACT"))
-    );
+    assert!(resumed
+        .turns
+        .iter()
+        .any(|t| matches!(t, Turn::User { content } if content == "PINNED-EARLY-FACT")));
     // A turn that the window DROPS from the send side is still canonical and
     // appears first in the resumed full history.
-    assert_eq!(resumed.turns[0], history[0], "dropped-from-send turn stays canonical");
+    assert_eq!(
+        resumed.turns[0], history[0],
+        "dropped-from-send turn stays canonical"
+    );
     assert_eq!(store2.list_messages(&id).unwrap().len(), 120);
     drop(store2);
     assert_eq!(
@@ -334,9 +338,16 @@ fn delete_session_removes_session_messages_and_tool_calls() {
     assert!(store.resume(&doomed).is_err(), "session row must be gone");
     assert!(store.list_messages(&doomed).is_err());
     assert!(store.list_tool_calls(&doomed).is_err());
-    assert_eq!(store.list().unwrap(), vec![kept], "sibling session untouched");
+    assert_eq!(
+        store.list().unwrap(),
+        vec![kept],
+        "sibling session untouched"
+    );
     assert_eq!(store.resume(&kept).unwrap().turns.len(), 1);
 
-    assert!(!store.delete_session(&doomed).unwrap(), "second delete reports false");
+    assert!(
+        !store.delete_session(&doomed).unwrap(),
+        "second delete reports false"
+    );
     assert_eq!(store.list().unwrap(), vec![kept]);
 }

@@ -48,10 +48,7 @@ pub fn split(area: Rect) -> Panels {
         INPUT_HEIGHT.min(remaining)
     };
     let main_y = area.y.saturating_add(header_h);
-    let main_h = area
-        .height
-        .saturating_sub(header_h)
-        .saturating_sub(input_h);
+    let main_h = area.height.saturating_sub(header_h).saturating_sub(input_h);
 
     let header = Rect {
         x: area.x,
@@ -126,8 +123,7 @@ mod tests {
                 rect.x >= area.x
                     && rect.y >= area.y
                     && rect.x.saturating_add(rect.width) <= area.x.saturating_add(area.width)
-                    && rect.y.saturating_add(rect.height)
-                        <= area.y.saturating_add(area.height),
+                    && rect.y.saturating_add(rect.height) <= area.y.saturating_add(area.height),
                 "{name} {rect:?} escapes area {area:?}"
             );
         }

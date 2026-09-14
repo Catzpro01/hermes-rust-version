@@ -133,7 +133,9 @@ impl PtyRepl {
 fn banner_wide_tty_shows_logo_gold_title_bronze_border() {
     let mut r = PtyRepl::spawn(100);
 
-    let out = r.wait_for(TITLE).expect("title must render on a 100-col TTY");
+    let out = r
+        .wait_for(TITLE)
+        .expect("title must render on a 100-col TTY");
     assert!(
         out.contains(LOGO_MARKER),
         "6-line logo must appear at width 100 (>= 95)"
@@ -157,14 +159,21 @@ fn banner_wide_tty_shows_logo_gold_title_bronze_border() {
         .wait_for("Welcome to Hermes Agent! Type your message or /help for commands.")
         .expect("welcome branding line follows the banner");
     assert!(!out.contains("✦ Tip:"), "no tip prefix in v0.21.0: {out}");
-    assert!(!out.contains("Hermes-RS session"), "no Rust-only session header on TTY: {out}");
-    assert!(!out.contains("Commands: /provider"), "no cheat-sheet on TTY: {out}");
-    assert!(!out.contains("provider:"), "no `provider:` info line (spec §B): {out}");
+    assert!(
+        !out.contains("Hermes-RS session"),
+        "no Rust-only session header on TTY: {out}"
+    );
+    assert!(
+        !out.contains("Commands: /provider"),
+        "no cheat-sheet on TTY: {out}"
+    );
+    assert!(
+        !out.contains("provider:"),
+        "no `provider:` info line (spec §B): {out}"
+    );
 
     r.send(b"/exit\r");
-    let out = r
-        .wait_for(GOODBYE)
-        .expect("clean exit after /exit on TTY");
+    let out = r.wait_for(GOODBYE).expect("clean exit after /exit on TTY");
     assert!(!out.contains('\0'), "no NUL bytes on the pty stream");
     let status = r.child.wait().expect("child exits");
     assert!(status.success(), "exit: {status}");
@@ -174,7 +183,9 @@ fn banner_wide_tty_shows_logo_gold_title_bronze_border() {
 fn banner_narrow_tty_hides_logo() {
     let mut r = PtyRepl::spawn(80);
 
-    let out = r.wait_for(TITLE).expect("title must render on an 80-col TTY");
+    let out = r
+        .wait_for(TITLE)
+        .expect("title must render on an 80-col TTY");
     assert!(
         !out.contains(LOGO_MARKER),
         "logo must be hidden below width 95 (80-col TTY)"

@@ -233,29 +233,78 @@ stdout; Python reference outputs at `/tmp/t06_py_help.txt` and
 | Python `hermes …` | Rust `hermes-rs …` | Rendering | Status |
 |---|---|---|---|
 | `model` | `model [--provider <name>]` | providers + models, `*` active marker, TTY-only colors | ✅ |
-| `sessions list` | `sessions` | `session_menu::list_sessions` (== REPL `/sessions`) | ✅ |
+| `sessions list` | `sessions` | `session_menu::list_sessions`; REPL `/sessions` opens picker on TTY, lists when piped | ✅ |
 | `sessions show <id>` | `inspect <id>` / `messages <id>` / `tool-calls <id>` | `session_menu::{inspect_session, show_messages, show_tool_calls}` (== REPL) | ✅ |
 | `sessions search <q>` | `search <query>` | `session_menu::search_sessions` (FTS5 + redaction, == REPL `/search`) | ✅ |
 | `status` / `config` | `info` | line 1 == REPL `/info`; then home, provider, counts | ✅ (subset) |
 | `mcp` | `mcp [list\|restart <name>]` | REPL `/mcp` row layout from config; shell never spawns servers | ✅ (config-only) |
 | `--version` / `version` | `--version` / `-V` / `version` | banner `VERSION_LABEL` + install facts | ✅ |
-| `setup` | `setup` | Spec 017 wizard | 🚧 Spec 017 |
+| `sessions browse` (curses) | `sessions browse` (crossterm) | §F frame verbatim; Enter/↓/j/k/filter/`d`+`y`/Esc; `--resume-id`; startup matrix | ✅ |
+| `setup` | `setup` | Spec 017 wizard (verbatim strings, atomic + backup) | ✅ |
 | `chat`, `gateway`, `cron`, `skills`, `doctor`, … | — | not implemented; not listed in `--help` | ❌ (later specs) |
+
+## Spec 017 — total v0.21.0 parity
+
+**Picker counter correction:** [a8d5e8c TDD evidence](hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md)
+now shows `0/2 sessions` for the two-session no-match fixture and preserves
+delete-hint behavior. Six actual pairs inspected; relevant CI green. Footer
+placement/palette and other T12/T13 requirements remain open.
+
+**Picker hint correction:** [c07f0c5 diagnosis](hermes-ui-spec/017/evidence/picker-hint-c07f0c5/REPORT.md)
+fixes `d delete` being displayed when filtering; six real paired frames inspected
+and relevant CI green. Geometry/palette differences remain; no new waiver.
+
+**Visual audit update:** [48-pair report](hermes-ui-spec/017/evidence/ui-3b39bd7/REPORT.md)
+records actual 100/80-column captures and direct inspection. Summary 0/3-tools
+and empty picker fixtures match; wizard, other picker states and completion
+presentation differ. The implementation checkmarks below are NOT whole-screen
+parity passes. Wizard coverage is section-level and Python completion is a native
+component host, not full CLI. No new adaptation or closure approval is implied.
+
+
+Implementation status below is scoped to the ported surface, not proof of
+whole-screen byte identity. Closure review remains open: §J.7 requires
+side-by-side captures, and the existing PTY/unit assertions do not replace
+that requirement without explicit approval. See the
+[closure review](../.scratch/hermes-rs-total-parity/issues/T11-closure-review.md).
+
+| Area | Python v0.21.0 | Hermes-RS | Status |
+|---|---|---|---|
+| Banner panel | Rich Panel with version title, caduceus, and info grid (§A) | Ratatui buffer + raw ANSI; nine normalized plain-text reference cases in `welcome.rs`, selected color/string checks in `banner_e2e` PTY | ✅ (intentional Rust branding; not whole ANSI-stream identity) |
+| Version label | `Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301` | `Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301` (T02) | ✅ (brand intentional) |
+| Info line | model line + summary line in banner; nothing after banner (`●`/`provider:`/`✦ Tip:` gone) | Same (T03) | ✅ |
+| Setup wizard | curses multi-step (terminal/backend/provider/model) | `inquire` wizard, verbatim strings, atomic write + timestamped backup, ESC rollback (`wizard_e2e` PTY) | ✅ (terminal backends ≠ local/docker + egress = explicit "not wired" notices) |
+| Provider catalog | 39 providers (§G) | Verbatim static catalog; `hermes model` picker; unit cross-check vs verbatim file | ✅ (live per-provider model list = manual entry; follow-up) |
+| Toolset catalog | 26 toolsets + 8 default-off (§G.5) | Verbatim static catalog; `hermes tools`; `tools.enabled_toolsets` stored | ✅ (registry wiring = follow-up) |
+| Autocomplete | prompt_toolkit completer + AutoSuggest ghost | rustyline completer + hinter, 101 verbatim registry entries + 14 separately marked RS extensions (gateway-only entries filtered in CLI) | ✅ (behavior parity; RS extensions labeled) |
+| Tips | 380 startup strings (dead code) + 11 composer placeholders | Ported verbatim as data + selectors; startup shows nothing (parity-faithful); placeholder shown TUI-only | ✅ |
+| Session picker | curses browser (§F) | crossterm browser, §F frame verbatim (`session_picker_e2e` PTY: 7 tests) | ✅ (documented adaptations below) |
+| Startup/resume | bare = new, `-c` = resume | Same + `--resume-id`; resume-latest (oldest-resume bugfix T09); piped bare resumes latest for scripted stability | ✅ |
+| Session delete | `d` + `[y/N]` in picker | Same, default-deny, cascade delete | ✅ |
+
+Documented picker adaptations (§F): 8-char `sid` for UUIDv7
+collision headroom; `done`/`empty` status words (T09 decision). The historical
+comparison said Python used 6 chars and no status; the pinned UI capture actually
+shows 18 chars and `intr`. This corrects that description, not the adaptation
+allowlist. Other existing adaptations: preview shows source/row names;
+Active shown as relative time; ↑/k wraps below ↓/j (reverse-cursor
+fidelity); `q` = filter key; `TOO_SMALL` floor 60×8. Explicitly not
+ported: §H resume display, `sessions list/stats/prune/export/rename/
+delete`, Nous Portal OAuth, egress firewall, Ctrl+P palette (upstream
+implementation not found), TUI picker.
 
 ## Differences ⚠️
 
 | Feature | Python | Rust | Impact |
 |---|---|---|---|
 | Session ID format | UUID v4 | UUID v7 | Low — schema-compatible and time-sortable |
-| FTS index | Enabled | Not yet | Low — search is not implemented |
-| Provider catalog | Many built-ins + plugins | Config-declared + built-in `fake` | Medium — Rust has no dynamic plugin loading |
-| Tool execution | Docker sandbox + egress proxy | Native shell; opt-in process-level sandbox (env allowlist, cwd jail, output cap, `ulimit`, `unshare --net`) — Spec 007 | Medium — no container isolation; see ADR 0006 |
+| FTS index | Enabled | FTS5 message search (`search` / `/search`), Spec 004 | Implemented; render-boundary credential redaction |
+| Provider catalog | Many built-ins + plugins | 39-entry static picker catalog + config-declared adapters + built-in `fake` | Medium — catalog is not a claim of 39 working adapters; no dynamic plugin loading |
+| Tool execution | Docker sandbox + egress proxy | Native shell; CLI-default-on process-level sandbox (env allowlist, cwd jail, output cap, `ulimit`, `unshare --net`) — Spec 007 | Medium — no container isolation; explicit `--no-sandbox` / `sandbox.enabled: false` opt-out; see ADR 0006 amendment |
 | TUI dashboard | Rich/curses terminal output only (no dedicated dashboard) | Opt-in Ratatui `--tui` dashboard + readline REPL | Rust-only capability (Spec 012) |
 
 ## Known Gaps 🚧
 
-- Function calling / tool use (planned Spec 002)
-- FTS5 search on message content
 - Dynamic plugin/provider loading
 - Conversation branching and edit
 
@@ -288,3 +337,64 @@ The Unix integration test `sigint_stream` synchronizes on the first SSE chunk be
 | Confirmed writes | ✅ | Atomic write and default-deny confirmation |
 | Readonly shell policy | ✅ | Blocklist, timeout, cancellation |
 | Security documentation | ✅ | See `docs/SECURITY.md` |
+
+### Footer-position TDD delivered at0c0704d
+
+Actual CLI normal100x30 RED34829070839 (row5 !=30, three failures) → official
+GREEN34829279773 → exact1199-byte patch applied → committed-source capture
+34829549105 and ordinary CI34829549118 SUCCESS. Primary PTY regression is now
+required in ordinary CI. Ten paired images directly inspected: footer row30 at
+both widths, delete prompt still bottom, empty row1. Counter6/hint6 controls PASS.
+Audit validates20 raw/cast roundtrips,10 PNGs, unchanged Python records/cells and
+renderer settings. Only old/new footer rows change; delete only drops stale row5;
+both empty PNGs byte-identical to original. No normalization or new Python run.
+See `docs/hermes-ui-spec/017/evidence/picker-position-0c0704d/REPORT.md`.
+Palette/header/selection/delete styling, other body geometry and wizard/completion
+coverage differences remain open. Resize/long-list/clear-filter behavior is not
+proved by this fixed-size slice. No whole-picker PASS, final acceptance or merge.
+
+### Footer color M5 delivered atae220ff — milestones visible
+
+Source capture34833465322 and ordinary CI34833465347 SUCCESS. Color6/geometry10/
+counter6/hint6 PASS; both real CLI position and color tests required in CI.
+Ten paired PNGs directly opened/inspected. New packet
+`docs/hermes-ui-spec/017/evidence/picker-color-ae220ff/REPORT.md` retains raw/casts,
+receipts, RED trace, tested patch, audit/checksums and reproducible verifiers.
+Rust bundle99678 bytes SHAb82134515d7b59fe40346a38ef136fb6c69c63861c9fbab3aad261f999022db1.
+
+Only footer foreground on row30 changes; all other cells unchanged. Four delete/
+empty PNGs byte-identical to0c0704d. Python records reused unchanged, not a new
+capture/source audit. Initial audit mode-equality probe failed: Python palette16
+vs Rust palette256, both indexed8/dim=false. Correct semantic check retains this
+encoding distinction (no raw/color normalization), rejects truecolor, and verifies
+six original footer/lower-half regions pixel-identical with pinned browser decoder.
+20 raw/cast roundtrips,10 PNG hashes,29 supporting tests PASS. Limited direct
+Standards review:0 new hard violations,1 nonblocking duplication observation;
+Spec color slice passes, broader picker/wizard/completion gaps remain open.
+
+User-facing `docs/hermes-ui-spec/017/MILESTONES.md` now marks M1–M5 complete for
+color ONLY; four picker correction milestones verified. No invented whole-project
+percentage, final acceptance, resize/long-list/clear-filter claims, or merge.
+
+### Normal header H5 delivered at7fef514
+
+Source capture34837424495 and ordinary CI34837424464 SUCCESS. Ten paired PNGs
+opened/inspected. Header4, footer color6/geometry10/counter6/hint6 PASS. New packet
+`docs/hermes-ui-spec/017/evidence/picker-header-7fef514/REPORT.md` includes original
+raw/casts, stage receipts/patch, audit/checksums and reproduction scripts.
+Rust bundle102020 bytes SHAf41d50ce422ee795a1fc7b1c5981b739a808389f97c4309e36df05970842b58f.
+
+Only normal/delete header row1 foreground/bold changes. All other cells unchanged;
+filter/no-match/empty6 paired PNGs byte-identical toae220ff. Python records/cells
+reused unchanged, not a new capture or5128-file source audit. Python palette16 /
+Rust palette256, both indexed3+bold/dim=false; encoding difference retained.
+Four complete header-row pixel regions identical with pinned renderer.20 raw/cast
+roundtrips,10 PNG hashes,34 supporting tests PASS. Source driver/helper hashes
+checked against committed blobs. No raw/image normalization.
+
+Milestones H1–H5 complete; now five picker correction milestones verified.
+CI requires live position, footer color and normal-header tests. Limited direct
+Standards/Spec review:0 new hard violations,1 nonblocking duplicated-runner/setup
+observation; filter/column headers, selection/delete/no-match styles, other layout,
+wizard/completion and T12 coverage remain open. No resize/clear-filter/long-list
+claims, new adaptation, whole-picker acceptance, closure or merge.

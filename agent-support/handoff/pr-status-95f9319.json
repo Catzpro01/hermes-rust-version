@@ -1,0 +1,34 @@
+{
+  "baseRefName": "main",
+  "headRefName": "arena/01a09c1e-hermes-rust-version",
+  "headRefOid": "95f9319c5e90daba3c70858e0920143d7febea42",
+  "isDraft": true,
+  "mergeStateStatus": "DIRTY",
+  "mergeable": "CONFLICTING",
+  "number": 7,
+  "state": "OPEN",
+  "statusCheckRollup": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-09-14T12:30:01Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Catzpro01/hermes-rust-version/actions/runs/34843728495/job/103974499776",
+      "name": "CI gate regression tests",
+      "startedAt": "2026-09-14T12:29:48Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-09-14T12:32:09Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Catzpro01/hermes-rust-version/actions/runs/34843728495/job/103974499555",
+      "name": "fmt + clippy + test",
+      "startedAt": "2026-09-14T12:29:48Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    }
+  ],
+  "title": "Preserve Hermes progress and organized agent handoff (Spec017 WIP)",
+  "url": "https://github.com/Catzpro01/hermes-rust-version/pull/7"
+}

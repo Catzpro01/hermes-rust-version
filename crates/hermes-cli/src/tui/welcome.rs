@@ -36,8 +36,7 @@ use ratatui::{
 };
 
 use super::art::{
-    caduceus_lines, logo_lines,
-    CADUCEUS_LINES, CADUCEUS_WIDTH, LOGO_LINES, LOGO_WIDTH,
+    caduceus_lines, logo_lines, CADUCEUS_LINES, CADUCEUS_WIDTH, LOGO_LINES, LOGO_WIDTH,
 };
 use super::theme::{detect_color_depth, truecolor_to_256, ColorDepth, HermesTheme};
 
@@ -218,10 +217,7 @@ fn wrap_line(line: &str, width: usize) -> Vec<String> {
 /// Byte offset of the `n`-th char boundary (or `len` when `n` is beyond the
 /// string).
 fn byte_at_char(s: &str, n: usize) -> usize {
-    s.char_indices()
-        .nth(n)
-        .map(|(i, _)| i)
-        .unwrap_or(s.len())
+    s.char_indices().nth(n).map(|(i, _)| i).unwrap_or(s.len())
 }
 
 /// Python's `round()` — banker's rounding (half to even), applied to the
@@ -259,10 +255,7 @@ fn shrink_columns(l: usize, r: usize, max_width: usize) -> (usize, usize) {
             .max()
             .unwrap_or(0);
         let diff = max_w - second;
-        let ratios: [u32; 2] = [
-            u32::from(widths[0] == max_w),
-            u32::from(widths[1] == max_w),
-        ];
+        let ratios: [u32; 2] = [u32::from(widths[0] == max_w), u32::from(widths[1] == max_w)];
         if ratios[0] + ratios[1] == 0 || diff == 0 {
             break;
         }
@@ -375,10 +368,18 @@ fn wrap_styled(line: &SLine, width: usize) -> Vec<SLine> {
             let mut sl = line.slice(s, e);
             if sl.width() > width {
                 let cut = byte_at_char(&sl.plain(), width.saturating_sub(1));
+                // Rich truncation retains the span at the ellipsis position,
+                // including the dim session color; it does not insert plain text.
+                let ellipsis_style = sl
+                    .slice(cut, sl.plain().len())
+                    .runs
+                    .first()
+                    .map(|run| run.style)
+                    .unwrap_or_default();
                 sl = sl.slice(0, cut);
                 sl.runs.push(Run {
                     text: "…".to_owned(),
-                    style: Style::default(),
+                    style: ellipsis_style,
                 });
             }
             sl
@@ -388,7 +389,7 @@ fn wrap_styled(line: &SLine, width: usize) -> Vec<SLine> {
 
 /// Left column lines (verbatim `build_welcome_banner` `left_lines`).
 fn left_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
-    let dim = theme.banner_dim();
+    let dim = theme.banner_dim().add_modifier(Modifier::DIM);
     let mut left = vec![SLine::blank()];
     for row in caduceus_lines() {
         left.push(SLine::new(vec![(row.text, row.style)]));
@@ -416,21 +417,13 @@ fn left_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
             model_short.truncate(model_short.len() - 5);
         }
         if model_short.chars().count() > 28 {
-            model_short = format!(
-                "{}...",
-                model_short.chars().take(25).collect::<String>()
-            );
+            model_short = format!("{}...", model_short.chars().take(25).collect::<String>());
         }
-        let mut parts: Vec<(String, Style)> = vec![(
-            model_short,
-            Style::default().fg(theme.banner_accent),
-        )];
+        let mut parts: Vec<(String, Style)> =
+            vec![(model_short, Style::default().fg(theme.banner_accent))];
         if let Some(ctx) = info.context_tokens {
             parts.push((" · ".to_owned(), dim));
-            parts.push((
-                format!("{} context", format_context_length(ctx)),
-                dim,
-            ));
+            parts.push((format!("{} context", format_context_length(ctx)), dim));
         }
         parts.push((" · ".to_owned(), dim));
         parts.push(("Nous Research".to_owned(), dim));
@@ -451,7 +444,9 @@ fn left_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
         left.push(SLine {
             runs: vec![Run {
                 text: format!("Session: {sid}"),
-                style: Style::default().fg(SESSION_COLOR),
+                style: Style::default()
+                    .fg(SESSION_COLOR)
+                    .add_modifier(Modifier::DIM),
             }],
         });
     }
@@ -462,7 +457,7 @@ fn left_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
 /// Rust port has no skills system, so the skills section is always the empty
 /// state).
 fn right_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
-    let dim = theme.banner_dim();
+    let dim = theme.banner_dim().add_modifier(Modifier::DIM);
     let body = theme.banner_text();
     let header = |text: &str| SLine::new(vec![(text, theme.banner_section())]);
     let mut right = vec![header("Available Tools")];
@@ -472,42 +467,51 @@ fn right_lines(info: &BannerInfo, theme: &HermesTheme) -> Vec<SLine> {
         // Python truncation rule: joined > 45 cells -> accumulate names while
         // `length + len(name) + 2 <= 42`, then append "..." and stop.
         let joined = names.join(", ");
-        let tools_str = if joined.chars().count() > 45 {
-            let mut short: Vec<&str> = Vec::new();
+        let displayed: Vec<(&str, Style)> = if joined.chars().count() > 45 {
+            let mut short = Vec::new();
             let mut length = 0usize;
             for name in &names {
                 if length + name.chars().count() + 2 > 42 {
-                    short.push("...");
+                    short.push(("...", Style::default().add_modifier(Modifier::DIM)));
                     break;
                 }
-                short.push(name);
+                short.push((*name, body));
                 length += name.chars().count() + 2;
             }
-            short.join(", ")
+            short
         } else {
-            joined
+            names.into_iter().map(|name| (name, body)).collect()
         };
-        right.push(SLine {
-            runs: vec![
-                Run {
-                    text: "other:".to_owned(),
-                    style: dim,
-                },
-                Run {
-                    text: format!(" {tools_str}"),
-                    style: body,
-                },
-            ],
-        });
+        let mut runs = vec![
+            Run {
+                text: "other:".to_owned(),
+                style: dim,
+            },
+            Run {
+                text: " ".to_owned(),
+                style: Style::default(),
+            },
+        ];
+        for (index, (name, style)) in displayed.into_iter().enumerate() {
+            if index > 0 {
+                // Rich joins individually styled names with plain punctuation.
+                runs.push(Run {
+                    text: ", ".to_owned(),
+                    style: Style::default(),
+                });
+            }
+            runs.push(Run {
+                text: name.to_owned(),
+                style,
+            });
+        }
+        right.push(SLine { runs });
     }
+
     if !info.mcp_servers.is_empty() {
         right.push(SLine::blank());
         right.push(header("MCP Servers"));
-        let mut names: Vec<&str> = info
-            .mcp_servers
-            .iter()
-            .map(String::as_str)
-            .collect();
+        let mut names: Vec<&str> = info.mcp_servers.iter().map(String::as_str).collect();
         names.sort_unstable();
         for name in names {
             right.push(SLine {
@@ -554,7 +558,7 @@ pub fn summary_line(tools: usize, skills: usize, mcp_connected: usize) -> String
 }
 
 /// Full layout of the panel content at panel width `width`: wrapped left/
-/// right columns plus their measured (post-wrap) widths.
+/// right columns plus the allocated left-column width.
 struct BannerLayout {
     left: Vec<SLine>,
     right: Vec<SLine>,
@@ -574,15 +578,14 @@ fn layout_banner(width: usize, info: &BannerInfo, theme: &HermesTheme) -> Banner
     } else {
         (l0, r0)
     };
-    let left: Vec<SLine> = left0
-        .iter()
-        .flat_map(|l| wrap_styled(l, l_alloc))
-        .collect();
+    let left: Vec<SLine> = left0.iter().flat_map(|l| wrap_styled(l, l_alloc)).collect();
     let right: Vec<SLine> = right0
         .iter()
         .flat_map(|l| wrap_styled(l, r_alloc))
         .collect();
-    let left_w = left.iter().map(SLine::width).max().unwrap_or(0);
+    // Rich keeps the allocated column width even when wrapping a long word
+    // leaves shorter lines. Re-measuring those lines collapses the grid gap.
+    let left_w = l_alloc;
     BannerLayout {
         left,
         right,
@@ -630,7 +633,11 @@ fn compose_banner(raw_width: u16, info: &BannerInfo, theme: &HermesTheme) -> Buf
     let layout = layout_banner(panel_w, info, theme);
     let panel_h = layout.left.len().max(layout.right.len()) + 2;
     // Logo rows only matter when the logo is shown (raw width >= 95).
-    let logo = if show_logo { logo_wrapped(raw_width as usize) } else { Vec::new() };
+    let logo = if show_logo {
+        logo_wrapped(raw_width as usize)
+    } else {
+        Vec::new()
+    };
     let top = 1 + logo.len() + usize::from(show_logo);
     let total_h = top + panel_h;
     let mut buf = Buffer::empty(Rect::new(0, 0, panel_w as u16, total_h as u16));
@@ -696,15 +703,12 @@ fn draw_panel(area: Rect, buf: &mut Buffer, theme: &HermesTheme, layout: &Banner
     } else {
         // Title wider than the border (only possible below the 60-cell
         // minimum): `─ {title…} ─` with a single dash per side (Rich crops).
-        let cut: String = VERSION_LABEL.chars().take(inner.saturating_sub(2)).collect();
+        let cut: String = VERSION_LABEL
+            .chars()
+            .take(inner.saturating_sub(2))
+            .collect();
         buf.set_stringn(area.x + 1, area.y, "─ ", 2, border_style);
-        buf.set_stringn(
-            area.x + 3,
-            area.y,
-            &cut,
-            cut.chars().count(),
-            title_style,
-        );
+        buf.set_stringn(area.x + 3, area.y, &cut, cut.chars().count(), title_style);
         buf.set_stringn(
             area.x + 3 + cut.chars().count() as u16,
             area.y,
@@ -713,7 +717,7 @@ fn draw_panel(area: Rect, buf: &mut Buffer, theme: &HermesTheme, layout: &Banner
             border_style,
         );
     }
-    // Content rows: left column centered in its measured width, right column
+    // Content rows: left column centered in its allocated width, right column
     // left-aligned at `left_w + 2` (the Rich grid gap), both top-aligned.
     for i in 0..h {
         let y = area.y + 1 + i as u16;
@@ -722,15 +726,11 @@ fn draw_panel(area: Rect, buf: &mut Buffer, theme: &HermesTheme, layout: &Banner
         // Panel content origin = border (1) + panel padding (2) = x + 3.
         if let Some(l) = layout.left.get(i) {
             if !l.is_blank() {
-                let offset = layout.left_w.saturating_sub(l.width()) / 2;
-                draw_line_at(
-                    buf,
-                    area.x,
-                    width,
-                    area.x + 3 + offset as u16,
-                    y,
-                    l,
-                );
+                // Wrapping may retain a separator space (e.g. "Session: ").
+                // Rich centers the visible text, not that trailing whitespace.
+                let visible_width = l.plain().trim_end().chars().count();
+                let offset = layout.left_w.saturating_sub(visible_width) / 2;
+                draw_line_at(buf, area.x, width, area.x + 3 + offset as u16, y, l);
             }
         }
         if let Some(r) = layout.right.get(i) {
@@ -749,13 +749,7 @@ fn draw_panel(area: Rect, buf: &mut Buffer, theme: &HermesTheme, layout: &Banner
     // Bottom border.
     let bottom_y = area.y + 1 + h as u16;
     buf.set_string(area.x, bottom_y, "╰", border_style);
-    buf.set_stringn(
-        area.x + 1,
-        bottom_y,
-        "─".repeat(inner),
-        inner,
-        border_style,
-    );
+    buf.set_stringn(area.x + 1, bottom_y, "─".repeat(inner), inner, border_style);
     buf.set_string(area.x + width as u16 - 1, bottom_y, "╯", border_style);
 }
 
@@ -793,15 +787,11 @@ pub fn write_banner(
     write_buffer_ansi(w, &buf, depth)
 }
 
-/// Writes a composed buffer as an SGR ANSI stream (Spec 013 T02): one reset
-/// at the end, SGR changes only when a cell's style changes, and no
+/// Writes a composed buffer as an SGR ANSI stream (Spec 013 T02): reset before
+/// changing an active style and at line ends, with no
 /// positioning escapes — the stream is written to stdout where the cursor
 /// sits at column 0.
-pub fn write_buffer_ansi(
-    w: &mut impl Write,
-    buf: &Buffer,
-    depth: ColorDepth,
-) -> io::Result<()> {
+pub fn write_buffer_ansi(w: &mut impl Write, buf: &Buffer, depth: ColorDepth) -> io::Result<()> {
     let area = buf.area;
     for y in area.y..area.y + area.height {
         if y > area.y {
@@ -811,13 +801,13 @@ pub fn write_buffer_ansi(
         for x in area.x..area.x + area.width {
             let cell = &buf[(x, y)];
             let sgr = sgr_for(cell, depth);
-            if cell.symbol() == " " && sgr.is_empty() {
-                continue;
-            }
-            if sgr.is_empty() && !current.is_empty() {
-                w.write_all(b"\x1b[0m")?;
-                current.clear();
-            } else if sgr != current {
+            // Unstyled spaces still advance the terminal cursor. Omitting
+            // them collapses padding, columns, and the panel's right border.
+            if sgr != current {
+                // SGR adds attributes; a new color alone cannot clear bold/dim.
+                if !current.is_empty() {
+                    w.write_all(b"\x1b[0m")?;
+                }
                 w.write_all(sgr.as_bytes())?;
                 current = sgr;
             }
@@ -910,35 +900,38 @@ fn color_code(color: Color, depth: ColorDepth) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::art::{CADUCEUS_LINES, LOGO_LINES, LOGO_WIDTH};
+    use super::*;
     // AUTO-GENERATED reference constants (Spec 017 T02).
     // Source: Python v0.21.0 `build_welcome_banner` (checkout 63279301) with
     // the Rust version label monkeypatched in — plain text, no ANSI, each line
     // rstripped. Widths 60/70/80/94/95/100. Regenerate with
     // /tmp/ref_final.py on the VM (hermes-agent venv).
-    
+
     const REF_W100_PRIMARY: &str = "\n██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗\n██╗████████╗\n██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗\n██║╚══██╔══╝\n███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║\n██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║\n██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║\n╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝\n\n╭─────────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ────────────────────────╮\n│                                                    Available Tools                               │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀           other: file_read, file_write, web_search      │\n│           ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀           Available Skills                              │\n│           ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀           No skills installed                           │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀           3 tools · 0 skills · /help for commands       │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│                                                                                                  │\n│  claude-sonnet-4-5 · 200K context · Nous Research                                                │\n│                  /home/user/demo                                                                 │\n╰──────────────────────────────────────────────────────────────────────────────────────────────────╯";
-    
+
     const REF_W80_PRIMARY: &str = "\n╭───────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ──────────────╮\n│                                     Available Tools                          │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                             │\n│   ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀    Available Skills                         │\n│   ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀    No skills installed                      │\n│   ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀                                             │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀    0 tools · 0 skills · /help for commands  │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                             │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                             │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                             │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                             │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                             │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                             │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                             │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                             │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                             │\n│   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                             │\n│                                                                              │\n│  claude-sonnet-4-5 · Nous Research                                           │\n│           /home/user/demo                                                    │\n╰──────────────────────────────────────────────────────────────────────────────╯";
-    
+
     const REF_W94_PRIMARY: &str = "\n╭──────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ─────────────────────╮\n│                                        Available Tools                                     │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│     ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀     Available Skills                                    │\n│     ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀     No skills installed                                 │\n│     ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀                                                         │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     0 tools · 0 skills · /help for commands             │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│                                                                                            │\n│  gpt-5 · 128K context · Nous Research                                                      │\n│            /home/user/demo                                                                 │\n╰────────────────────────────────────────────────────────────────────────────────────────────╯";
-    
+
     const REF_W95_PRIMARY: &str = "\n██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗\n██╗████████╗\n██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗\n██║╚══██╔══╝\n███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║\n██║\n██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║\n██║\n██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║\n██║\n╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝\n╚═╝\n\n╭───────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ─────────────────────╮\n│                                        Available Tools                                      │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │\n│     ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀     Available Skills                                     │\n│     ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀     No skills installed                                  │\n│     ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀                                                          │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     0 tools · 0 skills · /help for commands              │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                          │\n│                                                                                             │\n│  gpt-5 · 128K context · Nous Research                                                       │\n│            /home/user/demo                                                                  │\n╰─────────────────────────────────────────────────────────────────────────────────────────────╯";
-    
+
     const REF_W100_NOMODEL: &str = "\n██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗\n██╗████████╗\n██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗\n██║╚══██╔══╝\n███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║\n██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║\n██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║\n╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝\n\n╭─────────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ────────────────────────╮\n│                                                    Available Tools                               │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀           Available Skills                              │\n│           ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀           No skills installed                           │\n│           ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀           0 tools · 0 skills · /help for commands       │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                         │\n│                                                                                                  │\n│  no model configured — run /model or hermes setup                                                │\n│                  /home/user/demo                                                                 │\n╰──────────────────────────────────────────────────────────────────────────────────────────────────╯";
-    
+
     const REF_W100_SESSION: &str = "\n██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗\n██╗████████╗\n██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗\n██║╚══██╔══╝\n███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║\n██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║\n██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║\n╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝\n\n╭─────────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ────────────────────────╮\n│                                  Available Tools                                                 │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                  │\n│  ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀  Available Skills                                                │\n│  ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀  No skills installed                                             │\n│  ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀                                                                  │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  0 tools · 0 skills · /help for commands                         │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                  │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                  │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                  │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                  │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                  │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                  │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                  │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                  │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                  │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                                  │\n│                                                                                                  │\n│      gpt-5 · Nous Research                                                                       │\n│         /home/user/demo                                                                          │\n│       Session: sess_abc123                                                                       │\n╰──────────────────────────────────────────────────────────────────────────────────────────────────╯";
-    
+
     const REF_W100_MCP: &str = "\n██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗\n██╗████████╗\n██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗\n██║╚══██╔══╝\n███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║\n██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║\n██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║\n╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝\n\n╭─────────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ────────────────────────╮\n│                                        Available Tools                                           │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     other: file_read                                          │\n│     ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀                                                               │\n│     ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀     MCP Servers                                               │\n│     ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀     demo (stdio) — configured                                 │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                               │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     Available Skills                                          │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     No skills installed                                       │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                               │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀     1 tools · 0 skills · /help for commands                   │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                               │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                               │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                               │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                               │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                               │\n│     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                                               │\n│                                                                                                  │\n│  gpt-5 · 128K context · Nous Research                                                            │\n│            /home/user/demo                                                                       │\n╰──────────────────────────────────────────────────────────────────────────────────────────────────╯";
-    
+
     const REF_W60_SHRINK: &str = "\n╭─── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ────╮\n│                             Available Tools              │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀…  other: file_read             │\n│  ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀…                               │\n│  ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙…  Available Skills             │\n│  ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻…  No skills installed          │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀…  1 tools · 0 skills · /help   │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀…  for commands                 │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀…                               │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀…                               │\n│                                                          │\n│  claude-sonnet-4-5 · 200K                                │\n│   context · Nous Research                                │\n│       /home/user/demo                                    │\n╰──────────────────────────────────────────────────────────╯";
-    
+
     const REF_W70_NOMODEL: &str = "\n╭──────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ─────────╮\n│                                  Available Tools                   │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀  Available Skills                  │\n│  ⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀  No skills installed               │\n│  ⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  0 tools · 0 skills · /help for    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  commands                          │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                    │\n│                                                                    │\n│    no model configured — run                                       │\n│      /model or hermes setup                                        │\n│         /home/user/demo                                            │\n╰────────────────────────────────────────────────────────────────────╯";
 
     #[test]
     fn summary_line_matches_python_join_rule() {
-        assert_eq!(summary_line(0, 0, 0), "0 tools · 0 skills · /help for commands");
+        assert_eq!(
+            summary_line(0, 0, 0),
+            "0 tools · 0 skills · /help for commands"
+        );
         assert_eq!(
             summary_line(5, 3, 1),
             "5 tools · 3 skills · 1 MCP servers · /help for commands"
@@ -1036,7 +1029,12 @@ mod tests {
     fn byte_breaks(text: &str, char_breaks: &[usize]) -> Vec<usize> {
         char_breaks
             .iter()
-            .map(|&b| text.char_indices().nth(b).map(|(i, _)| i).unwrap_or(text.len()))
+            .map(|&b| {
+                text.char_indices()
+                    .nth(b)
+                    .map(|(i, _)| i)
+                    .unwrap_or(text.len())
+            })
             .collect()
     }
 
@@ -1054,13 +1052,25 @@ mod tests {
         // art): rows 1-2 break at 89; rows 3-6 break at 95 (width 95) or
         // not at all (width >= 98).
         let logo = logo_lines();
-        assert_eq!(divide_line(logo[0].text, 95), byte_breaks(logo[0].text, &[89]));
-        assert_eq!(divide_line(logo[1].text, 95), byte_breaks(logo[1].text, &[89]));
+        assert_eq!(
+            divide_line(logo[0].text, 95),
+            byte_breaks(logo[0].text, &[89])
+        );
+        assert_eq!(
+            divide_line(logo[1].text, 95),
+            byte_breaks(logo[1].text, &[89])
+        );
         for row in &logo[2..6] {
             assert_eq!(divide_line(row.text, 95), byte_breaks(row.text, &[95]));
         }
-        assert_eq!(divide_line(logo[0].text, 100), byte_breaks(logo[0].text, &[89]));
-        assert_eq!(divide_line(logo[1].text, 100), byte_breaks(logo[1].text, &[89]));
+        assert_eq!(
+            divide_line(logo[0].text, 100),
+            byte_breaks(logo[0].text, &[89])
+        );
+        assert_eq!(
+            divide_line(logo[1].text, 100),
+            byte_breaks(logo[1].text, &[89])
+        );
         for row in &logo[2..6] {
             assert_eq!(divide_line(row.text, 100), Vec::<usize>::new());
         }
@@ -1136,13 +1146,7 @@ mod tests {
 
     #[test]
     fn banner_w80_primary_matches_python_reference() {
-        let info = banner_info(
-            Some("anthropic/claude-sonnet-4-5"),
-            None,
-            &[],
-            &[],
-            None,
-        );
+        let info = banner_info(Some("anthropic/claude-sonnet-4-5"), None, &[], &[], None);
         assert_eq!(
             plain_banner(80, &info),
             ref_lines(REF_W80_PRIMARY),
@@ -1192,7 +1196,13 @@ mod tests {
 
     #[test]
     fn banner_w100_mcp_matches_python_reference() {
-        let info = banner_info(Some("gpt-5"), Some(128_000), &["file_read"], &["demo"], None);
+        let info = banner_info(
+            Some("gpt-5"),
+            Some(128_000),
+            &["file_read"],
+            &["demo"],
+            None,
+        );
         assert_eq!(
             plain_banner(100, &info),
             ref_lines(REF_W100_MCP),
@@ -1245,7 +1255,8 @@ mod tests {
         );
         let got = plain_banner(100, &info);
         assert!(
-            got.iter().any(|l| l.contains("other: tool_five, tool_four, tool_one, ...")),
+            got.iter()
+                .any(|l| l.contains("other: tool_five, tool_four, tool_one, ...")),
             "truncated toolset row expected; got: {got:?}"
         );
     }
@@ -1267,7 +1278,10 @@ mod tests {
         // Title: inner 98, block 51, left dashes (98-51)/2 = 23 -> x = 1+23+1.
         assert_eq!(buf[(25, 10)].symbol(), "H");
         assert_eq!(buf[(25, 10)].fg, Color::Rgb(255, 215, 0), "title #FFD700");
-        assert!(buf[(25, 10)].modifier.contains(Modifier::BOLD), "title bold");
+        assert!(
+            buf[(25, 10)].modifier.contains(Modifier::BOLD),
+            "title bold"
+        );
         // Left column (L=36): art offset (36-30)/2 = 3 -> x = 1+2+3 = 6,
         // first art row y = 10+1+1 = 12 (bronze tier).
         assert_eq!(buf[(6, 12)].fg, Color::Rgb(205, 127, 50), "caduceus bronze");
@@ -1279,7 +1293,10 @@ mod tests {
         // Right column header at x = 1+2+36+2 = 41, y = 11: bold accent.
         assert_eq!(buf[(41, 11)].symbol(), "A");
         assert_eq!(buf[(41, 11)].fg, Color::Rgb(255, 191, 0), "header accent");
-        assert!(buf[(41, 11)].modifier.contains(Modifier::BOLD), "header bold");
+        assert!(
+            buf[(41, 11)].modifier.contains(Modifier::BOLD),
+            "header bold"
+        );
     }
 
     #[test]
@@ -1332,11 +1349,412 @@ mod tests {
         assert!(tc.contains("Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301"));
         assert!(tc.contains("██╗"), "logo present at width 100");
         let mut c256 = Vec::new();
-        write_banner(&mut c256, &theme, 100, &info, ColorDepth::Color256)
-            .unwrap();
+        write_banner(&mut c256, &theme, 100, &info, ColorDepth::Color256).unwrap();
         let c256 = String::from_utf8(c256).unwrap();
-        assert!(!c256.contains("38;2;"), "256-color path must not emit truecolor");
-        assert!(c256.contains("38;5;"), "256-color path must use palette indices");
+        assert!(
+            !c256.contains("38;2;"),
+            "256-color path must not emit truecolor"
+        );
+        assert!(
+            c256.contains("38;5;"),
+            "256-color path must use palette indices"
+        );
+    }
+
+    #[test]
+    fn banner_ansi_preserves_python_reference_layout() {
+        let theme = HermesTheme::dark_canonical();
+        // Each independent Python reference has its own input fixture,
+        // identical to the corresponding plain-banner reference test above.
+        for (width, info, reference) in [
+            (
+                100,
+                banner_info(
+                    Some("anthropic/claude-sonnet-4-5"),
+                    Some(200_000),
+                    &["file_read", "file_write", "web_search"],
+                    &[],
+                    None,
+                ),
+                REF_W100_PRIMARY,
+            ),
+            (
+                80,
+                banner_info(Some("anthropic/claude-sonnet-4-5"), None, &[], &[], None),
+                REF_W80_PRIMARY,
+            ),
+            (
+                94,
+                banner_info(Some("gpt-5"), Some(128_000), &[], &[], None),
+                REF_W94_PRIMARY,
+            ),
+            (
+                95,
+                banner_info(Some("gpt-5"), Some(128_000), &[], &[], None),
+                REF_W95_PRIMARY,
+            ),
+        ] {
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
+                // This public writer emits only SGR escapes. Strip colors, not
+                // spaces: the independent Python rows pin terminal geometry.
+                let plain: String = observed_banner_cells(&bytes)
+                    .into_iter()
+                    .map(|(ch, _)| ch)
+                    .collect();
+                let actual: Vec<String> = plain
+                    .lines()
+                    .map(|line| line.trim_end().to_owned())
+                    .collect();
+                assert_eq!(
+                    actual,
+                    ref_lines(reference),
+                    "ANSI geometry at {width} columns"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn banner_ansi_long_session_columns_match_python() {
+        // Exact paired PTY fixtures and Python columns from evidence/banner-a2a3d08.
+        // The independently recorded Python positions are not Rust snapshots.
+        let theme = HermesTheme::dark_canonical();
+        for (width, cwd, session, column) in [
+            (
+                100,
+                "/tmp/hermes-visual-wkqpp90e/demo",
+                "01a09c9f-9e4c-7062-9da3-a43fe014205f",
+                51,
+            ),
+            (
+                80,
+                "/tmp/hermes-visual-mlzi2a67/demo",
+                "01a09c9f-9e5e-7a23-a26b-3671192efa10",
+                41,
+            ),
+            (
+                94,
+                "/tmp/hermes-visual-o2epp6b2/demo",
+                "01a09c9f-9e70-7600-8bdd-fa8f1c2edb20",
+                48,
+            ),
+            (
+                95,
+                "/tmp/hermes-visual-3jg1uo86/demo",
+                "01a09c9f-9e82-7390-8e0a-c738202a5bca",
+                49,
+            ),
+        ] {
+            let mut info = banner_info(
+                Some("parity-fixture"),
+                None,
+                &["list_dir", "read_file", "shell_readonly", "write_file"],
+                &[],
+                Some(session),
+            );
+            info.cwd = cwd.to_owned();
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
+                let plain: String = observed_banner_cells(&bytes)
+                    .into_iter()
+                    .map(|(ch, _)| ch)
+                    .collect();
+                for label in ["Available Tools", "Available Skills", "4 tools"] {
+                    let row = plain.lines().find(|line| line.contains(label)).unwrap();
+                    let prefix = row.split_once(label).unwrap().0;
+                    assert_eq!(
+                        prefix.chars().count() + 1,
+                        column,
+                        "Python column for {label}, width={width}, depth={depth:?}"
+                    );
+                    assert_eq!(
+                        row.chars().count(),
+                        usize::from(width),
+                        "panel border column"
+                    );
+                }
+            }
+        }
+    }
+
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    struct ObservedAnsiStyle {
+        foreground: Color,
+        bold: bool,
+        dim: bool,
+    }
+
+    // Decode the public SGR stream, not the private Ratatui buffer. Color
+    // parameters are consumed as a group so RGB values 1/2 aren't modifiers.
+    fn observed_banner_cells(bytes: &[u8]) -> Vec<(char, ObservedAnsiStyle)> {
+        let reset = ObservedAnsiStyle {
+            foreground: Color::Reset,
+            bold: false,
+            dim: false,
+        };
+        let mut style = reset;
+        let text = std::str::from_utf8(bytes).unwrap();
+        let mut chars = text.chars();
+        let mut cells = Vec::new();
+        while let Some(ch) = chars.next() {
+            if ch != '\x1b' {
+                cells.push((ch, style));
+                continue;
+            }
+            assert_eq!(chars.next(), Some('['), "expected CSI");
+            let mut params = String::new();
+            loop {
+                let ch = chars.next().expect("unterminated SGR");
+                if ch == 'm' {
+                    break;
+                }
+                params.push(ch);
+            }
+            let codes: Vec<u16> = params
+                .split(';')
+                .map(|p| if p.is_empty() { 0 } else { p.parse().unwrap() })
+                .collect();
+            let mut i = 0;
+            while i < codes.len() {
+                match codes[i] {
+                    0 => style = reset,
+                    1 => style.bold = true,
+                    2 => style.dim = true,
+                    22 => {
+                        style.bold = false;
+                        style.dim = false;
+                    }
+                    39 => style.foreground = Color::Reset,
+                    30..=37 => style.foreground = Color::Indexed((codes[i] - 30) as u8),
+                    90..=97 => style.foreground = Color::Indexed((codes[i] - 90 + 8) as u8),
+                    38 | 48 => {
+                        let foreground = codes[i] == 38;
+                        let color = match codes[i + 1] {
+                            2 => {
+                                let color = Color::Rgb(
+                                    codes[i + 2].try_into().unwrap(),
+                                    codes[i + 3].try_into().unwrap(),
+                                    codes[i + 4].try_into().unwrap(),
+                                );
+                                i += 4;
+                                color
+                            }
+                            5 => {
+                                let color = Color::Indexed(codes[i + 2].try_into().unwrap());
+                                i += 2;
+                                color
+                            }
+                            mode => panic!("unsupported color mode {mode}"),
+                        };
+                        if foreground {
+                            style.foreground = color;
+                        }
+                    }
+                    // These don't affect the foreground/intensity under test.
+                    3 | 4 | 23 | 24 | 40..=47 | 49 | 100..=107 => {}
+                    code => panic!("unsupported SGR {code}"),
+                }
+                i += 1;
+            }
+        }
+        cells
+    }
+
+    #[test]
+    fn banner_ansi_border_does_not_inherit_title_bold() {
+        // Python's captured title is bold; both bronze corners are not.
+        let theme = HermesTheme::dark_canonical();
+        for width in [100, 80, 94, 95] {
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &BannerInfo::default(), depth).unwrap();
+                let cells = observed_banner_cells(&bytes);
+                let title = cells.iter().find(|(ch, _)| *ch == 'H').unwrap().1;
+                assert!(title.bold, "title must remain bold");
+                for corner in ['╭', '╮'] {
+                    let style = cells.iter().find(|(ch, _)| *ch == corner).unwrap().1;
+                    assert!(
+                        !style.bold && !style.dim,
+                        "border {corner}, width={width}, depth={depth:?}: {style:?}"
+                    );
+                    if depth == ColorDepth::Truecolor {
+                        assert_eq!(style.foreground, Color::Rgb(205, 127, 50));
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn banner_ansi_secondary_text_retains_python_dim() {
+        // Python banner-a2a3d08: secondary text is dim, including the cropped
+        // session ellipsis at width 80. Model/tool names are not dim.
+        let theme = HermesTheme::dark_canonical();
+        let mut info = banner_info(
+            Some("parity-fixture"),
+            None,
+            &["list_dir", "read_file", "shell_readonly", "write_file"],
+            &[],
+            Some("01a09c9f-9e5e-7a23-a26b-3671192efa10"),
+        );
+        info.cwd = "/tmp/hermes-visual-mlzi2a67/demo".to_owned();
+        for width in [100, 80, 94, 95] {
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
+                let cells = observed_banner_cells(&bytes);
+                let plain: String = cells.iter().map(|(ch, _)| ch).collect();
+                for label in [
+                    "other:",
+                    "No skills installed",
+                    "4 tools",
+                    "Nous Research",
+                    "/tmp/hermes-visual-mlzi2a67/demo",
+                    "Session:",
+                ] {
+                    let byte = plain.find(label).unwrap();
+                    let start = plain[..byte].chars().count();
+                    for (_, style) in &cells[start..start + label.chars().count()] {
+                        assert!(
+                            style.dim && !style.bold,
+                            "secondary {label}, width={width}, depth={depth:?}: {style:?}"
+                        );
+                    }
+                }
+                for label in ["parity-fixture", "list_dir"] {
+                    let start = plain[..plain.find(label).unwrap()].chars().count();
+                    assert!(
+                        !cells[start].1.dim && !cells[start].1.bold,
+                        "primary {label}"
+                    );
+                }
+                if width == 80 {
+                    let style = cells.iter().find(|(ch, _)| *ch == '…').unwrap().1;
+                    assert!(
+                        style.dim && !style.bold,
+                        "cropped session ellipsis: {style:?}"
+                    );
+                    if depth == ColorDepth::Truecolor {
+                        assert_eq!(style.foreground, Color::Rgb(139, 134, 130));
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn banner_ansi_tool_punctuation_matches_python() {
+        // Independent Python capture: names use banner_text, commas use the
+        // terminal foreground, and the truncation marker is default + dim.
+        let theme = HermesTheme::dark_canonical();
+        let info = banner_info(
+            Some("parity-fixture"),
+            None,
+            &["list_dir", "read_file", "shell_readonly", "write_file"],
+            &[],
+            Some("01a09c9f-9e5e-7a23-a26b-3671192efa10"),
+        );
+        for width in [100, 80, 94, 95] {
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
+                let cells = observed_banner_cells(&bytes);
+                let plain: String = cells.iter().map(|(ch, _)| ch).collect();
+                for name in ["list_dir", "read_file", "shell_readonly"] {
+                    let start = plain[..plain.find(name).unwrap()].chars().count();
+                    let style = cells[start].1;
+                    assert!(!style.bold && !style.dim, "tool name {name}");
+                    if depth == ColorDepth::Truecolor {
+                        assert_eq!(style.foreground, Color::Rgb(255, 248, 220));
+                    }
+                    let (comma, style) = cells[start + name.chars().count()];
+                    assert_eq!(comma, ',');
+                    assert_eq!(
+                        style,
+                        ObservedAnsiStyle {
+                            foreground: Color::Reset,
+                            bold: false,
+                            dim: false,
+                        },
+                        "comma after {name}, width={width}, depth={depth:?}"
+                    );
+                }
+                let start = plain[..plain.find("...").unwrap()].chars().count();
+                for (ch, style) in &cells[start..start + 3] {
+                    assert_eq!(*ch, '.');
+                    assert_eq!(
+                        *style,
+                        ObservedAnsiStyle {
+                            foreground: Color::Reset,
+                            bold: false,
+                            dim: true,
+                        },
+                        "tool truncation marker, width={width}, depth={depth:?}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn banner_ansi_wrapped_session_label_is_centered() {
+        // Exact Python PTY fixtures and Session: columns from banner-b56c9a3.
+        let theme = HermesTheme::dark_canonical();
+        for (width, cwd, session, column) in [
+            (
+                100,
+                "/tmp/hermes-visual-7v7sd2i3/demo",
+                "01a09cc9-4734-7761-9629-9302353cdef6",
+                4,
+            ),
+            (
+                80,
+                "/tmp/hermes-visual-jmji_nyd/demo",
+                "01a09cc9-477f-7922-9e60-7709cd1d8581",
+                17,
+            ),
+            (
+                94,
+                "/tmp/hermes-visual-uu8p3j_0/demo",
+                "01a09cc9-4790-7f63-84db-2460bc0feb14",
+                21,
+            ),
+            (
+                95,
+                "/tmp/hermes-visual-3lspbw7u/demo",
+                "01a09cc9-479e-7811-80e8-5a35021f8ba8",
+                21,
+            ),
+        ] {
+            let mut info = banner_info(
+                Some("parity-fixture"),
+                None,
+                &["list_dir", "read_file", "shell_readonly", "write_file"],
+                &[],
+                Some(session),
+            );
+            info.cwd = cwd.to_owned();
+            for depth in [ColorDepth::Truecolor, ColorDepth::Color256] {
+                let mut bytes = Vec::new();
+                write_banner(&mut bytes, &theme, width, &info, depth).unwrap();
+                let plain: String = observed_banner_cells(&bytes)
+                    .into_iter()
+                    .map(|(ch, _)| ch)
+                    .collect();
+                let row = plain
+                    .lines()
+                    .find(|line| line.contains("Session:"))
+                    .unwrap();
+                assert_eq!(
+                    row.split_once("Session:").unwrap().0.chars().count() + 1,
+                    column,
+                    "Session label, width={width}, depth={depth:?}"
+                );
+            }
+        }
     }
 
     #[test]
@@ -1361,9 +1779,7 @@ mod tests {
         let buf = compose_banner(300, &info, &theme);
         assert_eq!(buf.area.width, 120, "panel must clamp down to 120");
         // At raw width 300 the logo is not wrapped (natural width 101).
-        let row2: String = (0..120)
-            .map(|x| buf[(x, 1)].symbol().to_string())
-            .collect();
+        let row2: String = (0..120).map(|x| buf[(x, 1)].symbol().to_string()).collect();
         assert_eq!(
             row2.trim_end(),
             "██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗"
@@ -1373,10 +1789,7 @@ mod tests {
     /// Full plain-text dump of a buffer (borrow-based, test helper).
     fn buffer_text(buf: &Buffer) -> String {
         (0..buf.area.height)
-            .flat_map(|y| {
-                (0..buf.area.width)
-                    .map(move |x| buf[(x, y)].symbol().to_string())
-            })
+            .flat_map(|y| (0..buf.area.width).map(move |x| buf[(x, y)].symbol().to_string()))
             .collect()
     }
 
@@ -1396,14 +1809,8 @@ mod tests {
     #[test]
     fn caduceus_verbatim() {
         let cad = caduceus_lines();
-        assert_eq!(
-            cad[0].text,
-            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
-        );
-        assert_eq!(
-            cad[14].text,
-            "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
-        );
+        assert_eq!(cad[0].text, "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
+        assert_eq!(cad[14].text, "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
         assert_eq!(cad[0].style.fg, Some(Color::Rgb(205, 127, 50)));
         assert_eq!(cad[4].style.fg, Some(Color::Rgb(255, 215, 0)));
         assert_eq!(cad[10].style.fg, Some(Color::Rgb(184, 134, 11)));

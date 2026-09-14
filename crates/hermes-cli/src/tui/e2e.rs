@@ -6,11 +6,11 @@
 //! [`ratatui::backend::TestBackend`] — then assert on the final terminal buffer.
 //! They are the sandbox-safe replacement for interactive `--tui` testing.
 
-use ratatui::Terminal;
 use ratatui::backend::TestBackend;
+use ratatui::Terminal;
 
-use hermes_core::conversation::AgentEvent;
 use hermes_core::conversation::goal::GoalStatus;
+use hermes_core::conversation::AgentEvent;
 use hermes_core::tools::ToolExecutionStatus;
 
 use super::app::{App, KeyAction};
@@ -54,7 +54,10 @@ fn full_turn_events() -> Vec<AgentEvent> {
             plan_active: true,
             reflection_on: true,
         },
-        AgentEvent::Iteration { current: 1, max: 10 },
+        AgentEvent::Iteration {
+            current: 1,
+            max: 10,
+        },
         // Streaming first half (draft text that will be replaced by the final
         // answer on `Done`, and cleared on the tool round).
         AgentEvent::Chunk {
@@ -73,7 +76,10 @@ fn full_turn_events() -> Vec<AgentEvent> {
             result: "[contents]".to_owned(),
         },
         // Final streaming answer + authoritative `Done`.
-        AgentEvent::Iteration { current: 2, max: 10 },
+        AgentEvent::Iteration {
+            current: 2,
+            max: 10,
+        },
         AgentEvent::Chunk {
             text: "Here is the ".to_owned(),
         },
@@ -92,7 +98,10 @@ fn full_agentic_session_populates_every_panel() {
     // Token meter in the header.
     assert!(text.contains("500/1000"), "token meter missing:\n{text}");
     // Goal / plan / reflection status line.
-    assert!(text.contains("goal: in progress"), "goal status missing:\n{text}");
+    assert!(
+        text.contains("goal: in progress"),
+        "goal status missing:\n{text}"
+    );
     // Tool log panel shows the tool call.
     assert!(text.contains("read_file"), "tool log missing:\n{text}");
     // Transcript carries the authoritative final answer.

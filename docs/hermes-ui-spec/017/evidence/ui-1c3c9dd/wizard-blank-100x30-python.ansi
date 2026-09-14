@@ -1,0 +1,35 @@
+
+[35m┌─────────────────────────────────────────────────────────┐[0m
+[35m│             ⚕ Hermes Agent Setup Wizard                │[0m
+[35m├─────────────────────────────────────────────────────────┤[0m
+[35m│  Let's configure your Hermes Agent installation.       │[0m
+[35m│  Press Ctrl+C at any time to exit.                     │[0m
+[35m└─────────────────────────────────────────────────────────┘[0m
+
+[?1049h[22;0;0t[1;30r(B[m[4l[?7h[?1h=[39;49m[?25l[39;49m(B[m[H[2J(B[0;1m[33mHow would you like to set up Hermes?[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4d(B[0;1m[32m → (●) Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)[5;4H[39m(B[m(○) Full setup — configure every provider, tool & option yourself (bring your own keys)[6;4H(○) Blank Slate — everything off except the bare minimum; opt in to each capability[H[2J(B[0;1m[33mHow would you like to set up Hermes?[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4;4H(B[m(●) Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)[5d(B[0;1m[32m → (○) Full setup — configure every provider, tool & option yourself (bring your own keys)[6;4H[39m(B[m(○) Blank Slate — everything off except the bare minimum; opt in to each capability[H[2J(B[0;1m[33mHow would you like to set up Hermes?[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4;4H(B[m(●) Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)[5;4H(○) Full setup — configure every provider, tool & option yourself (bring your own keys)[6d(B[0;1m[32m → (○) Blank Slate — everything off except the bare minimum; opt in to each capability[39m(B[m[?1l>[30;1H[?12l[?25h[?1049l[23;0;0t[?1l>
+
+
+[36m[1m◆ Blank Slate Setup[0m
+[2m  Everything starts OFF. First we force-enable only what's required[0m
+[2m  to run an agent, then you choose whether to stop there or walk[0m
+[2m  through enabling more — opting in to exactly what you want.[0m
+[2m  [0m
+[2m  Forced on: Provider & Model, File Operations, Terminal, Vision, Skills.[0m
+[2m  Everything else (web, browser, code exec, memory,[0m
+[2m  delegation, cron, plugins, MCP, …) starts disabled. The[0m
+[2m  essential `hermes-agent` skill is always kept so the agent[0m
+[2m  can help you drive and configure Hermes itself.[0m
+
+
+[36m[1m◆ Step 1 — Provider & Model (required)[0m
+
+[36m[1m◆ Inference Provider[0m
+[2m  Choose how to connect to your main chat model.[0m
+[2m     Guide: https://hermes-agent.nousresearch.com/docs/integrations/providers[0m
+
+Warning: No inference provider configured. Run 'hermes model' to choose a provider and model, or set an API key (OPENROUTER_API_KEY, OPENAI_API_KEY, etc.) in ~/.hermes/.env. Falling back to auto provider detection.
+
+  Current model:    (not set)
+  Active provider:  none
+
+[?1049h[22;0;0t[1;30r[?25l[39;49m]104(B[m[4l[?7h[H[2J(B[0;1m[33mHow would you like to set up Hermes?[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4;4H(B[m(●) Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)[5;4H(○) Full setup — configure every provider, tool & option yourself (bring your own keys)[6d(B[0;1m[32m → (○) Blank Slate — everything off except the bare minimum; opt in to each capability[39m(B[m[?1h=[39;49m(B[m[H[2J(B[0;1m[33mSelect provider:[2d[39m(B[0;2m  ↑↓ navigate  ENTER/SPACE select  ESC cancel[4d(B[0;1m[32m → (●) Nous Portal (Everything your agent needs, 300+ models with bundled tool use)[5;4H[39m(B[m(○) Fireworks AI (OpenAI-compatible direct model API)[6;4H(○) OpenRouter (Pay-per-use API aggregator)[7;4H(○) Mixture of Agents (named presets; aggregator acts after reference models)[8;4H(○) NovitaAI (Cloud: Model API, Agent Sandbox, GPU Cloud)[9;4H(○) LM Studio (Local desktop app with built-in model server)[10;4H(○) Anthropic (Claude models via API key or Claude Code)[11;4H(○) OpenAI ▸ (ChatGPT/Codex subscription or direct OpenAI API)[12;4H(○) Qwen ▸ (Qwen Cloud / DashScope, Coding Plan, Token Plan & Qwen CLI OAuth)[13;4H(○) xAI Grok ▸ (Direct API or SuperGrok / Premium+ OAuth)[14;4H(○) Xiaomi MiMo (MiMo-V2.5 and V2 models: pro, omni, flash)[15;4H(○) Tencent Hy ▸ (Hy4 / Hy3 via TokenHub & TokenPlan)[16;4H(○) NVIDIA NIM (Nemotron models via build.nvidia.com or local NIM)[17;4H(○) GitHub Copilot ▸ (GitHub token API or copilot --acp process)[18;4H(○) Hugging Face Inference Providers[19;4H(○) Google AI Studio (Native Gemini API)[20;4H(○) Google Vertex AI (Gemini via GCP; OAuth2 service account or ADC, GCP billing/quotas)[21;4H(○) DeepSeek (V3, R1, coder, direct API)[22;4H(○) Z.AI / GLM (Zhipu direct API)[23;4H(○) Kimi / Moonshot ▸ (Coding Plan, Moonshot global & China endpoints)[24;4H(○) StepFun Step Plan (Agent / coding models via Step Plan API)[25;4H(○) MiniMax ▸ (Global, OAuth Coding Plan & China endpoints)[26;4H(○) Ollama Cloud (Cloud-hosted open models, ollama.com)[27;4H(○) Arcee AI (Trinity models, direct API)[28;4H(○) GMI Cloud (Multi-model direct API)[29;4H(○) Kilo Code (Kilo Gateway API)

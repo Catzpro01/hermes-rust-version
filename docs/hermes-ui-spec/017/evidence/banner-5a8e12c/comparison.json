@@ -1,0 +1,227 @@
+{
+  "status": "BANNER_FIXTURE_MATCH_WITH_DOCUMENTED_BRANDING_NOT_CLOSED",
+  "normalization": "none",
+  "notes": [
+    "Column match is a narrow geometry check, not whole-banner parity.",
+    "All raw text differences are retained, including padding and intentional brand text.",
+    "Attribute list compares only equal glyphs at equal coordinates; it is incomplete where geometry differs.",
+    "U+2800 braille blank is not classified as whitespace by Python; counts are cell records, not necessarily visible-ink pixels.",
+    "Separate non-title glyph coordinate comparison excludes only empty/space cells; includes U+2800. No streams altered. Background/inverse/underline checked on all cells."
+  ],
+  "cases": [
+    {
+      "width": 100,
+      "available_tools_columns_1_based": {
+        "python": 51,
+        "rust": 51
+      },
+      "tools_column_match": true,
+      "emulator_rows": {
+        "python": 33,
+        "rust": 33
+      },
+      "raw_row_text_differences": [
+        {
+          "row_1_based": 1,
+          "python": "",
+          "rust": "                                                                                                    "
+        },
+        {
+          "row_1_based": 2,
+          "python": "██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ",
+          "rust": "██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗              "
+        },
+        {
+          "row_1_based": 3,
+          "python": "██╗████████╗",
+          "rust": "██╗████████╗                                                                                        "
+        },
+        {
+          "row_1_based": 4,
+          "python": "██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ",
+          "rust": "██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗             "
+        },
+        {
+          "row_1_based": 5,
+          "python": "██║╚══██╔══╝",
+          "rust": "██║╚══██╔══╝                                                                                        "
+        },
+        {
+          "row_1_based": 6,
+          "python": "███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║",
+          "rust": "███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║  "
+        },
+        {
+          "row_1_based": 7,
+          "python": "██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║",
+          "rust": "██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║  "
+        },
+        {
+          "row_1_based": 8,
+          "python": "██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║",
+          "rust": "██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║  "
+        },
+        {
+          "row_1_based": 9,
+          "python": "╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝",
+          "rust": "╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝  "
+        },
+        {
+          "row_1_based": 10,
+          "python": "",
+          "rust": "                                                                                                    "
+        },
+        {
+          "row_1_based": 11,
+          "python": "╭────────────────────── Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301 ──────────────────────╮",
+          "rust": "╭─────────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ────────────────────────╮"
+        }
+      ],
+      "same_glyph_non_whitespace_attribute_differences": [],
+      "session_columns_1_based": {
+        "python": 4,
+        "rust": 4
+      },
+      "non_title_glyph_geometry_differences": [],
+      "background_inverse_underline_differences": []
+    },
+    {
+      "width": 80,
+      "available_tools_columns_1_based": {
+        "python": 41,
+        "rust": 41
+      },
+      "tools_column_match": true,
+      "emulator_rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "raw_row_text_differences": [
+        {
+          "row_1_based": 1,
+          "python": "",
+          "rust": "                                                                                "
+        },
+        {
+          "row_1_based": 2,
+          "python": "╭──────────── Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301 ────────────╮",
+          "rust": "╭───────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ──────────────╮"
+        }
+      ],
+      "same_glyph_non_whitespace_attribute_differences": [],
+      "session_columns_1_based": {
+        "python": 17,
+        "rust": 17
+      },
+      "non_title_glyph_geometry_differences": [],
+      "background_inverse_underline_differences": []
+    },
+    {
+      "width": 94,
+      "available_tools_columns_1_based": {
+        "python": 48,
+        "rust": 48
+      },
+      "tools_column_match": true,
+      "emulator_rows": {
+        "python": 30,
+        "rust": 30
+      },
+      "raw_row_text_differences": [
+        {
+          "row_1_based": 1,
+          "python": "",
+          "rust": "                                                                                              "
+        },
+        {
+          "row_1_based": 2,
+          "python": "╭─────────────────── Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301 ───────────────────╮",
+          "rust": "╭──────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ─────────────────────╮"
+        }
+      ],
+      "same_glyph_non_whitespace_attribute_differences": [],
+      "session_columns_1_based": {
+        "python": 21,
+        "rust": 21
+      },
+      "non_title_glyph_geometry_differences": [],
+      "background_inverse_underline_differences": []
+    },
+    {
+      "width": 95,
+      "available_tools_columns_1_based": {
+        "python": 49,
+        "rust": 49
+      },
+      "tools_column_match": true,
+      "emulator_rows": {
+        "python": 38,
+        "rust": 38
+      },
+      "raw_row_text_differences": [
+        {
+          "row_1_based": 1,
+          "python": "",
+          "rust": "                                                                                               "
+        },
+        {
+          "row_1_based": 2,
+          "python": "██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ",
+          "rust": "██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗         "
+        },
+        {
+          "row_1_based": 3,
+          "python": "██╗████████╗",
+          "rust": "██╗████████╗                                                                                   "
+        },
+        {
+          "row_1_based": 4,
+          "python": "██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ",
+          "rust": "██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗        "
+        },
+        {
+          "row_1_based": 5,
+          "python": "██║╚══██╔══╝",
+          "rust": "██║╚══██╔══╝                                                                                   "
+        },
+        {
+          "row_1_based": 7,
+          "python": "██║",
+          "rust": "██║                                                                                            "
+        },
+        {
+          "row_1_based": 9,
+          "python": "██║",
+          "rust": "██║                                                                                            "
+        },
+        {
+          "row_1_based": 11,
+          "python": "██║",
+          "rust": "██║                                                                                            "
+        },
+        {
+          "row_1_based": 13,
+          "python": "╚═╝",
+          "rust": "╚═╝                                                                                            "
+        },
+        {
+          "row_1_based": 14,
+          "python": "",
+          "rust": "                                                                                               "
+        },
+        {
+          "row_1_based": 15,
+          "python": "╭─────────────────── Hermes Agent v0.21.0 (2026.8.31) · upstream 63279301 ────────────────────╮",
+          "rust": "╭───────────────────── Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301 ─────────────────────╮"
+        }
+      ],
+      "same_glyph_non_whitespace_attribute_differences": [],
+      "session_columns_1_based": {
+        "python": 21,
+        "rust": 21
+      },
+      "non_title_glyph_geometry_differences": [],
+      "background_inverse_underline_differences": []
+    }
+  ]
+}

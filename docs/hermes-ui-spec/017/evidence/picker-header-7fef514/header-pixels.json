@@ -1,0 +1,46 @@
+{
+  "normalization": "none",
+  "comparison": "unaltered first terminal row, excluding renderer titles and 24px gutter",
+  "cases": [
+    {
+      "id": "picker-normal-100x30",
+      "png_sha256": "b02d9630b4baf77f55cb7364610e145985f34cc15437e8ae5b9a03a76288e7a5",
+      "image_width": 2024,
+      "image_height": 601,
+      "pane_width": 1000,
+      "comparison_y": 31,
+      "comparison_height": 19,
+      "equal": true
+    },
+    {
+      "id": "picker-normal-80x30",
+      "png_sha256": "03096674cd38ff0249358316589ed2fcef6b48b41e15d1ab846742b3c285fa9f",
+      "image_width": 1624,
+      "image_height": 601,
+      "pane_width": 800,
+      "comparison_y": 31,
+      "comparison_height": 19,
+      "equal": true
+    },
+    {
+      "id": "picker-delete-100x30",
+      "png_sha256": "d367d858f83ee4174f50b2dc075e613f4a126e10b0116e500439b0253df29216",
+      "image_width": 2024,
+      "image_height": 601,
+      "pane_width": 1000,
+      "comparison_y": 31,
+      "comparison_height": 19,
+      "equal": true
+    },
+    {
+      "id": "picker-delete-80x30",
+      "png_sha256": "b623686ad475b5665d208cf9c58240c05958634ce4dcc05ceafab55baae9593b",
+      "image_width": 1624,
+      "image_height": 601,
+      "pane_width": 800,
+      "comparison_y": 31,
+      "comparison_height": 19,
+      "equal": true
+    }
+  ]
+}

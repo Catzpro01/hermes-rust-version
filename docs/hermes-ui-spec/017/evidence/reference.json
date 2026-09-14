@@ -1,0 +1,31 @@
+{
+  "repository": "https://github.com/NousResearch/hermes-agent",
+  "commit": "63279301bcbdc185c1b07b98a9312eb0c862f26d",
+  "version": "0.21.0",
+  "release_date": "2026.8.31",
+  "tree_sha": "63279301bcbdc185c1b07b98a9312eb0c862f26d",
+  "exact_blob_count": 11315,
+  "attributed_crlf_files": [
+    "optional-skills/software-development/ast-grep/install.ps1",
+    "optional-skills/software-development/ast-grep/tests/smoke.ps1",
+    "scripts/ci/test_install_ps1_cli_launchers.ps1",
+    "scripts/ci/test_install_ps1_path_migration.ps1",
+    "scripts/desktop-update.ps1",
+    "scripts/desktop-update/retry-policy.ps1",
+    "scripts/desktop-update/windows.ps1",
+    "scripts/install.ps1",
+    "scripts/tests/test-install-ps1-gitbash-compatibility.ps1",
+    "scripts/tests/test-install-ps1-longpath.ps1",
+    "scripts/tests/test-install-ps1-node-compatibility.ps1",
+    "scripts/tests/test-install-ps1-stage-protocol.ps1"
+  ],
+  "archive_sha256": "da6cd457422afc3b4a135c9f6a8caf71465c4bc76c10085cd2e4233feeacb19f",
+  "source_files_sha256": {
+    "hermes_cli/banner.py": "a9e2a8d26574a9364d3eba8ae9d5b96b83417fbfd3d2868ffb0d856d98c1d878",
+    "hermes_cli/skin_engine.py": "c78b77528ae548feef231bf60a6ccd2248a09b190022734c1df8432f698f6086",
+    "hermes_cli/__init__.py": "fd84470016147d1ed16b8655a60fd5e5c118c26a1a9816d1276933d32c337ff5",
+    "hermes_constants.py": "006ed0522bbe3cebdf0897ff1b9783c968b744943cc7e51b1e1eed17b3950c0c"
+  },
+  "method": "Every archive blob checked against the GitHub recursive tree; only .ps1 CRLF conversions permitted by upstream .gitattributes. Python source matched exactly. No files rewritten for verification.",
+  "limitations": "Official upstream reference, not an audit of historical VM local modifications. Minimal banner dependencies, not a full Python CLI installation."
+}

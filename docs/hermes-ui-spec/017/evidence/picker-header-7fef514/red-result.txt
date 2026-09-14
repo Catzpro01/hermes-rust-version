@@ -1,0 +1,16 @@
+test_normal_help_header_matches_reference_style (__main__.PickerNormalHeaderTests.test_normal_help_header_matches_reference_style) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+FAIL
+
+======================================================================
+FAIL: test_normal_help_header_matches_reference_style (__main__.PickerNormalHeaderTests.test_normal_help_header_matches_reference_style)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/work/hermes-rust-version/hermes-rust-version/scripts/test_picker_normal_header.py", line 32, in test_normal_help_header_matches_reference_style
+    self.assertIn(style, ({('brown', True)}, {('cdcd00', True)}),
+AssertionError: {('default', False)} not found in ({('brown', True)}, {('cdcd00', True)}) : Python reference: normal help header uses palette3 and bold
+
+----------------------------------------------------------------------
+Ran 1 test in 0.833s
+
+FAILED (failures=1)
+VERIFIED header trace 11973 56ecf3af0ea8fc93b369d0f23120277926f6ae2d9b6605c957a8b0cb754d5e7e

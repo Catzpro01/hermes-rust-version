@@ -28,7 +28,10 @@ fn reply_for(method: &str, params: Option<&Value>) -> Value {
                 .and_then(|p| p.get("name"))
                 .and_then(Value::as_str)
                 .unwrap_or("");
-            let args = params.and_then(|p| p.get("arguments")).cloned().unwrap_or(Value::Null);
+            let args = params
+                .and_then(|p| p.get("arguments"))
+                .cloned()
+                .unwrap_or(Value::Null);
             if name == "fail" {
                 json!({
                     "content": [{"type": "text", "text": "intentional failure"}],

@@ -49,10 +49,7 @@ impl FallbackProvider {
 
     /// Builds a chain backed by an explicit health tracker (for injecting a
     /// short cooldown in tests or a shared tracker at startup).
-    pub fn with_health(
-        hops: Vec<(String, Box<dyn Provider>)>,
-        health: Arc<HealthTracker>,
-    ) -> Self {
+    pub fn with_health(hops: Vec<(String, Box<dyn Provider>)>, health: Arc<HealthTracker>) -> Self {
         assert!(
             !hops.is_empty(),
             "FallbackProvider requires at least one provider"
@@ -252,7 +249,10 @@ mod tests {
         let a = counter();
         let b = counter();
         let provider = FallbackProvider::new(vec![
-            ("a".into(), stub(Behaviour::Err(ProviderError::Message("bad".into())), &a)),
+            (
+                "a".into(),
+                stub(Behaviour::Err(ProviderError::Message("bad".into())), &a),
+            ),
             ("b".into(), stub(Behaviour::Ok("from-b"), &b)),
         ]);
         let text = collect_text(provider.chat(&[]).await.unwrap()).await;
@@ -268,12 +268,15 @@ mod tests {
         let provider = FallbackProvider::new(vec![
             (
                 "a".into(),
-                stub(Behaviour::Err(ProviderError::Http { status: 503, message: "x".into() }), &a),
+                stub(
+                    Behaviour::Err(ProviderError::Http {
+                        status: 503,
+                        message: "x".into(),
+                    }),
+                    &a,
+                ),
             ),
-            (
-                "b".into(),
-                stub(Behaviour::Err(ProviderError::Timeout), &b),
-            ),
+            ("b".into(), stub(Behaviour::Err(ProviderError::Timeout), &b)),
             (
                 "c".into(),
                 stub(Behaviour::Err(ProviderError::Message("y".into())), &c),
@@ -291,7 +294,11 @@ mod tests {
             "unexpected aggregate: {err}"
         );
         for hop in [&a, &b, &c] {
-            assert_eq!(hop.load(Ordering::SeqCst), 1, "every hop must be tried once");
+            assert_eq!(
+                hop.load(Ordering::SeqCst),
+                1,
+                "every hop must be tried once"
+            );
         }
     }
 
@@ -318,7 +325,16 @@ mod tests {
         let a = counter();
         let b = counter();
         let provider = FallbackProvider::new(vec![
-            ("a".into(), stub(Behaviour::Err(ProviderError::Http { status: 500, message: "d".into() }), &a)),
+            (
+                "a".into(),
+                stub(
+                    Behaviour::Err(ProviderError::Http {
+                        status: 500,
+                        message: "d".into(),
+                    }),
+                    &a,
+                ),
+            ),
             ("b".into(), stub(Behaviour::Ok("from-b"), &b)),
         ]);
         let token = CancellationToken::new();
@@ -337,7 +353,10 @@ mod tests {
             ("a".into(), stub(Behaviour::Ok("x"), &a)),
             ("b".into(), stub(Behaviour::Ok("y"), &b)),
         ]);
-        assert_eq!(provider.provider_names(), vec!["a".to_owned(), "b".to_owned()]);
+        assert_eq!(
+            provider.provider_names(),
+            vec!["a".to_owned(), "b".to_owned()]
+        );
     }
 
     /// A stub whose behaviour is read from a shared cell, so it can change
@@ -378,12 +397,11 @@ mod tests {
     async fn a_failed_hop_is_skipped_while_cooling_down() {
         let a = counter();
         let b = counter();
-        let a_state = std::sync::Arc::new(std::sync::Mutex::new(Behaviour::Err(
-            ProviderError::Http {
+        let a_state =
+            std::sync::Arc::new(std::sync::Mutex::new(Behaviour::Err(ProviderError::Http {
                 status: 500,
                 message: "down".into(),
-            },
-        )));
+            })));
         let health = std::sync::Arc::new(HealthTracker::new(TINY_COOLDOWN));
         let provider = FallbackProvider::with_health(
             vec![
@@ -397,7 +415,10 @@ mod tests {
         // serves. Then within the cooldown, a second turn must skip A entirely.
         let t1 = collect_text(provider.chat(&[]).await.unwrap()).await;
         assert_eq!(t1, "from-b");
-        assert!(health.is_cooling_down("a"), "A must be cooling after its failure");
+        assert!(
+            health.is_cooling_down("a"),
+            "A must be cooling after its failure"
+        );
 
         let a_before = a.load(Ordering::SeqCst);
         let t2 = collect_text(provider.chat(&[]).await.unwrap()).await;
@@ -414,12 +435,11 @@ mod tests {
         let a = counter();
         let b = counter();
         // A fails at first, then "recovers" to Ok once we flip the flag.
-        let a_state = std::sync::Arc::new(std::sync::Mutex::new(Behaviour::Err(
-            ProviderError::Http {
+        let a_state =
+            std::sync::Arc::new(std::sync::Mutex::new(Behaviour::Err(ProviderError::Http {
                 status: 503,
                 message: "down".into(),
-            },
-        )));
+            })));
         let health = std::sync::Arc::new(HealthTracker::new(TINY_COOLDOWN));
         let provider = FallbackProvider::with_health(
             vec![
@@ -430,7 +450,10 @@ mod tests {
         );
 
         // A fails once -> cooling; B serves.
-        assert_eq!(collect_text(provider.chat(&[]).await.unwrap()).await, "from-b");
+        assert_eq!(
+            collect_text(provider.chat(&[]).await.unwrap()).await,
+            "from-b"
+        );
         assert!(health.is_cooling_down("a"));
         let a_failed_calls = a.load(Ordering::SeqCst);
 
@@ -483,9 +506,7 @@ mod tests {
         let tracker_a = HealthTracker::new(TINY_COOLDOWN);
         tracker_a.record_failure("b"); // some other chain cooled "b"
         let fresh = FallbackProvider::with_health(
-            vec![
-                ("b".into(), stub(Behaviour::Ok("manual-b"), &a)),
-            ],
+            vec![("b".into(), stub(Behaviour::Ok("manual-b"), &a))],
             std::sync::Arc::new(HealthTracker::new(TINY_COOLDOWN)),
         );
         // The fresh chain's own tracker has no record of "b" failing, so the

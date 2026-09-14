@@ -252,7 +252,9 @@ impl HermesTheme {
     // --- status bar ---
     /// `status-bar` — default status-bar cell (navy bg, `#C0C0C0` fg).
     pub fn status_bar(&self) -> Style {
-        Style::default().bg(self.status_bar_bg).fg(self.status_bar_text)
+        Style::default()
+            .bg(self.status_bar_bg)
+            .fg(self.status_bar_text)
     }
     /// `status-bar-strong` — strong segment (gold bold).
     pub fn status_bar_strong(&self) -> Style {
@@ -263,7 +265,9 @@ impl HermesTheme {
     }
     /// `status-bar-dim` — separators.
     pub fn status_bar_dim(&self) -> Style {
-        Style::default().bg(self.status_bar_bg).fg(self.status_bar_dim)
+        Style::default()
+            .bg(self.status_bar_bg)
+            .fg(self.status_bar_dim)
     }
     /// `status-bar-good` — healthy (bold).
     pub fn status_bar_good(&self) -> Style {
@@ -317,9 +321,7 @@ impl HermesTheme {
 
     /// Modal helper style builders shared by clarify/sudo/approval panels.
     fn bordered(&self, title: Color) -> Style {
-        Style::default()
-            .fg(title)
-            .add_modifier(Modifier::BOLD)
+        Style::default().fg(title).add_modifier(Modifier::BOLD)
     }
     fn selected(&self) -> Style {
         Style::default()
@@ -514,7 +516,7 @@ mod tests {
         assert_eq!(rgb(t.status_bar_bg), (0x1a, 0x1a, 0x2e)); // #1a1a2e
         assert_eq!(rgb(t.status_bar_critical), (0xFF, 0x6B, 0x6B)); // #FF6B6B
         assert_eq!(rgb(t.session_border), (0x8B, 0x86, 0x82)); // #8B8682
-        // #FFD700 is *not* the accent (Matt decision A: accent is #FFBF00).
+                                                               // #FFD700 is *not* the accent (Matt decision A: accent is #FFBF00).
         assert_ne!(rgb(t.banner_accent), rgb(t.banner_title));
     }
 
@@ -524,10 +526,7 @@ mod tests {
         assert_eq!(t.status_bar().bg, Some(t.status_bar_bg));
         assert_eq!(t.status_bar().fg, Some(t.status_bar_text));
         assert_eq!(t.status_bar_strong().fg, Some(t.status_bar_strong));
-        assert!(t
-            .status_bar_strong()
-            .add_modifier
-            .contains(Modifier::BOLD));
+        assert!(t.status_bar_strong().add_modifier.contains(Modifier::BOLD));
         assert_eq!(t.response_border().fg, Some(t.response_border));
         assert_eq!(t.input_rule().fg, Some(t.input_rule));
         assert!(t.response_border().add_modifier.contains(Modifier::BOLD));
@@ -585,7 +584,10 @@ mod tests {
     #[test]
     fn truecolor_to_256_maps_known_entries() {
         assert_eq!(truecolor_to_256(Color::Rgb(0, 0, 0)), Color::Indexed(232));
-        assert_eq!(truecolor_to_256(Color::Rgb(255, 255, 255)), Color::Indexed(255));
+        assert_eq!(
+            truecolor_to_256(Color::Rgb(255, 255, 255)),
+            Color::Indexed(255)
+        );
         assert_eq!(truecolor_to_256(Color::Rgb(255, 0, 0)), Color::Indexed(196));
         assert_eq!(truecolor_to_256(Color::Rgb(0, 255, 0)), Color::Indexed(46));
         assert_eq!(truecolor_to_256(Color::Rgb(0, 0, 255)), Color::Indexed(21));

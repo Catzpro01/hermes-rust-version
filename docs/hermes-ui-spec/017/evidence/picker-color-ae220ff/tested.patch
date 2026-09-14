@@ -1,0 +1,19 @@
+diff --git a/crates/hermes-cli/src/session_picker.rs b/crates/hermes-cli/src/session_picker.rs
+index 95d3c08..97cbec8 100644
+--- a/crates/hermes-cli/src/session_picker.rs
++++ b/crates/hermes-cli/src/session_picker.rs
+@@ -437,6 +437,14 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+                         Print(line),
+                         SetAttribute(Attribute::Reset)
+                     )?;
++                } else if is_footer {
++                    use crossterm::style::{Color, Print, SetForegroundColor};
++                    execute!(
++                        out,
++                        SetForegroundColor(Color::DarkGrey),
++                        Print(line),
++                        SetForegroundColor(Color::Reset)
++                    )?;
+                 } else {
+                     use crossterm::style::Print;
+                     execute!(out, Print(line))?;

@@ -1,0 +1,10 @@
+PASS python picker-normal-100x30: footer row=30; expected=30
+PASS python picker-empty-100x30: empty-store message at row1
+PASS python picker-filter-100x30: footer row=30; expected=30
+PASS python picker-no-match-100x30: footer row=30; expected=30
+PASS python picker-delete-100x30: delete prompt rows=[30]
+PASS python picker-normal-80x30: footer row=30; expected=30
+PASS python picker-empty-80x30: empty-store message at row1
+PASS python picker-filter-80x30: footer row=30; expected=30
+PASS python picker-no-match-80x30: footer row=30; expected=30
+PASS python picker-delete-80x30: delete prompt rows=[30]

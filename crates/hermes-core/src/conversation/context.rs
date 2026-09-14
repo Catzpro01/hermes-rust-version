@@ -138,7 +138,10 @@ mod tests {
     #[test]
     fn divisor_is_exactly_four() {
         // Pin the constant: 40 chars / 4 = 10 tokens.
-        assert_eq!(estimate_tokens("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), 10);
+        assert_eq!(
+            estimate_tokens("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+            10
+        );
         // Sub-divisor fragments round down but never below 1 token.
         assert_eq!(estimate_tokens(""), 1);
         assert_eq!(estimate_tokens("a"), 1);
@@ -212,10 +215,16 @@ mod tests {
         assert!(s.contains("[4 turns dropped]"), "got: {s}");
         assert!(s.contains("User: one"), "got: {s}");
         assert!(s.contains("Asst: two"), "got: {s}");
-        assert!(s.contains("Tool: read_file"), "tool summarized by name: {s}");
+        assert!(
+            s.contains("Tool: read_file"),
+            "tool summarized by name: {s}"
+        );
         // 4th turn (index 3) is beyond the max 3 shown -> counted in "+N more".
         assert!(s.contains("(+1 more)"), "got: {s}");
-        assert!(!s.contains("four"), "4th turn content must not be shown: {s}");
+        assert!(
+            !s.contains("four"),
+            "4th turn content must not be shown: {s}"
+        );
     }
 
     #[test]
@@ -223,7 +232,10 @@ mod tests {
         let long = "x".repeat(250);
         let s = summarize_dropped(&[u(&long)]);
         assert!(s.contains('…'), "must truncate with ellipsis: {s}");
-        assert!(!s.contains(&long), "must not include the full long content: {s}");
+        assert!(
+            !s.contains(&long),
+            "must not include the full long content: {s}"
+        );
     }
 
     #[test]

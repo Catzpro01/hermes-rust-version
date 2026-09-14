@@ -134,5 +134,7 @@ fn tui_flag_rejects_piped_non_interactive_stdin() {
         .write_stdin("hello\n")
         .assert()
         .failure()
-        .stderr(predicates::str::contains("--tui requires an interactive terminal"));
+        .stderr(predicates::str::contains(
+            "--tui requires an interactive terminal",
+        ));
 }

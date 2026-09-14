@@ -74,7 +74,10 @@ async fn e2e_failing_tool_maps_to_error() {
         name: "demo__fail".into(),
         arguments: "{}".into(),
     };
-    let err = reg.execute(&call, CancellationToken::new()).await.unwrap_err();
+    let err = reg
+        .execute(&call, CancellationToken::new())
+        .await
+        .unwrap_err();
     assert!(matches!(err, ToolError::Failed(_)), "got {err:?}");
     server.shutdown().await;
 }
@@ -82,7 +85,9 @@ async fn e2e_failing_tool_maps_to_error() {
 #[tokio::test]
 async fn confirm_true_denies_when_user_declines() {
     // A server with confirm:true + an auto-NO confirmation -> Denied (never runs).
-    let server = McpServer::spawn("denydemo", server_cfg(true)).await.unwrap();
+    let server = McpServer::spawn("denydemo", server_cfg(true))
+        .await
+        .unwrap();
     let descs = server.list_tools().await.unwrap();
     let echo = descs.iter().find(|d| d.name == "echo").unwrap();
     // Register with a deny-always confirmation.
@@ -95,7 +100,10 @@ async fn confirm_true_denies_when_user_declines() {
         name: "denydemo__echo".into(),
         arguments: "{}".into(),
     };
-    let err = reg.execute(&call, CancellationToken::new()).await.unwrap_err();
+    let err = reg
+        .execute(&call, CancellationToken::new())
+        .await
+        .unwrap_err();
     assert!(matches!(err, ToolError::Denied(_)), "got {err:?}");
     server.shutdown().await;
 }
@@ -150,7 +158,10 @@ async fn e2e_default_has_no_mcp_spawn() {
         name: "demo__echo".into(),
         arguments: "{}".into(),
     };
-    let err = reg.execute(&call, CancellationToken::new()).await.unwrap_err();
+    let err = reg
+        .execute(&call, CancellationToken::new())
+        .await
+        .unwrap_err();
     assert!(matches!(err, ToolError::Unknown(_)), "got {err:?}");
     // Sanity: registry still has nothing MCP.
     assert!(reg.get("demo__echo").is_none());

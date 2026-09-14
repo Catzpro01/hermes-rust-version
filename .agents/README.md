@@ -1,0 +1,1 @@
+../agent-support/guidance/SKILLS-ENTRY.md

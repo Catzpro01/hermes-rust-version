@@ -41,9 +41,9 @@ impl ProviderError {
             ProviderError::Timeout => true,
             // A fallback-exhausted error is terminal for this request; each hop
             // already ran its own retry policy before the chain gave up.
-            ProviderError::Message(_) | ProviderError::Cancelled | ProviderError::Fallback { .. } => {
-                false
-            }
+            ProviderError::Message(_)
+            | ProviderError::Cancelled
+            | ProviderError::Fallback { .. } => false,
         }
     }
 }
@@ -112,8 +112,8 @@ pub mod fake;
 pub mod fallback;
 pub mod health;
 pub mod http;
-pub mod registry;
 mod redact;
+pub mod registry;
 pub mod sse;
 pub use fake::FakeProvider;
 pub use fallback::FallbackProvider;

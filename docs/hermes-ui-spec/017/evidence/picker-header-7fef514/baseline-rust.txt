@@ -1,0 +1,4 @@
+FAIL rust picker-normal-100x30: style=[('default', False)]; reference=palette3+bold
+FAIL rust picker-delete-100x30: style=[('default', False)]; reference=palette3+bold
+FAIL rust picker-normal-80x30: style=[('default', False)]; reference=palette3+bold
+FAIL rust picker-delete-80x30: style=[('default', False)]; reference=palette3+bold

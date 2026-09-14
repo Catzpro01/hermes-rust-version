@@ -1,0 +1,102 @@
+{
+  "status": "CAPTURED_NOT_REVIEWED",
+  "browser": "138.0.7204.0",
+  "xterm": "5.5.0",
+  "font": "DejaVu Mono @fontsource 5.2.5",
+  "fontSize": 16,
+  "deviceScaleFactor": 1,
+  "normalization": "none",
+  "input_sha256": "b52521002876affaef9cb3ecaa83272a5526dc273e0008bcff6db068b85cbf19",
+  "fonts": [
+    {
+      "weight": 400,
+      "style": "normal",
+      "sha256": "6242d5eac0a8e83fc2668f1e219b1eaa276a97ba9945747cc9a2918eab209580"
+    },
+    {
+      "weight": 700,
+      "style": "normal",
+      "sha256": "d118121ca2f1629c66c9709ac99649248f696ddf6d432bb4cca53a0f5bf0f49c"
+    },
+    {
+      "weight": 400,
+      "style": "italic",
+      "sha256": "59bcbc3678d621937a63c4b47b7d3b2118a707565c75c7c7664797db6f024c7b"
+    },
+    {
+      "weight": 700,
+      "style": "italic",
+      "sha256": "517464d76704e1c94d8066f9c01ebce165b7d3bd2ca25fc3e41f034d61cf3c49"
+    }
+  ],
+  "cases": [
+    {
+      "id": "banner-100x30",
+      "width": 100,
+      "height": 30,
+      "images": [
+        {
+          "file": "banner-100x30-top.png",
+          "sha256": "bd57d5e0c96dd07a9835ca5f33e1a5ce3dd7fa647626845fdcf34e015598f01e",
+          "viewport": "top"
+        },
+        {
+          "file": "banner-100x30-bottom.png",
+          "sha256": "7dae87a704cf75479991881c82e7ac0b015ea6918ac67917df8350dad4c53e9e",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "banner-80x30",
+      "width": 80,
+      "height": 30,
+      "images": [
+        {
+          "file": "banner-80x30-top.png",
+          "sha256": "b3e9b2aed7835c2b5b0a08ca9fa56ef5cdd797a58e4747a71b11f7acebb34fb9",
+          "viewport": "top"
+        },
+        {
+          "file": "banner-80x30-bottom.png",
+          "sha256": "b3e9b2aed7835c2b5b0a08ca9fa56ef5cdd797a58e4747a71b11f7acebb34fb9",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "banner-94x30",
+      "width": 94,
+      "height": 30,
+      "images": [
+        {
+          "file": "banner-94x30-top.png",
+          "sha256": "fb4b27e867c1bc0d25ff58aeb91eb2260584d8847762fd4a55f423125f6ac17f",
+          "viewport": "top"
+        },
+        {
+          "file": "banner-94x30-bottom.png",
+          "sha256": "fb4b27e867c1bc0d25ff58aeb91eb2260584d8847762fd4a55f423125f6ac17f",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "banner-95x30",
+      "width": 95,
+      "height": 30,
+      "images": [
+        {
+          "file": "banner-95x30-top.png",
+          "sha256": "a123a8cc6a07fbbc222044c6d048c275e758502ac78f5f6f078a0666b5fbc8a4",
+          "viewport": "top"
+        },
+        {
+          "file": "banner-95x30-bottom.png",
+          "sha256": "7345eacab606258d18736f7e329be7242b0ba24eebbc194c5a5fb850ed2ead2f",
+          "viewport": "bottom"
+        }
+      ]
+    }
+  ]
+}

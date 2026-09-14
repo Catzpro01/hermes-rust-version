@@ -1,25 +1,26 @@
-# Hermes-RS Agent Instructions
+# Hermes-RS — agent entry point
 
-Read `CONTEXT.md` before changing domain terms or architecture. Read relevant ADRs under `docs/adr/` before making an irreversible design choice.
+Read these files before editing:
 
-## Agent skills
+1. [Rules](agent-support/RULES.md) — project constraints and safe checkpointing.
+2. [Current handoff](agent-support/handoff/CURRENT.md) — active work and next action.
+3. [Start next session](agent-support/handoff/START-NEXT-SESSION.md) — bootstrap/checks.
+4. [Working memory](agent-support/memory/MEMORY.md) and the latest entries of
+   [progress](agent-support/memory/PROGRESS.md).
+5. [Context](agent-support/context/CONTEXT.md), relevant `docs/adr/`, and the active
+   local issue under `.scratch/` before domain or architecture changes.
 
-### Issue tracker
+## Non-negotiable defaults
 
-Issues are local Markdown files under `.scratch/<feature>/issues/`. See `docs/agents/issue-tracker.md`.
+- Use only the branch assigned to the active session. Do not force-push or discard work.
+- No branch/PR merge or auto-merge without explicit user instruction AND platform permission.
+- Preserve Python Hermes and its data; never commit secrets or real credentials.
+- Work in small verified slices; commit and push meaningful progress with notes.
+- Rust changes require fmt/check; if unavailable locally, use verified official
+  runner results and the exact tested patch, never invent a local PASS.
+- Read requested skill originals in `.agents/skills/<name>/SKILL.md`. Preserve
+  invocation gates. Do not claim unavailable subagents, personal reviews or tools.
 
-### Triage labels
-
-Use `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-This is a single-context repository with root `CONTEXT.md` and ADRs in `docs/adr/`. See `docs/agents/domain.md`.
-
-## Engineering rules
-
-- Preserve the Python Hermes installation; do not delete or mutate it as part of Hermes-RS work.
-- Prefer small vertical slices with tests before broad rewrites.
-- Keep provider and tool integrations behind explicit interfaces.
-- Never commit API keys, passwords, private keys, or `.env` files.
-- Run `cargo fmt --all` and `cargo check` before committing Rust changes.
+Canonical agent-only material lives in `agent-support/`. Legacy entry paths
+`MEMORY.md`, `PROGRESS.md`, `CONTEXT.md`, `docs/agents`, and `.agents/skills`
+are compatibility symlinks, not duplicate sources. See [folder guide](agent-support/README.md).

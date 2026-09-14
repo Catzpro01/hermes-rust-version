@@ -32,10 +32,16 @@ fn seed_state_db(home: &Path) {
         "CREATE TABLE sessions(id TEXT PRIMARY KEY,source TEXT NOT NULL,started_at REAL NOT NULL); CREATE TABLE messages(id INTEGER PRIMARY KEY AUTOINCREMENT,session_id TEXT NOT NULL,role TEXT NOT NULL,content TEXT,timestamp REAL NOT NULL); CREATE TABLE tool_calls(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,turn_index INTEGER NOT NULL,tool_name TEXT NOT NULL,arguments TEXT NOT NULL,result TEXT,status TEXT NOT NULL CHECK(status IN ('success','error','denied','timeout','cancelled')),created_at REAL NOT NULL);",
     )
     .unwrap();
-    c.execute("INSERT INTO sessions VALUES (?1,'cli',1700000000.0)", [SEED_A])
-        .unwrap();
-    c.execute("INSERT INTO sessions VALUES (?1,'cli',1700000001.0)", [SEED_B])
-        .unwrap();
+    c.execute(
+        "INSERT INTO sessions VALUES (?1,'cli',1700000000.0)",
+        [SEED_A],
+    )
+    .unwrap();
+    c.execute(
+        "INSERT INTO sessions VALUES (?1,'cli',1700000001.0)",
+        [SEED_B],
+    )
+    .unwrap();
     c.execute(
         "INSERT INTO messages(session_id,role,content,timestamp) VALUES (?1,'user','deploy the thing',1700000000.5)",
         [SEED_A],
@@ -77,7 +83,11 @@ impl PtyPicker {
         };
         let OpenptyResult { master, slave } = openpty(&ws, None).expect("openpty");
         let home = TempDir::new().unwrap();
-        std::fs::write(home.path().join("config.yaml"), "model:\n  provider: auto\n").unwrap();
+        std::fs::write(
+            home.path().join("config.yaml"),
+            "model:\n  provider: auto\n",
+        )
+        .unwrap();
         if seed {
             seed_state_db(home.path());
         }
@@ -123,7 +133,10 @@ impl PtyPicker {
             }
             std::thread::sleep(Duration::from_millis(50));
         }
-        Err(format!("timeout waiting for {needle:?}; output so far: {}", self.snapshot()))
+        Err(format!(
+            "timeout waiting for {needle:?}; output so far: {}",
+            self.snapshot()
+        ))
     }
 
     fn snapshot(&self) -> String {
@@ -131,7 +144,11 @@ impl PtyPicker {
     }
 
     fn send(&mut self, bytes: &[u8]) {
-        self.master.lock().unwrap().write_all(bytes).expect("write to pty master");
+        self.master
+            .lock()
+            .unwrap()
+            .write_all(bytes)
+            .expect("write to pty master");
     }
 }
 
@@ -141,13 +158,18 @@ fn browse_renders_verbatim_frame_and_selects_first_row_with_enter() {
     let out = p.wait_for(HINT).expect("verbatim hint line");
     assert!(out.contains("Title / Preview"), "column header: {out}");
     assert!(out.contains("second topic"), "newest session first: {out}");
-    assert!(out.contains("deploy the thing"), "older session listed: {out}");
+    assert!(
+        out.contains("deploy the thing"),
+        "older session listed: {out}"
+    );
     assert!(out.contains("1/2 sessions   d delete"), "footer: {out}");
     // Stat/Msgs columns: one done session with one message each row.
     assert!(out.contains("done"), "status column: {out}");
 
     p.send(b"\r");
-    let out = p.wait_for(&format!("Selected session {SEED_B}")).expect("select newest");
+    let out = p
+        .wait_for(&format!("Selected session {SEED_B}"))
+        .expect("select newest");
     assert!(
         out.contains(&format!("hermes-rs --resume-id {SEED_B}")),
         "resume hint: {out}"
@@ -163,7 +185,8 @@ fn browse_arrow_down_selects_the_second_row() {
     p.send(b"\x1b[B");
     std::thread::sleep(Duration::from_millis(500));
     p.send(b"\r");
-    p.wait_for(&format!("Selected session {SEED_A}")).expect("select older");
+    p.wait_for(&format!("Selected session {SEED_A}"))
+        .expect("select older");
     let status = p.child.wait().expect("child exits");
     assert!(status.success(), "exit: {status}");
 }
@@ -173,10 +196,13 @@ fn browse_live_filter_narrows_rows_and_footer_counts() {
     let mut p = PtyPicker::spawn(&["sessions", "browse"], true);
     p.wait_for(HINT).expect("hint");
     p.send(b"second");
-    p.wait_for("  Browse sessions — filter: second█").expect("filter hint with block cursor");
-    p.wait_for("1/1 sessions (filtered from 2)").expect("filtered footer counts");
+    p.wait_for("  Browse sessions — filter: second█")
+        .expect("filter hint with block cursor");
+    p.wait_for("1/1 sessions (filtered from 2)")
+        .expect("filtered footer counts");
     p.send(b"\r");
-    p.wait_for(&format!("Selected session {SEED_B}")).expect("select filtered row");
+    p.wait_for(&format!("Selected session {SEED_B}"))
+        .expect("select filtered row");
     let status = p.child.wait().expect("child exits");
     assert!(status.success(), "exit: {status}");
 }
@@ -187,7 +213,8 @@ fn browse_delete_removes_the_session_from_state_db() {
     p.wait_for(HINT).expect("hint");
     // Cursor starts on B ("second topic"): `d` asks, `y` confirms.
     p.send(b"d");
-    p.wait_for("  Delete session 'second topic'? [y/N]").expect("explicit [y/N] prompt");
+    p.wait_for("  Delete session 'second topic'? [y/N]")
+        .expect("explicit [y/N] prompt");
     p.send(b"y");
     std::thread::sleep(Duration::from_millis(500));
     p.send(b"\x1b");
@@ -195,7 +222,10 @@ fn browse_delete_removes_the_session_from_state_db() {
     assert!(status.success(), "exit: {status}");
     let out = p.snapshot();
     assert!(out.contains("Deleted."), "delete notice: {out}");
-    assert!(!out.contains("Selected session"), "cancelled, no selection: {out}");
+    assert!(
+        !out.contains("Selected session"),
+        "cancelled, no selection: {out}"
+    );
     // Ground truth: B's rows are gone, A's are untouched.
     let c = rusqlite::Connection::open(p.home.path().join("state.db")).unwrap();
     let sessions: Vec<String> = c
@@ -207,7 +237,11 @@ fn browse_delete_removes_the_session_from_state_db() {
         .collect();
     assert_eq!(sessions, vec![SEED_A.to_owned()]);
     let msgs: i64 = c
-        .query_row("SELECT COUNT(*) FROM messages WHERE session_id=?1", [SEED_B], |r| r.get(0))
+        .query_row(
+            "SELECT COUNT(*) FROM messages WHERE session_id=?1",
+            [SEED_B],
+            |r| r.get(0),
+        )
         .unwrap();
     assert_eq!(msgs, 0);
 }
@@ -227,10 +261,14 @@ fn browse_escape_cancels_without_selecting() {
 #[test]
 fn browse_without_a_store_reports_no_sessions() {
     let mut p = PtyPicker::spawn(&["sessions", "browse"], false);
-    p.wait_for("No sessions found.").expect("empty-store message");
+    p.wait_for("No sessions found.")
+        .expect("empty-store message");
     let status = p.child.wait().expect("child exits");
     assert!(status.success(), "exit: {status}");
-    assert!(!p.home.path().join("state.db").exists(), "browse must not create the store");
+    assert!(
+        !p.home.path().join("state.db").exists(),
+        "browse must not create the store"
+    );
 }
 
 #[test]
@@ -244,7 +282,8 @@ fn repl_sessions_opens_the_picker_and_resumes_in_place() {
     p.send(b"\x1b[B");
     std::thread::sleep(Duration::from_millis(500));
     p.send(b"\r");
-    p.wait_for(&format!("Resumed {SEED_B}")).expect("resume the picked session");
+    p.wait_for(&format!("Resumed {SEED_B}"))
+        .expect("resume the picked session");
     p.send(b"/exit\r");
     p.wait_for(GOODBYE).expect("clean exit");
     let status = p.child.wait().expect("child exits");

@@ -130,11 +130,7 @@ impl Tool for Flaky {
     fn description(&self) -> &str {
         "always times out (retryable failure)"
     }
-    async fn execute(
-        &self,
-        _: &ToolCall,
-        _: CancellationToken,
-    ) -> Result<ToolResponse, ToolError> {
+    async fn execute(&self, _: &ToolCall, _: CancellationToken) -> Result<ToolResponse, ToolError> {
         self.calls.fetch_add(1, Ordering::SeqCst);
         Err(ToolError::Timeout(Duration::from_secs(1)))
     }
@@ -142,7 +138,9 @@ impl Tool for Flaky {
 fn flaky_registry() -> (ToolRegistry, Arc<AtomicUsize>) {
     let calls = Arc::new(AtomicUsize::new(0));
     let mut r = ToolRegistry::new();
-    r.register(Flaky { calls: calls.clone() });
+    r.register(Flaky {
+        calls: calls.clone(),
+    });
     (r, calls)
 }
 
@@ -159,11 +157,7 @@ impl Tool for Deny {
     fn description(&self) -> &str {
         "always denied"
     }
-    async fn execute(
-        &self,
-        _: &ToolCall,
-        _: CancellationToken,
-    ) -> Result<ToolResponse, ToolError> {
+    async fn execute(&self, _: &ToolCall, _: CancellationToken) -> Result<ToolResponse, ToolError> {
         self.calls.fetch_add(1, Ordering::SeqCst);
         Err(ToolError::Denied("operator declined".into()))
     }
@@ -171,7 +165,9 @@ impl Tool for Deny {
 fn deny_registry() -> (ToolRegistry, Arc<AtomicUsize>) {
     let calls = Arc::new(AtomicUsize::new(0));
     let mut r = ToolRegistry::new();
-    r.register(Deny { calls: calls.clone() });
+    r.register(Deny {
+        calls: calls.clone(),
+    });
     (r, calls)
 }
 
@@ -206,7 +202,11 @@ async fn recovery_bounds_retryable_failures_and_does_not_reexecute_identical() {
     );
     // Only the three *distinct* argument sets executed; the two exact repeats
     // were intercepted and NOT re-executed.
-    assert_eq!(calls.load(Ordering::SeqCst), 3, "identical repeats must be skipped");
+    assert_eq!(
+        calls.load(Ordering::SeqCst),
+        3,
+        "identical repeats must be skipped"
+    );
 }
 
 /// A user denial must never be retried: it immediately blocks the goal and the
@@ -216,7 +216,7 @@ async fn recovery_never_retries_a_denied_tool() {
     let (reg, calls) = deny_registry();
     let p = Scenario {
         responses: Arc::new(Mutex::new(vec![
-            "<tool_call id=\"1\">deny: x</tool_call>".into(),
+            "<tool_call id=\"1\">deny: x</tool_call>".into()
         ])),
     };
     let mut r = ConversationRunner::new(p);
@@ -230,5 +230,9 @@ async fn recovery_never_retries_a_denied_tool() {
         matches!(out, AgenticResult::Blocked { .. }),
         "a denied tool must Block immediately, got {out:?}"
     );
-    assert_eq!(calls.load(Ordering::SeqCst), 1, "a denied call must never be retried");
+    assert_eq!(
+        calls.load(Ordering::SeqCst),
+        1,
+        "a denied call must never be retried"
+    );
 }
