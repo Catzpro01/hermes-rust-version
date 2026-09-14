@@ -1631,7 +1631,16 @@ prediksi handoff sebelumnya:
 - Tidak ada perubahan runtime Rust, bukti visual, atau vendor pada checkpoint
   ini; hanya dokumen analisis + catatan progres/memory/handoff.
 
-### Hasil push dan CI checkpoint analisis
+### Hasil push dan CI checkpoint analisis (terverifikasi)
 
-Diperbarui setelah push terverifikasi; lihat entri berikutnya atau `git log -1`
-pada branch sesi. Tidak ada merge/auto-merge yang dilakukan.
+- Commit analisis `c7668f15a6f4510c55ebd0c33351d462320ce948` berhasil di-push ke
+  `origin/arena/01a0a052-hermes-rust-version`; `git ls-remote` mengembalikan SHA
+  yang sama dan receipt auto-push mencatat `outcome: success`, `no force or
+  merge`.
+- CI run `34856316182` pada commit itu **SUCCESS** di kedua job. Anotasi
+  check-run `104016690749`: `fmt=success clippy=success test=success
+  picker=success`, **584 tes Rust lulus / 0 gagal**. Ketiga regresi terminal
+  picker nyata ikut hijau.
+- Isi commit hanya dokumen: analisis baru, koreksi `CURRENT.md`, catatan
+  MEMORY/PROGRESS. Tidak ada perubahan runtime, bukti visual, atau vendor, dan
+  tidak ada merge/auto-merge.
