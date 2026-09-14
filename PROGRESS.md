@@ -1461,3 +1461,22 @@ Standards/Spec review:0 new hard violations,1 nonblocking duplicated-runner/setu
 observation; filter/column headers, selection/delete/no-match styles, other layout,
 wizard/completion and T12 coverage remain open. No resize/clear-filter/long-list
 claims, new adaptation, whole-picker acceptance, closure or merge.
+
+### `/wayfinder` invoked — destination interview, planning only
+
+Read installed official wayfinder, grilling and domain-modeling skills, existing
+local-Markdown tracker, context, memory and completed header milestone. No local
+wayfinder map found. Invocation names no destination/map, so first ask the user
+to choose the destination rather than silently treating the known picker backlog
+as decision tickets. Recommended scope: route to completing the already agreed
+Spec017 evidence/corrections/acceptance requirements; broader Hermes roadmap is
+an alternative, not assumed scope. Existing Q1–Q8 constraints remain binding.
+
+Destination is NOT yet confirmed. No map, decision ticket, resolution or runtime
+change created. Once confirmed, interview breadth-first about unsettled decisions,
+then chart precise questions and dependencies using the existing local tracker.
+Its doc currently lacks a Wayfinding operations section; add a local parent/
+assignee/blocking/resolution convention when charting (no tracker migration).
+No native Skill/subagent tools are available; skills are read/applied directly,
+and no external research/subagent execution or alternate branch is claimed.
+Planning does not grant implementation, closure or merge permission.

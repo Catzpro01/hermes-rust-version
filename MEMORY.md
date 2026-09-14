@@ -30,6 +30,14 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Active `/wayfinder`: planning only, destination interview pending. User gave
+  no map/destination; first choose Spec017 completion route (recommended) versus
+  broader Hermes roadmap or a small picker follow-up. No map/tickets/decisions
+  resolved or runtime change yet. Preserve settled Q1–Q8/no-merge constraints.
+  Existing tracker is local Markdown; wayfinding operations convention is absent
+  and can be documented when charting. Read official wayfinder/grilling/domain-
+  modeling skills; no native Skill/subagents or alternate branches available.
+
 - Normal-help-header cycle complete: runtime7fef514; capture34837424495 and
   CI34837424464 SUCCESS. RED34836863589/4aa0858 → GREEN34837102702/645f86d →
   exact1171-byte patch90fa6de6e8c260cb783260bafb4bc1502fad98ec6a332fc42c7fa5363c4dfd54.
