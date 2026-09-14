@@ -528,7 +528,7 @@ jobs:
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace --no-fail-fast
       - name: Export exactly tested proposal
-        if: steps.plan.outputs.phase == 'green' && !((steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input' || steps.plan.outputs.test == 'picker_terminal_size')
+        if: steps.plan.outputs.phase == 'green' && !(steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input' || steps.plan.outputs.test == 'picker_terminal_size')
         run: |
           mkdir -p evidence
           git diff --binary -- '*.rs' > evidence/tested.patch

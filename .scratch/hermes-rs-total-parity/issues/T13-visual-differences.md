@@ -318,3 +318,8 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     screen exists, so at 40 columns it must show the notice where the reference
     draws the picker, and at 39 it returns before the key (the reference stays in
     `getch()`).
+  - [x] Second invalid-workflow incident (run 34879063271): my own `if:` rewrite for
+    the tested-patch export left an unclosed parenthesis, and GitHub again refused
+    the whole file (run named after the path, no jobs). Fixed; `test_ci_workflow.py`
+    now checks every step expression for balanced parentheses and quotes (27 tests).
+    `actionlint-py` was tried for a real validator but its wheel does not build here.

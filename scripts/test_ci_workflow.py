@@ -228,6 +228,22 @@ class CiGateTests(unittest.TestCase):
                         self.assertIn("RUNNER_TEMP", script,
                                       f"{name}:{job_name}:{step.get('name')} uses $QA without defining it")
 
+    def test_step_expressions_are_balanced(self):
+        """GitHub rejects the whole file for one malformed expression, and the run
+        then appears named after the file path with no jobs (runs 34879063271,
+        34878422065). Cheap local guard for the two mistakes actually made:
+        unbalanced parentheses and an odd number of single quotes."""
+        for name in ("ci.yml", "picker-diagnostic.yml", "ui-evidence.yml", "visual-evidence.yml"):
+            workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+            for job_name, job in workflow["jobs"].items():
+                for step in job["steps"]:
+                    expression = str(step.get("if", ""))
+                    label = f"{name}:{job_name}:{step.get('name')}"
+                    self.assertEqual(expression.count("("), expression.count(")"),
+                                     f"{label}: unbalanced parentheses in if")
+                    self.assertEqual(expression.count("'") % 2, 0,
+                                     f"{label}: odd number of quotes in if")
+
     def test_workflows_avoid_contexts_github_rejects(self):
         """`runner` is not available at job level; using it invalidates the file
         (both workflows were rejected in run 34878423059/34878422065)."""
