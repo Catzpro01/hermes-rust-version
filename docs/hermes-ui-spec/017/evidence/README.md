@@ -151,6 +151,19 @@ Signed artifact ZIP gagal di sandbox; tidak ada bagian hilang yang diabaikan.
   `picker-selection-b4cb408`, `picker-message-style-fd674dc`,
   `picker-column-layout-b732d22`, `picker-filter-header-9cc5cb4`, `picker-header-7fef514`.
 
+## Paket terbaru
+
+- [picker-redraw-on-input-b2db435](picker-redraw-on-input-b2db435/REPORT.md) — cadence
+  gambar picker (gambar hanya saat layar berubah), audit
+  `REDRAW_ON_INPUT_FIXED_FRAME_CONTENT_UNCHANGED_ALL_REGIONS_EQUAL`; 11 checker PASS,
+  gate menolak 8/10 kasus paket sebelumnya, konten frame identik byte, 34 region
+  kontrol identik + 4 perbedaan yang dinyatakan.
+- [picker-status-ink-19bbbd5](picker-status-ink-19bbbd5/REPORT.md) — tinta tag status;
+  audit `STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL`.
+- Paket-paket picker sebelumnya tetap berlaku sebagai kontrol:
+  `picker-selection-b4cb408`, `picker-message-style-fd674dc`,
+  `picker-column-layout-b732d22`, `picker-filter-header-9cc5cb4`, `picker-header-7fef514`.
+
 ## Reproduksi
 
 Lihat [instruksi tooling](../../../../scripts/visual-renderer/README.md).

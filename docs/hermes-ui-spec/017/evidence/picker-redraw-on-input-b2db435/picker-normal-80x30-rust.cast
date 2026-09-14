@@ -1,0 +1,3 @@
+{"version":2,"width":80,"height":30,"env":{"TERM":"xterm-256color"},"title":"picker-normal-80x30-rust"}
+[0.00796,"o","\u001b[?1049h\u001b[?25l\u001b[1;1H\u001b[2J"]
+[0.009263,"o","\u001b[38;5;3m\u001b[1m  Browse sessions — ↑↓ navigate  Enter select  Type to filter  Esc quit\u001b[0m\u001b[1E\u001b[38;5;8m   Title / Preview        Stat    Msgs  Active      Src   ID\u001b[39m\u001b[1E\u001b[1E\u001b[38;5;2m\u001b[1m → second topic          done       1  2y ago      cli   660f8400\u001b[0m\u001b[1E   deploy the thing      \u001b[38;5;2mdone \u001b[39m      1  2y ago      cli   550e8400\u001b[1E\u001b[30;1H\u001b[38;5;8m  1/2 sessions   d delete\u001b[39m"]

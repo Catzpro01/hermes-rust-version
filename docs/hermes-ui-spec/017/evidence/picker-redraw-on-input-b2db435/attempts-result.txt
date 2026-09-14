@@ -1,0 +1,15 @@
+Failed attempts on 2026-09-14, kept because they changed the outcome
+
+1. Ordinary CI runs during the RED window (34873144303 on 7a9ab45, 34873480642 on d69c97e) are
+   red on purpose: the ninth live gate ships before its fix, and the picker step is
+   `continue-on-error: true`, so the step list shows success while `steps.picker.outcome` is
+   failure and the final aggregate step fails the job. Read the `picker terminal` annotation.
+2. No GREEN attempt failed in this cycle: the first request (34873480643) passed the live gate
+   three times with full validation green and an exported patch byte-identical to the bound
+   one. That is the first time in the picker work that a GREEN request landed without a second
+   attempt, which is the expected effect of removing the sustained repaint: the harness's
+   quiet-or-stable rule no longer races the child.
+3. The flake this cycle fixes was measured before and after: cycle 10's capture-commit CI
+   (34871743697) failed with `missing readiness/timeout at stage 0` after 207901 bytes even
+   though the whole frame was on screen. With the fix, both CI runs on the fixed source
+   (34873775366, 34873776473) are green and the same gates capture in seconds.

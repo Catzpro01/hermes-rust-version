@@ -464,6 +464,39 @@ documented `Active`/`ID` content, resize/long-list/clear-filter, and the
 sustained repaint the reference does not do. No whole-picker PASS, adaptation,
 acceptance or merge.
 
+### Redraw-cadence slice delivered atbbd943c (capture b2db435)
+
+The picker now draws because the screen changed, not on every loop turn: a `dirty`
+flag starts set, every accepted key press and every resize sets it again, and the
+100 ms poll loop is unchanged so signals keep being served. That matches the
+reference, which draws at the top of its loop and then blocks in
+`stdscr.getch()` — one frame per key, nothing while it waits. Chain: RED
+34873144309 → GREEN 34873480643 (2801-byte patch, exported byte-identical to the
+bound one — the first picker GREEN that landed on the first attempt) → capture
+34873776470 (ten cases; eleven checkers green on the committed source) →
+ordinary CI 34873775366 and 34873776473 SUCCESS. Packet
+`docs/hermes-ui-spec/017/evidence/picker-redraw-on-input-b2db435/REPORT.md`.
+
+The new live gate `picker_redraw_on_input` splits each record at the scenario
+keystrokes (terminal replies excluded) and counts frames per input window: one
+before the first keystroke, one per typed key after that. The same gate rejects
+8 of 10 cases in the previous packet (5 frames with no input in the normal case,
+25 in the no-match case, 41 in the 80-column filter case) and accepts all ten
+retained Python records, so it measures the behaviour rather than matching one
+capture. Frame content is provably untouched: all ten cell maps and all ten
+paired PNGs are byte-identical to the previous packet, 34/34 control regions are
+pixel-equal, and the four declared tag-span differences stay at 270 pixels each.
+Records shrank everywhere the loop runs (e.g. 13815 to 1463 bytes).
+
+The side effect that mattered operationally: the PTY harness no longer loses its
+quiet-or-stable race against a child that repaints forever, so the start-up flake
+recorded in the two previous packets stops reproducing — both CI runs on the
+fixed source are green.
+
+Still open in the picker: live coverage of the other three status inks, the
+documented `Active`/`ID` content, and resize/long-list/clear-filter. No
+whole-picker PASS, new adaptation, acceptance or merge.
+
 ### Prompt/message slice delivered at549fc8d (capture fd674dc)
 
 The delete-confirm prompt is now drawn with palette slot 1 plus bold and the

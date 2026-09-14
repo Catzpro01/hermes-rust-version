@@ -1,0 +1,29 @@
+GREEN run 34873480643 (picker-diagnostic, headSha d69c97e, conclusion success)
+
+Verify and apply bounded diagnostic proposal: success (source 804b80f0, patch 925b963e)
+Format and type check, build of the actual CLI, and the three-times live regression: success
+Full GREEN validation: success (clippy -D warnings + whole workspace suite)
+green actual CLI regression verified three times
+test_picker_draws_on_input_not_on_its_poll_timeout (__main__.PickerRedrawOnInputTests.test_picker_draws_on_input_not_on_its_poll_timeout) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+rust picker-filter 100 CAPTURED_NOT_REVIEWED
+rust picker-no-match 100 CAPTURED_NOT_REVIEWED
+rust picker-delete 100 CAPTURED_NOT_REVIEWED
+rust picker-empty 100 CAPTURED_NOT_REVIEWED
+rust picker-normal 80 CAPTURED_NOT_REVIEWED
+rust picker-filter 80 CAPTURED_NOT_REVIEWED
+rust picker-no-match 80 CAPTURED_NOT_REVIEWED
+rust picker-delete 80 CAPTURED_NOT_REVIEWED
+rust picker-empty 80 CAPTURED_NOT_REVIEWED
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 5.991s
+
+OK
+
+Exported tested proposal: sha256=925b963e0d3385109cbffa74527798c7d173d1439184cab3602c82b05d8b6a8b; bytes=2801
+The exported patch is byte-identical to the bound request patch, so `cargo fmt --all` had
+nothing to change; the same file is shipped as tested.patch.
+Retained GREEN trace: sha256=fa742920e4980e1d17b3dc4546c0cfc25c79c9434ff1184f4af74ce30a2d0c87; bytes=45749
+The trace is 45748 bytes against 279052 bytes in RED — the picker stopped repainting while it
+waits, which is the behaviour this cycle pins.

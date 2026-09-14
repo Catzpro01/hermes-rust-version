@@ -1,0 +1,28 @@
+RED run 34873144309 (picker-diagnostic, headSha 7a9ab45, conclusion success as a phase-aware gate)
+
+Exact CLI redraw-on-input regression repeated three times: EXPECTED FAIL
+red actual CLI regression verified three times
+test_picker_draws_on_input_not_on_its_poll_timeout (__main__.PickerRedrawOnInputTests.test_picker_draws_on_input_not_on_its_poll_timeout) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+rust picker-filter 100 CAPTURED_NOT_REVIEWED
+rust picker-no-match 100 CAPTURED_NOT_REVIEWED
+rust picker-delete 100 CAPTURED_NOT_REVIEWED
+rust picker-empty 100 CAPTURED_NOT_REVIEWED
+rust picker-normal 80 CAPTURED_NOT_REVIEWED
+rust picker-filter 80 CAPTURED_NOT_REVIEWED
+rust picker-no-match 80 CAPTURED_NOT_REVIEWED
+rust picker-delete 80 CAPTURED_NOT_REVIEWED
+rust picker-empty 80 CAPTURED_NOT_REVIEWED
+FAIL
+
+======================================================================
+FAIL: test_picker_draws_on_input_not_on_its_poll_timeout (__main__.PickerRedrawOnInputTests.test_picker_draws_on_input_not_on_its_poll_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/work/hermes-rust-version/hermes-rust-version/scripts/test_picker_redraw_on_input.py", line 37, in test_picker_draws_on_input_not_on_its_poll_timeout
+    self.assertEqual(
+AssertionError: Lists differ: ['picker-normal-100x30: while waiting for [1477 chars]our'] !=
+
+Retained RED trace: sha256=65cf8b28ae2af1767c76e96a8adc737571fb440013e4bc521dd96eb9984c1c6f; bytes=279052
+The gate is RED-shaped without a setup error: the assertion names the reference cadence
+(one frame before any keystroke, one per typed key) while the committed source repainted on
+every poll timeout.

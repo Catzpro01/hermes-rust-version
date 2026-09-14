@@ -1,0 +1,210 @@
+{
+  "status": "REDRAW_ON_INPUT_FIXED_FRAME_CONTENT_UNCHANGED_ALL_REGIONS_EQUAL",
+  "source": "b2db435f6071d9baab13d7347b7452c9e38ffef0",
+  "fix_commit": "bbd943c",
+  "raw_cast_roundtrips": 20,
+  "png_hash_checks": 10,
+  "all_ten_pngs_identical_to_previous_packet": true,
+  "all_ten_cell_maps_identical_to_previous_packet": true,
+  "python_records_and_cells_unchanged": true,
+  "renderer_script_sha256": "201091eef5007e9a45889da7b4725b658ce39df1bf977a48677e435df9f9c074",
+  "renderer_settings_match_prior": true,
+  "checker_runs": [
+    "check_picker_redraw_on_input:python:10",
+    "check_picker_redraw_on_input:rust:10",
+    "check_picker_status_ink:python:6",
+    "check_picker_status_ink:rust:6",
+    "check_picker_selection:python:6",
+    "check_picker_selection:rust:6",
+    "check_picker_message_style:python:6",
+    "check_picker_message_style:rust:6",
+    "check_picker_column_layout:python:4",
+    "check_picker_column_layout:rust:4",
+    "check_picker_footer_position:rust:10",
+    "check_picker_footer_color:rust:6",
+    "check_picker_normal_header:rust:4",
+    "check_picker_filter_header:rust:4",
+    "check_picker_counter:rust:12",
+    "check_picker_filter_hint:rust:6"
+  ],
+  "checker_failures": 0,
+  "gate_rejects_previous_capture": {
+    "side": "rust",
+    "failing_cases": [
+      "picker-normal-100x30",
+      "picker-filter-100x30",
+      "picker-no-match-100x30",
+      "picker-delete-100x30",
+      "picker-normal-80x30",
+      "picker-filter-80x30",
+      "picker-no-match-80x30",
+      "picker-delete-80x30"
+    ]
+  },
+  "gate_accepts_reference_records": true,
+  "frames_per_window_before": {
+    "picker-normal-100x30": [
+      5
+    ],
+    "picker-filter-100x30": [
+      6,
+      8
+    ],
+    "picker-no-match-100x30": [
+      25,
+      9
+    ],
+    "picker-delete-100x30": [
+      14,
+      0
+    ],
+    "picker-empty-100x30": [
+      1
+    ],
+    "picker-normal-80x30": [
+      8
+    ],
+    "picker-filter-80x30": [
+      41,
+      8
+    ],
+    "picker-no-match-80x30": [
+      7,
+      7
+    ],
+    "picker-delete-80x30": [
+      21,
+      0
+    ],
+    "picker-empty-80x30": [
+      1
+    ]
+  },
+  "frames_per_window_after": {
+    "picker-normal-100x30": [
+      1
+    ],
+    "picker-filter-100x30": [
+      1,
+      5
+    ],
+    "picker-no-match-100x30": [
+      1,
+      4
+    ],
+    "picker-delete-100x30": [
+      1,
+      0
+    ],
+    "picker-empty-100x30": [
+      1
+    ],
+    "picker-normal-80x30": [
+      1
+    ],
+    "picker-filter-80x30": [
+      1,
+      5
+    ],
+    "picker-no-match-80x30": [
+      1,
+      4
+    ],
+    "picker-delete-80x30": [
+      1,
+      0
+    ],
+    "picker-empty-80x30": [
+      1
+    ]
+  },
+  "raw_bytes_before": {
+    "picker-normal-100x30": 2329,
+    "picker-filter-100x30": 5505,
+    "picker-no-match-100x30": 13815,
+    "picker-delete-100x30": 6562,
+    "picker-empty-100x30": 20,
+    "picker-normal-80x30": 3270,
+    "picker-filter-80x30": 19092,
+    "picker-no-match-80x30": 4453,
+    "picker-delete-80x30": 8627,
+    "picker-empty-80x30": 20
+  },
+  "raw_bytes_after": {
+    "picker-normal-100x30": 477,
+    "picker-filter-100x30": 2200,
+    "picker-no-match-100x30": 1463,
+    "picker-delete-100x30": 543,
+    "picker-empty-100x30": 20,
+    "picker-normal-80x30": 421,
+    "picker-filter-80x30": 1936,
+    "picker-no-match-80x30": 1327,
+    "picker-delete-80x30": 487,
+    "picker-empty-80x30": 20
+  },
+  "cases_with_smaller_record": [
+    "picker-delete-100x30",
+    "picker-delete-80x30",
+    "picker-filter-100x30",
+    "picker-filter-80x30",
+    "picker-no-match-100x30",
+    "picker-no-match-80x30",
+    "picker-normal-100x30",
+    "picker-normal-80x30"
+  ],
+  "tested_patch": {
+    "sha256": "925b963e0d3385109cbffa74527798c7d173d1439184cab3602c82b05d8b6a8b",
+    "bytes": 2801,
+    "request_patch_identical": true
+  },
+  "pixel_equal_regions": [
+    "picker-delete-100x30:column header row",
+    "picker-delete-100x30:delete-confirm prompt row",
+    "picker-delete-100x30:selected row up to the status column",
+    "picker-delete-100x30:unselected row up to the status column",
+    "picker-delete-80x30:column header row",
+    "picker-delete-80x30:delete-confirm prompt row",
+    "picker-delete-80x30:selected row up to the status column",
+    "picker-delete-80x30:unselected row up to the status column",
+    "picker-empty-100x30:empty-store message row",
+    "picker-empty-80x30:empty-store message row",
+    "picker-filter-100x30:filter help header row",
+    "picker-filter-100x30:footer row control",
+    "picker-filter-100x30:selected row up to the status column",
+    "picker-filter-80x30:filter help header row",
+    "picker-filter-80x30:footer row control",
+    "picker-filter-80x30:selected row up to the status column",
+    "picker-no-match-100x30:column header row",
+    "picker-no-match-100x30:footer row control",
+    "picker-no-match-100x30:no-match message row",
+    "picker-no-match-80x30:column header row",
+    "picker-no-match-80x30:footer row control",
+    "picker-no-match-80x30:no-match message row",
+    "picker-normal-100x30:blank separator row",
+    "picker-normal-100x30:column header row",
+    "picker-normal-100x30:footer row control",
+    "picker-normal-100x30:hint row control",
+    "picker-normal-100x30:selected row up to the status column",
+    "picker-normal-100x30:unselected row up to the status column",
+    "picker-normal-80x30:blank separator row",
+    "picker-normal-80x30:column header row",
+    "picker-normal-80x30:footer row control",
+    "picker-normal-80x30:hint row control",
+    "picker-normal-80x30:selected row up to the status column",
+    "picker-normal-80x30:unselected row up to the status column"
+  ],
+  "pixel_differing_regions": [],
+  "declared_differing_regions": [
+    "picker-delete-100x30:unselected row status tag",
+    "picker-delete-80x30:unselected row status tag",
+    "picker-normal-100x30:unselected row status tag",
+    "picker-normal-80x30:unselected row status tag"
+  ],
+  "declared_difference_reason": "status tag word is fixture data (retained Python session is interrupted, Rust fixture complete); the ink at this span is pinned by check_picker_status_ink.py on both sides",
+  "still_open_outside_regions": [
+    "the live capture exercises only the complete->done status mapping",
+    "Active/ID column content is a documented adaptation",
+    "resize, long lists and clear-filter are unproved by these fixed-size fixtures"
+  ],
+  "normalization": "none"
+}

@@ -176,6 +176,20 @@ dibandingkan dan pixel-identik. Tidak ada normalisasi warna/geometry.
 - Dua kegagalan jujur (underflow `n - 3` pada patch pertama, geometri unit test pada
   percobaan kedua) dan satu flake start-up PTY tercatat di `attempts-result.txt`.
 
+### Slice cadence redraw picker (fix `bbd943c`, capture `b2db435`)
+
+- Referensi menggambar sekali lalu memblokir di `stdscr.getch()`; port Rust kini
+  memakai flag `dirty` sehingga poll 100 ms tetap ada tetapi repaint hanya saat
+  layar berubah.
+- Lengkap: RED `34873144309` → GREEN `34873480643` (percobaan pertama) →
+  capture `34873776470` → CI `34873775366`/`34873776473` SUCCESS.
+- Paket [laporan](picker-redraw-on-input-b2db435/REPORT.md):
+  `REDRAW_ON_INPUT_FIXED_FRAME_CONTENT_UNCHANGED_ALL_REGIONS_EQUAL` — gate menolak
+  8/10 kasus paket sebelumnya dan menerima 10/10 rekaman referensi; kesepuluh cell
+  map dan PNG identik byte dengan paket siklus sebelumnya.
+- Flake start-up PTY hilang sebagai efek samping; tidak ada lagi kegagalan
+  `missing readiness/timeout at stage 0` pada CI sumber tetap.
+
 ### Sisa milestone berikutnya
 
 1. Styling header filter/kolom, seleksi, prompt hapus/no-match dan sisa tata letak picker —
