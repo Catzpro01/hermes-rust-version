@@ -1,0 +1,35 @@
+RED run 34864078749 (picker-diagnostic, headSha 13098b1, conclusion success as a phase-aware gate)
+
+Exact CLI prompt/message-style regression repeated three times: EXPECTED FAIL
+red actual CLI regression verified three times
+rust picker-delete 80 CAPTURED_NOT_REVIEWED
+rust picker-no-match 80 CAPTURED_NOT_REVIEWED
+FAIL
+
+======================================================================
+FAIL: test_prompt_and_no_match_match_reference_style (__main__.PickerMessageStyleTests.test_prompt_and_no_match_match_reference_style)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/work/hermes-rust-version/hermes-rust-version/scripts/test_picker_message_style.py", line 38, in test_prompt_and_no_match_match_reference_style
+    self.assertEqual(
+AssertionError: Lists differ: ["picker-delete-100x30: delete prompt styl[353 chars]ute'] != []
+
+First list contains 4 additional elements.
+First extra element 0:
+"picker-delete-100x30: delete prompt style [('default', False, False)], expected palette1 red + bold without reverse"
+
++ []
+- ["picker-delete-100x30: delete prompt style [('default', False, False)], "
+-  'expected palette1 red + bold without reverse',
+-  'picker-no-match-100x30: no-match message is not written with the dim '
+-  'attribute',
+-  "picker-delete-80x30: delete prompt style [('default', False, False)], "
+-  'expected palette1 red + bold without reverse',
+-  'picker-no-match-80x30: no-match message is not written with the dim '
+-  'attribute'] : Python reference: the delete prompt is palette1 red + bold and the no-match message carries the dim attribute
+
+----------------------------------------------------------------------
+Ran 1 test in 6.440s
+
+FAILED (failures=1)
+sha256=fceac7f5cbb71894d6cbeb58d5f9283a5cbee0434442a8b8f92d0262e42c63ef; bytes=84235
