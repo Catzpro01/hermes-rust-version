@@ -30,6 +30,19 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Normal-help-header cycle complete: runtime7fef514; capture34837424495 and
+  CI34837424464 SUCCESS. RED34836863589/4aa0858 → GREEN34837102702/645f86d →
+  exact1171-byte patch90fa6de6e8c260cb783260bafb4bc1502fad98ec6a332fc42c7fa5363c4dfd54.
+  Packet `docs/hermes-ui-spec/017/evidence/picker-header-7fef514/REPORT.md`:10 images
+  directly inspected, header4/footer color6/geometry10/counter6/hint6 PASS.
+  Only row1 fg/bold changes in normal/delete;6 filter/no-match/empty PNGs identical
+  toae220ff. Both indexed3+bold (Python palette16/Rust palette256),4 header rows
+  pixel-identical; no normalization/new Python capture.20 raw/cast,10 PNG checks,
+  34 support tests PASS. CI now requires all three live picker regressions.
+  Milestones H1–H5 complete; five picker corrections verified. Filter/column header,
+  selection/delete/no-match styles, other body geometry and wizard/completion/T12
+  coverage remain open. Limited direct review only; no closure or merge.
+
 - Active normal-help-header `/tdd`: agreed real CLI/PTy normal100x30 seam.
   Python target indexed3 + bold=true; pyte brown/cdcd00 aliases (NOT palette11).
   RED34836863589/4aa0858: real CLI style FAIL3, fmt/check/build PASS.
@@ -37,7 +50,7 @@ user's private Python installation.
   GREEN34837102702/645f86d exact3/fmt/check/clippy/full suite PASS.
   Tested1171-byte patch 90fa6de6e8c260cb783260bafb4bc1502fad98ec6a332fc42c7fa5363c4dfd54
   applied byte-identically; DarkYellow/Bold/Reset on n0 with empty filter.
-  H3/H4 complete; fresh committed-source capture/CI next. Ordinary CI now
+  H3/H4 completed there; H5 subsequently completed above. Ordinary CI now
   requires live position, color and normal-header tests. Header checker4 PASS. Historical normal/
   delete4 header checks fail for Rust, Python4 PASS;14 policy tests PASS.
   `MILESTONES.md` H1 done/H2 test-first. Preserve other rows, filter header and

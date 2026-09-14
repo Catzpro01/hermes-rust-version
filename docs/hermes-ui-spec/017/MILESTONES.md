@@ -1,6 +1,6 @@
 # Milestone Hermes — visual parity Spec017
 
-**Pembaruan: 14 September 2026 · Aktif: header bantuan picker mode normal.**
+**Pembaruan: 14 September 2026 · Header bantuan mode normal selesai diverifikasi.**
 
 Halaman ini melacak pekerjaan visual parity yang sedang aktif, **bukan persentase
 seluruh proyek Hermes**. “Terverifikasi” berlaku untuk scope yang disebutkan;
@@ -15,12 +15,12 @@ bukan berarti seluruh layar identik atau Spec017 sudah diterima pengguna.
 | Counter tanpa hasil tetap menunjukkan total sesi | ✅ Terverifikasi | [a8d5e8c](evidence/picker-counter-a8d5e8c/REPORT.md) |
 | Footer berada di baris terakhir terminal | ✅ Terverifikasi | [0c0704d: 10 pasangan diperiksa](evidence/picker-position-0c0704d/REPORT.md) |
 | Warna footer sesuai Python | ✅ Terverifikasi | [ae220ff: 10 gambar, 6 footer pixel-identik](evidence/picker-color-ae220ff/REPORT.md) |
-| Header bantuan mode normal | 🔄 TDD dimulai | Referensi palette3 + bold; bukan header kolom atau header filter |
+| Header bantuan mode normal | ✅ Terverifikasi | [7fef514: palette3 + bold, 4 header pixel-identik](evidence/picker-header-7fef514/REPORT.md) |
 | Header filter, seleksi, konfirmasi hapus, sisa tata letak picker | ⏳ Belum selesai | Siklus terpisah; tidak ikut dianggap selesai oleh warna footer |
 | Sisa perbedaan wizard/completion dan kelengkapan bukti | ⏳ Belum selesai | T12/T13 tetap terbuka |
 | Penerimaan akhir Spec017 | 🔒 Belum siap | Memerlukan bukti lengkap, CI relevan GREEN, dan persetujuan eksplisit pengguna |
 
-## Milestone aktif — header bantuan mode normal
+## Header bantuan mode normal — H1–H5 selesai
 
 Scope: baris bantuan `Browse sessions` ketika filter kosong, **palette3 + bold**.
 Header yang sama juga tampak saat konfirmasi hapus. Warna prompt hapus sendiri,
@@ -32,9 +32,19 @@ header filter/kolom, seleksi, footer dan posisi teks tidak ikut diubah.
 | H2 · RED nyata | ✅ Selesai | [34836863589 / 4aa0858](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34836863589): tes primer FAIL3, default/tidak bold; fmt/check/build PASS |
 | H3 · Perubahan minimal | ✅ Selesai | Patch1171 byte resmi diterapkan persis; DarkYellow + Bold untuk header filter kosong, lalu reset |
 | H4 · GREEN resmi | ✅ Selesai | [34837102702 / 645f86d](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837102702): primer3, fmt/check/clippy/full workspace PASS |
-| H5 · Capture dan review | 🔄 Berjalan | Capture source committed + CI, lalu 10 pasangan dan audit isolasi perubahan; semua perbaikan footer harus tetap benar |
+| H5 · Capture dan review | ✅ Selesai | [Capture34837424495](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837424495) + [CI34837424464](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837424464) GREEN; 10 gambar diperiksa, audit isolasi PASS |
 
-## Milestone warna footer picker — M1–M5 selesai
+### Hasil terbaru
+
+- **Lima koreksi picker terverifikasi:** hint hapus, counter, posisi footer,
+  warna footer, dan header bantuan normal. Ini bukan persentase seluruh Hermes.
+- Header normal4/4 PASS; hanya foreground/bold pada baris1 berubah di normal/delete.
+- Enam gambar filter/no-match/empty byte-identik dengan paket sebelumnya.
+- Footer color6/6, geometry10/10, counter6/6, hint6/6 tetap PASS.
+- 34 tes pendukung PASS. CI biasa wajib menjalankan ketiga regresi CLI picker.
+- [Laporan, seluruh gambar dan cara reproduksi](evidence/picker-header-7fef514/REPORT.md).
+
+## Milestone warna footer picker — M1–M5 selesai (ae220ff)
 
 Scope: footer normal/filter/tanpa hasil memakai warna terminal indeks8 seperti
 rekaman Python; tetap baris30, counter/hint benar, tidak mewarnai tabel atau
@@ -54,7 +64,7 @@ Python memakai palette16 dan Rust palette256, **keduanya indeks8, dim=false**.
 Encoding tidak disamakan secara paksa: enam area footer pada gambar asli juga
 dibandingkan dan pixel-identik. Tidak ada normalisasi warna/geometry.
 
-### Hasil yang bisa dicek
+### Hasil historis slice warna footer
 
 - **Empat milestone perbaikan picker terverifikasi:** hint hapus, counter, posisi,
   dan warna footer. Ini bukan empat dari total seluruh fitur Hermes.
@@ -67,7 +77,7 @@ dibandingkan dan pixel-identik. Tidak ada normalisasi warna/geometry.
 
 ### Sisa milestone berikutnya
 
-1. Styling header, seleksi, prompt hapus/no-match dan sisa tata letak picker —
+1. Styling header filter/kolom, seleksi, prompt hapus/no-match dan sisa tata letak picker —
    dikerjakan satu perilaku per siklus, bukan satu perubahan besar.
 2. Sisa perbedaan wizard/completion dan bukti nested fields/full Python CLI.
 3. Review kelengkapan semua area, CI relevan GREEN, lalu permintaan acceptance.

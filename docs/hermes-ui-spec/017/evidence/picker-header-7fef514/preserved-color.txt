@@ -1,0 +1,6 @@
+PASS rust picker-normal-100x30: foreground=['7f7f7f']; reference=palette8
+PASS rust picker-filter-100x30: foreground=['7f7f7f']; reference=palette8
+PASS rust picker-no-match-100x30: foreground=['7f7f7f']; reference=palette8
+PASS rust picker-normal-80x30: foreground=['7f7f7f']; reference=palette8
+PASS rust picker-filter-80x30: foreground=['7f7f7f']; reference=palette8
+PASS rust picker-no-match-80x30: foreground=['7f7f7f']; reference=palette8

@@ -1,0 +1,46 @@
+{
+  "status": "NORMAL_HELP_HEADER_FIXED_NOT_WHOLE_SCREEN_PARITY",
+  "source": "7fef5140c9242588ddb46749aafcdd7542a559c9",
+  "raw_cast_roundtrips": 20,
+  "png_hash_checks": 10,
+  "python_records_and_cells_unchanged": true,
+  "renderer_script_sha256": "201091eef5007e9a45889da7b4725b658ce39df1bf977a48677e435df9f9c074",
+  "renderer_settings_match_prior": true,
+  "normal_header_palette3_bold_checks": 4,
+  "header_pixel_comparisons": 4,
+  "encoding_modes": {
+    "python": "palette16",
+    "rust": "palette256"
+  },
+  "only_normal_header_foreground_and_bold_changed": true,
+  "all_other_rows_and_filter_no_match_empty_unchanged": true,
+  "unchanged_paired_pngs": [
+    "picker-filter-100x30-bottom.png",
+    "picker-no-match-100x30-bottom.png",
+    "picker-empty-100x30-bottom.png",
+    "picker-filter-80x30-bottom.png",
+    "picker-no-match-80x30-bottom.png",
+    "picker-empty-80x30-bottom.png"
+  ],
+  "rust_changed_rows_1_based": {
+    "picker-normal-100x30": [
+      1
+    ],
+    "picker-filter-100x30": [],
+    "picker-no-match-100x30": [],
+    "picker-delete-100x30": [
+      1
+    ],
+    "picker-empty-100x30": [],
+    "picker-normal-80x30": [
+      1
+    ],
+    "picker-filter-80x30": [],
+    "picker-no-match-80x30": [],
+    "picker-delete-80x30": [
+      1
+    ],
+    "picker-empty-80x30": []
+  },
+  "normalization": "none"
+}

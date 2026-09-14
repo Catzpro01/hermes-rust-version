@@ -1,0 +1,8 @@
+test_normal_help_header_matches_reference_style (__main__.PickerNormalHeaderTests.test_normal_help_header_matches_reference_style) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 1.137s
+
+OK
+VERIFIED candidate patch 1171 90fa6de6e8c260cb783260bafb4bc1502fad98ec6a332fc42c7fa5363c4dfd54

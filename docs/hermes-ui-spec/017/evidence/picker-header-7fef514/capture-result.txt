@@ -1,0 +1,8 @@
+test_normal_help_header_matches_reference_style (__main__.PickerNormalHeaderTests.test_normal_help_header_matches_reference_style) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 1.134s
+
+OK
+VERIFIED visual bundle 102020 f41d50ce422ee795a1fc7b1c5981b739a808389f97c4309e36df05970842b58f

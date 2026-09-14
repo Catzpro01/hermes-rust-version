@@ -351,3 +351,26 @@ Spec color slice passes, broader picker/wizard/completion gaps remain open.
 User-facing `docs/hermes-ui-spec/017/MILESTONES.md` now marks M1–M5 complete for
 color ONLY; four picker correction milestones verified. No invented whole-project
 percentage, final acceptance, resize/long-list/clear-filter claims, or merge.
+
+### Normal header H5 delivered at7fef514
+
+Source capture34837424495 and ordinary CI34837424464 SUCCESS. Ten paired PNGs
+opened/inspected. Header4, footer color6/geometry10/counter6/hint6 PASS. New packet
+`docs/hermes-ui-spec/017/evidence/picker-header-7fef514/REPORT.md` includes original
+raw/casts, stage receipts/patch, audit/checksums and reproduction scripts.
+Rust bundle102020 bytes SHAf41d50ce422ee795a1fc7b1c5981b739a808389f97c4309e36df05970842b58f.
+
+Only normal/delete header row1 foreground/bold changes. All other cells unchanged;
+filter/no-match/empty6 paired PNGs byte-identical toae220ff. Python records/cells
+reused unchanged, not a new capture or5128-file source audit. Python palette16 /
+Rust palette256, both indexed3+bold/dim=false; encoding difference retained.
+Four complete header-row pixel regions identical with pinned renderer.20 raw/cast
+roundtrips,10 PNG hashes,34 supporting tests PASS. Source driver/helper hashes
+checked against committed blobs. No raw/image normalization.
+
+Milestones H1–H5 complete; now five picker correction milestones verified.
+CI requires live position, footer color and normal-header tests. Limited direct
+Standards/Spec review:0 new hard violations,1 nonblocking duplicated-runner/setup
+observation; filter/column headers, selection/delete/no-match styles, other layout,
+wizard/completion and T12 coverage remain open. No resize/clear-filter/long-list
+claims, new adaptation, whole-picker acceptance, closure or merge.
