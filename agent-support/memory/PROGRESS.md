@@ -1961,3 +1961,41 @@ sccache, swap 4 GB aktif, kedua runner direstart).
   Step baru sudah aman untuk kedua kondisi, tetapi bila job harus selalu mendarat
   di VPS tertata, label runner perlu dikonfirmasi pengguna (API daftar runner
   403 untuk token sesi ini).
+
+### Slice VPS self-hosted: pin runs-on, toolchain, pip, PATH cargo (dalam verifikasi)
+
+**Request:** job repo harus selalu dieksekusi di VPS tertata (label
+`self-hosted, vps, hermes`; runner `vps-fern-hermes`; sccache 10 GiB + mold);
+pengguna menghapus CARGO_INCREMENTAL dari .env runner, swap 4 GB aktif, runner
+direstart.
+
+Urutan kejadian aktual (semua run pada runner `vps-fern-hermes`):
+
+1. `runs-on: [self-hosted, vps, hermes]` diterapkan pada keempat workflow
+   (`7df86d2`) + tes yang mem-pin pilihan itu. Commit pengguna `e7e170b`
+   menambah concurrency cancel-in-progress.
+2. Run 34889606785: tes `test_sccache_enabled_only_when_present` bocor — VPS
+   punya sccache asli di PATH sehingga kasus "absent" gagal. Dibetulkan
+   hermetis dengan PATH fixture terisolasi + bash absolut (`ffab4f1`),
+   diverifikasi dengan simulasi sccache-di-PATH.
+3. Run 34891514988: toolchain fix `rustup update stable` bekerja — build
+   `--locked` selesai 46,8 dtk, fmt/clippy/584 tes PASS, sccache aktif, swap
+   terpakai (mem 464/1967 MiB; swap 200/4095 MiB). Gagal di guard pip picker
+   (exit 1): python3 sistem VPS tanpa pip, sedangkan job workflow-regression
+   yang memakai setup-python lolos. Fix: setup-python pada job test (`22621d1`).
+4. Run 34893179340: pip teratasi, tetapi picker mati `cargo: command not
+   found` (exit 127) padahal fmt/clippy/test se-job memakai cargo baik-baik.
+   Fix defensif (`30dc775`): re-source `~/.cargo/env` + prepend
+   `~/.cargo/bin` hanya saat cargo hilang, diagnostik PATH ke log/anotasi bila
+   tetap hilang, fallback `ensurepip` pada guard pip; 4 tes baru mem-pin.
+5. Run 34894773118 (commit `30dc775`) **dibatalkan** di tengah job ("The
+   operation was canceled") tanpa commit baru — penyebab belum diketahui
+   (runner terputus atau pembatalan manual). Percobaan re-run gagal karena
+   **token GitHub menjadi 401** di tengah sesi; pengguna perlu menyambungkan
+   ulang GitHub di Arena. Semua commit s/d `30dc775` sudah ter-push dan
+   terverifikasi sebelumnya.
+
+Catatan penting: workflow `picker-diagnostic`/`ui-evidence` masih ter-gate ke
+branch lama `arena/01a0a052` (dari dini); adaptasinya tugas terpisah sesuai
+VERIFICATION. Bukti VPS sejauh ini: 584 tes Rust hijau di VPS, sccache aktif,
+swap bekerja; tinggal verifikasi langkah picker pasca perbaikan PATH.
