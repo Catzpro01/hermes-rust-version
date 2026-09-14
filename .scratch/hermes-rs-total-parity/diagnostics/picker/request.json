@@ -1,6 +1,5 @@
 {
-  "phase": "green",
+  "phase": "capture",
   "test": "picker_redraw_on_input",
-  "source_sha256": "804b80f0bf4805a407456b66c88a8f439c9727f4a050e4ff96fb4af697cdebe9",
-  "patch_sha256": "925b963e0d3385109cbffa74527798c7d173d1439184cab3602c82b05d8b6a8b"
+  "source_sha256": "e6cad4ba91d3b83a3b2d2dc16dfcd2e5fb6a2d79913a131b74171adeb4c05f75"
 }
