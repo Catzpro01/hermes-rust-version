@@ -1,0 +1,109 @@
+{
+  "status": "SELECTION_ROW_FIXED_ALL_PINNED_REGIONS_EQUAL",
+  "source": "b4cb408a3bc4a0a35131206a7dc3e902fc1c6928",
+  "fix_commit": "ee115414e012",
+  "raw_cast_roundtrips": 20,
+  "png_hash_checks": 10,
+  "python_records_and_cells_unchanged": true,
+  "renderer_script_sha256": "201091eef5007e9a45889da7b4725b658ce39df1bf977a48677e435df9f9c074",
+  "renderer_settings_match_prior": true,
+  "checker_runs": [
+    "check_picker_selection:python:6",
+    "check_picker_selection:rust:6",
+    "check_picker_message_style:python:6",
+    "check_picker_message_style:rust:6",
+    "check_picker_column_layout:python:4",
+    "check_picker_column_layout:rust:4",
+    "check_picker_footer_position:rust:10",
+    "check_picker_footer_color:rust:6",
+    "check_picker_normal_header:rust:4",
+    "check_picker_filter_header:rust:4",
+    "check_picker_counter:rust:12",
+    "check_picker_filter_hint:rust:6"
+  ],
+  "checker_failures": 0,
+  "encoding_modes": {
+    "python": "palette16",
+    "rust": "palette256"
+  },
+  "tested_patch": {
+    "sha256": "8eed758f33bb38b6409517f31f0faccaded907706be97dbe7443f2f064253ee5",
+    "bytes": 1171
+  },
+  "changed_rows_1_based": {
+    "picker-normal-100x30": [
+      4
+    ],
+    "picker-filter-100x30": [
+      4
+    ],
+    "picker-no-match-100x30": [],
+    "picker-delete-100x30": [
+      4
+    ],
+    "picker-empty-100x30": [],
+    "picker-normal-80x30": [
+      4
+    ],
+    "picker-filter-80x30": [
+      4
+    ],
+    "picker-no-match-80x30": [],
+    "picker-delete-80x30": [
+      4
+    ],
+    "picker-empty-80x30": []
+  },
+  "attribute_deltas": {
+    "selection_ink": 444
+  },
+  "unchanged_paired_pngs": [
+    "picker-empty-100x30-bottom.png",
+    "picker-empty-80x30-bottom.png",
+    "picker-no-match-100x30-bottom.png",
+    "picker-no-match-80x30-bottom.png"
+  ],
+  "pixel_equal_regions": [
+    "picker-delete-100x30:column header row",
+    "picker-delete-100x30:delete-confirm prompt row",
+    "picker-delete-100x30:selected row up to the status column",
+    "picker-delete-100x30:unselected row up to the status column",
+    "picker-delete-80x30:column header row",
+    "picker-delete-80x30:delete-confirm prompt row",
+    "picker-delete-80x30:selected row up to the status column",
+    "picker-delete-80x30:unselected row up to the status column",
+    "picker-empty-100x30:empty-store message row",
+    "picker-empty-80x30:empty-store message row",
+    "picker-filter-100x30:filter help header row",
+    "picker-filter-100x30:footer row control",
+    "picker-filter-100x30:selected row up to the status column",
+    "picker-filter-80x30:filter help header row",
+    "picker-filter-80x30:footer row control",
+    "picker-filter-80x30:selected row up to the status column",
+    "picker-no-match-100x30:column header row",
+    "picker-no-match-100x30:footer row control",
+    "picker-no-match-100x30:no-match message row",
+    "picker-no-match-80x30:column header row",
+    "picker-no-match-80x30:footer row control",
+    "picker-no-match-80x30:no-match message row",
+    "picker-normal-100x30:blank separator row",
+    "picker-normal-100x30:column header row",
+    "picker-normal-100x30:footer row control",
+    "picker-normal-100x30:hint row control",
+    "picker-normal-100x30:selected row up to the status column",
+    "picker-normal-100x30:unselected row up to the status column",
+    "picker-normal-80x30:blank separator row",
+    "picker-normal-80x30:column header row",
+    "picker-normal-80x30:footer row control",
+    "picker-normal-80x30:hint row control",
+    "picker-normal-80x30:selected row up to the status column",
+    "picker-normal-80x30:unselected row up to the status column"
+  ],
+  "pixel_differing_regions": [],
+  "still_open_outside_regions": [
+    "status-column ink has no pinned evidence for the Rust `done` value",
+    "Active/ID column content is a documented adaptation",
+    "resize, long lists and clear-filter are unproved by these fixed-size fixtures"
+  ],
+  "normalization": "none"
+}

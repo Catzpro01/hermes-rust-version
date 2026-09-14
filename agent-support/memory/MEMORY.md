@@ -30,6 +30,23 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- **Picker selected-row slice delivered**: fix `ee11541` (tested patch 1171 B
+  `8eed758f…`: `Color::DarkGreen` + bold replaces reverse video), RED `34866264371`
+  → GREEN `34866921566` → capture `34868306211` (bundle `fe8bc2c2…`, 10 cases) →
+  CI `34867949911`/`34868819214`. Packet
+  `docs/hermes-ui-spec/017/evidence/picker-selection-b4cb408/`:
+  **34 of 34 pinned pixel regions identical** (two new selected-row regions per
+  width), 4 byte-identical empty-case PNGs, 20 round trips, 12 checker runs, cell
+  deltas only on row 4 of the three cursor scenarios (444 cells: inverse off, fg
+  slot 2, bold on, palette256).
+- **Three real defects found and closed in that cycle** (all in the packet's
+  `attempts-result.txt`): `check_picker_message_style.dim_state` read the palette
+  index in `38;5;2` as SGR dim (fix `1c40eea`); the PTY harness hit intermittent
+  start-up timeouts (45 s allowance + diagnostic message, `400f5e2`/`064e92d`);
+  one GREEN request failed unreproducibly and passed on an identical re-request.
+- **Picker still open**: status-column ink (no pinned evidence for the Rust `done`
+  value — next cycle candidate), documented `Active`/`ID` content, resize/
+  long-list/clear-filter, then wizard V1 and the completion product decision.
 - **Picker prompt/message slice delivered**: fix `549fc8d` (tested patch 2216 B
   `d1ed7f99…`: `Attribute::Dim` on the no-match message reset in place, and
   `Color::DarkRed` + bold on the delete-confirm prompt), RED `34864078749` →

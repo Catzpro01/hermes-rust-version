@@ -1,0 +1,761 @@
+{
+  "spec": {
+    "note": "Terminal coordinates (1-based rows, half-open column ranges) over the pinned xterm.js panes; left pane is the retained Python recording, right pane the Rust capture from the committed fix. No normalization. The selected-row regions stop at the status column on purpose: the status, Active and ID column content is a documented adaptation, while the marker and name field are asserted here.",
+    "cases": [
+      {
+        "id": "picker-normal-100x30",
+        "columns": 100,
+        "regions": [
+          {
+            "label": "hint row control",
+            "row": 1,
+            "colStart": 0,
+            "colEnd": 71
+          },
+          {
+            "label": "column header row",
+            "row": 2,
+            "colStart": 0,
+            "colEnd": 80
+          },
+          {
+            "label": "blank separator row",
+            "row": 3,
+            "colStart": 0,
+            "colEnd": 100
+          },
+          {
+            "label": "selected row up to the status column",
+            "row": 4,
+            "colStart": 0,
+            "colEnd": 43
+          },
+          {
+            "label": "unselected row up to the status column",
+            "row": 5,
+            "colStart": 0,
+            "colEnd": 43
+          },
+          {
+            "label": "footer row control",
+            "row": 30,
+            "colStart": 0,
+            "colEnd": 30
+          }
+        ]
+      },
+      {
+        "id": "picker-normal-80x30",
+        "columns": 80,
+        "regions": [
+          {
+            "label": "hint row control",
+            "row": 1,
+            "colStart": 0,
+            "colEnd": 71
+          },
+          {
+            "label": "column header row",
+            "row": 2,
+            "colStart": 0,
+            "colEnd": 60
+          },
+          {
+            "label": "blank separator row",
+            "row": 3,
+            "colStart": 0,
+            "colEnd": 80
+          },
+          {
+            "label": "selected row up to the status column",
+            "row": 4,
+            "colStart": 0,
+            "colEnd": 25
+          },
+          {
+            "label": "unselected row up to the status column",
+            "row": 5,
+            "colStart": 0,
+            "colEnd": 25
+          },
+          {
+            "label": "footer row control",
+            "row": 30,
+            "colStart": 0,
+            "colEnd": 30
+          }
+        ]
+      },
+      {
+        "id": "picker-filter-100x30",
+        "columns": 100,
+        "regions": [
+          {
+            "label": "filter help header row",
+            "row": 1,
+            "colStart": 0,
+            "colEnd": 71
+          },
+          {
+            "label": "selected row up to the status column",
+            "row": 4,
+            "colStart": 0,
+            "colEnd": 43
+          },
+          {
+            "label": "footer row control",
+            "row": 30,
+            "colStart": 0,
+            "colEnd": 30
+          }
+        ]
+      },
+      {
+        "id": "picker-filter-80x30",
+        "columns": 80,
+        "regions": [
+          {
+            "label": "filter help header row",
+            "row": 1,
+            "colStart": 0,
+            "colEnd": 71
+          },
+          {
+            "label": "selected row up to the status column",
+            "row": 4,
+            "colStart": 0,
+            "colEnd": 25
+          },
+          {
+            "label": "footer row control",
+            "row": 30,
+            "colStart": 0,
+            "colEnd": 30
+          }
+        ]
+      },
+      {
+        "id": "picker-delete-100x30",
+        "columns": 100,
+        "regions": [
+          {
+            "label": "column header row",
+            "row": 2,
+            "colStart": 0,
+            "colEnd": 80
+          },
+          {
+            "label": "selected row up to the status column",
+            "row": 4,
+            "colStart": 0,
+            "colEnd": 43
+          },
+          {
+            "label": "unselected row up to the status column",
+            "row": 5,
+            "colStart": 0,
+            "colEnd": 43
+          },
+          {
+            "label": "delete-confirm prompt row",
+            "row": 30,
+            "colStart": 0,
+            "colEnd": 38
+          }
+        ]
+      },
+      {
+        "id": "picker-delete-80x30",
+        "columns": 80,
+        "regions": [
+          {
+            "label": "column header row",
+            "row": 2,
+            "colStart": 0,
+            "colEnd": 60
+          },
+          {
+            "label": "selected row up to the status column",
+            "row": 4,
+            "colStart": 0,
+            "colEnd": 25
+          },
+          {
+            "label": "unselected row up to the status column",
+            "row": 5,
+            "colStart": 0,
+            "colEnd": 25
+          },
+          {
+            "label": "delete-confirm prompt row",
+            "row": 30,
+            "colStart": 0,
+            "colEnd": 38
+          }
+        ]
+      },
+      {
+        "id": "picker-no-match-100x30",
+        "columns": 100,
+        "regions": [
+          {
+            "label": "column header row",
+            "row": 2,
+            "colStart": 0,
+            "colEnd": 80
+          },
+          {
+            "label": "no-match message row",
+            "row": 4,
+            "colStart": 0,
+            "colEnd": 31
+          },
+          {
+            "label": "footer row control",
+            "row": 30,
+            "colStart": 0,
+            "colEnd": 30
+          }
+        ]
+      },
+      {
+        "id": "picker-no-match-80x30",
+        "columns": 80,
+        "regions": [
+          {
+            "label": "column header row",
+            "row": 2,
+            "colStart": 0,
+            "colEnd": 60
+          },
+          {
+            "label": "no-match message row",
+            "row": 4,
+            "colStart": 0,
+            "colEnd": 31
+          },
+          {
+            "label": "footer row control",
+            "row": 30,
+            "colStart": 0,
+            "colEnd": 30
+          }
+        ]
+      },
+      {
+        "id": "picker-empty-100x30",
+        "columns": 100,
+        "regions": [
+          {
+            "label": "empty-store message row",
+            "row": 1,
+            "colStart": 0,
+            "colEnd": 30
+          }
+        ]
+      },
+      {
+        "id": "picker-empty-80x30",
+        "columns": 80,
+        "regions": [
+          {
+            "label": "empty-store message row",
+            "row": 1,
+            "colStart": 0,
+            "colEnd": 30
+          }
+        ]
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "picker-normal-100x30",
+      "columns": 100,
+      "png_sha256": "4c4fdfac1a34c9c08520d835772a9eb84f2a623dc37e0c1cc77bb20be14e5f6f",
+      "differing_total": 0,
+      "regions": [
+        {
+          "label": "hint row control",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 71,
+          "x": 0,
+          "y": 31,
+          "width": 710,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 80,
+          "x": 0,
+          "y": 50,
+          "width": 800,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "blank separator row",
+          "row": 3,
+          "colStart": 0,
+          "colEnd": 100,
+          "x": 0,
+          "y": 69,
+          "width": 1000,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 43,
+          "x": 0,
+          "y": 88,
+          "width": 430,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "unselected row up to the status column",
+          "row": 5,
+          "colStart": 0,
+          "colEnd": 43,
+          "x": 0,
+          "y": 107,
+          "width": 430,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30,
+          "x": 0,
+          "y": 582,
+          "width": 300,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "id": "picker-normal-80x30",
+      "columns": 80,
+      "png_sha256": "cca1d7472d1ec88cab7858e02ef4605ba912f6f953c4f5ced5df8927f3508f8e",
+      "differing_total": 0,
+      "regions": [
+        {
+          "label": "hint row control",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 71,
+          "x": 0,
+          "y": 31,
+          "width": 710,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 60,
+          "x": 0,
+          "y": 50,
+          "width": 600,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "blank separator row",
+          "row": 3,
+          "colStart": 0,
+          "colEnd": 80,
+          "x": 0,
+          "y": 69,
+          "width": 800,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 25,
+          "x": 0,
+          "y": 88,
+          "width": 250,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "unselected row up to the status column",
+          "row": 5,
+          "colStart": 0,
+          "colEnd": 25,
+          "x": 0,
+          "y": 107,
+          "width": 250,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30,
+          "x": 0,
+          "y": 582,
+          "width": 300,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "id": "picker-filter-100x30",
+      "columns": 100,
+      "png_sha256": "d9e68551421ec3a464dca67ab74ba95a49871640fe672f60d6b4ea6f9be435ce",
+      "differing_total": 0,
+      "regions": [
+        {
+          "label": "filter help header row",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 71,
+          "x": 0,
+          "y": 31,
+          "width": 710,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 43,
+          "x": 0,
+          "y": 88,
+          "width": 430,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30,
+          "x": 0,
+          "y": 582,
+          "width": 300,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "id": "picker-filter-80x30",
+      "columns": 80,
+      "png_sha256": "9cda8af4c4489c45d20525e35eb62e5e9c43fd24ffc4bae61e9a22edaf0a602b",
+      "differing_total": 0,
+      "regions": [
+        {
+          "label": "filter help header row",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 71,
+          "x": 0,
+          "y": 31,
+          "width": 710,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 25,
+          "x": 0,
+          "y": 88,
+          "width": 250,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30,
+          "x": 0,
+          "y": 582,
+          "width": 300,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "id": "picker-delete-100x30",
+      "columns": 100,
+      "png_sha256": "84b5e2801e17298a83ea89d01838ae9d11fa1165951af033bd7df0e2fbcbc6e2",
+      "differing_total": 0,
+      "regions": [
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 80,
+          "x": 0,
+          "y": 50,
+          "width": 800,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 43,
+          "x": 0,
+          "y": 88,
+          "width": 430,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "unselected row up to the status column",
+          "row": 5,
+          "colStart": 0,
+          "colEnd": 43,
+          "x": 0,
+          "y": 107,
+          "width": 430,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "delete-confirm prompt row",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 38,
+          "x": 0,
+          "y": 582,
+          "width": 380,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "id": "picker-delete-80x30",
+      "columns": 80,
+      "png_sha256": "e999f1a442ded0af3f4a0518649b418d9be0ff9885249b3e2a3af79c5df9afd4",
+      "differing_total": 0,
+      "regions": [
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 60,
+          "x": 0,
+          "y": 50,
+          "width": 600,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 25,
+          "x": 0,
+          "y": 88,
+          "width": 250,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "unselected row up to the status column",
+          "row": 5,
+          "colStart": 0,
+          "colEnd": 25,
+          "x": 0,
+          "y": 107,
+          "width": 250,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "delete-confirm prompt row",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 38,
+          "x": 0,
+          "y": 582,
+          "width": 380,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "id": "picker-no-match-100x30",
+      "columns": 100,
+      "png_sha256": "9835a676030f73f84af7f8693b5e27614ec39f6aee5d44d2e900dd045330e4c3",
+      "differing_total": 0,
+      "regions": [
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 80,
+          "x": 0,
+          "y": 50,
+          "width": 800,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "no-match message row",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 31,
+          "x": 0,
+          "y": 88,
+          "width": 310,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30,
+          "x": 0,
+          "y": 582,
+          "width": 300,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "id": "picker-no-match-80x30",
+      "columns": 80,
+      "png_sha256": "5ecd0227235fa53301d1aa08c65db3377fbef96fc8287ce3faa270e4198d3431",
+      "differing_total": 0,
+      "regions": [
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 60,
+          "x": 0,
+          "y": 50,
+          "width": 600,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "no-match message row",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 31,
+          "x": 0,
+          "y": 88,
+          "width": 310,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30,
+          "x": 0,
+          "y": 582,
+          "width": 300,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "id": "picker-empty-100x30",
+      "columns": 100,
+      "png_sha256": "1039a46c61fe388e1790a30c3557676553cc8afe7b0db769e6cda7b627af6192",
+      "differing_total": 0,
+      "regions": [
+        {
+          "label": "empty-store message row",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 30,
+          "x": 0,
+          "y": 31,
+          "width": 300,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        }
+      ]
+    },
+    {
+      "id": "picker-empty-80x30",
+      "columns": 80,
+      "png_sha256": "3160c71d1176df2835ab36d472438cd40e1f3d94cf37bd36e7859d2fee7ad1e7",
+      "differing_total": 0,
+      "regions": [
+        {
+          "label": "empty-store message row",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 30,
+          "x": 0,
+          "y": 31,
+          "width": 300,
+          "height": 19,
+          "differing_pixels": 0,
+          "equal": true
+        }
+      ]
+    }
+  ]
+}

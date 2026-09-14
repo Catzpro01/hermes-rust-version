@@ -1,0 +1,31 @@
+RED run 34866264371 (picker-diagnostic, headSha 98f7d12, conclusion success as a phase-aware gate)
+
+Exact CLI selected-row regression repeated three times: EXPECTED FAIL
+red actual CLI regression verified three times
+test_selected_row_matches_reference_style (__main__.PickerSelectionTests.test_selected_row_matches_reference_style) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+rust picker-filter 100 CAPTURED_NOT_REVIEWED
+rust picker-delete 100 CAPTURED_NOT_REVIEWED
+rust picker-normal 80 CAPTURED_NOT_REVIEWED
+rust picker-filter 80 CAPTURED_NOT_REVIEWED
+rust picker-delete 80 CAPTURED_NOT_REVIEWED
+FAIL
+
+======================================================================
+FAIL: test_selected_row_matches_reference_style (__main__.PickerSelectionTests.test_selected_row_matches_reference_style)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/work/hermes-rust-version/hermes-rust-version/scripts/test_picker_selection.py", line 37, in test_selected_row_matches_reference_style
+    self.assertEqual(
+AssertionError: Lists differ: ['picker-normal-100x30: reverse video stil[949 chars]nly"] != []
+
+First list contains 12 additional elements.
+First extra element 0:
+'picker-normal-100x30: reverse video still set on the cursor row'
+
+Diff is 1073 characters long. Set self.maxDiff to None to see it. : Python reference: the selected row is the whole row in palette2 green + bold with no reverse video
+
+----------------------------------------------------------------------
+Ran 1 test in 6.889s
+
+FAILED (failures=1)
+sha256=fbd40cad9ec9fd6bd4e7067d0027c0caa0afacba85b9eada0b8b96208539efdc; bytes=91458

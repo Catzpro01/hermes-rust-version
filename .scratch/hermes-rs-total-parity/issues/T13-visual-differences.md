@@ -81,8 +81,14 @@ This supersedes the historical pending-counter entries above.
     `docs/hermes-ui-spec/017/evidence/picker-message-style-fd674dc/REPORT.md`.
     All 28 pinned pixel regions are equal, so the dim finding from cycle 2 is
     closed.
-  - [ ] Cycle 4 (selection row) stays separate: ` → ` + palette2 green + bold
-    instead of reverse video, found by the pinned-renderer pixels.
+  - [x] Cycle 4 (selection row) delivered: the whole cursor row uses palette
+    slot 2 + bold with no reverse video (RED 34866264371 → GREEN 34866921566 →
+    capture 34868306211 → CI GREEN). Packet
+    `docs/hermes-ui-spec/017/evidence/picker-selection-b4cb408/REPORT.md`; 34/34
+    pinned pixel regions equal, and `attempts-result.txt` records the dim-scanner
+    bug, the PTY start-up flake fix and the one unexplained GREEN failure.
+  - [ ] Cycle 5 candidates: status-column ink (needs pinned evidence for the Rust
+    `done` value), resize/long-list/clear-filter behaviour.
 - [ ] Wizard/completion discrepancies and T12 field/full-Python-CLI evidence.
 
 Report: `docs/hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md`.

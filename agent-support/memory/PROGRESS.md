@@ -1755,3 +1755,32 @@ Berikutnya: baris terpilih (` → ` palette2 hijau + bold menggantikan reverse
 video), lalu warna kolom status (butuh bukti terpinn), sisanya wizard V1 dan
 keputusan produk dropdown completion. Tidak ada adaptasi baru, PASS seluruh
 picker, acceptance, atau merge.
+
+### Slice picker: baris terpilih (S1–S5 selesai)
+
+Siklus TDD keempat untuk picker V2; sumber ter-commit `b4cb408`, fix `ee11541`:
+
+- RED 34866264371: gate live `picker_selection` gagal 3× dengan nama benar dan
+  tanpa error setup (reverse masih aktif; gaya default bukan palette2+bold).
+- GREEN 34866921566: patch 1.171 byte `8eed758f…` (`Color::DarkGreen` + bold
+  menggantikan `Attribute::Reverse`) diterapkan persis; fmt/check, clippy
+  `-D warnings` dan seluruh suite PASS; patch ekspor identik byte.
+- Capture 34868306211: 10 kasus, sembilan checker PASS di sumber ter-commit;
+  bundle 423.798 byte `fe8bc2c2…`.
+- Paket `docs/hermes-ui-spec/017/evidence/picker-selection-b4cb408/`: `verify.py`
+  → audit `SELECTION_ROW_FIXED_ALL_PINNED_REGIONS_EQUAL` — 20 round trip raw/cast,
+  10 hash PNG, 12 jalan checker, **34/34 region piksel identik**, 4 PNG kasus empty
+  byte-identik; delta sel hanya baris4 di tiga skenario ber-kursor (444 sel:
+  inverse mati, fg slot2, bold hidup, mode palet256), teks baris tidak berubah.
+- Tiga masalah nyata ditemukan dan ditutup sepanjang siklus ini dan dicatat di
+  `attempts-result.txt`: (1) checker kami sendiri membaca indeks palet `38;5;2`
+  sebagai dim (`1c40eea`); (2) flake start-up PTY — izin 45 s + pesan diagnostik
+  yang menyebut isi layar (`400f5e2`, `064e92d`); (3) satu permintaan GREEN gagal
+  tanpa dapat direproduksi dan lulus 3× pada permintaan ulang identik. Tidak ada
+  kegagalan yang diubah menjadi sukses senyap.
+- CI biasa kini menjalankan gate live ketujuh; permintaan capture kini memverifikasi
+  seluruh sembilan gate pada sumber ter-commit.
+
+Berikutnya: warna kolom status (butuh bukti terpinn lebih dulu), lalu resize/
+daftar panjang/clear-filter, kemudian wizard V1 dan keputusan produk dropdown
+completion. Tidak ada adaptasi baru, PASS seluruh picker, acceptance, atau merge.

@@ -398,6 +398,33 @@ colour, status/`Active`/`ID` column content, remaining body geometry, and the
 wizard/completion evidence gaps. Resize/long-list/clear-filter behaviour is not
 proved by these fixed-size cases. No whole-picker PASS, acceptance or merge.
 
+### Selected-row slice delivered atee11541 (capture b4cb408)
+
+The cursor row now uses palette slot 2 plus bold with no reverse video, the
+styling the retained reference paints the whole selected row (marker included)
+with. Chain: RED 34866264371 → GREEN 34866921566 (exported 1171-byte patch
+byte-identical to the bound proposal; fmt/check, clippy `-D warnings`, whole
+suite) → capture 34868306211 (ten cases; nine checkers green on the committed
+source) → ordinary CI SUCCESS. Packet
+`docs/hermes-ui-spec/017/evidence/picker-selection-b4cb408/REPORT.md`.
+
+34 of 34 pinned renderer regions are pixel-identical, including the two new
+selected-row regions per width and the unselected control row. Cell deltas are
+only row 4 of the three cursor scenarios at both widths: reverse video off,
+foreground default to slot 2, bold on, palette256 mode — text unchanged, Python
+records and cells unchanged, four empty-case PNGs byte-identical.
+
+Three real problems surfaced and were closed inside this cycle, recorded in the
+packet's `attempts-result.txt`: our own checker read the palette index in
+`38;5;2` as SGR dim; the PTY harness hit an intermittent start-up timeout (now a
+45 s allowance plus a diagnostic message naming what the child drew); and one
+GREEN request failed without a reproducible cause (the identical re-request
+passed three times). None of these was converted into a silent success.
+
+Still open in the picker: the status-column ink (no pinned evidence for the Rust
+`done` value), the documented `Active`/`ID` content, and resize/long-list/
+clear-filter. No whole-picker PASS, adaptation, acceptance or merge.
+
 ### Prompt/message slice delivered at549fc8d (capture fd674dc)
 
 The delete-confirm prompt is now drawn with palette slot 1 plus bold and the

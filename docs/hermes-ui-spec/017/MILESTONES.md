@@ -1,6 +1,6 @@
 # Milestone Hermes — visual parity Spec017
 
-**Pembaruan: 14 September 2026 · Tata letak kolom, prompt hapus dan pesan no-match picker selesai diverifikasi; seluruh region piksel yang dipatok kini identik.**
+**Pembaruan: 14 September 2026 · Tata letak kolom, prompt/no-match dan baris terpilih picker selesai diverifikasi; 34 region piksel yang dipatok identik.**
 
 Halaman ini melacak pekerjaan visual parity yang sedang aktif, **bukan persentase
 seluruh proyek Hermes**. “Terverifikasi” berlaku untuk scope yang disebutkan;
@@ -19,7 +19,8 @@ bukan berarti seluruh layar identik atau Spec017 sudah diterima pengguna.
 | Header filter picker (palette6 + bold) | ✅ Terverifikasi | [9cc5cb4: 4 piksel row1 identik, slot6+bold](evidence/picker-filter-header-9cc5cb4/REPORT.md) |
 | Tata letak kolom picker (kolom kursor, baris pemisah, medan nama, tinta header) | ✅ Terverifikasi | [b732d22: 14 region piksel identik, 2 PNG byte-identik](evidence/picker-column-layout-b732d22/REPORT.md) |
 | Prompt konfirmasi hapus (palette1 + bold) dan pesan no-match (atribut dim) | ✅ Terverifikasi | [fd674dc: 28 dari 28 region piksel identik](evidence/picker-message-style-fd674dc/REPORT.md) |
-| Seleksi (baris terpilih hijau + bold), warna kolom status, sisa bukti tata letak picker | ⏳ Belum selesai | Siklus terpisah; `pyte` tidak dapat membaca dim sehingga bukti piksel yang menentukan |
+| Baris terpilih picker (palette2 + bold, tanpa reverse video) | ✅ Terverifikasi | [b4cb408: 34 dari 34 region piksel identik](evidence/picker-selection-b4cb408/REPORT.md) |
+| Warna kolom status, konten `Active`/`ID`, resize/daftar panjang/clear-filter | ⏳ Belum selesai | Warna status belum ada bukti terpinn untuk nilai Rust `done`; `Active`/`ID` adaptasi terdokumentasi |
 | Sisa perbedaan wizard/completion dan kelengkapan bukti | ⏳ Belum selesai | T12/T13 tetap terbuka |
 | Penerimaan akhir Spec017 | 🔒 Belum siap | Memerlukan bukti lengkap, CI relevan GREEN, dan persetujuan eksplisit pengguna |
 
@@ -56,6 +57,27 @@ header filter/kolom, seleksi, footer dan posisi teks tidak ikut diubah.
 | H3 · Perubahan minimal | ✅ Selesai | Patch1171 byte resmi diterapkan persis; DarkYellow + Bold untuk header filter kosong, lalu reset |
 | H4 · GREEN resmi | ✅ Selesai | [34837102702 / 645f86d](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837102702): primer3, fmt/check/clippy/full workspace PASS |
 | H5 · Capture dan review | ✅ Selesai | [Capture34837424495](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837424495) + [CI34837424464](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837424464) GREEN; 10 gambar diperiksa, audit isolasi PASS |
+
+### Baris terpilih picker — S1–S5 selesai
+
+Scope: seluruh baris kursor (termasuk penanda ` → `) memakai palette slot 2 + bold
+tanpa reverse video. Kolom status, konten `Active`/`ID`, geometri dan teks tidak
+ikut diubah.
+
+| Tahap | Status | Bukti / kriteria |
+|---|---|---|
+| S1 · Kontrak dan referensi | ✅ Selesai | Referensi v0.21.0: satu run `palette2 + bold`, tanpa reverse, span0…93 (100 kolom) dan0…75 (80 kolom) |
+| S2 · RED nyata | ✅ Selesai | [34866264371](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34866264371): tes primer FAIL3× dengan nama benar, tanpa error setup |
+| S3 · Perubahan minimal | ✅ Selesai | Patch1.171 byte `8eed758f…` diterapkan persis (`Color::DarkGreen` + bold menggantikan reverse) |
+| S4 · GREEN resmi | ✅ Selesai | [34866921566](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34866921566): gate live3×, fmt/check, clippy `-D warnings` dan seluruh suite PASS |
+| S5 · Capture dan review | ✅ Selesai | [Capture34868306211](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34868306211) + CI GREEN; 34/34 region piksel identik,9 checker PASS,4 PNG byte-identik |
+
+Gate live ketujuh (`picker_selection`) menyusul CI biasa. Siklus ini juga
+memunculkan dan menutup tiga masalah nyata: pemetaan SGR `38;5;2` sebagai dim di
+checker kami sendiri, flake start-up PTY (kini 45 s + pesan diagnostik), dan satu
+percobaan GREEN yang gagal tanpa dapat direproduksi — semuanya tercatat di
+`attempts-result.txt` paket. Sisa picker: warna kolom status (butuh bukti
+terpinn), konten `Active`/`ID` (adaptasi), resize/daftar panjang/clear-filter.
 
 ### Baris prompt/pesan picker — P1–P5 selesai
 

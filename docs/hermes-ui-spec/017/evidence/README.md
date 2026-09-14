@@ -1,16 +1,20 @@
 # Bukti visual Spec 017
 
-**Terbaru: baris prompt/no-match picker sudah sesuai referensi — prompt hapus
-palette1 + bold, pesan no-match dengan atribut dim — dan seluruh region piksel
-yang dipatok kini identik. Keseluruhan §J.7 belum selesai atau diterima user.**
+**Terbaru: baris terpilih picker memakai palette2 + bold tanpa reverse video,
+dan 34 region piksel yang dipatok identik. Keseluruhan §J.7 belum selesai atau
+diterima user.**
 
-[Laporan terbaru](../evidence/picker-message-style-fd674dc/REPORT.md) (paket
-`picker-message-style-fd674dc`): RED 34864078749 → GREEN 34864360124 → capture
-34864672852 → CI 34864669012/34864672933 SUCCESS. Prompt konfirmasi hapus kini
-palette1 + bold dan pesan no-match memakai atribut **dim**; 28 dari 28 region
-piksel identik dengan pane Python (baris pesan yang sebelumnya berbeda 1.135
-piksel kini sama), enam PNG kasus empty byte-identik. `pyte` tidak dapat membaca
-dim, jadi atribut itu diverifikasi dari byte stream dan piksel.
+[Laporan terbaru](../evidence/picker-selection-b4cb408/REPORT.md) (paket
+`picker-selection-b4cb408`): RED 34866264371 → GREEN 34866921566 → capture
+34868306211 → CI GREEN. Baris terpilih kini palette2 + bold tanpa reverse video;
+34 dari 34 region piksel identik (termasuk region baru baris terpilih di kedua
+lebar), empat PNG kasus empty byte-identik, dan hanya baris4 yang berubah di ketiga
+skenario ber-kursor. Paket mencatat pula tiga masalah yang ditemukan dan ditutup
+sepanjang siklus ini (`attempts-result.txt`).
+
+[Laporan sebelumnya](../evidence/picker-message-style-fd674dc/REPORT.md) (paket
+`picker-message-style-fd674dc`): prompt hapus palette1 + bold dan pesan no-match
+dengan atribut **dim**; 28/28 region piksel identik saat itu.
 
 [Laporan sebelumnya](../evidence/picker-column-layout-b732d22/REPORT.md) (paket
 `picker-column-layout-b732d22`): RED 34860668321 → GREEN 34861285022 → capture
