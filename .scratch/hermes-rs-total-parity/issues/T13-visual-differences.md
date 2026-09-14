@@ -213,3 +213,10 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     test compared `format_row(..., 20, ...)` cells against the 100-column tag
     offsets, so step 24 (Full GREEN validation) failed on that assertion alone.
     Test corrected to use the matching widths; patch re-requested.
+  - [x] Cycle 5 GREEN: run 34871381451 succeeded with `green actual CLI
+    regression verified three times` (all six live cases captured, full
+    validation OK). Exported `tested.patch` = 6109 bytes,
+    sha256 `73d0322e…` — the same diff as the bound `e88347c8…` patch plus the
+    rustfmt line wrapping the runner applies; it is now applied to the tree.
+    (The earlier commit message quoted `3b7f…`; the correct bound digest is
+    `e88347c8…`.)
