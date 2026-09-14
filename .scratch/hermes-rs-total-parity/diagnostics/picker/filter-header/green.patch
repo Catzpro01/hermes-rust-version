@@ -1,0 +1,25 @@
+diff --git a/crates/hermes-cli/src/session_picker.rs b/crates/hermes-cli/src/session_picker.rs
+index b5e535b..5ea88a5 100644
+--- a/crates/hermes-cli/src/session_picker.rs
++++ b/crates/hermes-cli/src/session_picker.rs
+@@ -429,13 +429,18 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+                     && n >= 2
+                     && n - 2 == cursor_idx.saturating_sub(start)
+                     && n < frame.len() - 1;
+-                if n == 0 && filter.is_empty() {
++                if n == 0 {
+                     use crossterm::style::{
+                         Attribute, Color, Print, SetAttribute, SetForegroundColor,
+                     };
++                    let ink = if filter.is_empty() {
++                        Color::DarkYellow
++                    } else {
++                        Color::Cyan
++                    };
+                     execute!(
+                         out,
+-                        SetForegroundColor(Color::DarkYellow),
++                        SetForegroundColor(ink),
+                         SetAttribute(Attribute::Bold),
+                         Print(line),
+                         SetAttribute(Attribute::Reset)
