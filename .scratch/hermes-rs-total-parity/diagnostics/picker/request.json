@@ -1,5 +1,5 @@
 {
   "phase": "reference",
   "test": "picker_terminal_size",
-  "note": "re-request 7: size cases now paired with their widths (narrow=40, too-small=39)"
+  "note": "re-request 8: after the invalid-workflow fix (runner context must stay inside steps)"
 }
