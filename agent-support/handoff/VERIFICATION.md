@@ -20,8 +20,17 @@ mengubah byte upstream atau lisensinya. Jangan menjalankan installer/hook vendor
 Bila dependency cache hilang, install versi yang sama di tempat terisolasi:
 
 ```sh
-python3 -m pip install --target /tmp/hermes-qa pyte==0.8.2 wcwidth==0.8.3 PyYAML==6.0.3
+python3 -m pip install --target /tmp/hermes-qa pyte==0.8.2 wcwidth==0.8.3 PyYAML==6.0.3 \
+  || python3 -m pip install --target /tmp/hermes-qa --break-system-packages pyte==0.8.2 wcwidth==0.8.3 PyYAML==6.0.3
 export PYTHONPATH=/tmp/hermes-qa
+```
+
+Bila pip sistem menolak `--target` karena PEP 668 (externally-managed),
+alternatif yang setara: `python3 -m venv /tmp/hermes-venv` lalu install versi
+pin yang sama di dalamnya dan jalankan tes dengan python venv. Fallback
+`--break-system-packages` di atas sama dengan yang dipakai `ci.yml`.
+
+```sh
 python3 scripts/test_ci_workflow.py
 python3 scripts/test_picker_normal_header_checks.py
 python3 scripts/test_picker_footer_color_checks.py

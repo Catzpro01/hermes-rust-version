@@ -1856,3 +1856,41 @@ Berikutnya: resize/daftar panjang/clear-filter, adaptasi `Active`/`ID`, fixture 
 menjalankan tinta `interrupted`/`error`/`empty` secara live, lalu wizard V1 dan
 keputusan produk dropdown completion. Tidak ada adaptasi baru, PASS seluruh picker,
 acceptance, atau merge.
+
+### Sesi baru arena/01a0a14a — baca panduan, analisis error, betulkan (bootstrap)
+
+**Request:** baca panduan, analisis error, betulkan.
+**Branch:** `arena/01a0a14a-hermes-rust-version` (basis `5617ab8` = merge PR #8 =
+head `main`; working tree bersih saat mulai).
+
+- Dibaca: AGENTS.md, RULES, CURRENT, START-NEXT-SESSION, VERIFICATION,
+  MEMORY/PROGRESS, PROGRESS-ANALYSIS. Bootstrap panduan dijalankan.
+- Check paket: `verify.py` PASS (7 alias, 37 skill links, 164 file vendor,
+  10 guide) dan `test_checkpoint.py` 8/8 PASS — tanpa perubahan.
+- **Error ditemukan (baru, sesi ini):** `python3 -m unittest discover -s scripts`
+  gagal dengan 25 collection error `ModuleNotFoundError: pyte` + 1 import error
+  `yaml`. Ini kehilangan dependency QA pihak ketiga di lingkungan lokal, bukan
+  regresi kode.
+- **Perbaikan:** PyPI terjangkau di sesi ini; pip sistem Debian menolak karena
+  PEP 668, jadi dibuat venv `/tmp/hermes-venv` berisi versi pin yang sama dengan
+  `ci.yml`: `pyte==0.8.2`, `wcwidth==0.8.3`, `PyYAML==6.0.3`.
+- **Hasil run baru (bukan klaim historis):** 134 tes terkoleksi, **124 PASS**;
+  10 error tersisa semuanya `KeyError: HERMES_PICKER_BINARY` — kesepuluh regresi
+  PTY nyata yang memang menuntut binary hasil `cargo build` sesuai desain tes dan
+  `ci.yml`. `test_ci_workflow` kini PASS setelah PyYAML terpasang.
+- **Toolchain Rust tetap tidak tersedia:** unduhan sh.rustup.rs,
+  static.rust-lang.org, index.crates.io gagal TLS dan mirror apt Debian gagal —
+  diverifikasi ulang sesi ini, konsisten dengan blocker lama. Tidak ada klaim
+  fmt/check/test Rust lokal.
+- Gate Rust diverifikasi pada runner resmi untuk commit basis branch ini:
+  CI run [34883722539](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34883722539)
+  pada `main`/`5617ab8` SUCCESS (dua job). Ini hasil untuk basis sesi ini, bukan
+  ekstrapolasi dari commit lama.
+- VERIFICATION §Regresi proyek pendukung dilengkapi fallback
+  `--break-system-packages` (sama dengan `ci.yml`) dan catatan alternatif venv.
+- Auto-push checkpoint diinstal untuk branch sesi ini; hook commit-msg Arena yang
+  sudah ada dipertahankan.
+- Catatan lingkungan: `/tmp` tidak persist; sesi berikutnya membuat ulang venv
+  sesuai VERIFICATION bila ingin menjalankan tes `scripts/` di luar CI.
+- Tugas substantif berikutnya tetap sesuai handoff: wawancara Wayfinder rute
+  penuntasan Spec017 (bukan coding baru); tidak ada merge/acceptance di sesi ini.
