@@ -506,8 +506,15 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
             use crossterm::terminal::ClearType;
             let mut out = std::io::stdout();
             execute!(out, cursor::MoveTo(0, 0), terminal::Clear(ClearType::All))?;
-            let frame =
-                frame_lines(&rows, &shown, cursor_idx, scroll_offset, &filter, cols, max_rows);
+            let frame = frame_lines(
+                &rows,
+                &shown,
+                cursor_idx,
+                scroll_offset,
+                &filter,
+                cols,
+                max_rows,
+            );
             for (n, line) in frame.iter().enumerate() {
                 let is_footer = n == frame.len() - 1;
                 // `addnstr(..., max_x - 1, ...)` in the reference: clip, never wrap.
@@ -994,8 +1001,16 @@ mod tests {
 
     #[test]
     fn picker_cursor_wraps_modulo_like_the_reference() {
-        assert_eq!(wrapped_cursor(0, 3, false), 2, "Up from the first item wraps to the last");
-        assert_eq!(wrapped_cursor(2, 3, true), 0, "Down from the last item wraps to the first");
+        assert_eq!(
+            wrapped_cursor(0, 3, false),
+            2,
+            "Up from the first item wraps to the last"
+        );
+        assert_eq!(
+            wrapped_cursor(2, 3, true),
+            0,
+            "Down from the last item wraps to the first"
+        );
         assert_eq!(wrapped_cursor(1, 3, true), 2);
         assert_eq!(wrapped_cursor(1, 3, false), 0);
         assert_eq!(wrapped_cursor(0, 0, true), 0, "an empty list never moves");
@@ -1040,7 +1055,10 @@ mod tests {
         let frame = frame_lines(&rows, &shown, 29, 4, "", 100, 26);
         assert!(frame[3].contains("session-04"), "{frame:?}");
         assert!(frame[28].contains("session-29"), "{frame:?}");
-        assert!(frame[28].contains("→"), "cursor row keeps the arrow: {frame:?}");
+        assert!(
+            frame[28].contains("→"),
+            "cursor row keeps the arrow: {frame:?}"
+        );
         assert_eq!(frame[29].trim(), "30/30 sessions   d delete");
         // Wrap down to item 0: window snapped to the top, cursor on row 3.
         let frame = frame_lines(&rows, &shown, 0, 0, "", 100, 26);
