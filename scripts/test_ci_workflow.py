@@ -215,11 +215,32 @@ class CiGateTests(unittest.TestCase):
         """Self-hosted runners persist /tmp and may already have a toolchain."""
         for name in ("ci.yml", "picker-diagnostic.yml"):
             text = (ROOT / ".github/workflows" / name).read_text()
-            self.assertIn("QA: ${{ runner.temp }}/picker-qa", text, name)
             self.assertNotIn("/tmp/picker-qa", text, name)
+            self.assertIn("RUNNER_TEMP", text, name)
             self.assertIn("rm -rf \"$QA\"", text, name)
             self.assertIn("--break-system-packages", text, name)
             self.assertIn('command -v "$tool"', text, name)
+            workflow = yaml.safe_load(text)
+            for job_name, job in workflow["jobs"].items():
+                for step in job["steps"]:
+                    script = step.get("run") or ""
+                    if "$QA" in script:
+                        self.assertIn("RUNNER_TEMP", script,
+                                      f"{name}:{job_name}:{step.get('name')} uses $QA without defining it")
+
+    def test_workflows_avoid_contexts_github_rejects(self):
+        """`runner` is not available at job level; using it invalidates the file
+        (both workflows were rejected in run 34878423059/34878422065)."""
+        import re
+        allowed = {"github", "needs", "strategy", "matrix", "vars", "secrets", "inputs"}
+        for name in ("ci.yml", "picker-diagnostic.yml", "ui-evidence.yml", "visual-evidence.yml"):
+            workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+            for job_name, job in workflow["jobs"].items():
+                texts = [str(job.get("env", "")), str(job.get("if", ""))]
+                for text in texts:
+                    for context in re.findall(r"\$\{\{\s*([a-z_]+)\.", text):
+                        self.assertIn(context, allowed,
+                                      f"{name}:{job_name} uses the {context!r} context at job level")
 
     def test_reference_steps_log_and_are_exported(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())

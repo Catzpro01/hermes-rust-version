@@ -287,3 +287,11 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     So the contract is per width (40 usable, 39 notice), not a cross product: the
     case/width matrix is now explicit (`PAIRS`), `capture_side` accepts
     `pairs`, and the live test uses the same pairing.
+  - [x] Workflow-invalidity incident (runs 34878420568, 34878422065, 34878423059): both
+    workflows were rejected by GitHub with "invalid workflow file" because
+    `${{ runner.temp }}` was placed in a **job-level** `env:` block — the `runner`
+    context is only available inside steps. Signature: the run is named after the
+    workflow file path and has no jobs. Fixed by defining
+    `QA="${RUNNER_TEMP:-/tmp}/picker-qa"` at the top of each step that uses it, and
+    `test_ci_workflow.py` now rejects any job-level use of a context GitHub does not
+    allow there (25 tests).
