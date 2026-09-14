@@ -450,6 +450,17 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                         Print(line),
                         SetForegroundColor(Color::Reset)
                     )?;
+                } else if line.as_str() == NO_MATCH {
+                    // The reference writes the message with the dim attribute
+                    // (SGR 2) and only resets it at the footer redraw; resetting
+                    // in place renders identically and never leaks dim.
+                    use crossterm::style::{Attribute, Print, SetAttribute};
+                    execute!(
+                        out,
+                        SetAttribute(Attribute::Dim),
+                        Print(line),
+                        SetAttribute(Attribute::Reset)
+                    )?;
                 } else if is_cursor_row {
                     use crossterm::style::{Attribute, Print, SetAttribute};
                     execute!(
@@ -517,8 +528,16 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                             terminal::Clear(terminal::ClearType::CurrentLine)
                         )?;
                         {
-                            use crossterm::style::Print;
-                            execute!(out, Print(delete_prompt(&target.name)))?;
+                            use crossterm::style::{
+                                Attribute, Color, Print, SetAttribute, SetForegroundColor,
+                            };
+                            execute!(
+                                out,
+                                SetForegroundColor(Color::DarkRed),
+                                SetAttribute(Attribute::Bold),
+                                Print(delete_prompt(&target.name)),
+                                SetAttribute(Attribute::Reset)
+                            )?;
                         }
                         out.flush()?;
                         let confirm = loop {
