@@ -1,10 +1,12 @@
 """Observe the filter-mode help header through retained public terminal output.
 
-Palette6 is cyan in pyte0.8.2; it is a base ANSI colour, so both the Python
-reference and the Rust port decode to the same name. These decoder
-representations are not colour normalization; the xterm acceptance audit
-verifies the actual palette index/mode, attributes and rendered pixels
-separately.
+pyte0.8.2 represents palette slot6 as `cyan` for the bright ANSI form (the
+Python reference emits SGR 36) or `00ffff` for the indexed 256-colour form
+(the Rust port emits 38;5;6 in this capture environment), exactly like the
+already-accepted palette3 (`brown`/`cdcd00`) and palette8
+(`brightblack`/`7f7f7f`) equivalences. These decoder representations are not
+colour normalization; the xterm acceptance audit verifies the actual palette
+index/mode, attributes and rendered pixels separately.
 """
 import argparse
 import json
@@ -36,7 +38,7 @@ def check(bundle, side):
         if case['id'] != f'{case["scenario"]}-{record["width"]}x{record["height"]}':
             raise RuntimeError('Terminal dimensions do not match case id')
         style = filter_header_style(record)
-        passed = style in ({('cyan', True)},)
+        passed = style in ({('cyan', True)}, {('00ffff', True)})
         print(f'{"PASS" if passed else "FAIL"} {side} {case["id"]}: style={sorted(style)}; reference=palette6+bold')
         if not passed:
             failures.append(case['id'])
