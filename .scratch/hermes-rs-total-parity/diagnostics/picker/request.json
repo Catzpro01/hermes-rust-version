@@ -1,4 +1,5 @@
 {
   "phase": "reference",
-  "test": "picker_terminal_size"
+  "test": "picker_terminal_size",
+  "note": "re-request after the plan step was fixed to publish phase/test before any step guard (run 34876400782)"
 }
