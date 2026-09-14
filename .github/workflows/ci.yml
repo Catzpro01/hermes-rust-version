@@ -21,7 +21,10 @@ jobs:
   workflow-regression:
     name: CI gate regression tests
     runs-on: [self-hosted, vps, hermes]
-    timeout-minutes: 5
+    # The 8-worker elastic pool shares cores with the n8n repo's micro-jobs
+    # (see .scratch/INFRASTRUCTURE-HANDOFF.md); a 5m ceiling got killed under
+    # contention (run 34902358798) even though these tests need ~1 minute.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
@@ -135,15 +138,26 @@ jobs:
           set -o pipefail
           # Self-hosted quirk (run 34893179340): cargo can drop off PATH in
           # this step even though earlier cargo steps in the same job worked.
-          # Repair PATH by re-sourcing the rustup env / prepending ~/.cargo/bin,
-          # and fail loudly with PATH diagnostics in the exported log if cargo
-          # is still missing.
+          # Repair PATH by asking rustup for the ACTIVE toolchain's cargo
+          # (`rustup which cargo`) so this step always builds with the same
+          # toolchain that passed fmt/clippy/test — on fresh pool workers,
+          # blindly prepending ~/.cargo/bin can surface a stale user-level
+          # toolchain (run 34902358798 picked up rustc 1.85.1 that way).
+          # Fail loudly with PATH diagnostics in the exported log if cargo is
+          # still missing.
           if ! command -v cargo >/dev/null 2>&1; then
             if [ -f "$HOME/.cargo/env" ]; then . "$HOME/.cargo/env"; fi
-            export PATH="$HOME/.cargo/bin:$PATH"
+            if command -v rustup >/dev/null 2>&1; then
+              RUSTUP_CARGO="$(rustup which cargo 2>/dev/null || true)"
+              if [ -n "$RUSTUP_CARGO" ]; then
+                export PATH="$(dirname "$RUSTUP_CARGO"):$PATH"
+              fi
+            fi
+            command -v cargo >/dev/null 2>&1 || export PATH="$HOME/.cargo/bin:$PATH"
           fi
           command -v cargo >/dev/null 2>&1 || { echo "cargo missing in picker step; PATH=$PATH" | tee picker-position.log; exit 1; }
-          cargo build --locked -p hermes-rs --bin hermes-rs 2>&1 | tee picker-position.log
+          { command -v rustc >/dev/null 2>&1 && rustc --version; cargo --version; } 2>&1 | tee picker-position.log
+          cargo build --locked -p hermes-rs --bin hermes-rs 2>&1 | tee -a picker-position.log
           rm -rf "$QA"
           python3 -m pip --version >/dev/null 2>&1 || python3 -m ensurepip --upgrade >/dev/null 2>&1 \
             || { echo 'python3 -m pip is required on this runner'; exit 1; }
