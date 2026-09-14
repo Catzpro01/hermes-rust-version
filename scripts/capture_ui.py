@@ -70,7 +70,15 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
         while index < len(steps):
             now = time.monotonic()
             if now - stage_begin > timeout:
-                error = f'missing readiness/timeout at stage {index}: {steps[index][0]}'
+                # Diagnose without changing the snapshot rule: say what the child
+                # actually drew, so a rare start-up failure is identifiable from
+                # the annotation instead of only from the blocked job log.
+                visible = [line.strip() for line in screen.display if line.strip()][:3]
+                head = output[:160].decode('utf-8', 'replace')
+                tail = output[-120:].decode('utf-8', 'replace')
+                error = (f'missing readiness/timeout at stage {index}: {steps[index][0]} '
+                         f'({len(output)} bytes; screen={visible!r}; '
+                         f'head={head!r}; tail={tail!r})')
                 break
             if not eof and select.select([master], [], [], 0.05)[0]:
                 try:
