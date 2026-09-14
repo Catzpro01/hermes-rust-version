@@ -16,7 +16,7 @@ env:
 jobs:
   workflow-regression:
     name: CI gate regression tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, vps, hermes]
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -50,7 +50,7 @@ jobs:
 
   test:
     name: fmt + clippy + test
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, vps, hermes]
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -151,6 +151,9 @@ jobs:
             dmesg 2>/dev/null | grep -iE "out of memory|oom-kill|killed process" | tail -20 || echo "(dmesg unavailable or no OOM lines)"
             echo "== sccache =="
             if command -v sccache >/dev/null 2>&1; then sccache --show-stats 2>/dev/null || true; else echo "(no sccache on PATH)"; fi
+            echo "== linker =="
+            if command -v mold >/dev/null 2>&1; then mold --version 2>/dev/null || true; else echo "(mold not on PATH)"; fi
+            ld --version 2>/dev/null | head -1 || true
           } > memory-oom.log 2>&1
           set -e
           cat memory-oom.log

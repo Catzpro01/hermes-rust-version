@@ -744,6 +744,7 @@ class CiGateTests(unittest.TestCase):
                 log = (Path(tmp) / "memory-oom.log").read_text()
                 self.assertIn("== free -m ==", log)
                 self.assertIn("== dmesg OOM kills ==", log)
+                self.assertIn("== linker ==", log)
                 self.assertEqual("::error title=OOM kill detected::" in result.stdout, oom,
                                  result.stdout)
                 self.assertIn("::notice title=memory::mem 1400MiB used of 1977MiB",
@@ -752,6 +753,17 @@ class CiGateTests(unittest.TestCase):
     def test_memory_log_is_included_in_the_uploaded_logs(self):
         step = STEPS["Upload logs"]
         self.assertIn("memory-oom.log", step["with"]["path"])
+
+    def test_jobs_run_on_the_tuned_self_hosted_vps(self):
+        """User instruction 2026-09-15: this repo's jobs must always run on
+        the tuned self-hosted VPS runner (sccache + mold), never the shared
+        ubuntu-latest pool."""
+        for name in ("ci.yml", "picker-diagnostic.yml", "ui-evidence.yml", "visual-evidence.yml"):
+            with self.subTest(workflow=name):
+                workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+                for job_name, job in workflow["jobs"].items():
+                    self.assertEqual(job.get("runs-on"), ["self-hosted", "vps", "hermes"],
+                                     f"{name}:{job_name} must target the tuned VPS runner")
 
 
 if __name__ == "__main__":
