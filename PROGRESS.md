@@ -1093,3 +1093,14 @@ remote2c7397b. Fetched ONLY the assigned branch and verified every remote tracke
 blob against disk (zero differences), then aligned HEAD/index with a mixed reset;
 no working file, user edit, branch switch, merge or force-push was involved.
 Cache reinstalls and Git metadata alignment do not modify the Python reference.
+
+Picker RED34791212317/5d3c564 confirmed the exact real frame regression FAIL
+three times after fmt/typecheck. It fails with one row, filter `CLI` matching
+that same row: actual `1/1 sessions   d delete`, expected `1/1 sessions`.
+No PTY/emulator is involved in this minimal unit call, rejecting stale redraw.
+Equal shown/total also disproves count-based eligibility. Source inspection
+shows footer() always appends the hint, while browse() only handles delete if
+filter.is_empty() && !shown.is_empty(); frame_lines did not pass that state.
+Proposed GREEN passes that actual guard predicate into footer; existing counter,
+geometry, palette and delete-key behavior are unchanged. Not yet applied locally.
+RED transport1115 bytes SHA108b6403537ca7ad946ba52a99c346597a9d27c12d4943f0a9c1bd89d50bb9f6 verified.
