@@ -208,3 +208,8 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     job still fails at the final aggregate step. Cycle 9's "unexplained" GREEN
     failure `34866468131` was exactly this: the committed source failed a live
     gate, not a flake. Read the `picker terminal` annotation, not the step list.
+  - [ ] Cycle 5 GREEN attempt 2 (run 34871081677): the fix works — the live gate
+    captured all six cases and passed three times in a row — but the new unit
+    test compared `format_row(..., 20, ...)` cells against the 100-column tag
+    offsets, so step 24 (Full GREEN validation) failed on that assertion alone.
+    Test corrected to use the matching widths; patch re-requested.

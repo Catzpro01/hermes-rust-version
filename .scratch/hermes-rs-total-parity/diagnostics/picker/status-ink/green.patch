@@ -1,5 +1,5 @@
 diff --git a/crates/hermes-cli/src/session_picker.rs b/crates/hermes-cli/src/session_picker.rs
-index d4887c2..7cef132 100644
+index d4887c2..0e0fa45 100644
 --- a/crates/hermes-cli/src/session_picker.rs
 +++ b/crates/hermes-cli/src/session_picker.rs
 @@ -15,8 +15,13 @@
@@ -98,7 +98,7 @@ index d4887c2..7cef132 100644
                  }
                  if !is_footer {
                      execute!(out, cursor::MoveToNextLine(1))?;
-@@ -693,6 +753,25 @@ mod tests {
+@@ -693,6 +753,27 @@ mod tests {
          );
      }
  
@@ -115,9 +115,11 @@ index d4887c2..7cef132 100644
 +    fn status_tag_span_sits_three_plus_name_width_plus_two() {
 +        assert_eq!(status_tag_span(name_width(100)), 43..48);
 +        assert_eq!(status_tag_span(name_width(80)), 25..30);
-+        let line = format_row(&row("deploy", "done", 12, "2h ago", "550e8400"), 20, false);
-+        assert_eq!(&line[43..48], "done ");
-+        assert_eq!(char_offset(&line, 43), 43);
++        let wide = format_row(&row("deploy", "done", 12, "2h ago", "550e8400"), name_width(100), false);
++        assert_eq!(&wide[43..48], "done ");
++        let narrow = format_row(&row("deploy", "done", 12, "2h ago", "550e8400"), name_width(80), false);
++        assert_eq!(&narrow[25..30], "done ");
++        assert_eq!(char_offset(&wide, 43), 43);
 +        assert_eq!(char_offset("  → deploy", 4), 6);
 +    }
 +
