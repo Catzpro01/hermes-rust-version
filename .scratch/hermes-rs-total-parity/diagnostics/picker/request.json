@@ -1,5 +1,5 @@
 {
-  "phase": "capture",
-  "test": "picker_footer_position",
+  "phase": "red",
+  "test": "picker_footer_color",
   "source_sha256": "2b88eddb07a4face2aaf83b32cfb28db4b922b576c0468a7a9ab26a7d314d75d"
 }

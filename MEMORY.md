@@ -30,6 +30,15 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Active `/tdd warna footer picker`; user also requests milestone visibility.
+  See `docs/hermes-ui-spec/017/MILESTONES.md`: M1 complete, M2 primary test
+  written, live RED pending; no Rust patch yet. Agreed real CLI/PTy normal100x30
+  seam. pyte palette8 aliases brightblack/7f7f7f accepted by color gate; final
+  xterm audit MUST prove actual palette8 mode/index and dim=false. Do not
+  confuse decoder aliases with permission to normalize evidence colors.
+  Six historical Rust footer-color failures, six Python controls PASS;12 policy
+  tests PASS. Preserve geometry/counter/hints and check ten-case style isolation.
+
 - Latest `/ask-matt` routing after delivery0ed7b65: recommend `/tdd` on footer
   foreground color, one primary actual CLI/PTy normal100x30 regression. Six
   retained cases prove Python palette index8, dim=false vs Rust default fg,

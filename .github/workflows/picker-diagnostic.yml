@@ -29,7 +29,8 @@ jobs:
           phase = request['phase']
           tests = {'picker_footer_tracks_delete_availability': '',
                    'picker_no_match_counter_preserves_total': 'counter',
-                   'picker_footer_position': 'position'}
+                   'picker_footer_position': 'position',
+                   'picker_footer_color': 'color'}
           test = request.get('test', 'picker_footer_tracks_delete_availability')
           assert test in tests, 'non-allowlisted regression'
           folder = folder/tests[test]
@@ -37,7 +38,7 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write(f'phase={phase}\ntest={test}\n')
           if phase != 'capture':
-              if test == 'picker_footer_position' and phase == 'red':
+              if test in ('picker_footer_position', 'picker_footer_color') and phase == 'red':
                   source = Path('crates/hermes-cli/src/session_picker.rs')
                   assert hashlib.sha256(source.read_bytes()).hexdigest() == request['source_sha256']
                   raise SystemExit(0)  # Live CLI test; RED uses unchanged committed Rust.
@@ -57,12 +58,12 @@ jobs:
           cargo fmt --all -- --check
           cargo check --workspace --all-targets --locked
       - name: Build CLI for terminal-coordinate regression
-        if: steps.plan.outputs.test == 'picker_footer_position'
+        if: steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color'
         run: |
           cargo build --locked -p hermes-rs --bin hermes-rs
           python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
       - name: Exact frame regression repeated three times
-        if: steps.plan.outputs.test != 'picker_footer_position'
+        if: steps.plan.outputs.test != 'picker_footer_position' && steps.plan.outputs.test != 'picker_footer_color'
         id: regression
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
@@ -118,6 +119,41 @@ jobs:
           if Path('evidence/position-1.json').exists():
               export_annotations(Path('evidence/position-1.json'), 0, 'position trace')
           PY
+      - name: Exact CLI footer-color regression repeated three times
+        if: steps.plan.outputs.test == 'picker_footer_color'
+        id: color
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+        run: |
+          for attempt in 1 2 3; do
+            set +e
+            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/color-$attempt.json python3 scripts/test_picker_footer_color.py > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F 'FAIL: test_footer_uses_reference_grey' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
+            else
+              test "$status" -eq 0
+              grep -F 'test_footer_uses_reference_grey' "regression-$attempt.log"
+              grep -x 'OK' "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker color regression::$PHASE actual CLI regression verified three times"
+      - name: Retain primary color CLI trace
+        if: always() && steps.plan.outputs.test == 'picker_footer_color'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          if Path('evidence/color-1.json').exists():
+              export_annotations(Path('evidence/color-1.json'), 0, 'color trace')
+          PY
       - name: Full GREEN validation
         if: steps.plan.outputs.phase != 'red'
         run: |
@@ -125,7 +161,7 @@ jobs:
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace --no-fail-fast
       - name: Export exactly tested proposal
-        if: steps.plan.outputs.phase != 'capture' && !(steps.plan.outputs.test == 'picker_footer_position' && steps.plan.outputs.phase == 'red')
+        if: steps.plan.outputs.phase != 'capture' && !((steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color') && steps.plan.outputs.phase == 'red')
         run: |
           mkdir -p evidence
           git diff --binary -- '*.rs' > evidence/tested.patch
@@ -141,8 +177,11 @@ jobs:
           if [ "${{ steps.plan.outputs.test }}" != picker_footer_tracks_delete_availability ]; then
             PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_counter.py evidence/picker.json --side rust
           fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_footer_position ]; then
+          if [ "${{ steps.plan.outputs.test }}" = picker_footer_position ] || [ "${{ steps.plan.outputs.test }}" = picker_footer_color ]; then
             PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_position.py evidence/picker.json --side rust
+          fi
+          if [ "${{ steps.plan.outputs.test }}" = picker_footer_color ]; then
+            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_color.py evidence/picker.json --side rust
           fi
           python3 scripts/capture_banner.py export evidence/picker.json
       - name: Export exact regression log

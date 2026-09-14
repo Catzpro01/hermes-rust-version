@@ -1330,3 +1330,20 @@ Ask-matt is a skill router, not a personal Matt review. No new test, production
 patch, delegated review, closure, or merge is authorized/executed by this routing.
 Same repository/session can continue; no portable handoff needed. Independent
 review tools remain unavailable; do not relabel limited direct review as such.
+
+### `/tdd warna footer picker` — M1 done, M2 test-first
+
+User explicitly continued the recommended actual CLI/PTy footer-color slice and
+asked to see milestone progress. Added `docs/hermes-ui-spec/017/MILESTONES.md`
+(Indonesian, scope-specific statuses, no invented overall percentage). Primary
+normal100x30 test records the real CLI and inspects visible footer foreground.
+Six historical Rust cases fail; six Python reference cases pass. This replay
+is not live RED. No Rust source modification or GREEN proposal exists yet.
+
+pyte reports palette8 as brightblack (bright ANSI form) or7f7f7f (indexed form);
+the primary gate accepts both decoder representations, not a dim attribute.
+Final xterm cell audit must verify actual mode/index8 and dim=false, and compare
+all other rows/attributes with0c0704d. No raw/image normalization. Runner gains
+one allowlisted color test with exact one-test execution/error rejection3 times;
+12 workflow policy tests PASS. Preserve prior footer position and counter/hints,
+then ten-case acceptance including delete/empty for style leakage. No merge.
