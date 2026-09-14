@@ -1,0 +1,147 @@
+{
+  "python_reference": "63279301bcbdc185c1b07b98a9312eb0c862f26d",
+  "python_version": "3.12.3 (main, Jul 15 2026, 23:46:41) [GCC 13.3.0]",
+  "main_py_sha256": "89cde75d388ae3ff0d3512c00a0b4e77fe9f55c438874032b32967b4ab867567",
+  "capture_driver_sha256": "b0daa787231fcc9590e78c4c3606779e6a762765cf4e94869b2e10dba617a277",
+  "capture_script_sha256": "7a094c9bbbe449d5c54f0804ff4ac884c18db02b33ef6ec3723a457afa775159",
+  "cases": [
+    {
+      "id": "picker-narrow-40x30",
+      "scenario": "picker-narrow",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [
+          "550e8400-e29b-41d4-a716-446655440000",
+          "660f8400-e29b-41d4-a716-446655440001"
+        ],
+        "picker_timestamp_base": 1700000000
+      },
+      "python": {
+        "command": [
+          "/usr/bin/python3",
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/scripts/capture_ui.py",
+          "python-child",
+          "/tmp/hermes-ref",
+          "picker-narrow",
+          "40"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-python-2wv5wjgt",
+          "HERMES_HOME": "/tmp/hermes-ui-python-2wv5wjgt",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": "/home/runner/work/_temp/picker-qa"
+        },
+        "cwd": "/tmp/hermes-ui-python-2wv5wjgt",
+        "width": 40,
+        "height": 30,
+        "events_base64": [
+          [
+            0.902638,
+            "G1s/MTA0OWgbWzIyOzA7MHQbWzE7MzByGyhCG1ttG1s0bBtbPzdoG1s/MWgbPQ=="
+          ],
+          [
+            0.904075,
+            "G1szOTs0OW0bWz8yNWwbWzM5OzQ5bRsoQhtbbRtbSBtbMkobKEIbWzA7MW0bWzMzbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIA0bWzJkGyhCG1swbRtbOTBtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgIFN0YXQgICAgTXNncyAgDRtbNGQbKEIbWzA7MW0bWzMybSDihpIgc2Vjb25kIHRvcGljICAgICAgICAgIGludHIgICAgICAgMSAgG1s1OzRIG1szOW0bKEIbW21kZXBsb3kgdGhlIHRoaW5nG1syNkcbWzMzbWludHIgG1szN0cbWzM5bRsoQhtbbTENG1szMGQbWzkwbSAgMS8yIHNlc3Npb25zICAgZCBkZWxldGUbWzM5bRsoQhtbbQ=="
+          ]
+        ],
+        "inputs_base64": [],
+        "raw_base64": "G1s/MTA0OWgbWzIyOzA7MHQbWzE7MzByGyhCG1ttG1s0bBtbPzdoG1s/MWgbPRtbMzk7NDltG1s/MjVsG1szOTs0OW0bKEIbW20bW0gbWzJKGyhCG1swOzFtG1szM20gIEJyb3dzZSBzZXNzaW9ucyDigJQg4oaR4oaTIG5hdmlnYXRlICBFbnRlciANG1syZBsoQhtbMG0bWzkwbSAgIFRpdGxlIC8gUHJldmlldyAgICAgICBTdGF0ICAgIE1zZ3MgIA0bWzRkGyhCG1swOzFtG1szMm0g4oaSIHNlY29uZCB0b3BpYyAgICAgICAgICBpbnRyICAgICAgIDEgIBtbNTs0SBtbMzltGyhCG1ttZGVwbG95IHRoZSB0aGluZxtbMjZHG1szM21pbnRyIBtbMzdHG1szOW0bKEIbW20xDRtbMzBkG1s5MG0gIDEvMiBzZXNzaW9ucyAgIGQgZGVsZXRlG1szOW0bKEIbW20=",
+        "raw_sha256": "ef8607233dff90fab09b76c85b4d245f53385b963a913b2e9fc3b227db160509",
+        "snapshot_end_byte": 368,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "Browse sessions",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "Browse sessions",
+            "end_byte": 368
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": null,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    },
+    {
+      "id": "picker-too-small-39x30",
+      "scenario": "picker-too-small",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [
+          "550e8400-e29b-41d4-a716-446655440000",
+          "660f8400-e29b-41d4-a716-446655440001"
+        ],
+        "picker_timestamp_base": 1700000000
+      },
+      "python": {
+        "command": [
+          "/usr/bin/python3",
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/scripts/capture_ui.py",
+          "python-child",
+          "/tmp/hermes-ref",
+          "picker-too-small",
+          "39"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-python-w0io413z",
+          "HERMES_HOME": "/tmp/hermes-ui-python-w0io413z",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONPATH": "/home/runner/work/_temp/picker-qa"
+        },
+        "cwd": "/tmp/hermes-ui-python-w0io413z",
+        "width": 39,
+        "height": 30,
+        "events_base64": [
+          [
+            0.889698,
+            "G1s/MTA0OWgbWzIyOzA7MHQbWzE7MzByGyhCG1ttG1s0bBtbPzdoG1s/MWgbPQ=="
+          ],
+          [
+            0.89104,
+            "G1szOTs0OW0bWz8yNWwbWzM5OzQ5bRsoQhtbbRtbSBtbMkpUZXJtaW5hbCB0b28gc21hbGw="
+          ]
+        ],
+        "inputs_base64": [],
+        "raw_base64": "G1s/MTA0OWgbWzIyOzA7MHQbWzE7MzByGyhCG1ttG1s0bBtbPzdoG1s/MWgbPRtbMzk7NDltG1s/MjVsG1szOTs0OW0bKEIbW20bW0gbWzJKVGVybWluYWwgdG9vIHNtYWxs",
+        "raw_sha256": "baed70cd2a1f3309b395602a31d37bdeafabb1e8ed5ae772ce1e13d7d04b20ca",
+        "snapshot_end_byte": 99,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "Terminal too small",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "Terminal too small",
+            "end_byte": 99
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": null,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    }
+  ]
+}

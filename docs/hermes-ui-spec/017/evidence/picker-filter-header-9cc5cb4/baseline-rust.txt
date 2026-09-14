@@ -1,0 +1,3 @@
+Rust before this slice (picker-header-7fef514 packet), filter help header row1:
+  style = {('default', False)}   (no palette ink, no bold)
+  the same text and geometry were already present, so only the ink changed

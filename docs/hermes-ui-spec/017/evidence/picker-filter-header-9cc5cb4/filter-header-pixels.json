@@ -1,0 +1,50 @@
+{
+  "normalization": "none",
+  "comparison": "unaltered first terminal row, excluding renderer titles and 24px gutter",
+  "cases": [
+    {
+      "id": "picker-filter-100x30",
+      "png_sha256": "4f6812a8ae6cd84e5e4007c19926a1025c175d8e9f0ab48bb7339b2cc0566b63",
+      "image_width": 2024,
+      "image_height": 601,
+      "pane_width": 1000,
+      "comparison_y": 31,
+      "comparison_height": 19,
+      "differing_pixels": 0,
+      "equal": true
+    },
+    {
+      "id": "picker-filter-80x30",
+      "png_sha256": "e93133c4051b64a117079d1abf6f713d6114f53453c9fb72cfc823240b979063",
+      "image_width": 1624,
+      "image_height": 601,
+      "pane_width": 800,
+      "comparison_y": 31,
+      "comparison_height": 19,
+      "differing_pixels": 0,
+      "equal": true
+    },
+    {
+      "id": "picker-no-match-100x30",
+      "png_sha256": "ce8950e49d17f7bbfe333f82bb1ba43be79e7e352043aed88573184a1be699f3",
+      "image_width": 2024,
+      "image_height": 601,
+      "pane_width": 1000,
+      "comparison_y": 31,
+      "comparison_height": 19,
+      "differing_pixels": 0,
+      "equal": true
+    },
+    {
+      "id": "picker-no-match-80x30",
+      "png_sha256": "3ccdd24a7e37860576907ee448caf14ae27f50cbc228ef657405e27a83e4d1ed",
+      "image_width": 1624,
+      "image_height": 601,
+      "pane_width": 800,
+      "comparison_y": 31,
+      "comparison_height": 19,
+      "differing_pixels": 0,
+      "equal": true
+    }
+  ]
+}

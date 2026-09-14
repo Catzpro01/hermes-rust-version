@@ -15,15 +15,26 @@
 //!   `intr`/`err` cannot be distinguished (column kept for parity).
 //! * `name` is the first user message (single-lined); Hermes-RS has no
 //!   session titles yet, so there is no title half of `Title / Preview`.
-//! * The cursor row is reverse video; Python colors rows via `_status_attr`,
-//!   whose palette was not captured in §F.
+//! * The cursor row is painted with palette slot 2 + bold, and every row that
+//!   is not the cursor gets its five-cell status tag recoloured by Python's
+//!   `_status_attr` contract (complete/pair1 green, interrupted/pair2 yellow,
+//!   error/pair5 red, empty/pair4 palette8, otherwise A_NORMAL). Both the tag
+//!   wording and the ink were read out of the pinned upstream source, kept at
+//!   `docs/hermes-ui-spec/017/evidence/upstream-status-attr/`, because §F named
+//!   `_status_attr` without its mapping.
 //! * `q` is a filter character in the curses-style browser (the hint lists
 //!   `Esc quit` only); `q to cancel` exists solely in the numbered fallback.
+//! * The frame is drawn when the screen changed, not on every loop turn: the
+//!   reference draws at the top of its loop and then blocks in `getch()`, so it
+//!   paints once per key and nothing while it waits. The port keeps polling (100
+//!   ms) to stay responsive to signals, but only repaints when a key or a resize
+//!   marked the screen dirty.
 
 use std::io::{BufRead, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::Context;
+use crossterm::style::Color;
 use hermes_core::session::{SessionId, SessionStore};
 
 use crate::output::sanitize_untrusted_output;
@@ -43,50 +54,55 @@ pub const DELETE_FAILED: &str = "Delete failed.";
 /// Non-curses fallback header (spec §F, verbatim, incl. newlines).
 pub const FALLBACK_HEADER: &str = "\n  Browse sessions  (enter number to resume, q to cancel)\n";
 
-/// Minimum terminal size for the curses-style browser. §F does not record
-/// Python's threshold; 60×8 fits the fixed columns plus a 10-char name.
+/// Narrowest terminal that still draws the picker. The pinned reference
+/// (`_session_browse_picker`) refuses `max_y < 5 or max_x < 40`, so 40 columns is
+/// usable (the fixed columns get clipped) and anything below that shows the notice.
+pub const PICKER_MIN_COLUMNS: u16 = 40;
+pub const PICKER_MIN_ROWS: u16 = 5;
+
+/// Width floor for the numbered non-curses fallback's own padding, which the
+/// reference does not constrain. The curses picker uses `PICKER_MIN_*` instead.
 pub const MIN_WIDTH: u16 = 60;
-pub const MIN_HEIGHT: u16 = 8;
 
 /// Hint line while filter text is typed (spec §F, verbatim shape).
 pub fn hint_filter(search: &str) -> String {
     format!("  Browse sessions — filter: {search}█")
 }
 
-/// Column header (spec §F, verbatim shape).
-pub fn column_header(name_width: usize) -> String {
+/// Column-header name field. The pinned 100/80 reference draws the header with
+/// its own field (width-59, floored at the 80-column value of 20), so `Stat`
+/// lands three cells right of the body status column, as the reference does.
+pub fn header_name_width(term_width: u16) -> usize {
+    (term_width as usize).saturating_sub(59).max(20)
+}
+
+/// Column header (spec §F, verbatim shape; the pinned three-cell indent).
+pub fn column_header(term_width: u16) -> String {
     format!(
-        "  {:<nw$}  {:<5}  {:>5}  {:<10}  {:<5} {}",
+        "   {:<nw$}  {:<5}  {:>5}  {:<10}  {:<5} {}",
         "Title / Preview",
         "Stat",
         "Msgs",
         "Active",
         "Src",
         "ID",
-        nw = name_width,
+        nw = header_name_width(term_width),
     )
 }
 
-/// One session row (spec §F, verbatim shape). The f-string in L1387 carries
-/// no leading indent but curses draws it under the indented header, so the
-/// two spaces are part of the rendered row.
-pub fn format_row(
-    name: &str,
-    status: &str,
-    msgs: usize,
-    last_active: &str,
-    source: &str,
-    sid: &str,
-    name_width: usize,
-) -> String {
+/// One session row (spec §F, verbatim shape). The f-string in L1387 carries no
+/// leading indent, but curses draws it behind the three-cell cursor column the
+/// reference shows (` → ` on the cursor row, three spaces otherwise).
+pub fn format_row(row: &SessionRow, name_width: usize, selected: bool) -> String {
     format!(
-        "  {:<nw$}  {:<5}  {:>5}  {:<10}  {:<5} {}",
-        truncate_chars(name, name_width),
-        status,
-        msgs,
-        last_active,
-        source,
-        sid,
+        "{}{:<nw$}  {:<5}  {:>5}  {:<10}  {:<5} {}",
+        row_prefix(selected),
+        truncate_chars(&row.name, name_width),
+        row.status,
+        row.msgs,
+        row.last_active,
+        row.source,
+        row.sid,
         nw = name_width,
     )
 }
@@ -111,11 +127,52 @@ pub fn delete_prompt(label: &str) -> String {
     format!("  Delete session '{label}'? [y/N]")
 }
 
-/// Name-column width for a terminal width. Fixed columns occupy 44 cells
-/// (`  ` + `  Stat ` + `   Msgs ` + `  Active    ` + `  Src  ` + ` ` + 8-char
-/// sid); the remainder goes to the name, clamped to a readable range.
+/// Body name-column width for a terminal width. The pinned 100/80 reference
+/// puts the body status column at width-57, i.e. a name field of width-62
+/// floored at the 80-column value of 20; terminals narrower than the reference
+/// are not evidenced.
 pub fn name_width(term_width: u16) -> usize {
-    (term_width as usize).saturating_sub(44).clamp(10, 48)
+    (term_width as usize).saturating_sub(62).max(20)
+}
+
+/// Ink of the five-cell status tag (`_status_attr` in the pinned upstream
+/// source, kept under `docs/hermes-ui-spec/017/evidence/upstream-status-attr/`):
+/// `done` pair1 green, `intr` pair2 yellow, `err` pair5 red, `empty` pair4
+/// palette8; any other tag keeps the terminal's normal ink (A_NORMAL).
+pub fn status_ink(status: &str) -> Color {
+    match status {
+        "done" => Color::DarkGreen,
+        "intr" => Color::DarkYellow,
+        "err" => Color::DarkRed,
+        "empty" => Color::DarkGrey,
+        _ => Color::Reset,
+    }
+}
+
+/// Character span of the status tag inside a body row: the three-cell cursor
+/// column, the name field and its two separator cells, i.e. `3 + name + 2`
+/// cells in, exactly `_status_attr`'s `tag_x = 3 + max(20, max_x - 62) + 2`.
+pub fn status_tag_span(name_width: usize) -> std::ops::Range<usize> {
+    let start = 3 + name_width + 2;
+    start..start + 5
+}
+
+/// Byte offset of a character index, clamped to the end of the string.
+fn char_offset(line: &str, char_index: usize) -> usize {
+    line.char_indices()
+        .nth(char_index)
+        .map(|(offset, _)| offset)
+        .unwrap_or(line.len())
+}
+
+/// Three-cell cursor column shared by every body row. The reference draws
+/// ` → ` on the cursor row and three spaces on the others.
+pub fn row_prefix(selected: bool) -> &'static str {
+    if selected {
+        " \u{2192} "
+    } else {
+        "   "
+    }
 }
 
 fn truncate_chars(text: &str, max: usize) -> String {
@@ -272,14 +329,15 @@ pub enum BrowseOutcome {
 }
 
 /// Pure frame builder for the curses-style browser (no SGR; the interactive
-/// layer wraps the cursor line in reverse video). Returns the lines to draw
-/// top to bottom, footer last.
+/// layer styles the hint, the column header, the cursor row and the footer).
+/// Returns the lines to draw top to bottom, footer last. The reference keeps
+/// one blank row between the column header and the body.
 pub fn frame_lines(
     rows: &[SessionRow],
     shown: &[usize],
     cursor: usize,
     filter: &str,
-    name_width: usize,
+    term_width: u16,
     max_rows: usize,
 ) -> Vec<String> {
     let mut lines = Vec::new();
@@ -288,7 +346,8 @@ pub fn frame_lines(
     } else {
         lines.push(hint_filter(filter));
     }
-    lines.push(column_header(name_width));
+    lines.push(column_header(term_width));
+    lines.push(String::new());
     if shown.is_empty() {
         lines.push(NO_MATCH.to_owned());
     } else {
@@ -297,17 +356,10 @@ pub fn frame_lines(
         } else {
             0
         };
+        let nw = name_width(term_width);
+        let selected = shown.get(cursor).copied();
         for &i in shown.iter().skip(start).take(max_rows) {
-            let r = &rows[i];
-            lines.push(format_row(
-                &r.name,
-                r.status,
-                r.msgs,
-                &r.last_active,
-                &r.source,
-                &r.sid,
-                name_width,
-            ));
+            lines.push(format_row(&rows[i], nw, selected == Some(i)));
         }
     }
     let cursor_one_based = if shown.is_empty() { 0 } else { cursor + 1 };
@@ -338,21 +390,14 @@ pub fn browse_numbered<R: BufRead, W: Write>(
         output.flush()?;
         return Ok(BrowseOutcome::Empty);
     }
-    let nw = name_width(term_width.max(MIN_WIDTH));
+    let term_width = term_width.max(MIN_WIDTH);
+    let nw = name_width(term_width);
     write!(output, "{FALLBACK_HEADER}")?;
     // Number gutter is 7 cells (`  [ 1] `); the header is padded equally so
     // the columns stay aligned with the numbered rows.
-    writeln!(output, "       {}", column_header(nw).trim_start())?;
+    writeln!(output, "       {}", column_header(term_width).trim_start())?;
     for (n, r) in rows.iter().enumerate() {
-        let body = format_row(
-            &r.name,
-            r.status,
-            r.msgs,
-            &r.last_active,
-            &r.source,
-            &r.sid,
-            nw,
-        );
+        let body = format_row(r, nw, false);
         writeln!(output, "  [{:>2}] {}", n + 1, body.trim_start())?;
     }
     loop {
@@ -385,34 +430,54 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
     use crossterm::{cursor, execute};
 
     let (cols, term_rows) = terminal::size().context("query terminal size")?;
-    if cols < MIN_WIDTH || term_rows < MIN_HEIGHT {
-        println!("{TOO_SMALL}");
-        return Ok(BrowseOutcome::Cancelled);
-    }
     let mut rows = collect_rows(store)?;
+    // The reference reports an empty store before curses ever starts, so an empty
+    // store on a small terminal still prints `No sessions found.`.
     if rows.is_empty() {
         println!("{NO_SESSIONS}");
         return Ok(BrowseOutcome::Empty);
     }
-    let nw = name_width(cols);
-
     let _guard = ScreenGuard::enter()?;
+    if cols < PICKER_MIN_COLUMNS || term_rows < PICKER_MIN_ROWS {
+        // The reference clears the screen, writes the notice and then blocks in
+        // `getch()`: the notice stays visible until a key is pressed, and a narrow
+        // terminal never falls through to the picker.
+        let mut notice = std::io::stdout();
+        execute!(
+            notice,
+            cursor::MoveTo(0, 0),
+            terminal::Clear(terminal::ClearType::All),
+            crossterm::style::Print(TOO_SMALL)
+        )?;
+        notice.flush()?;
+        loop {
+            match event::read()? {
+                Event::Key(key) if key.kind == event::KeyEventKind::Press => break,
+                Event::Resize(_, _) => continue,
+                _ => continue,
+            }
+        }
+        return Ok(BrowseOutcome::Cancelled);
+    }
 
     let mut filter = String::new();
     let mut cursor_idx = 0usize;
     let mut notices: Vec<&str> = Vec::new();
-    // Header (2) + footer (1) + one spare row.
+    // Hint, column header, blank separator and footer occupy four rows.
     let max_rows = (term_rows as usize).saturating_sub(4).max(1);
 
+    // The reference draws once and then blocks in `getch()`; repainting only when
+    // something changed keeps that cadence while the poll loop stays responsive.
+    let mut dirty = true;
     let outcome = loop {
         let shown = apply_filter(&rows, &filter);
         cursor_idx = cursor_idx.min(shown.len().saturating_sub(1));
-        // Full redraw: home + clear + frame (flicker is acceptable here).
-        {
+        if dirty {
+            // Full redraw: home + clear + frame (flicker is acceptable here).
             use crossterm::terminal::ClearType;
             let mut out = std::io::stdout();
             execute!(out, cursor::MoveTo(0, 0), terminal::Clear(ClearType::All))?;
-            let frame = frame_lines(&rows, &shown, cursor_idx, &filter, nw, max_rows);
+            let frame = frame_lines(&rows, &shown, cursor_idx, &filter, cols, max_rows);
             let start = if cursor_idx >= max_rows {
                 cursor_idx + 1 - max_rows
             } else {
@@ -420,31 +485,62 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
             };
             for (n, line) in frame.iter().enumerate() {
                 let is_footer = n == frame.len() - 1;
+                // `addnstr(..., max_x - 1, ...)` in the reference: clip, never wrap.
+                let line = truncate_chars(line, (cols as usize).saturating_sub(1));
                 if is_footer {
                     execute!(out, cursor::MoveTo(0, term_rows - 1))?;
                 }
-                // Row lines sit between header (1) and footer (last); the
-                // cursor row gets reverse video.
+                // Body rows sit between the blank separator (index 2) and the
+                // footer; the cursor row still gets reverse video.
                 let is_cursor_row = !shown.is_empty()
-                    && n >= 2
-                    && n - 2 == cursor_idx.saturating_sub(start)
+                    && n >= 3
+                    && n - 3 == cursor_idx.saturating_sub(start)
                     && n < frame.len() - 1;
-                if n == 0 && filter.is_empty() {
+                if n == 0 {
+                    use crossterm::style::{
+                        Attribute, Color, Print, SetAttribute, SetForegroundColor,
+                    };
+                    let ink = if filter.is_empty() {
+                        Color::DarkYellow
+                    } else {
+                        Color::DarkCyan
+                    };
+                    execute!(
+                        out,
+                        SetForegroundColor(ink),
+                        SetAttribute(Attribute::Bold),
+                        Print(line),
+                        SetAttribute(Attribute::Reset)
+                    )?;
+                } else if n == 1 {
+                    use crossterm::style::{Color, Print, SetForegroundColor};
+                    execute!(
+                        out,
+                        SetForegroundColor(Color::DarkGrey),
+                        Print(line),
+                        SetForegroundColor(Color::Reset)
+                    )?;
+                } else if line.as_str() == NO_MATCH {
+                    // The reference writes the message with the dim attribute
+                    // (SGR 2) and only resets it at the footer redraw; resetting
+                    // in place renders identically and never leaks dim.
+                    use crossterm::style::{Attribute, Print, SetAttribute};
+                    execute!(
+                        out,
+                        SetAttribute(Attribute::Dim),
+                        Print(line),
+                        SetAttribute(Attribute::Reset)
+                    )?;
+                } else if is_cursor_row {
+                    // The reference paints the whole selected row with palette
+                    // slot 2 + bold and never uses reverse video.
                     use crossterm::style::{
                         Attribute, Color, Print, SetAttribute, SetForegroundColor,
                     };
                     execute!(
                         out,
-                        SetForegroundColor(Color::DarkYellow),
+                        SetForegroundColor(Color::DarkGreen),
                         SetAttribute(Attribute::Bold),
-                        Print(line),
-                        SetAttribute(Attribute::Reset)
-                    )?;
-                } else if is_cursor_row {
-                    use crossterm::style::{Attribute, Print, SetAttribute};
-                    execute!(
-                        out,
-                        SetAttribute(Attribute::Reverse),
                         Print(line),
                         SetAttribute(Attribute::Reset)
                     )?;
@@ -457,26 +553,55 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                         SetForegroundColor(Color::Reset)
                     )?;
                 } else {
-                    use crossterm::style::Print;
-                    execute!(out, Print(line))?;
+                    // Only the five-cell status tag is recoloured, and only on
+                    // rows that are not the cursor (pinned `_session_browse_picker`).
+                    use crossterm::style::{Print, SetForegroundColor};
+                    let span = status_tag_span(name_width(cols));
+                    // Rows above the body (hint, header, separator) must not
+                    // index into `shown`; `n - 3` would underflow there.
+                    let body = if n < 3 {
+                        None
+                    } else {
+                        shown.get(start + (n - 3)).copied()
+                    };
+                    match body.filter(|_| line.chars().count() >= span.end) {
+                        Some(index) => {
+                            let head = char_offset(&line, span.start);
+                            let tag = char_offset(&line, span.end);
+                            execute!(
+                                out,
+                                Print(&line[..head]),
+                                SetForegroundColor(status_ink(rows[index].status)),
+                                Print(&line[head..tag]),
+                                SetForegroundColor(Color::Reset),
+                                Print(&line[tag..])
+                            )?;
+                        }
+                        None => execute!(out, Print(line))?,
+                    }
                 }
                 if !is_footer {
                     execute!(out, cursor::MoveToNextLine(1))?;
                 }
             }
             out.flush()?;
+            dirty = false;
         }
         if !event::poll(std::time::Duration::from_millis(100))? {
             continue;
         }
         match event::read()? {
-            Event::Resize(_, _) => continue,
+            Event::Resize(_, _) => {
+                dirty = true;
+                continue;
+            }
             Event::Key(key) => {
                 // Like the TUI renderer: only press events drive input, so a
                 // terminal that reports release/repeat never double-applies.
                 if key.kind != event::KeyEventKind::Press {
                     continue;
                 }
+                dirty = true;
                 if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
                     anyhow::bail!("interrupted");
                 }
@@ -507,8 +632,16 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                             terminal::Clear(terminal::ClearType::CurrentLine)
                         )?;
                         {
-                            use crossterm::style::Print;
-                            execute!(out, Print(delete_prompt(&target.name)))?;
+                            use crossterm::style::{
+                                Attribute, Color, Print, SetAttribute, SetForegroundColor,
+                            };
+                            execute!(
+                                out,
+                                SetForegroundColor(Color::DarkRed),
+                                SetAttribute(Attribute::Bold),
+                                Print(delete_prompt(&target.name)),
+                                SetAttribute(Attribute::Reset)
+                            )?;
                         }
                         out.flush()?;
                         let confirm = loop {
@@ -587,6 +720,24 @@ mod tests {
         ]
     }
 
+    fn row(
+        name: &str,
+        status: &'static str,
+        msgs: usize,
+        last_active: &str,
+        sid: &str,
+    ) -> SessionRow {
+        SessionRow {
+            id: "550e8400-e29b-41d4-a716-446655440000".parse().unwrap(),
+            name: name.into(),
+            status,
+            msgs,
+            last_active: last_active.into(),
+            source: "cli".into(),
+            sid: sid.into(),
+        }
+    }
+
     #[test]
     fn picker_no_match_counter_preserves_total() {
         let rows = fixture_rows();
@@ -622,12 +773,12 @@ mod tests {
         );
         assert_eq!(hint_filter("dep"), "  Browse sessions — filter: dep█");
         assert_eq!(
-            column_header(20),
-            "  Title / Preview       Stat    Msgs  Active      Src   ID"
+            column_header(100),
+            "   Title / Preview                            Stat    Msgs  Active      Src   ID"
         );
         assert_eq!(
-            format_row("deploy", "done", 12, "2h ago", "cli", "550e8400", 20),
-            "  deploy                done      12  2h ago      cli   550e8400"
+            format_row(&row("deploy", "done", 12, "2h ago", "550e8400"), 20, false),
+            "   deploy                done      12  2h ago      cli   550e8400"
         );
         assert_eq!(footer(1, 2, 2, true), "  1/2 sessions   d delete");
         assert_eq!(footer(1, 1, 2, false), "  1/1 sessions (filtered from 2)");
@@ -642,26 +793,90 @@ mod tests {
     }
 
     #[test]
-    fn row_truncates_long_names_to_the_column() {
-        let row = format_row(
-            "abcdefghijklmnopqrstuvwxyz",
-            "done",
-            1,
-            "now",
-            "cli",
-            "abcdef01",
-            10,
-        );
-        assert!(row.contains("abcdefghij"), "{row}");
-        assert!(!row.contains("klmnop"), "{row}");
+    fn too_small_threshold_follows_the_pinned_reference() {
+        assert_eq!(PICKER_MIN_COLUMNS, 40);
+        assert_eq!(PICKER_MIN_ROWS, 5);
+        // The numbered fallback keeps its own, wider floor.
+        assert_eq!(MIN_WIDTH, 60);
+        assert_eq!(TOO_SMALL, "Terminal too small");
     }
 
     #[test]
-    fn name_width_fits_an_80_column_terminal() {
-        assert_eq!(name_width(80), 36);
-        assert_eq!(name_width(60), 16);
-        assert_eq!(name_width(40), 10);
-        assert_eq!(name_width(200), 48);
+    fn a_drawn_row_is_clipped_not_wrapped() {
+        assert_eq!(truncate_chars("  Browse sessions", 39), "  Browse sessions");
+        assert_eq!(truncate_chars("", 5), "");
+        let wide = format_row(
+            &row("deploy the thing", "done", 12, "2h ago", "550e8400"),
+            name_width(40),
+            false,
+        );
+        assert!(wide.chars().count() > 39, "{wide:?}");
+        assert_eq!(truncate_chars(&wide, 39).chars().count(), 39);
+        assert_eq!(
+            truncate_chars(&wide, 39),
+            wide.chars().take(39).collect::<String>()
+        );
+    }
+
+    #[test]
+    fn status_ink_follows_the_pinned_mapping() {
+        assert_eq!(status_ink("done"), Color::DarkGreen);
+        assert_eq!(status_ink("intr"), Color::DarkYellow);
+        assert_eq!(status_ink("err"), Color::DarkRed);
+        assert_eq!(status_ink("empty"), Color::DarkGrey);
+        assert_eq!(status_ink("-"), Color::Reset);
+    }
+
+    #[test]
+    fn status_tag_span_sits_three_plus_name_width_plus_two() {
+        assert_eq!(status_tag_span(name_width(100)), 43..48);
+        assert_eq!(status_tag_span(name_width(80)), 25..30);
+        let wide = format_row(
+            &row("deploy", "done", 12, "2h ago", "550e8400"),
+            name_width(100),
+            false,
+        );
+        assert_eq!(&wide[43..48], "done ");
+        let narrow = format_row(
+            &row("deploy", "done", 12, "2h ago", "550e8400"),
+            name_width(80),
+            false,
+        );
+        assert_eq!(&narrow[25..30], "done ");
+        assert_eq!(char_offset(&wide, 43), 43);
+        assert_eq!(char_offset("  → deploy", 4), 6);
+    }
+
+    #[test]
+    fn row_truncates_long_names_to_the_column() {
+        let line = format_row(
+            &row("abcdefghijklmnopqrstuvwxyz", "done", 1, "now", "abcdef01"),
+            10,
+            false,
+        );
+        assert!(line.contains("abcdefghij"), "{line}");
+        assert!(!line.contains("klmnop"), "{line}");
+    }
+
+    #[test]
+    fn name_width_matches_the_two_pinned_widths() {
+        // Body field width-62 and header field width-59, both floored at the
+        // 80-column value 20, reproduce the retained 100/80 reference rows.
+        assert_eq!(name_width(100), 38);
+        assert_eq!(name_width(80), 20);
+        assert_eq!(name_width(60), 20);
+        assert_eq!(header_name_width(100), 41);
+        assert_eq!(header_name_width(80), 21);
+        assert_eq!(
+            format_row(
+                &row("second topic", "done", 1, "2023-11-14", "660f8400"),
+                name_width(100),
+                true,
+            ),
+            " → second topic                            done       1  2023-11-14  cli   660f8400"
+        );
+        assert_eq!(column_header(100).find("Stat"), Some(46));
+        assert_eq!(column_header(80).find("Stat"), Some(26));
     }
 
     #[test]
@@ -698,8 +913,9 @@ mod tests {
         let frame = frame_lines(&rows, &shown, 0, "", 20, 10);
         assert_eq!(frame[0], HINT_BROWSE);
         assert_eq!(frame[1], column_header(20));
-        assert!(frame[2].contains("deploy the thing"), "{frame:?}");
-        assert!(frame[3].contains("(empty)"), "{frame:?}");
+        assert_eq!(frame[2], "");
+        assert!(frame[3].contains("deploy the thing"), "{frame:?}");
+        assert!(frame[4].contains("(empty)"), "{frame:?}");
         assert_eq!(*frame.last().unwrap(), "  1/2 sessions   d delete");
 
         let shown = apply_filter(&rows, "zzz");

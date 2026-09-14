@@ -1,0 +1,13 @@
+diff --git a/crates/hermes-cli/src/session_picker.rs b/crates/hermes-cli/src/session_picker.rs
+index 5ea88a5..90bcd93 100644
+--- a/crates/hermes-cli/src/session_picker.rs
++++ b/crates/hermes-cli/src/session_picker.rs
+@@ -436,7 +436,7 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+                     let ink = if filter.is_empty() {
+                         Color::DarkYellow
+                     } else {
+-                        Color::Cyan
++                        Color::DarkCyan
+                     };
+                     execute!(
+                         out,

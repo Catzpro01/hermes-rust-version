@@ -1,0 +1,6 @@
+Rejected first GREEN proposal (2c79b6d1..., kept as rejected-first-attempt.patch): the live
+column-layout gate was already green three times, but `cargo clippy --workspace --all-targets
+-- -D warnings` stopped the build with `clippy::too_many_arguments (8/7)` on `format_row`.
+No behaviour from that attempt was kept: the accepted patch (006bdcc7...) additionally takes
+`&SessionRow` in `format_row` and leaves every wire-visible behaviour of the rejected attempt
+unchanged.

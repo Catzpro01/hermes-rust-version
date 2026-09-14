@@ -1,0 +1,31 @@
+Capture run 34873776470 (picker-diagnostic, headSha b2db435, conclusion success)
+
+Capture committed picker and verify original symptom: success
+  clean tree asserted, CLI built, capture_picker_diagnostic.py wrote ten cases, then the
+  hint, counter, footer-position, footer-color, normal-header, filter-header, column-layout,
+  prompt/message-style, selected-row, status-tag and redraw-on-input checkers all passed on
+  the committed source
+capture actual CLI regression verified three times
+test_picker_draws_on_input_not_on_its_poll_timeout (__main__.PickerRedrawOnInputTests.test_picker_draws_on_input_not_on_its_poll_timeout) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+rust picker-filter 100 CAPTURED_NOT_REVIEWED
+rust picker-no-match 100 CAPTURED_NOT_REVIEWED
+rust picker-delete 100 CAPTURED_NOT_REVIEWED
+rust picker-empty 100 CAPTURED_NOT_REVIEWED
+rust picker-normal 80 CAPTURED_NOT_REVIEWED
+rust picker-filter 80 CAPTURED_NOT_REVIEWED
+rust picker-no-match 80 CAPTURED_NOT_REVIEWED
+rust picker-delete 80 CAPTURED_NOT_REVIEWED
+rust picker-empty 80 CAPTURED_NOT_REVIEWED
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 5.065s
+
+OK
+
+Committed capture bundle: sha256=491713dd563bbb322ae2f4ca043637a93cb5070a71336632097abb0b0b4d0083; bytes=46091
+Retained capture trace: sha256=b682870e5ce3666d46b0587e0c68274d2867b434701fb7e87c49776325d6a02a; bytes=45748
+Ordinary CI on the fixed source 34873775366 (headSha bbd943c): success
+Ordinary CI on the capture request commit 34873776473 (headSha b2db435): success
+The `error: interrupted` line inside the full-validation annotation is the SIGINT smoke test
+(`smoke_sigint_returns_130 ... ok`), not a failure.

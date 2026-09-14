@@ -12,7 +12,8 @@ import pyte
 def screen_for(record):
     raw = base64.b64decode(record['raw_base64'], validate=True)
     if record['error'] or not 0 < record['snapshot_end_byte'] <= len(raw):
-        raise RuntimeError('UI capture did not reach its snapshot')
+        raise RuntimeError('UI capture did not reach its snapshot: '
+                           f'{record["error"]!r} ({record["snapshot_end_byte"]} bytes)')
     if hashlib.sha256(raw).hexdigest() != record['raw_sha256']:
         raise RuntimeError('Corrupt raw capture')
     if b''.join(base64.b64decode(e[1], validate=True) for e in record['events_base64']) != raw:

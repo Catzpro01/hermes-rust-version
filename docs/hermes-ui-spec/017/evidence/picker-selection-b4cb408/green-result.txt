@@ -1,0 +1,8 @@
+GREEN run 34866921566 (picker-diagnostic, headSha 1de26b6, conclusion success)
+
+Verify and apply bounded diagnostic proposal: success (source 44279ec5, patch 8eed758f, 1171 bytes)
+Format and type check, build of the actual CLI, and the three-times live regression: success
+Full GREEN validation: success (clippy -D warnings + whole workspace suite)
+green actual CLI regression verified three times
+sha256=8eed758f33bb38b6409517f31f0faccaded907706be97dbe7443f2f064253ee5; bytes=1171
+sha256=ef0999403aa13f1ed55230e76d3705e6a793785f31bc80bca304937921358d0f; bytes=87659

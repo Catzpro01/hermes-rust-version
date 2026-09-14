@@ -1,0 +1,137 @@
+{
+  "spec": {
+    "note": "The five status-tag cells of the unselected row, the exact span the Rust redraw recolours. These regions are declared differences, not parity regions: the tag word is fixture data and differs by design (the retained Python fixtures carry an interrupted session, the Rust fixtures a complete one), so the glyph pixels cannot match. The ink at this span is pinned by check_picker_status_ink.py on both sides, and the span geometry is pinned by the checker and the unit tests.",
+    "cases": [
+      {
+        "id": "picker-normal-100x30",
+        "columns": 100,
+        "regions": [
+          {
+            "label": "unselected row status tag",
+            "row": 5,
+            "colStart": 43,
+            "colEnd": 48
+          }
+        ]
+      },
+      {
+        "id": "picker-delete-100x30",
+        "columns": 100,
+        "regions": [
+          {
+            "label": "unselected row status tag",
+            "row": 5,
+            "colStart": 43,
+            "colEnd": 48
+          }
+        ]
+      },
+      {
+        "id": "picker-normal-80x30",
+        "columns": 80,
+        "regions": [
+          {
+            "label": "unselected row status tag",
+            "row": 5,
+            "colStart": 25,
+            "colEnd": 30
+          }
+        ]
+      },
+      {
+        "id": "picker-delete-80x30",
+        "columns": 80,
+        "regions": [
+          {
+            "label": "unselected row status tag",
+            "row": 5,
+            "colStart": 25,
+            "colEnd": 30
+          }
+        ]
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "picker-normal-100x30",
+      "columns": 100,
+      "png_sha256": "5e4486a25b6e653b01a1a558ba17b90c5e00487178e1ee20d03507533baffbfc",
+      "differing_total": 270,
+      "regions": [
+        {
+          "label": "unselected row status tag",
+          "row": 5,
+          "colStart": 43,
+          "colEnd": 48,
+          "x": 430,
+          "y": 107,
+          "width": 50,
+          "height": 19,
+          "differing_pixels": 270,
+          "equal": false
+        }
+      ]
+    },
+    {
+      "id": "picker-delete-100x30",
+      "columns": 100,
+      "png_sha256": "ec750bcb6d9cd813150d8754cd2146387fecc03066112a65bdb6f0f5eac28d0e",
+      "differing_total": 270,
+      "regions": [
+        {
+          "label": "unselected row status tag",
+          "row": 5,
+          "colStart": 43,
+          "colEnd": 48,
+          "x": 430,
+          "y": 107,
+          "width": 50,
+          "height": 19,
+          "differing_pixels": 270,
+          "equal": false
+        }
+      ]
+    },
+    {
+      "id": "picker-normal-80x30",
+      "columns": 80,
+      "png_sha256": "531d950fe9682c50e5316b587bd3fdb3b7edc637f12b17d1772b7e0a89cf5b01",
+      "differing_total": 270,
+      "regions": [
+        {
+          "label": "unselected row status tag",
+          "row": 5,
+          "colStart": 25,
+          "colEnd": 30,
+          "x": 250,
+          "y": 107,
+          "width": 50,
+          "height": 19,
+          "differing_pixels": 270,
+          "equal": false
+        }
+      ]
+    },
+    {
+      "id": "picker-delete-80x30",
+      "columns": 80,
+      "png_sha256": "e5dbc7dd4cd07c9d1479576933f39125e3301f70a276cd00b5f04d9a65743f45",
+      "differing_total": 270,
+      "regions": [
+        {
+          "label": "unselected row status tag",
+          "row": 5,
+          "colStart": 25,
+          "colEnd": 30,
+          "x": 250,
+          "y": 107,
+          "width": 50,
+          "height": 19,
+          "differing_pixels": 270,
+          "equal": false
+        }
+      ]
+    }
+  ]
+}

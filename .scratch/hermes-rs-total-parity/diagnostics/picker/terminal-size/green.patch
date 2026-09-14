@@ -1,0 +1,113 @@
+diff --git a/crates/hermes-cli/src/session_picker.rs b/crates/hermes-cli/src/session_picker.rs
+index 8fc6ff9..36db9d7 100644
+--- a/crates/hermes-cli/src/session_picker.rs
++++ b/crates/hermes-cli/src/session_picker.rs
+@@ -54,10 +54,15 @@ pub const DELETE_FAILED: &str = "Delete failed.";
+ /// Non-curses fallback header (spec §F, verbatim, incl. newlines).
+ pub const FALLBACK_HEADER: &str = "\n  Browse sessions  (enter number to resume, q to cancel)\n";
+ 
+-/// Minimum terminal size for the curses-style browser. §F does not record
+-/// Python's threshold; 60×8 fits the fixed columns plus a 10-char name.
++/// Narrowest terminal that still draws the picker. The pinned reference
++/// (`_session_browse_picker`) refuses `max_y < 5 or max_x < 40`, so 40 columns is
++/// usable (the fixed columns get clipped) and anything below that shows the notice.
++pub const PICKER_MIN_COLUMNS: u16 = 40;
++pub const PICKER_MIN_ROWS: u16 = 5;
++
++/// Width floor for the numbered non-curses fallback's own padding, which the
++/// reference does not constrain. The curses picker uses `PICKER_MIN_*` instead.
+ pub const MIN_WIDTH: u16 = 60;
+-pub const MIN_HEIGHT: u16 = 8;
+ 
+ /// Hint line while filter text is typed (spec §F, verbatim shape).
+ pub fn hint_filter(search: &str) -> String {
+@@ -425,16 +430,35 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+     use crossterm::{cursor, execute};
+ 
+     let (cols, term_rows) = terminal::size().context("query terminal size")?;
+-    if cols < MIN_WIDTH || term_rows < MIN_HEIGHT {
+-        println!("{TOO_SMALL}");
+-        return Ok(BrowseOutcome::Cancelled);
+-    }
+     let mut rows = collect_rows(store)?;
++    // The reference reports an empty store before curses ever starts, so an empty
++    // store on a small terminal still prints `No sessions found.`.
+     if rows.is_empty() {
+         println!("{NO_SESSIONS}");
+         return Ok(BrowseOutcome::Empty);
+     }
+     let _guard = ScreenGuard::enter()?;
++    if cols < PICKER_MIN_COLUMNS || term_rows < PICKER_MIN_ROWS {
++        // The reference clears the screen, writes the notice and then blocks in
++        // `getch()`: the notice stays visible until a key is pressed, and a narrow
++        // terminal never falls through to the picker.
++        let mut notice = std::io::stdout();
++        execute!(
++            notice,
++            cursor::MoveTo(0, 0),
++            terminal::Clear(terminal::ClearType::All),
++            crossterm::style::Print(TOO_SMALL)
++        )?;
++        notice.flush()?;
++        loop {
++            match event::read()? {
++                Event::Key(key) if key.kind == event::KeyEventKind::Press => break,
++                Event::Resize(_, _) => continue,
++                _ => continue,
++            }
++        }
++        return Ok(BrowseOutcome::Cancelled);
++    }
+ 
+     let mut filter = String::new();
+     let mut cursor_idx = 0usize;
+@@ -461,6 +485,8 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+             };
+             for (n, line) in frame.iter().enumerate() {
+                 let is_footer = n == frame.len() - 1;
++                // `addnstr(..., max_x - 1, ...)` in the reference: clip, never wrap.
++                let line = truncate_chars(line, (cols as usize).saturating_sub(1));
+                 if is_footer {
+                     execute!(out, cursor::MoveTo(0, term_rows - 1))?;
+                 }
+@@ -540,8 +566,8 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+                     };
+                     match body.filter(|_| line.chars().count() >= span.end) {
+                         Some(index) => {
+-                            let head = char_offset(line, span.start);
+-                            let tag = char_offset(line, span.end);
++                            let head = char_offset(&line, span.start);
++                            let tag = char_offset(&line, span.end);
+                             execute!(
+                                 out,
+                                 Print(&line[..head]),
+@@ -766,6 +792,29 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn too_small_threshold_follows_the_pinned_reference() {
++        assert_eq!(PICKER_MIN_COLUMNS, 40);
++        assert_eq!(PICKER_MIN_ROWS, 5);
++        // The numbered fallback keeps its own, wider floor.
++        assert_eq!(MIN_WIDTH, 60);
++        assert_eq!(TOO_SMALL, "Terminal too small");
++    }
++
++    #[test]
++    fn a_drawn_row_is_clipped_not_wrapped() {
++        assert_eq!(truncate_chars("  Browse sessions", 39), "  Browse sessions");
++        assert_eq!(truncate_chars("", 5), "");
++        let wide = format_row(
++            &row("deploy the thing", "done", 12, "2h ago", "550e8400"),
++            name_width(40),
++            false,
++        );
++        assert!(wide.chars().count() > 39, "{wide:?}");
++        assert_eq!(truncate_chars(&wide, 39).chars().count(), 39);
++        assert_eq!(truncate_chars(&wide, 39), wide.chars().take(39).collect::<String>());
++    }
++
+     #[test]
+     fn status_ink_follows_the_pinned_mapping() {
+         assert_eq!(status_ink("done"), Color::DarkGreen);

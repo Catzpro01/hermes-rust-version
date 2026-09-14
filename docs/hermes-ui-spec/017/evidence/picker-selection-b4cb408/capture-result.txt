@@ -1,0 +1,9 @@
+Capture run 34868306211 (picker-diagnostic, headSha b4cb408, conclusion success)
+
+Capture committed picker and verify original symptom: success
+  clean tree asserted, CLI built, capture_picker_diagnostic.py wrote ten cases, then the hint,
+  counter, footer-position, footer-color, normal-header, filter-header, column-layout,
+  prompt/message-style and selected-row checkers all passed on the committed source
+capture actual CLI regression verified three times
+sha256=fe8bc2c2d1fb5b41a8b2f4e5e0c73cedd8b3789ad7fc8e61a91aabd3f7e102bd; bytes=423798
+sha256=b192abd20fda851af57c3d78fac88f72f958bccf83546cd731e85b0edc9654e3; bytes=234898

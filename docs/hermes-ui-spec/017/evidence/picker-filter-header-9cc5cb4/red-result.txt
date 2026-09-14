@@ -1,0 +1,15 @@
+test_filter_help_header_matches_reference_style (__main__.PickerFilterHeaderTests.test_filter_help_header_matches_reference_style) ... rust picker-filter 100 CAPTURED_NOT_REVIEWED
+FAIL
+
+======================================================================
+FAIL: test_filter_help_header_matches_reference_style (__main__.PickerFilterHeaderTests.test_filter_help_header_matches_reference_style)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/work/hermes-rust-version/hermes-rust-version/scripts/test_picker_filter_header.py", line 32, in test_filter_help_header_matches_reference_style
+    self.assertIn(style, ({('cyan', True)}, {('00cdcd', True)}),
+AssertionError: {('00ffff', True)} not found in ({('cyan', True)}, {('00cdcd', True)}) : Python reference: filter help header uses palette6 (not the bright variant) and bold
+
+----------------------------------------------------------------------
+Ran 1 test in 1.848s
+
+FAILED (failures=1)

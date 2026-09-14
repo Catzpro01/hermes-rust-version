@@ -1,0 +1,4 @@
+Pinned Python v0.21.0 reference (retained ui-3b39bd7 records), filter help header row1:
+  style = {('cyan', True)}   (SGR 0;1 then 36 = bold + palette slot 6)
+  cases = picker-filter-100x30, picker-filter-80x30, picker-no-match-100x30, picker-no-match-80x30
+  source = docs/hermes-ui-spec/017/evidence/ui-3b39bd7/python-bundle.json

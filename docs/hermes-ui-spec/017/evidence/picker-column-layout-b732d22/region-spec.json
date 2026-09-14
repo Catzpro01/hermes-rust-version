@@ -1,0 +1,21 @@
+{
+  "note": "Terminal coordinates (1-based rows, half-open column ranges) over the pinned xterm.js panes; left pane is the retained Python recording, right pane the Rust capture. No normalization.",
+  "cases": [
+    {"id": "picker-normal-100x30", "columns": 100, "regions": [
+      {"label": "column header row", "row": 2, "colStart": 0, "colEnd": 80},
+      {"label": "blank separator row", "row": 3, "colStart": 0, "colEnd": 100},
+      {"label": "unselected body row up to the status column", "row": 5, "colStart": 0, "colEnd": 43},
+      {"label": "hint row control", "row": 1, "colStart": 0, "colEnd": 71}]},
+    {"id": "picker-normal-80x30", "columns": 80, "regions": [
+      {"label": "column header row", "row": 2, "colStart": 0, "colEnd": 60},
+      {"label": "blank separator row", "row": 3, "colStart": 0, "colEnd": 80},
+      {"label": "unselected body row up to the status column", "row": 5, "colStart": 0, "colEnd": 25},
+      {"label": "hint row control", "row": 1, "colStart": 0, "colEnd": 71}]},
+    {"id": "picker-no-match-100x30", "columns": 100, "regions": [
+      {"label": "column header row", "row": 2, "colStart": 0, "colEnd": 80},
+      {"label": "no-match message row", "row": 4, "colStart": 0, "colEnd": 31}]},
+    {"id": "picker-no-match-80x30", "columns": 80, "regions": [
+      {"label": "column header row", "row": 2, "colStart": 0, "colEnd": 60},
+      {"label": "no-match message row", "row": 4, "colStart": 0, "colEnd": 31}]}
+  ]
+}

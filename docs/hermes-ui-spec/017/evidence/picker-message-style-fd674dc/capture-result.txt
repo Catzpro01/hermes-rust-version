@@ -1,0 +1,21 @@
+Capture run 34864672852 (picker-diagnostic, headSha fd674dc, conclusion success)
+
+Capture committed picker and verify original symptom: success
+  clean tree asserted, CLI built, capture_picker_diagnostic.py wrote ten cases, then the
+  hint, counter, footer-position, footer-color, normal-header, filter-header, column-layout
+  and prompt/message-style checkers all passed on the committed source
+capture actual CLI regression verified three times
+test_prompt_and_no_match_match_reference_style (__main__.PickerMessageStyleTests.test_prompt_and_no_match_match_reference_style) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+rust picker-delete 100 CAPTURED_NOT_REVIEWED
+rust picker-no-match 100 CAPTURED_NOT_REVIEWED
+rust picker-normal 80 CAPTURED_NOT_REVIEWED
+rust picker-delete 80 CAPTURED_NOT_REVIEWED
+rust picker-no-match 80 CAPTURED_NOT_REVIEWED
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 38.332s
+
+OK
+sha256=a8f37c4613cf585cb93c15220636e24ca46d810704ecdfb614b9f1a3596b78a2; bytes=166599
+sha256=94f25c1e4ca4c40df08c0c883193ca288f46d87b42a10265175c0c04e78c790b; bytes=452241

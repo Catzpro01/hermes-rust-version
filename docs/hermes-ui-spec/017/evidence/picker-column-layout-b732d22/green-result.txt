@@ -1,0 +1,11 @@
+GREEN run 34861285022 (picker-diagnostic, headSha d18fd9a, conclusion success)
+
+Verify and apply bounded diagnostic proposal: success (source 8f05d71f..., patch 006bdcc7..., 12824 bytes)
+Format and type check: success
+Build CLI for terminal-coordinate regression: success
+Exact CLI column-layout regression repeated three times: success
+picker column-layout regression :: green actual CLI regression verified three times
+Full GREEN validation: success (clippy -D warnings + whole workspace suite)
+Export exactly tested proposal: success
+candidate patch digest :: sha256=006bdcc75217da662ca838e1ffb2c4f27d215a21d5465b8a39605f6f68358271; bytes=12824
+column-layout trace digest :: sha256=b45c921ef3da6fc071dd21660e5d7d4d1b8f76a7b94730fda9c12736112a0889; bytes=43781

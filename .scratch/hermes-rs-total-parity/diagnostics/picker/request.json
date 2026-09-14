@@ -1,5 +1,6 @@
 {
   "phase": "capture",
-  "test": "picker_normal_header",
-  "source_sha256": "76e462d9b5b9ce28a518f205bd8c24a76b35f403479f121fbfca37f611c915a9"
+  "test": "picker_terminal_size",
+  "source_sha256": "72909a5c2212d02158983a469351d5837bc44ddb18ef9f64f6d0a5cc7e9c8bce",
+  "attempt": 2
 }

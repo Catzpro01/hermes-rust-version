@@ -26,6 +26,9 @@ ROOT = Path(__file__).resolve().parents[1]
 UPSTREAM = '63279301bcbdc185c1b07b98a9312eb0c862f26d'
 SID_A = '550e8400-e29b-41d4-a716-446655440000'
 SID_B = '660f8400-e29b-41d4-a716-446655440001'
+# Requested explicitly by the size-contract capture; never part of the default
+# matrix, so the existing bundles keep their exact case list.
+PICKER_SIZE_CASES = ('picker-narrow', 'picker-too-small')
 CASES = ('wizard-mode', 'wizard-full', 'wizard-blank', 'wizard-quick',
          'wizard-model', 'wizard-terminal', 'wizard-local', 'wizard-docker',
          'wizard-gateway', 'wizard-gateway-empty', 'wizard-gateway-token',
@@ -70,7 +73,15 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
         while index < len(steps):
             now = time.monotonic()
             if now - stage_begin > timeout:
-                error = f'missing readiness/timeout at stage {index}: {steps[index][0]}'
+                # Diagnose without changing the snapshot rule: say what the child
+                # actually drew, so a rare start-up failure is identifiable from
+                # the annotation instead of only from the blocked job log.
+                visible = [line.strip() for line in screen.display if line.strip()][:3]
+                head = output[:160].decode('utf-8', 'replace')
+                tail = output[-120:].decode('utf-8', 'replace')
+                error = (f'missing readiness/timeout at stage {index}: {steps[index][0]} '
+                         f'({len(output)} bytes; screen={visible!r}; '
+                         f'head={head!r}; tail={tail!r})')
                 break
             if not eof and select.select([master], [], [], 0.05)[0]:
                 try:
@@ -159,6 +170,8 @@ def steps_for(name, side):
     if name == 'wizard-tools-toggle': return ([(tools, '\r'), ('Tools for', ' '), ('Tools for', None)] if py else [(tools, ' '), (tools, None)])
     if name == 'wizard-cancel': return [(terminal, '\x1b'), ('@exit', None)]
     if name == 'picker-empty': return [('No sessions found.', None)]
+    if name == 'picker-too-small': return [('Terminal too small', None)]
+    if name == 'picker-narrow': return [('Browse sessions', None)]
     if name == 'picker-normal': return [('Browse sessions', None)]
     if name == 'picker-filter': return [('Browse sessions', 'topic'), ('filter: topic', None)]
     if name == 'picker-no-match': return [('Browse sessions', 'zzzz'), ('No sessions match', None)]
@@ -187,10 +200,14 @@ def seed_rust(home, empty=False):
                 db.execute('INSERT INTO messages(session_id,role,content,timestamp) VALUES (?,?,?,?)',(sid,'user',text,1700000000.5+i))
 
 
-def capture_side(side, binary=None, summary=None, reference=None, names=CASES, widths=(100,80)):
+def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
+                 widths=(100,80), timeout=15, pairs=None):
+    """Record cases. By default every name is recorded at every width; pass
+    `pairs` of (name, width) when the case set is width-specific (the size
+    contract records 40 and 39 columns only in their own scenarios)."""
     cases = []
-    for width in widths:
-        for name in names:
+    plan = pairs if pairs else [(name, width) for width in widths for name in names]
+    for name, width in plan:
             with tempfile.TemporaryDirectory(prefix='hermes-ui-'+side+'-') as tmp:
                 home = Path(tmp)
                 if name.startswith('picker') and side == 'rust': seed_rust(home, name=='picker-empty')
@@ -209,7 +226,7 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES, w
                 if name == 'wizard-docker':
                     (home/'empty-bin').mkdir()
                     extra['PATH'] = str(home/'empty-bin')
-                result = record(command,home,width,steps_for(name,side),extra)
+                result = record(command,home,width,steps_for(name,side),extra,timeout=timeout)
                 # Select a recorded instant, not normalized output. Keep later
                 # bytes/events too, including deliberately blocked service calls.
                 if side == 'python' and name in ('wizard-docker', 'wizard-gateway-empty') and not result['error']:

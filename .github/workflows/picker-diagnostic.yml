@@ -1,13 +1,13 @@
 name: Picker diagnostic regression
 on:
   push:
-    branches: ["arena/01a09c1e-hermes-rust-version"]
+    branches: ["arena/01a0a052-hermes-rust-version"]
     paths: ['.scratch/hermes-rs-total-parity/diagnostics/picker/request.json']
 permissions:
   contents: read
 jobs:
   diagnose:
-    if: github.ref == 'refs/heads/arena/01a09c1e-hermes-rust-version'
+    if: github.ref == 'refs/heads/arena/01a0a052-hermes-rust-version'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -16,8 +16,18 @@ jobs:
           persist-credentials: false
       - name: Official Rust tools
         run: |
-          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
-          rustup default stable
+          if command -v rustup >/dev/null 2>&1; then
+            rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+            rustup default stable
+          fi
+          for tool in rustc cargo rustfmt cargo-clippy; do
+            command -v "$tool" >/dev/null 2>&1 || {
+              echo "this runner is missing $tool; install the stable Rust toolchain with rustfmt and clippy"
+              exit 1
+            }
+          done
+          rustc --version
+          cargo --version
       - name: Verify and apply bounded diagnostic proposal
         id: plan
         run: |
@@ -31,15 +41,32 @@ jobs:
                    'picker_no_match_counter_preserves_total': 'counter',
                    'picker_footer_position': 'position',
                    'picker_footer_color': 'color',
-                   'picker_normal_header': 'header'}
+                   'picker_normal_header': 'header',
+                   'picker_filter_header': 'filter-header',
+                   'picker_column_layout': 'column-layout',
+                   'picker_message_style': 'message-style',
+                   'picker_selection': 'selection',
+                   'picker_status_ink': 'status-ink',
+                   'picker_redraw_on_input': 'redraw-on-input',
+                   'picker_terminal_size': 'terminal-size'}
+          live = ('picker_footer_position', 'picker_footer_color',
+                  'picker_normal_header', 'picker_filter_header',
+                  'picker_column_layout', 'picker_message_style',
+                  'picker_selection', 'picker_status_ink',
+                  'picker_redraw_on_input', 'picker_terminal_size')
           test = request.get('test', 'picker_footer_tracks_delete_availability')
           assert test in tests, 'non-allowlisted regression'
           folder = folder/tests[test]
-          assert phase in ('red', 'green', 'capture')
+          assert phase in ('red', 'green', 'capture', 'reference')
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write(f'phase={phase}\ntest={test}\n')
+          if phase == 'reference':
+              # The plan outputs must exist before any step is skipped, otherwise a
+              # missing `test` makes the `!=` conditions select the wrong steps.
+              assert test == 'picker_terminal_size', 'only the size contract has a reference phase'
+              raise SystemExit(0)  # Reference capture; no Rust patch is applied.
           if phase != 'capture':
-              if test in ('picker_footer_position', 'picker_footer_color', 'picker_normal_header') and phase == 'red':
+              if test in live and phase == 'red':
                   source = Path('crates/hermes-cli/src/session_picker.rs')
                   assert hashlib.sha256(source.read_bytes()).hexdigest() == request['source_sha256']
                   raise SystemExit(0)  # Live CLI test; RED uses unchanged committed Rust.
@@ -57,14 +84,26 @@ jobs:
         run: |
           cargo fmt --all
           cargo fmt --all -- --check
-          cargo check --workspace --all-targets --locked
+          set +e
+          cargo check --workspace --all-targets --locked 2>&1 | tee picker-check.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            first="$(grep -m1 -E '^error(\[E[0-9]+\])?:' picker-check.log || echo 'cargo check failed')"
+            echo "::error title=cargo check failed::$first"
+            exit "$status"
+          fi
       - name: Build CLI for terminal-coordinate regression
-        if: steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header'
+        if: steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input' || steps.plan.outputs.test == 'picker_terminal_size'
         run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
           cargo build --locked -p hermes-rs --bin hermes-rs
-          python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
+          rm -rf "$QA"
+          python3 -m pip --version || { echo 'python3 -m pip is required on this runner'; exit 1; }
+          python3 -m pip install --target "$QA" pyte==0.8.2 wcwidth==0.8.3 \
+            || python3 -m pip install --target "$QA" --break-system-packages pyte==0.8.2 wcwidth==0.8.3
       - name: Exact frame regression repeated three times
-        if: steps.plan.outputs.test != 'picker_footer_position' && steps.plan.outputs.test != 'picker_footer_color' && steps.plan.outputs.test != 'picker_normal_header'
+        if: steps.plan.outputs.test != 'picker_footer_position' && steps.plan.outputs.test != 'picker_footer_color' && steps.plan.outputs.test != 'picker_normal_header' && steps.plan.outputs.test != 'picker_filter_header' && steps.plan.outputs.test != 'picker_column_layout' && steps.plan.outputs.test != 'picker_message_style' && steps.plan.outputs.test != 'picker_selection' && steps.plan.outputs.test != 'picker_status_ink' && steps.plan.outputs.test != 'picker_redraw_on_input' && steps.plan.outputs.test != 'picker_terminal_size'
         id: regression
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
@@ -91,9 +130,10 @@ jobs:
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
         run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/position-$attempt.json python3 scripts/test_picker_footer_position.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/position-$attempt.json python3 scripts/test_picker_footer_position.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -126,9 +166,10 @@ jobs:
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
         run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/color-$attempt.json python3 scripts/test_picker_footer_color.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/color-$attempt.json python3 scripts/test_picker_footer_color.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -161,9 +202,10 @@ jobs:
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
         run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/header-$attempt.json python3 scripts/test_picker_normal_header.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/header-$attempt.json python3 scripts/test_picker_normal_header.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -190,54 +232,417 @@ jobs:
           if Path('evidence/header-1.json').exists():
               export_annotations(Path('evidence/header-1.json'), 0, 'header trace')
           PY
+      - name: Exact CLI filter-header regression repeated three times
+        if: steps.plan.outputs.test == 'picker_filter_header'
+        id: filter_header
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+        run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
+          for attempt in 1 2 3; do
+            set +e
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/filter-header-$attempt.json python3 scripts/test_picker_filter_header.py > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F 'FAIL: test_filter_help_header_matches_reference_style' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
+            else
+              test "$status" -eq 0
+              grep -F 'test_filter_help_header_matches_reference_style' "regression-$attempt.log"
+              grep -x 'OK' "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker filter-header regression::$PHASE actual CLI regression verified three times"
+      - name: Retain primary filter-header CLI trace
+        if: always() && steps.plan.outputs.test == 'picker_filter_header'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          if Path('evidence/filter-header-1.json').exists():
+              export_annotations(Path('evidence/filter-header-1.json'), 0, 'filter-header trace')
+          PY
+      - name: Exact CLI column-layout regression repeated three times
+        if: steps.plan.outputs.test == 'picker_column_layout'
+        id: column_layout
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+        run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
+          for attempt in 1 2 3; do
+            set +e
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/column-layout-$attempt.json python3 scripts/test_picker_column_layout.py > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F 'FAIL: test_column_layout_matches_pinned_reference' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
+            else
+              test "$status" -eq 0
+              grep -F 'test_column_layout_matches_pinned_reference' "regression-$attempt.log"
+              grep -x 'OK' "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker column-layout regression::$PHASE actual CLI regression verified three times"
+      - name: Retain primary column-layout CLI trace
+        if: always() && steps.plan.outputs.test == 'picker_column_layout'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          if Path('evidence/column-layout-1.json').exists():
+              export_annotations(Path('evidence/column-layout-1.json'), 0, 'column-layout trace')
+          PY
+      - name: Exact CLI prompt/message-style regression repeated three times
+        if: steps.plan.outputs.test == 'picker_message_style'
+        id: message_style
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+        run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
+          for attempt in 1 2 3; do
+            set +e
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/message-style-$attempt.json python3 scripts/test_picker_message_style.py > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F 'FAIL: test_prompt_and_no_match_match_reference_style' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
+            else
+              test "$status" -eq 0
+              grep -F 'test_prompt_and_no_match_match_reference_style' "regression-$attempt.log"
+              grep -x 'OK' "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker prompt/message-style regression::$PHASE actual CLI regression verified three times"
+      - name: Retain primary prompt/message-style CLI trace
+        if: always() && steps.plan.outputs.test == 'picker_message_style'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          if Path('evidence/message-style-1.json').exists():
+              export_annotations(Path('evidence/message-style-1.json'), 0, 'message-style trace')
+          PY
+      - name: Exact CLI selected-row regression repeated three times
+        if: steps.plan.outputs.test == 'picker_selection'
+        id: selection
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+        run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
+          for attempt in 1 2 3; do
+            set +e
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/selection-$attempt.json python3 scripts/test_picker_selection.py > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F 'FAIL: test_selected_row_matches_reference_style' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
+            else
+              test "$status" -eq 0
+              grep -F 'test_selected_row_matches_reference_style' "regression-$attempt.log"
+              grep -x 'OK' "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker selection regression::$PHASE actual CLI regression verified three times"
+      - name: Retain primary selection CLI trace
+        if: always() && steps.plan.outputs.test == 'picker_selection'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          if Path('evidence/selection-1.json').exists():
+              export_annotations(Path('evidence/selection-1.json'), 0, 'selection trace')
+          PY
+      - name: Exact CLI status-tag ink regression repeated three times
+        if: steps.plan.outputs.test == 'picker_status_ink'
+        id: status_ink
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+        run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
+          for attempt in 1 2 3; do
+            set +e
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/status-ink-$attempt.json python3 scripts/test_picker_status_ink.py > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F 'FAIL: test_status_tag_ink_matches_the_pinned_mapping' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
+            else
+              test "$status" -eq 0
+              grep -F 'test_status_tag_ink_matches_the_pinned_mapping' "regression-$attempt.log"
+              grep -x 'OK' "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker status-tag ink regression::$PHASE actual CLI regression verified three times"
+      - name: Retain primary status-tag ink CLI trace
+        if: always() && steps.plan.outputs.test == 'picker_status_ink'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          if Path('evidence/status-ink-1.json').exists():
+              export_annotations(Path('evidence/status-ink-1.json'), 0, 'status-ink trace')
+          PY
+      - name: Exact CLI redraw-on-input regression repeated three times
+        if: steps.plan.outputs.test == 'picker_redraw_on_input'
+        id: redraw
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+        run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
+          for attempt in 1 2 3; do
+            set +e
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/redraw-$attempt.json python3 scripts/test_picker_redraw_on_input.py > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F 'FAIL: test_picker_draws_on_input_not_on_its_poll_timeout' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
+            else
+              test "$status" -eq 0
+              grep -F 'test_picker_draws_on_input_not_on_its_poll_timeout' "regression-$attempt.log"
+              grep -x 'OK' "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker redraw-on-input regression::$PHASE actual CLI regression verified three times"
+      - name: Retain primary redraw-on-input CLI trace
+        if: always() && steps.plan.outputs.test == 'picker_redraw_on_input'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          if Path('evidence/redraw-1.json').exists():
+              export_annotations(Path('evidence/redraw-1.json'), 0, 'redraw trace')
+          PY
+      - name: Exact CLI terminal-size regression repeated three times
+        if: steps.plan.outputs.test == 'picker_terminal_size' && steps.plan.outputs.phase != 'reference'
+        id: size
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+        run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
+          for attempt in 1 2 3; do
+            set +e
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/size-$attempt.json python3 scripts/test_picker_terminal_size.py > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F 'FAIL: test_size_contract_follows_the_pinned_threshold' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
+            else
+              test "$status" -eq 0
+              grep -F 'test_size_contract_follows_the_pinned_threshold' "regression-$attempt.log"
+              grep -x 'OK' "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker terminal-size regression::$PHASE actual CLI regression verified three times"
+      - name: Retain primary terminal-size CLI trace
+        if: always() && steps.plan.outputs.test == 'picker_terminal_size' && steps.plan.outputs.phase != 'reference'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          if Path('evidence/size-1.json').exists():
+              export_annotations(Path('evidence/size-1.json'), 0, 'size trace')
+          PY
+      - name: Prepare the pinned Python reference
+        if: steps.plan.outputs.phase == 'reference'
+        run: |
+          set -o pipefail
+          {
+            curl -sSL -o /tmp/hermes-ref.tar.gz https://codeload.github.com/NousResearch/hermes-agent/tar.gz/63279301bcbdc185c1b07b98a9312eb0c862f26d
+            ls -l /tmp/hermes-ref.tar.gz
+            mkdir -p /tmp/hermes-ref
+            tar -xzf /tmp/hermes-ref.tar.gz -C /tmp/hermes-ref --strip-components=1
+            printf '63279301bcbdc185c1b07b98a9312eb0c862f26d\n' > /tmp/hermes-ref/.visual-evidence-reference
+            python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          path = Path('/tmp/hermes-ref/hermes_cli/main.py')
+          digest = hashlib.sha256(path.read_bytes()).hexdigest()
+          assert digest == '89cde75d388ae3ff0d3512c00a0b4e77fe9f55c438874032b32967b4ab867567', digest
+          print('pinned reference main.py', digest, path.stat().st_size, 'bytes')
+          PY
+          } 2>&1 | tee reference-prepare.log
+      - name: Record the reference side of the size contract
+        if: steps.plan.outputs.phase == 'reference'
+        run: |
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
+          set -o pipefail
+          command -v curl >/dev/null 2>&1 || { echo 'curl is required to fetch the pinned reference'; exit 1; }
+          python3 -m pip install --target "$QA" -r scripts/visual-renderer/requirements-banner.txt pyte==0.8.2 wcwidth==0.8.3 2>&1 | tail -2 \
+            || python3 -m pip install --target "$QA" --break-system-packages -r scripts/visual-renderer/requirements-banner.txt pyte==0.8.2 wcwidth==0.8.3 2>&1 | tail -2
+          PYTHONPATH="$QA" python3 scripts/capture_picker_sizes.py reference /tmp/hermes-ref evidence/picker-size-reference.json 2>&1 | tee -a reference-prepare.log
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          cases = json.loads(Path('evidence/picker-size-reference.json').read_text())['cases']
+          print('::notice title=picker size reference::captured ' + str(len(cases)) + ' cases: ' +
+                ', '.join(f"{c['id']} ({c['python']['error']})" for c in cases))
+          PY
+      - name: Export picker size reference recordings
+        if: steps.plan.outputs.phase == 'reference'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          export_annotations(Path('evidence/picker-size-reference.json'), 0, 'size reference bundle')
+          PY
       - name: Full GREEN validation
-        if: steps.plan.outputs.phase != 'red'
+        if: steps.plan.outputs.phase == 'green'
         run: |
           exec > >(tee full-validation.log) 2>&1
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace --no-fail-fast
       - name: Export exactly tested proposal
-        if: steps.plan.outputs.phase != 'capture' && !((steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header') && steps.plan.outputs.phase == 'red')
+        # Every GREEN phase exports the tree it actually tested, after the step
+        # above ran `cargo fmt --all`. Live tests need this too: their committed
+        # rustfmt state is what the CI fmt gate checks later.
+        if: steps.plan.outputs.phase == 'green'
         run: |
           mkdir -p evidence
           git diff --binary -- '*.rs' > evidence/tested.patch
           python3 scripts/capture_banner.py export evidence/tested.patch --label 'candidate patch'
       - name: Capture committed picker and verify original symptom
+        id: capture
         if: steps.plan.outputs.phase == 'capture'
         run: |
-          test -z "$(git diff --name-only -- '*.rs')"
-          cargo build --locked -p hermes-rs --bin hermes-rs
-          python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
-          PYTHONPATH=/tmp/picker-qa python3 scripts/capture_picker_diagnostic.py target/debug/hermes-rs evidence/picker.json
-          PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_filter_hint.py evidence/picker.json --side rust
-          if [ "${{ steps.plan.outputs.test }}" != picker_footer_tracks_delete_availability ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_counter.py evidence/picker.json --side rust
+          QA="${RUNNER_TEMP:-/tmp}/picker-qa"
+          set -o pipefail
+          {
+            test -z "$(git diff --name-only -- '*.rs')"
+            cargo build --locked -p hermes-rs --bin hermes-rs
+            rm -rf "$QA"
+            python3 -m pip install --target "$QA" pyte==0.8.2 wcwidth==0.8.3 \
+              || python3 -m pip install --target "$QA" --break-system-packages pyte==0.8.2 wcwidth==0.8.3
+            PYTHONPATH="$QA" python3 scripts/capture_picker_diagnostic.py target/debug/hermes-rs evidence/picker.json
+            PYTHONPATH="$QA" python3 scripts/check_picker_filter_hint.py evidence/picker.json --side rust
+            if [ "${{ steps.plan.outputs.test }}" != picker_footer_tracks_delete_availability ]; then
+              PYTHONPATH="$QA" python3 scripts/check_picker_counter.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_footer_position ] || [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
+              PYTHONPATH="$QA" python3 scripts/check_picker_footer_position.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
+              PYTHONPATH="$QA" python3 scripts/check_picker_footer_color.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
+              PYTHONPATH="$QA" python3 scripts/check_picker_normal_header.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
+              PYTHONPATH="$QA" python3 scripts/check_picker_filter_header.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_column_layout ] || [ "${{ steps.plan.outputs.test }}" = picker_message_style ]; then
+              PYTHONPATH="$QA" python3 scripts/check_picker_column_layout.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_message_style ] || [ "${{ steps.plan.outputs.test }}" = picker_selection ]; then
+              PYTHONPATH="$QA" python3 scripts/check_picker_message_style.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_selection ] || [ "${{ steps.plan.outputs.test }}" = picker_status_ink ]; then
+              PYTHONPATH="$QA" python3 scripts/check_picker_selection.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_status_ink ]; then
+              PYTHONPATH="$QA" python3 scripts/check_picker_status_ink.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_redraw_on_input ]; then
+              PYTHONPATH="$QA" python3 scripts/check_picker_redraw_on_input.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_terminal_size ]; then
+              PYTHONPATH="$QA" python3 scripts/capture_picker_sizes.py rust target/debug/hermes-rs evidence/picker-size-rust.json
+              PYTHONPATH="$QA" python3 scripts/capture_picker_sizes.py pair evidence/picker-size-rust.json docs/hermes-ui-spec/017/evidence/picker-size-reference/picker-size-reference.json evidence/picker-size-paired.json
+              PYTHONPATH="$QA" python3 scripts/check_picker_terminal_size.py evidence/picker-size-paired.json --side python
+              PYTHONPATH="$QA" python3 scripts/check_picker_terminal_size.py evidence/picker-size-paired.json --side rust
+            fi
+            python3 scripts/capture_banner.py export evidence/picker.json
+          if [ -f evidence/picker-size-paired.json ]; then
+            python3 scripts/capture_banner.py export evidence/picker-size-paired.json --label 'size bundle'
           fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_footer_position ] || [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_position.py evidence/picker.json --side rust
-          fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_color.py evidence/picker.json --side rust
-          fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_normal_header ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_normal_header.py evidence/picker.json --side rust
-          fi
-          python3 scripts/capture_banner.py export evidence/picker.json
+          } 2>&1 | tee capture-verify.log
       - name: Export exact regression log
         if: always()
+        env:
+          CAPTURE: ${{ steps.capture.outcome }}
+          PHASE: ${{ steps.plan.outputs.phase }}
+          REF_PREPARE: ${{ steps.prepare.outcome }}
+          REF_RECORD: ${{ steps.record.outcome }}
         run: |
           python3 - <<'PY'
+          import os
           from pathlib import Path
           p=Path('regression-1.log')
           if p.exists():
               text='\n'.join(p.read_text().splitlines()[-30:])
               print('::notice title=picker exact result::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
+          p=Path('capture-verify.log')
+          if p.exists() and os.environ.get('CAPTURE') != 'success':
+              lines=p.read_text().splitlines()
+              signals=[line for line in lines if line.startswith('FAIL') or 'Traceback' in line
+                       or 'Error' in line or line.startswith('RuntimeError')]
+              tail=lines[-40:]
+              text='\n'.join(signals[-20:] + ['--- last 40 lines ---'] + tail)
+              print('::error title=picker capture verify::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
+          reference_failed = (os.environ.get('REF_PREPARE') not in (None, 'success')
+                              or os.environ.get('REF_RECORD') not in (None, 'success'))
+          p=Path('reference-child.log')
+          if p.exists() and os.environ.get('PHASE') == 'reference' and reference_failed:
+              print('::error title=picker reference child output::' + p.read_text()[-3000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+          p=Path('reference-prepare.log')
+          if p.exists() and os.environ.get('PHASE') == 'reference' and reference_failed:
+              lines=p.read_text().splitlines()
+              signals=[line for line in lines if line.startswith(('FAIL','ERROR','AssertionError','RuntimeError'))
+                       or 'Traceback' in line or 'Error' in line or 'error' in line]
+              text='\n'.join((signals[-10:] + ['--- picker size lines ---'] +
+                               [line for line in lines if line.startswith(('python picker-', 'rust picker-'))][-6:] +
+                               ['--- last 25 lines ---'] + lines[-25:]))
+              print('::error title=picker reference prepare::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
           p=Path('full-validation.log')
           if p.exists():
               lines=p.read_text().splitlines()
               signals=[]
               for i,line in enumerate(lines):
-                  if 'panicked at' in line or line.startswith('error:'):
+                  if 'panicked at' in line or (line.startswith('error:')
+                                               and 'interrupted' not in line):
                       signals.extend(lines[max(0,i-1):i+7])
               if signals:
                   text='\n'.join(signals)
@@ -251,4 +656,8 @@ jobs:
             evidence/
             regression-*.log
             full-validation.log
+            capture-verify.log
+            reference-prepare.log
+            reference-child.log
+            picker-check.log
           retention-days: 90

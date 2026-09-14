@@ -60,7 +60,42 @@ This supersedes the historical pending-counter entries above.
   Public frame RED three times → official full GREEN → exact2008-byte patch
   applied → source capture34826757031 and CI34826756998 GREEN. Six paired PNGs
   directly inspected; four normal/filter PNGs byte-identical to prior packet.
-- [ ] Footer placement and picker palette/header/selection/delete styling.
+- [x] Footer placement: preserved; six PTY checks pass.
+- [x] Filter help header: palette slot6 + bold reached and pixel-verified at
+  both widths (RED34858664487 → GREEN34858865863 → capture34859140850/CI34859140646).
+  The strict gate rejects the bright variant, so the slot is verified.
+  Packet: `docs/hermes-ui-spec/017/evidence/picker-filter-header-9cc5cb4/REPORT.md`.
+- [ ] Column header colour/indent, selection styling, delete-prompt colour.
+  - [x] Cycle 2 (column layout) delivered: kursor column, blank row 3, header at
+    width-54 in palette8 without bold and body columns at width-57 as the pinned
+    100/80 reference shows (RED 34860668321 → GREEN 34861285022 → capture
+    34861588181 / CI 34861587979). The first GREEN proposal was rejected by
+    clippy (8/7 arguments) and kept as `rejected-first-attempt.patch`.
+    Packet: `docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/REPORT.md`.
+  - [x] Cycle 3 (prompt/message rows) delivered: the delete-confirm prompt is
+    palette1 + bold and the no-match message carries the **dim** attribute
+    (`ESC[0;2m`, unreadable by pyte 0.8.2, so verified from the retained byte
+    stream plus rendered pixels). RED 34864078749 → GREEN 34864360124 → capture
+    34864672852 → CI 34864669012/34864672933. The tested 2216-byte patch is
+    `message-style/green.patch`; packet
+    `docs/hermes-ui-spec/017/evidence/picker-message-style-fd674dc/REPORT.md`.
+    All 28 pinned pixel regions are equal, so the dim finding from cycle 2 is
+    closed.
+  - [x] Cycle 4 (selection row) delivered: the whole cursor row uses palette
+    slot 2 + bold with no reverse video (RED 34866264371 → GREEN 34866921566 →
+    capture 34868306211 → CI GREEN). Packet
+    `docs/hermes-ui-spec/017/evidence/picker-selection-b4cb408/REPORT.md`; 34/34
+    pinned pixel regions equal, and `attempts-result.txt` records the dim-scanner
+    bug, the PTY start-up flake fix and the one unexplained GREEN failure.
+  - [ ] Cycle 5 (status-tag ink) in flight: the new live gate
+    `picker_status_ink` pins the tag ink from the upstream mapping read out of the
+    pinned source (`docs/hermes-ui-spec/017/evidence/upstream-status-attr/`): the
+    tag is drawn at `3 + name_width + 2`, five cells wide, never bold, and only on
+    rows that are not the cursor — `done`/complete green slot 2, `intr` yellow
+    slot 3 (corroborated by the retained capture), `err` red slot 1, `empty`
+    palette 8. RED requested against the unchanged Rust source; the reference
+    passes and the Rust capture misses the ink on `done`.
+  - [ ] Cycle 6 candidates: resize/long-list/clear-filter behaviour.
 - [ ] Wizard/completion discrepancies and T12 field/full-Python-CLI evidence.
 
 Report: `docs/hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md`.
@@ -154,3 +189,166 @@ Standards/Spec review:0 new hard violations,1 nonblocking duplicated-runner/setu
 observation; filter/column headers, selection/delete/no-match styles, other layout,
 wizard/completion and T12 coverage remain open. No resize/clear-filter/long-list
 claims, new adaptation, whole-picker acceptance, closure or merge.
+  - [x] Cycle 5 (status-tag ink) patch authored: `status_ink()` + `status_tag_span()`
+    + the per-row tag redraw in `session_picker.rs`, 5567 bytes
+    (sha256 `a073bedc…`), verified with `git apply --check` against the committed
+    source. RED run 34870302745 failed three times as expected (assertion only,
+    no setup error). GREEN bound to the patch digest.
+  - [ ] Cycle 5 GREEN attempt 1 (run 34870642732) failed honestly: the patched
+    binary panicked with `attempt to subtract with overflow` at the blank
+    separator row (`n - 3` on `n == 2`), so every case exited 101 at stage 0 and
+    the gate reported a capture error, not an assertion failure. The panic was
+    located by decoding the retained trace annotation
+    (`sha256 bc0b233a…`, 18703 bytes) — the harness's raw bytes carry the Rust
+    panic message. The patch now guards `n < 3` and is re-requested as
+    `60687c1c…` (5840 bytes).
+  - [ ] Lesson for the CI story: `ci.yml`'s picker step uses
+    `continue-on-error: true`, so a real live-gate failure shows up as
+    `step.conclusion == success` while the step's `outcome` is `failure`, and the
+    job still fails at the final aggregate step. Cycle 9's "unexplained" GREEN
+    failure `34866468131` was exactly this: the committed source failed a live
+    gate, not a flake. Read the `picker terminal` annotation, not the step list.
+  - [ ] Cycle 5 GREEN attempt 2 (run 34871081677): the fix works — the live gate
+    captured all six cases and passed three times in a row — but the new unit
+    test compared `format_row(..., 20, ...)` cells against the 100-column tag
+    offsets, so step 24 (Full GREEN validation) failed on that assertion alone.
+    Test corrected to use the matching widths; patch re-requested.
+  - [x] Cycle 5 GREEN: run 34871381451 succeeded with `green actual CLI
+    regression verified three times` (all six live cases captured, full
+    validation OK). Exported `tested.patch` = 6109 bytes,
+    sha256 `73d0322e…` — the same diff as the bound `e88347c8…` patch plus the
+    rustfmt line wrapping the runner applies; it is now applied to the tree.
+    (The earlier commit message quoted `3b7f…`; the correct bound digest is
+    `e88347c8…`.)
+  - [x] Cycle 5 (status-tag ink) delivered: fix `1781404`, capture `19bbbd5`,
+    packet `docs/hermes-ui-spec/017/evidence/picker-status-ink-19bbbd5/`
+    (79 files) with audit `STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL` —
+    10 checkers PASS on the committed source, 34/34 control regions equal,
+    4 declared tag-span differences, 20 changed cells (row 5 only).
+  - [ ] Cycle 6 candidates (in order): (a) the picker repaints the whole frame
+    every poll timeout while the reference redraws only after a key
+    (`_curses_browse` blocks in `stdscr.getch()`) — this is also what makes the
+    PTY gates flaky; (b) resize/long-list/clear-filter behaviour; (c) the
+    documented `Active`/`ID` adaptations; (d) a fixture that exercises the
+    `interrupted`/`error`/`empty` inks in a live capture (today only
+    `complete`/`done` is captured).
+  - [ ] Cycle 6 (a) in flight: the picker redraws the whole frame on every poll
+    timeout while the pinned reference draws the frame and then blocks in
+    `stdscr.getch()` (one draw per key, nothing while idle). The new live gate
+    `picker_redraw_on_input` splits each record at the scenario keystrokes and
+    counts frames per input window (allowance 1 before the first keystroke, one
+    per typed key afterwards). The retained Python reference passes 10/10 on the
+    cycle-10 bundle; the committed Rust capture fails 8/10 (e.g. 5 frames with no
+    input at all, 25 frames in the no-match case) while the empty-store case is a
+    control. This deviation is also the cause of the PTY start-up flake, so fixing
+    it makes every live gate deterministic.
+  - [x] Cycle 6 (a) RED: run 34873144309 failed exactly three times with the
+    assertion and no setup error (trace `65cf8b28…`, 279052 bytes). Patch bound:
+    2801 bytes `925b963e…` — a `dirty` flag makes the redraw happen only when a
+    key or a resize changed the screen; the 100 ms poll loop stays for signal
+    responsiveness. The runner's `cargo fmt --all` reindents the new block, so
+    the tested patch is expected to differ from the bound one, as in cycle 10.
+  - [x] Cycle 6 (a) GREEN: run 34873480643 succeeded, and the exported tested
+    patch is byte-identical to the bound request patch (`925b963e…`, 2801 bytes)
+    — rustfmt had nothing to change. The live gate passed three times and the
+    retained trace fell from 279052 bytes (RED) to 45749 bytes (GREEN), the
+    direct sign that the picker stopped repainting while idle.
+  - [x] Cycle 6 (a) delivered: fix `bbd943c`, capture `b2db435`, packet
+    `docs/hermes-ui-spec/017/evidence/picker-redraw-on-input-b2db435/` (78 files)
+    with audit `REDRAW_ON_INPUT_FIXED_FRAME_CONTENT_UNCHANGED_ALL_REGIONS_EQUAL` —
+    eleven checkers PASS, the same gate rejects 8/10 cases of the previous packet,
+    frame content byte-identical, and the PTY start-up flake stops reproducing.
+  - [ ] Cycle 7 candidates: (a) resize/long-list/clear-filter behaviour;
+    (b) the documented Active/ID adaptations; (c) a fixture that exercises the
+    interrupted/error/empty inks in a live capture.
+  - [ ] Cycle 7 (size contract) started; the pinned reference records must be
+    captured before the Rust gate can be RED. The private-looking upstream
+    repository is public, so the runner materialises the pinned checkout from
+    codeload and records the reference side itself.
+  - [x] Reference-phase attempt 1 (run 34876400782) failed honestly: the plan step
+    short-circuited *before* writing `phase`/`test` to `GITHUB_OUTPUT`, so a
+    missing `test` made every `!=` step condition true and the generic Rust unit
+    test step ran instead. Fixed by writing the outputs first; 
+    `test_ci_workflow.py` now asserts the written outputs.
+  - [x] Reference-phase attempt 2 (run 34876621220) failed honestly too: the live
+    Rust size gate ran during the reference phase (its guard only checked `test`)
+    and failed, stopping the job before the reference steps. The live step and its
+    trace step now skip `phase == 'reference'`, and `test_ci_workflow.py` asserts
+    that guard. Incidentally this run shows the new live gate is RED-shaped: it
+    fails on the assertion with no setup error.
+  - [x] Reference-phase attempt 6 (run 34877481167) finally ran the pinned Python
+    picker: the environment fix worked. Findings from its per-case lines:
+    * 40 columns: the reference draws the picker frame (369 bytes, no error) —
+      `Browse sessions — ↑↓ navigate Enter …`, `Title / Preview  Stat Msgs`,
+      `→ second topic  intr 1`, footer `1/2 sessions  d delete`;
+    * 39 columns: `Terminal too small` is what it draws (99 bytes) — and the
+      harness therefore timed out waiting for `Browse sessions`, which is exactly
+      the notice case.
+    So the contract is per width (40 usable, 39 notice), not a cross product: the
+    case/width matrix is now explicit (`PAIRS`), `capture_side` accepts
+    `pairs`, and the live test uses the same pairing.
+  - [x] Workflow-invalidity incident (runs 34878420568, 34878422065, 34878423059): both
+    workflows were rejected by GitHub with "invalid workflow file" because
+    `${{ runner.temp }}` was placed in a **job-level** `env:` block — the `runner`
+    context is only available inside steps. Signature: the run is named after the
+    workflow file path and has no jobs. Fixed by defining
+    `QA="${RUNNER_TEMP:-/tmp}/picker-qa"` at the top of each step that uses it, and
+    `test_ci_workflow.py` now rejects any job-level use of a context GitHub does not
+    allow there (25 tests).
+  - [x] Reference-phase attempt 7 (run 34878644103) succeeded and the retained
+    records are gold:
+    * `picker-narrow-40x30`: 368 bytes, the reference enters the alternate screen
+      (`ESC[?1049h`) and draws the whole picker (hint, `Title / Preview  Stat  Msgs`,
+      `→ second topic  intr  1`, footer `1/2 sessions  d delete`);
+    * `picker-too-small-39x30`: 99 bytes, the reference still enters the alternate
+      screen, clears it and writes plain `Terminal too small` at row 1 with no
+      attributes, then waits — `exit_code_at_snapshot` is None, so it had not
+      returned before the key.
+    The bundle is retained at `docs/hermes-ui-spec/017/evidence/picker-size-reference/`
+    (sha256 2c84be67…), and the checker passes on it 2/2 (the local gate now also
+    pins that narrow lines are clipped, never wrapped, and that hint/header/footer
+    keep their rows).
+  - [x] Annotation hygiene found in that same run: the reference export shouted
+    "error" even on success (it printed whenever the phase was `reference`), the
+    full-validation annotation fired on the benign `error: interrupted` SIGINT
+    line, and the GREEN-only steps (validation + empty tested-patch export) ran
+    during the reference phase. All three are fixed and covered by tests.
+  - [ ] Cycle 7 (size contract) RED requested against the unchanged Rust source:
+    Rust still refuses anything below 60x8 with a plain `println!` before the
+    screen exists, so at 40 columns it must show the notice where the reference
+    draws the picker, and at 39 it returns before the key (the reference stays in
+    `getch()`).
+  - [x] Second invalid-workflow incident (run 34879063271): my own `if:` rewrite for
+    the tested-patch export left an unclosed parenthesis, and GitHub again refused
+    the whole file (run named after the path, no jobs). Fixed; `test_ci_workflow.py`
+    now checks every step expression for balanced parentheses and quotes (27 tests).
+    `actionlint-py` was tried for a real validator but its wheel does not build here.
+  - [x] Cycle 7 (size contract) RED: run 34879223385 failed exactly three times
+    with the assertion and no setup error (trace `30c81a2a…`, 4165 bytes) — at 40
+    columns Rust printed the notice instead of drawing the picker, because the
+    check itself (`cols < 60 || rows < 8` with a plain `println!` before the
+    screen) is not the pinned contract. Patch bound: 5204 bytes — threshold becomes
+    `PICKER_MIN_COLUMNS = 40` / `PICKER_MIN_ROWS = 5`, the notice is drawn on the
+    cleared alternate screen and followed by a key wait, the empty-store print
+    keeps its reference order (before curses), and every drawn line is clipped to
+    `cols - 1` like `addnstr(..., max_x - 1, ...)` so a narrow terminal never wraps.
+  - [x] Cycle 7 (size contract) GREEN attempt 1 (commit `e2272b3`, run
+    34879520834) failed in `Format and type check` with an invisible exit code
+    101. Cause: `clip_line` returns an owned `String`, so the later
+    `char_offset(line, …)` calls needed `&line`. Fix: borrow at both call sites
+    (patch now 5852 bytes, digest `91bab27…`) and make `cargo check` failures
+    visible — the step tees to `picker-check.log` and emits
+    `::error title=cargo check failed::<first error line>`, covered by a new
+    `test_ci_workflow.py` case (28 tests).
+  - [x] Cycle 7 (size contract) GREEN attempt 2 (commit `9122443`, run
+    34879746760) SUCCESS: `green actual CLI regression verified three times`,
+    live test `rust picker-narrow 40 CAPTURED_NOT_REVIEWED` +
+    `rust picker-too-small 39 CAPTURED_NOT_REVIEWED`, trace digest
+    `sha256=772b8383…; bytes=5141`. The export step now also runs for live GREEN
+    phases, so the tree the runner formatted (`cargo fmt --all`) is exported and
+    the patch committed here is the patch that was verified.
+  - [x] Cycle 7 (size contract) fix committed from the exported tested patch
+    (`f74411bf…`, 5178 bytes; source sha256 now `72909a5c…`). The runner's
+    `cargo fmt --all` re-wrapped one `assert_eq!`, which is exactly why the export
+    now covers live gates: committing the bound patch would have failed the CI fmt
+    gate on that line.

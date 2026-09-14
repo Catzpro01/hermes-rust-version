@@ -1,9 +1,31 @@
 # Bukti visual Spec 017
 
-**Terbaru: fixture banner 5a8e12c cocok selain branding terdokumentasi;
-keseluruhan §J.7 belum selesai atau diterima user.**
+**Terbaru: baris terpilih picker memakai palette2 + bold tanpa reverse video,
+dan 34 region piksel yang dipatok identik. Keseluruhan §J.7 belum selesai atau
+diterima user.**
 
-[Laporan terbaru](banner-5a8e12c/REPORT.md): CI 34785921216 dan capture
+[Laporan terbaru](../evidence/picker-selection-b4cb408/REPORT.md) (paket
+`picker-selection-b4cb408`): RED 34866264371 → GREEN 34866921566 → capture
+34868306211 → CI GREEN. Baris terpilih kini palette2 + bold tanpa reverse video;
+34 dari 34 region piksel identik (termasuk region baru baris terpilih di kedua
+lebar), empat PNG kasus empty byte-identik, dan hanya baris4 yang berubah di ketiga
+skenario ber-kursor. Paket mencatat pula tiga masalah yang ditemukan dan ditutup
+sepanjang siklus ini (`attempts-result.txt`).
+
+[Laporan sebelumnya](../evidence/picker-message-style-fd674dc/REPORT.md) (paket
+`picker-message-style-fd674dc`): prompt hapus palette1 + bold dan pesan no-match
+dengan atribut **dim**; 28/28 region piksel identik saat itu.
+
+[Laporan sebelumnya](../evidence/picker-column-layout-b732d22/REPORT.md) (paket
+`picker-column-layout-b732d22`): RED 34860668321 → GREEN 34861285022 → capture
+34861588181 → CI 34861587979 SUCCESS; kolom header, baris kosong pemisah dan
+kolom kursor pada koordinat referensi, 14 region piksel identik.
+
+[Laporan sebelumnya](../evidence/picker-filter-header-9cc5cb4/REPORT.md) (paket
+`picker-filter-header-9cc5cb4`): header filter memakai palette slot 6 + bold;
+percobaan pertama (`Color::Cyan` = slot14) ditolak dan disimpan sebagai bukti.
+
+[Laporan banner 5a8e12c](banner-5a8e12c/REPORT.md): CI 34785921216 dan capture
 34785921221 SUCCESS; semua delapan PNG diperiksa, delapan raw/event/cast round
 trip terverifikasi. Tools 51/41/48/49 dan Session 4/17/21/21 cocok; tidak ada
 perbedaan posisi glyph non-judul atau atribut glyph sama. Ini bukan klaim
@@ -118,6 +140,29 @@ Signed artifact ZIP gagal di sandbox; tidak ada bagian hilang yang diabaikan.
   stable); sudah dicatat pada capture ulang `a2a3d08`. Referensi upstream tidak membuktikan
   tidak adanya modifikasi lokal historis pada VM.
 - Semua bukti akhir harus ditinjau user sebelum closure. Tidak ada izin merge.
+
+## Paket terbaru
+
+- [picker-status-ink-19bbbd5](picker-status-ink-19bbbd5/REPORT.md) — tinta tag status
+  (slot 2/3/1/8 sesuai pemetaan upstream), audit
+  `STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL`; 34 region kontrol identik, 4 region
+  span tag sebagai perbedaan yang dinyatakan, 10 verifikasi PNG, 20 round trip raw/cast.
+- Paket-paket picker sebelumnya tetap berlaku sebagai kontrol:
+  `picker-selection-b4cb408`, `picker-message-style-fd674dc`,
+  `picker-column-layout-b732d22`, `picker-filter-header-9cc5cb4`, `picker-header-7fef514`.
+
+## Paket terbaru
+
+- [picker-redraw-on-input-b2db435](picker-redraw-on-input-b2db435/REPORT.md) — cadence
+  gambar picker (gambar hanya saat layar berubah), audit
+  `REDRAW_ON_INPUT_FIXED_FRAME_CONTENT_UNCHANGED_ALL_REGIONS_EQUAL`; 11 checker PASS,
+  gate menolak 8/10 kasus paket sebelumnya, konten frame identik byte, 34 region
+  kontrol identik + 4 perbedaan yang dinyatakan.
+- [picker-status-ink-19bbbd5](picker-status-ink-19bbbd5/REPORT.md) — tinta tag status;
+  audit `STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL`.
+- Paket-paket picker sebelumnya tetap berlaku sebagai kontrol:
+  `picker-selection-b4cb408`, `picker-message-style-fd674dc`,
+  `picker-column-layout-b732d22`, `picker-filter-header-9cc5cb4`, `picker-header-7fef514`.
 
 ## Reproduksi
 

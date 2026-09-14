@@ -1,0 +1,53 @@
+{
+  "note": "The five status-tag cells of the unselected row, the exact span the Rust redraw recolours. These regions are declared differences, not parity regions: the tag word is fixture data and differs by design (the retained Python fixtures carry an interrupted session, the Rust fixtures a complete one), so the glyph pixels cannot match. The ink at this span is pinned by check_picker_status_ink.py on both sides, and the span geometry is pinned by the checker and the unit tests.",
+  "cases": [
+    {
+      "id": "picker-normal-100x30",
+      "columns": 100,
+      "regions": [
+        {
+          "label": "unselected row status tag",
+          "row": 5,
+          "colStart": 43,
+          "colEnd": 48
+        }
+      ]
+    },
+    {
+      "id": "picker-delete-100x30",
+      "columns": 100,
+      "regions": [
+        {
+          "label": "unselected row status tag",
+          "row": 5,
+          "colStart": 43,
+          "colEnd": 48
+        }
+      ]
+    },
+    {
+      "id": "picker-normal-80x30",
+      "columns": 80,
+      "regions": [
+        {
+          "label": "unselected row status tag",
+          "row": 5,
+          "colStart": 25,
+          "colEnd": 30
+        }
+      ]
+    },
+    {
+      "id": "picker-delete-80x30",
+      "columns": 80,
+      "regions": [
+        {
+          "label": "unselected row status tag",
+          "row": 5,
+          "colStart": 25,
+          "colEnd": 30
+        }
+      ]
+    }
+  ]
+}

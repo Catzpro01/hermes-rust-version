@@ -194,7 +194,8 @@ def main():
     export = sub.add_parser("export")
     export.add_argument("bundle", type=Path)
     export.add_argument("--group", type=int, choices=(0, 1), default=0)
-    export.add_argument("--label", choices=("visual bundle", "candidate patch"), default="visual bundle")
+    export.add_argument("--label", choices=("visual bundle", "candidate patch", "size bundle"),
+                        default="visual bundle")
     args = parser.parse_args()
     if args.mode == "python-child":
         python_child(args.reference.resolve(), args.fixture.resolve())

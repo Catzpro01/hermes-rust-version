@@ -1,0 +1,20 @@
+Failed attempts on 2026-09-14, kept because they changed the outcome
+
+1. GREEN 34866468131 (headSha a2dfb87): the exported regression-1.log showed the live gate
+   passing, but the three-times loop still ended the step non-zero and the run failed. The
+   failing iterations' logs were inside the blocked artifact upload, so the cause stayed
+   unexplained. The identical re-request with the same bound source and patch (34866921566)
+   passed three times; the transient failure is recorded as not-reproduced, not as a hidden
+   success.
+2. Capture 34867188650, 34867582407 (headSha 88b9e21, d9e74f0): step 24 failed with no visible
+   reason because the job log download is blocked. The capture step now tees everything into
+   capture-verify.log and the export step annotates it (ed22834).
+3. Capture 34867949844 (headSha 6494b98): the annotated verify log showed all six cases failed
+   with 'control screen emitted N dim window(s)' and 'first dim window covers the selected row'.
+   Cause was our own scanner: palette slot 2 is written as `38;5;2` and the dim parser treated
+   the trailing `2` as the dim attribute. Fixed in 1c40eea with supporting checks; the previous
+   packet still passes on both sides.
+4. Capture 34867949844 also showed two 80-column cases with 'missing readiness/timeout at stage 0'
+   after 202014 bytes: a startup flake. The live gates now use a 45 s per-stage allowance
+   (400f5e2) and a timeout message that reports what the child drew (064e92d). Ordinary CI
+   34868306601 failed on the older footer-colour gate for the same reason before that fix.

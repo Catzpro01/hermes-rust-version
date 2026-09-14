@@ -1,0 +1,269 @@
+{
+  "note": "Terminal coordinates (1-based rows, half-open column ranges) over the pinned xterm.js panes; left pane is the retained Python recording, right pane the Rust capture from the committed fix. No normalization. The selected-row regions stop at the status column on purpose: the status, Active and ID column content is a documented adaptation, while the marker and name field are asserted here.",
+  "cases": [
+    {
+      "id": "picker-normal-100x30",
+      "columns": 100,
+      "regions": [
+        {
+          "label": "hint row control",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 71
+        },
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 80
+        },
+        {
+          "label": "blank separator row",
+          "row": 3,
+          "colStart": 0,
+          "colEnd": 100
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 43
+        },
+        {
+          "label": "unselected row up to the status column",
+          "row": 5,
+          "colStart": 0,
+          "colEnd": 43
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30
+        }
+      ]
+    },
+    {
+      "id": "picker-normal-80x30",
+      "columns": 80,
+      "regions": [
+        {
+          "label": "hint row control",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 71
+        },
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 60
+        },
+        {
+          "label": "blank separator row",
+          "row": 3,
+          "colStart": 0,
+          "colEnd": 80
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 25
+        },
+        {
+          "label": "unselected row up to the status column",
+          "row": 5,
+          "colStart": 0,
+          "colEnd": 25
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30
+        }
+      ]
+    },
+    {
+      "id": "picker-filter-100x30",
+      "columns": 100,
+      "regions": [
+        {
+          "label": "filter help header row",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 71
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 43
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30
+        }
+      ]
+    },
+    {
+      "id": "picker-filter-80x30",
+      "columns": 80,
+      "regions": [
+        {
+          "label": "filter help header row",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 71
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 25
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30
+        }
+      ]
+    },
+    {
+      "id": "picker-delete-100x30",
+      "columns": 100,
+      "regions": [
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 80
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 43
+        },
+        {
+          "label": "unselected row up to the status column",
+          "row": 5,
+          "colStart": 0,
+          "colEnd": 43
+        },
+        {
+          "label": "delete-confirm prompt row",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 38
+        }
+      ]
+    },
+    {
+      "id": "picker-delete-80x30",
+      "columns": 80,
+      "regions": [
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 60
+        },
+        {
+          "label": "selected row up to the status column",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 25
+        },
+        {
+          "label": "unselected row up to the status column",
+          "row": 5,
+          "colStart": 0,
+          "colEnd": 25
+        },
+        {
+          "label": "delete-confirm prompt row",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 38
+        }
+      ]
+    },
+    {
+      "id": "picker-no-match-100x30",
+      "columns": 100,
+      "regions": [
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 80
+        },
+        {
+          "label": "no-match message row",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 31
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30
+        }
+      ]
+    },
+    {
+      "id": "picker-no-match-80x30",
+      "columns": 80,
+      "regions": [
+        {
+          "label": "column header row",
+          "row": 2,
+          "colStart": 0,
+          "colEnd": 60
+        },
+        {
+          "label": "no-match message row",
+          "row": 4,
+          "colStart": 0,
+          "colEnd": 31
+        },
+        {
+          "label": "footer row control",
+          "row": 30,
+          "colStart": 0,
+          "colEnd": 30
+        }
+      ]
+    },
+    {
+      "id": "picker-empty-100x30",
+      "columns": 100,
+      "regions": [
+        {
+          "label": "empty-store message row",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 30
+        }
+      ]
+    },
+    {
+      "id": "picker-empty-80x30",
+      "columns": 80,
+      "regions": [
+        {
+          "label": "empty-store message row",
+          "row": 1,
+          "colStart": 0,
+          "colEnd": 30
+        }
+      ]
+    }
+  ]
+}

@@ -1,14 +1,14 @@
 name: Visual evidence (remaining UI)
 on:
   push:
-    branches: ["arena/01a09c1e-hermes-rust-version"]
+    branches: ["arena/01a0a052-hermes-rust-version"]
     paths:
       - '.scratch/hermes-rs-total-parity/ui-capture/request.json'
 permissions:
   contents: read
 jobs:
   capture:
-    if: github.ref == 'refs/heads/arena/01a09c1e-hermes-rust-version'
+    if: github.ref == 'refs/heads/arena/01a0a052-hermes-rust-version'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

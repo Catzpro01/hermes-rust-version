@@ -1,0 +1,767 @@
+{
+  "rust_commit": "b2db435f6071d9baab13d7347b7452c9e38ffef0",
+  "binary_sha256": "a71a9d868a4213a218f8c97a689f8d6e224acce1ba483a1a63842758f56dcc1a",
+  "capture_driver_sha256": "0840f727e6a900e2d5373fcfcd1659712f2f1cf69e630fcc84bdb9b702a9797a",
+  "scope": "picker normal-help header and footer subset (counter, hint, placement and foreground), not whole-screen parity",
+  "rustc_version": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "cargo_version": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+  "capture_script_sha256": "ee340c7e1bdc6115f3bbc0a7c0d04ce7a5b74684054fea870a0376cacbfa61d9",
+  "cases": [
+    {
+      "id": "picker-normal-100x30",
+      "scenario": "picker-normal",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [
+          "550e8400-e29b-41d4-a716-446655440000",
+          "660f8400-e29b-41d4-a716-446655440001"
+        ],
+        "picker_timestamp_base": 1700000000
+      },
+      "rust": {
+        "command": [
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/target/debug/hermes-rs",
+          "sessions",
+          "browse"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-rust-jtldgogx",
+          "HERMES_HOME": "/tmp/hermes-ui-rust-jtldgogx",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "cwd": "/tmp/hermes-ui-rust-jtldgogx",
+        "width": 100,
+        "height": 30,
+        "events_base64": [
+          [
+            0.015702,
+            "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJKG1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzM4OzU7Mm0bWzFtIOKGkiBzZWNvbmQgdG9waWMgICAgICAgICAgICAgICAgICAgICAgICAgICAgZG9uZSAgICAgICAxICAyeSBhZ28gICAgICBjbGkgICA2NjBmODQwMBtbMG0bWzFFICAgZGVwbG95IHRoZSB0aGluZyAgICAgICAgICAgICAgICAgICAgICAgIBtbMzg7NTsybWRvbmUgG1szOW0gICAgICAxICAyeSBhZ28gICAgICBjbGkgICA1NTBlODQwMBtbMUUbWzMwOzFIG1szODs1OzhtICAxLzIgc2Vzc2lvbnMgICBkIGRlbGV0ZRtbMzlt"
+          ]
+        ],
+        "inputs_base64": [],
+        "raw_base64": "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJKG1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzM4OzU7Mm0bWzFtIOKGkiBzZWNvbmQgdG9waWMgICAgICAgICAgICAgICAgICAgICAgICAgICAgZG9uZSAgICAgICAxICAyeSBhZ28gICAgICBjbGkgICA2NjBmODQwMBtbMG0bWzFFICAgZGVwbG95IHRoZSB0aGluZyAgICAgICAgICAgICAgICAgICAgICAgIBtbMzg7NTsybWRvbmUgG1szOW0gICAgICAxICAyeSBhZ28gICAgICBjbGkgICA1NTBlODQwMBtbMUUbWzMwOzFIG1szODs1OzhtICAxLzIgc2Vzc2lvbnMgICBkIGRlbGV0ZRtbMzlt",
+        "raw_sha256": "cceee9d8d1a7fc88628a0fc6b4573bfeacab3e7de1300757003bc6d9ee108cd0",
+        "snapshot_end_byte": 477,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "Browse sessions",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "Browse sessions",
+            "end_byte": 477
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": null,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    },
+    {
+      "id": "picker-filter-100x30",
+      "scenario": "picker-filter",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [
+          "550e8400-e29b-41d4-a716-446655440000",
+          "660f8400-e29b-41d4-a716-446655440001"
+        ],
+        "picker_timestamp_base": 1700000000
+      },
+      "rust": {
+        "command": [
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/target/debug/hermes-rs",
+          "sessions",
+          "browse"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-rust-qa54r3dw",
+          "HERMES_HOME": "/tmp/hermes-ui-rust-qa54r3dw",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "cwd": "/tmp/hermes-ui-rust-qa54r3dw",
+        "width": 100,
+        "height": 30,
+        "events_base64": [
+          [
+            0.008351,
+            "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJK"
+          ],
+          [
+            0.0099,
+            "G1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzM4OzU7Mm0bWzFtIOKGkiBzZWNvbmQgdG9waWMgICAgICAgICAgICAgICAgICAgICAgICAgICAgZG9uZSAgICAgICAxICAyeSBhZ28gICAgICBjbGkgICA2NjBmODQwMBtbMG0bWzFFICAgZGVwbG95IHRoZSB0aGluZyAgICAgICAgICAgICAgICAgICAgICAgIBtbMzg7NTsybWRvbmUgG1szOW0gICAgICAxICAyeSBhZ28gICAgICBjbGkgICA1NTBlODQwMBtbMUUbWzMwOzFIG1szODs1OzhtICAxLzIgc2Vzc2lvbnMgICBkIGRlbGV0ZRtbMzlt"
+          ],
+          [
+            0.312047,
+            "G1sxOzFIG1sySg=="
+          ],
+          [
+            0.313549,
+            "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"
+          ]
+        ],
+        "inputs_base64": [
+          [
+            0.311885,
+            "dG9waWM=",
+            "scenario key"
+          ]
+        ],
+        "raw_base64": "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJKG1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzM4OzU7Mm0bWzFtIOKGkiBzZWNvbmQgdG9waWMgICAgICAgICAgICAgICAgICAgICAgICAgICAgZG9uZSAgICAgICAxICAyeSBhZ28gICAgICBjbGkgICA2NjBmODQwMBtbMG0bWzFFICAgZGVwbG95IHRoZSB0aGluZyAgICAgICAgICAgICAgICAgICAgICAgIBtbMzg7NTsybWRvbmUgG1szOW0gICAgICAxICAyeSBhZ28gICAgICBjbGkgICA1NTBlODQwMBtbMUUbWzMwOzFIG1szODs1OzhtICAxLzIgc2Vzc2lvbnMgICBkIGRlbGV0ZRtbMzltG1sxOzFIG1syShtbMzg7NTs2bRtbMW0gIEJyb3dzZSBzZXNzaW9ucyDigJQgZmlsdGVyOiB04paIG1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzM4OzU7Mm0bWzFtIOKGkiBzZWNvbmQgdG9waWMgICAgICAgICAgICAgICAgICAgICAgICAgICAgZG9uZSAgICAgICAxICAyeSBhZ28gICAgICBjbGkgICA2NjBmODQwMBtbMG0bWzFFICAgZGVwbG95IHRoZSB0aGluZyAgICAgICAgICAgICAgICAgICAgICAgIBtbMzg7NTsybWRvbmUgG1szOW0gICAgICAxICAyeSBhZ28gICAgICBjbGkgICA1NTBlODQwMBtbMUUbWzMwOzFIG1szODs1OzhtICAxLzIgc2Vzc2lvbnMbWzM5bRtbMTsxSBtbMkobWzM4OzU7Nm0bWzFtICBCcm93c2Ugc2Vzc2lvbnMg4oCUIGZpbHRlcjogdG/ilogbWzBtG1sxRRtbMzg7NTs4bSAgIFRpdGxlIC8gUHJldmlldyAgICAgICAgICAgICAgICAgICAgICAgICAgICBTdGF0ICAgIE1zZ3MgIEFjdGl2ZSAgICAgIFNyYyAgIElEG1szOW0bWzFFG1sxRRtbMzg7NTsybRtbMW0g4oaSIHNlY29uZCB0b3BpYyAgICAgICAgICAgICAgICAgICAgICAgICAgICBkb25lICAgICAgIDEgIDJ5IGFnbyAgICAgIGNsaSAgIDY2MGY4NDAwG1swbRtbMUUbWzMwOzFIG1szODs1OzhtICAxLzEgc2Vzc2lvbnMgKGZpbHRlcmVkIGZyb20gMikbWzM5bRtbMTsxSBtbMkobWzM4OzU7Nm0bWzFtICBCcm93c2Ugc2Vzc2lvbnMg4oCUIGZpbHRlcjogdG9w4paIG1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzM4OzU7Mm0bWzFtIOKGkiBzZWNvbmQgdG9waWMgICAgICAgICAgICAgICAgICAgICAgICAgICAgZG9uZSAgICAgICAxICAyeSBhZ28gICAgICBjbGkgICA2NjBmODQwMBtbMG0bWzFFG1szMDsxSBtbMzg7NTs4bSAgMS8xIHNlc3Npb25zIChmaWx0ZXJlZCBmcm9tIDIpG1szOW0bWzE7MUgbWzJKG1szODs1OzZtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCBmaWx0ZXI6IHRvcGnilogbWzBtG1sxRRtbMzg7NTs4bSAgIFRpdGxlIC8gUHJldmlldyAgICAgICAgICAgICAgICAgICAgICAgICAgICBTdGF0ICAgIE1zZ3MgIEFjdGl2ZSAgICAgIFNyYyAgIElEG1szOW0bWzFFG1sxRRtbMzg7NTsybRtbMW0g4oaSIHNlY29uZCB0b3BpYyAgICAgICAgICAgICAgICAgICAgICAgICAgICBkb25lICAgICAgIDEgIDJ5IGFnbyAgICAgIGNsaSAgIDY2MGY4NDAwG1swbRtbMUUbWzMwOzFIG1szODs1OzhtICAxLzEgc2Vzc2lvbnMgKGZpbHRlcmVkIGZyb20gMikbWzM5bRtbMTsxSBtbMkobWzM4OzU7Nm0bWzFtICBCcm93c2Ugc2Vzc2lvbnMg4oCUIGZpbHRlcjogdG9waWPilogbWzBtG1sxRRtbMzg7NTs4bSAgIFRpdGxlIC8gUHJldmlldyAgICAgICAgICAgICAgICAgICAgICAgICAgICBTdGF0ICAgIE1zZ3MgIEFjdGl2ZSAgICAgIFNyYyAgIElEG1szOW0bWzFFG1sxRRtbMzg7NTsybRtbMW0g4oaSIHNlY29uZCB0b3BpYyAgICAgICAgICAgICAgICAgICAgICAgICAgICBkb25lICAgICAgIDEgIDJ5IGFnbyAgICAgIGNsaSAgIDY2MGY4NDAwG1swbRtbMUUbWzMwOzFIG1szODs1OzhtICAxLzEgc2Vzc2lvbnMgKGZpbHRlcmVkIGZyb20gMikbWzM5bQ==",
+        "raw_sha256": "b1858b4268bd092ec3b4e9dffc3694f4a2125efc1daa3f6ff4a9e63a9c550cb8",
+        "snapshot_end_byte": 2200,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "Browse sessions",
+            "topic"
+          ],
+          [
+            "filter: topic",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "Browse sessions",
+            "end_byte": 477
+          },
+          {
+            "marker": "filter: topic",
+            "end_byte": 2200
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": null,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    },
+    {
+      "id": "picker-no-match-100x30",
+      "scenario": "picker-no-match",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [
+          "550e8400-e29b-41d4-a716-446655440000",
+          "660f8400-e29b-41d4-a716-446655440001"
+        ],
+        "picker_timestamp_base": 1700000000
+      },
+      "rust": {
+        "command": [
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/target/debug/hermes-rs",
+          "sessions",
+          "browse"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-rust-pp5tnqn3",
+          "HERMES_HOME": "/tmp/hermes-ui-rust-pp5tnqn3",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "cwd": "/tmp/hermes-ui-rust-pp5tnqn3",
+        "width": 100,
+        "height": 30,
+        "events_base64": [
+          [
+            0.007446,
+            "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJK"
+          ],
+          [
+            0.008999,
+            "G1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzM4OzU7Mm0bWzFtIOKGkiBzZWNvbmQgdG9waWMgICAgICAgICAgICAgICAgICAgICAgICAgICAgZG9uZSAgICAgICAxICAyeSBhZ28gICAgICBjbGkgICA2NjBmODQwMBtbMG0bWzFFICAgZGVwbG95IHRoZSB0aGluZyAgICAgICAgICAgICAgICAgICAgICAgIBtbMzg7NTsybWRvbmUgG1szOW0gICAgICAxICAyeSBhZ28gICAgICBjbGkgICA1NTBlODQwMBtbMUUbWzMwOzFIG1szODs1OzhtICAxLzIgc2Vzc2lvbnMgICBkIGRlbGV0ZRtbMzlt"
+          ],
+          [
+            0.311108,
+            "G1sxOzFIG1syShtbMzg7NTs2bRtbMW0gIEJyb3dzZSBzZXNzaW9ucyDigJQgZmlsdGVyOiB64paIG1swbRtbMUU="
+          ],
+          [
+            0.31264,
+            "G1szODs1OzhtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgICAgICAgICAgICAgICAgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1sybSAgTm8gc2Vzc2lvbnMgbWF0Y2ggdGhlIGZpbHRlci4bWzBtG1sxRRtbMzA7MUgbWzM4OzU7OG0gIDAvMiBzZXNzaW9ucxtbMzltG1sxOzFIG1syShtbMzg7NTs2bRtbMW0gIEJyb3dzZSBzZXNzaW9ucyDigJQgZmlsdGVyOiB6euKWiBtbMG0bWzFFG1szODs1OzhtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgICAgICAgICAgICAgICAgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1sybSAgTm8gc2Vzc2lvbnMgbWF0Y2ggdGhlIGZpbHRlci4bWzBtG1sxRRtbMzA7MUgbWzM4OzU7OG0gIDAvMiBzZXNzaW9ucxtbMzltG1sxOzFIG1syShtbMzg7NTs2bRtbMW0gIEJyb3dzZSBzZXNzaW9ucyDigJQgZmlsdGVyOiB6enrilogbWzBtG1sxRRtbMzg7NTs4bSAgIFRpdGxlIC8gUHJldmlldyAgICAgICAgICAgICAgICAgICAgICAgICAgICBTdGF0ICAgIE1zZ3MgIEFjdGl2ZSAgICAgIFNyYyAgIElEG1szOW0bWzFFG1sxRRtbMm0gIE5vIHNlc3Npb25zIG1hdGNoIHRoZSBmaWx0ZXIuG1swbRtbMUUbWzMwOzFIG1szODs1OzhtICAwLzIgc2Vzc2lvbnMbWzM5bRtbMTsxSBtbMkobWzM4OzU7Nm0bWzFtICBCcm93c2Ugc2Vzc2lvbnMg4oCUIGZpbHRlcjogenp6euKWiBtbMG0bWzFFG1szODs1OzhtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgICAgICAgICAgICAgICAgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1sybSAgTm8gc2Vzc2lvbnMgbWF0Y2ggdGhlIGZpbHRlci4bWzBtG1sxRRtbMzA7MUgbWzM4OzU7OG0gIDAvMiBzZXNzaW9ucxtbMzlt"
+          ]
+        ],
+        "inputs_base64": [
+          [
+            0.310945,
+            "enp6eg==",
+            "scenario key"
+          ]
+        ],
+        "raw_base64": "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJKG1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzM4OzU7Mm0bWzFtIOKGkiBzZWNvbmQgdG9waWMgICAgICAgICAgICAgICAgICAgICAgICAgICAgZG9uZSAgICAgICAxICAyeSBhZ28gICAgICBjbGkgICA2NjBmODQwMBtbMG0bWzFFICAgZGVwbG95IHRoZSB0aGluZyAgICAgICAgICAgICAgICAgICAgICAgIBtbMzg7NTsybWRvbmUgG1szOW0gICAgICAxICAyeSBhZ28gICAgICBjbGkgICA1NTBlODQwMBtbMUUbWzMwOzFIG1szODs1OzhtICAxLzIgc2Vzc2lvbnMgICBkIGRlbGV0ZRtbMzltG1sxOzFIG1syShtbMzg7NTs2bRtbMW0gIEJyb3dzZSBzZXNzaW9ucyDigJQgZmlsdGVyOiB64paIG1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzJtICBObyBzZXNzaW9ucyBtYXRjaCB0aGUgZmlsdGVyLhtbMG0bWzFFG1szMDsxSBtbMzg7NTs4bSAgMC8yIHNlc3Npb25zG1szOW0bWzE7MUgbWzJKG1szODs1OzZtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCBmaWx0ZXI6IHp64paIG1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzJtICBObyBzZXNzaW9ucyBtYXRjaCB0aGUgZmlsdGVyLhtbMG0bWzFFG1szMDsxSBtbMzg7NTs4bSAgMC8yIHNlc3Npb25zG1szOW0bWzE7MUgbWzJKG1szODs1OzZtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCBmaWx0ZXI6IHp6euKWiBtbMG0bWzFFG1szODs1OzhtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgICAgICAgICAgICAgICAgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1sybSAgTm8gc2Vzc2lvbnMgbWF0Y2ggdGhlIGZpbHRlci4bWzBtG1sxRRtbMzA7MUgbWzM4OzU7OG0gIDAvMiBzZXNzaW9ucxtbMzltG1sxOzFIG1syShtbMzg7NTs2bRtbMW0gIEJyb3dzZSBzZXNzaW9ucyDigJQgZmlsdGVyOiB6enp64paIG1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzJtICBObyBzZXNzaW9ucyBtYXRjaCB0aGUgZmlsdGVyLhtbMG0bWzFFG1szMDsxSBtbMzg7NTs4bSAgMC8yIHNlc3Npb25zG1szOW0=",
+        "raw_sha256": "7632611728206eceb08d4d5b57ea4894a83ded4acd932de47d6c7e9f017f318b",
+        "snapshot_end_byte": 1463,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "Browse sessions",
+            "zzzz"
+          ],
+          [
+            "No sessions match",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "Browse sessions",
+            "end_byte": 477
+          },
+          {
+            "marker": "No sessions match",
+            "end_byte": 1463
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": null,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    },
+    {
+      "id": "picker-delete-100x30",
+      "scenario": "picker-delete",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [
+          "550e8400-e29b-41d4-a716-446655440000",
+          "660f8400-e29b-41d4-a716-446655440001"
+        ],
+        "picker_timestamp_base": 1700000000
+      },
+      "rust": {
+        "command": [
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/target/debug/hermes-rs",
+          "sessions",
+          "browse"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-rust-lnnm669u",
+          "HERMES_HOME": "/tmp/hermes-ui-rust-lnnm669u",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "cwd": "/tmp/hermes-ui-rust-lnnm669u",
+        "width": 100,
+        "height": 30,
+        "events_base64": [
+          [
+            0.008229,
+            "G1s/MTA0OWgbWz8yNWw="
+          ],
+          [
+            0.009751,
+            "G1sxOzFIG1syShtbMzg7NTszbRtbMW0gIEJyb3dzZSBzZXNzaW9ucyDigJQg4oaR4oaTIG5hdmlnYXRlICBFbnRlciBzZWxlY3QgIFR5cGUgdG8gZmlsdGVyICBFc2MgcXVpdBtbMG0bWzFFG1szODs1OzhtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgICAgICAgICAgICAgICAgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1szODs1OzJtG1sxbSDihpIgc2Vjb25kIHRvcGljICAgICAgICAgICAgICAgICAgICAgICAgICAgIGRvbmUgICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNjYwZjg0MDAbWzBtG1sxRSAgIGRlcGxveSB0aGUgdGhpbmcgICAgICAgICAgICAgICAgICAgICAgICAbWzM4OzU7Mm1kb25lIBtbMzltICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNTUwZTg0MDAbWzFFG1szMDsxSBtbMzg7NTs4bSAgMS8yIHNlc3Npb25zICAgZCBkZWxldGUbWzM5bQ=="
+          ],
+          [
+            0.311806,
+            "G1szMDsxSBtbMksbWzM4OzU7MW0bWzFtICBEZWxldGUgc2Vzc2lvbiAnc2Vjb25kIHRvcGljJz8gW3kvTl0bWzBt"
+          ]
+        ],
+        "inputs_base64": [
+          [
+            0.311651,
+            "ZA==",
+            "scenario key"
+          ]
+        ],
+        "raw_base64": "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJKG1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgICAgICAgICAgICAgICAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzM4OzU7Mm0bWzFtIOKGkiBzZWNvbmQgdG9waWMgICAgICAgICAgICAgICAgICAgICAgICAgICAgZG9uZSAgICAgICAxICAyeSBhZ28gICAgICBjbGkgICA2NjBmODQwMBtbMG0bWzFFICAgZGVwbG95IHRoZSB0aGluZyAgICAgICAgICAgICAgICAgICAgICAgIBtbMzg7NTsybWRvbmUgG1szOW0gICAgICAxICAyeSBhZ28gICAgICBjbGkgICA1NTBlODQwMBtbMUUbWzMwOzFIG1szODs1OzhtICAxLzIgc2Vzc2lvbnMgICBkIGRlbGV0ZRtbMzltG1szMDsxSBtbMksbWzM4OzU7MW0bWzFtICBEZWxldGUgc2Vzc2lvbiAnc2Vjb25kIHRvcGljJz8gW3kvTl0bWzBt",
+        "raw_sha256": "51407bfbe16226020317baabcbc6140da12e7be6f5b72a20005b6e9b8f61824d",
+        "snapshot_end_byte": 543,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "Browse sessions",
+            "d"
+          ],
+          [
+            "Delete",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "Browse sessions",
+            "end_byte": 477
+          },
+          {
+            "marker": "Delete",
+            "end_byte": 543
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": null,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    },
+    {
+      "id": "picker-empty-100x30",
+      "scenario": "picker-empty",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [],
+        "picker_timestamp_base": 1700000000
+      },
+      "rust": {
+        "command": [
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/target/debug/hermes-rs",
+          "sessions",
+          "browse"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-rust-ljvwp7qf",
+          "HERMES_HOME": "/tmp/hermes-ui-rust-ljvwp7qf",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "cwd": "/tmp/hermes-ui-rust-ljvwp7qf",
+        "width": 100,
+        "height": 30,
+        "events_base64": [
+          [
+            0.008051,
+            "Tm8gc2Vzc2lvbnMgZm91bmQuDQo="
+          ]
+        ],
+        "inputs_base64": [],
+        "raw_base64": "Tm8gc2Vzc2lvbnMgZm91bmQuDQo=",
+        "raw_sha256": "b0f92eaf584936e281ebada2b493a30c7021a847abdedbdb5a39038e37fff2bd",
+        "snapshot_end_byte": 20,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "No sessions found.",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "No sessions found.",
+            "end_byte": 20
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": 0,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    },
+    {
+      "id": "picker-normal-80x30",
+      "scenario": "picker-normal",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [
+          "550e8400-e29b-41d4-a716-446655440000",
+          "660f8400-e29b-41d4-a716-446655440001"
+        ],
+        "picker_timestamp_base": 1700000000
+      },
+      "rust": {
+        "command": [
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/target/debug/hermes-rs",
+          "sessions",
+          "browse"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-rust-p7mpi5hq",
+          "HERMES_HOME": "/tmp/hermes-ui-rust-p7mpi5hq",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "cwd": "/tmp/hermes-ui-rust-p7mpi5hq",
+        "width": 80,
+        "height": 30,
+        "events_base64": [
+          [
+            0.00796,
+            "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJK"
+          ],
+          [
+            0.009263,
+            "G1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1szODs1OzJtG1sxbSDihpIgc2Vjb25kIHRvcGljICAgICAgICAgIGRvbmUgICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNjYwZjg0MDAbWzBtG1sxRSAgIGRlcGxveSB0aGUgdGhpbmcgICAgICAbWzM4OzU7Mm1kb25lIBtbMzltICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNTUwZTg0MDAbWzFFG1szMDsxSBtbMzg7NTs4bSAgMS8yIHNlc3Npb25zICAgZCBkZWxldGUbWzM5bQ=="
+          ]
+        ],
+        "inputs_base64": [],
+        "raw_base64": "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJKG1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1szODs1OzJtG1sxbSDihpIgc2Vjb25kIHRvcGljICAgICAgICAgIGRvbmUgICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNjYwZjg0MDAbWzBtG1sxRSAgIGRlcGxveSB0aGUgdGhpbmcgICAgICAbWzM4OzU7Mm1kb25lIBtbMzltICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNTUwZTg0MDAbWzFFG1szMDsxSBtbMzg7NTs4bSAgMS8yIHNlc3Npb25zICAgZCBkZWxldGUbWzM5bQ==",
+        "raw_sha256": "69d45887ee1007dec32b6aeda7f2e2954cbcc79a63f4a2f708170aa84d5394fa",
+        "snapshot_end_byte": 421,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "Browse sessions",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "Browse sessions",
+            "end_byte": 421
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": null,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    },
+    {
+      "id": "picker-filter-80x30",
+      "scenario": "picker-filter",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [
+          "550e8400-e29b-41d4-a716-446655440000",
+          "660f8400-e29b-41d4-a716-446655440001"
+        ],
+        "picker_timestamp_base": 1700000000
+      },
+      "rust": {
+        "command": [
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/target/debug/hermes-rs",
+          "sessions",
+          "browse"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-rust-i8vftja7",
+          "HERMES_HOME": "/tmp/hermes-ui-rust-i8vftja7",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "cwd": "/tmp/hermes-ui-rust-i8vftja7",
+        "width": 80,
+        "height": 30,
+        "events_base64": [
+          [
+            0.010525,
+            "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJK"
+          ],
+          [
+            0.011814,
+            "G1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1szODs1OzJtG1sxbSDihpIgc2Vjb25kIHRvcGljICAgICAgICAgIGRvbmUgICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNjYwZjg0MDAbWzBtG1sxRSAgIGRlcGxveSB0aGUgdGhpbmcgICAgICAbWzM4OzU7Mm1kb25lIBtbMzltICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNTUwZTg0MDAbWzFFG1szMDsxSBtbMzg7NTs4bSAgMS8yIHNlc3Npb25zICAgZCBkZWxldGUbWzM5bQ=="
+          ],
+          [
+            0.314421,
+            "G1sxOzFIG1sySg=="
+          ],
+          [
+            0.315655,
+            "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"
+          ]
+        ],
+        "inputs_base64": [
+          [
+            0.314289,
+            "dG9waWM=",
+            "scenario key"
+          ]
+        ],
+        "raw_base64": "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",
+        "raw_sha256": "27b49904f4d532c73c36dec5d77cff71ba9f40941b90186fa73e69d1e5b9f881",
+        "snapshot_end_byte": 1936,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "Browse sessions",
+            "topic"
+          ],
+          [
+            "filter: topic",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "Browse sessions",
+            "end_byte": 421
+          },
+          {
+            "marker": "filter: topic",
+            "end_byte": 1936
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": null,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    },
+    {
+      "id": "picker-no-match-80x30",
+      "scenario": "picker-no-match",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [
+          "550e8400-e29b-41d4-a716-446655440000",
+          "660f8400-e29b-41d4-a716-446655440001"
+        ],
+        "picker_timestamp_base": 1700000000
+      },
+      "rust": {
+        "command": [
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/target/debug/hermes-rs",
+          "sessions",
+          "browse"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-rust-991e65ni",
+          "HERMES_HOME": "/tmp/hermes-ui-rust-991e65ni",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "cwd": "/tmp/hermes-ui-rust-991e65ni",
+        "width": 80,
+        "height": 30,
+        "events_base64": [
+          [
+            0.007279,
+            "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJK"
+          ],
+          [
+            0.00856,
+            "G1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1szODs1OzJtG1sxbSDihpIgc2Vjb25kIHRvcGljICAgICAgICAgIGRvbmUgICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNjYwZjg0MDAbWzBtG1sxRSAgIGRlcGxveSB0aGUgdGhpbmcgICAgICAbWzM4OzU7Mm1kb25lIBtbMzltICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNTUwZTg0MDAbWzFFG1szMDsxSBtbMzg7NTs4bSAgMS8yIHNlc3Npb25zICAgZCBkZWxldGUbWzM5bQ=="
+          ],
+          [
+            0.310587,
+            "G1sxOzFIG1syShtbMzg7NTs2bRtbMW0gIEJyb3dzZSBzZXNzaW9ucyDigJQgZmlsdGVyOiB64paIG1swbRtbMUU="
+          ],
+          [
+            0.311873,
+            "G1szODs1OzhtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgICBTdGF0ICAgIE1zZ3MgIEFjdGl2ZSAgICAgIFNyYyAgIElEG1szOW0bWzFFG1sxRRtbMm0gIE5vIHNlc3Npb25zIG1hdGNoIHRoZSBmaWx0ZXIuG1swbRtbMUUbWzMwOzFIG1szODs1OzhtICAwLzIgc2Vzc2lvbnMbWzM5bRtbMTsxSBtbMkobWzM4OzU7Nm0bWzFtICBCcm93c2Ugc2Vzc2lvbnMg4oCUIGZpbHRlcjogenrilogbWzBtG1sxRRtbMzg7NTs4bSAgIFRpdGxlIC8gUHJldmlldyAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzJtICBObyBzZXNzaW9ucyBtYXRjaCB0aGUgZmlsdGVyLhtbMG0bWzFFG1szMDsxSBtbMzg7NTs4bSAgMC8yIHNlc3Npb25zG1szOW0bWzE7MUgbWzJKG1szODs1OzZtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCBmaWx0ZXI6IHp6euKWiBtbMG0bWzFFG1szODs1OzhtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgICBTdGF0ICAgIE1zZ3MgIEFjdGl2ZSAgICAgIFNyYyAgIElEG1szOW0bWzFFG1sxRRtbMm0gIE5vIHNlc3Npb25zIG1hdGNoIHRoZSBmaWx0ZXIuG1swbRtbMUUbWzMwOzFIG1szODs1OzhtICAwLzIgc2Vzc2lvbnMbWzM5bRtbMTsxSBtbMkobWzM4OzU7Nm0bWzFtICBCcm93c2Ugc2Vzc2lvbnMg4oCUIGZpbHRlcjogenp6euKWiBtbMG0bWzFFG1szODs1OzhtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgICBTdGF0ICAgIE1zZ3MgIEFjdGl2ZSAgICAgIFNyYyAgIElEG1szOW0bWzFFG1sxRRtbMm0gIE5vIHNlc3Npb25zIG1hdGNoIHRoZSBmaWx0ZXIuG1swbRtbMUUbWzMwOzFIG1szODs1OzhtICAwLzIgc2Vzc2lvbnMbWzM5bQ=="
+          ]
+        ],
+        "inputs_base64": [
+          [
+            0.310415,
+            "enp6eg==",
+            "scenario key"
+          ]
+        ],
+        "raw_base64": "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJKG1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1szODs1OzJtG1sxbSDihpIgc2Vjb25kIHRvcGljICAgICAgICAgIGRvbmUgICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNjYwZjg0MDAbWzBtG1sxRSAgIGRlcGxveSB0aGUgdGhpbmcgICAgICAbWzM4OzU7Mm1kb25lIBtbMzltICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNTUwZTg0MDAbWzFFG1szMDsxSBtbMzg7NTs4bSAgMS8yIHNlc3Npb25zICAgZCBkZWxldGUbWzM5bRtbMTsxSBtbMkobWzM4OzU7Nm0bWzFtICBCcm93c2Ugc2Vzc2lvbnMg4oCUIGZpbHRlcjogeuKWiBtbMG0bWzFFG1szODs1OzhtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgICBTdGF0ICAgIE1zZ3MgIEFjdGl2ZSAgICAgIFNyYyAgIElEG1szOW0bWzFFG1sxRRtbMm0gIE5vIHNlc3Npb25zIG1hdGNoIHRoZSBmaWx0ZXIuG1swbRtbMUUbWzMwOzFIG1szODs1OzhtICAwLzIgc2Vzc2lvbnMbWzM5bRtbMTsxSBtbMkobWzM4OzU7Nm0bWzFtICBCcm93c2Ugc2Vzc2lvbnMg4oCUIGZpbHRlcjogenrilogbWzBtG1sxRRtbMzg7NTs4bSAgIFRpdGxlIC8gUHJldmlldyAgICAgICAgU3RhdCAgICBNc2dzICBBY3RpdmUgICAgICBTcmMgICBJRBtbMzltG1sxRRtbMUUbWzJtICBObyBzZXNzaW9ucyBtYXRjaCB0aGUgZmlsdGVyLhtbMG0bWzFFG1szMDsxSBtbMzg7NTs4bSAgMC8yIHNlc3Npb25zG1szOW0bWzE7MUgbWzJKG1szODs1OzZtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCBmaWx0ZXI6IHp6euKWiBtbMG0bWzFFG1szODs1OzhtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgICBTdGF0ICAgIE1zZ3MgIEFjdGl2ZSAgICAgIFNyYyAgIElEG1szOW0bWzFFG1sxRRtbMm0gIE5vIHNlc3Npb25zIG1hdGNoIHRoZSBmaWx0ZXIuG1swbRtbMUUbWzMwOzFIG1szODs1OzhtICAwLzIgc2Vzc2lvbnMbWzM5bRtbMTsxSBtbMkobWzM4OzU7Nm0bWzFtICBCcm93c2Ugc2Vzc2lvbnMg4oCUIGZpbHRlcjogenp6euKWiBtbMG0bWzFFG1szODs1OzhtICAgVGl0bGUgLyBQcmV2aWV3ICAgICAgICBTdGF0ICAgIE1zZ3MgIEFjdGl2ZSAgICAgIFNyYyAgIElEG1szOW0bWzFFG1sxRRtbMm0gIE5vIHNlc3Npb25zIG1hdGNoIHRoZSBmaWx0ZXIuG1swbRtbMUUbWzMwOzFIG1szODs1OzhtICAwLzIgc2Vzc2lvbnMbWzM5bQ==",
+        "raw_sha256": "172534e41755b2224ea100da3d6a2a0f1ac2746fc61180a53b8774ca17f06df2",
+        "snapshot_end_byte": 1327,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "Browse sessions",
+            "zzzz"
+          ],
+          [
+            "No sessions match",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "Browse sessions",
+            "end_byte": 421
+          },
+          {
+            "marker": "No sessions match",
+            "end_byte": 1327
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": null,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    },
+    {
+      "id": "picker-delete-80x30",
+      "scenario": "picker-delete",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [
+          "550e8400-e29b-41d4-a716-446655440000",
+          "660f8400-e29b-41d4-a716-446655440001"
+        ],
+        "picker_timestamp_base": 1700000000
+      },
+      "rust": {
+        "command": [
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/target/debug/hermes-rs",
+          "sessions",
+          "browse"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-rust-l181pn93",
+          "HERMES_HOME": "/tmp/hermes-ui-rust-l181pn93",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "cwd": "/tmp/hermes-ui-rust-l181pn93",
+        "width": 80,
+        "height": 30,
+        "events_base64": [
+          [
+            0.007769,
+            "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJK"
+          ],
+          [
+            0.009078,
+            "G1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1szODs1OzJtG1sxbSDihpIgc2Vjb25kIHRvcGljICAgICAgICAgIGRvbmUgICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNjYwZjg0MDAbWzBtG1sxRSAgIGRlcGxveSB0aGUgdGhpbmcgICAgICAbWzM4OzU7Mm1kb25lIBtbMzltICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNTUwZTg0MDAbWzFFG1szMDsxSBtbMzg7NTs4bSAgMS8yIHNlc3Npb25zICAgZCBkZWxldGUbWzM5bQ=="
+          ],
+          [
+            0.310802,
+            "G1szMDsxSBtbMksbWzM4OzU7MW0bWzFtICBEZWxldGUgc2Vzc2lvbiAnc2Vjb25kIHRvcGljJz8gW3kvTl0bWzBt"
+          ]
+        ],
+        "inputs_base64": [
+          [
+            0.31064,
+            "ZA==",
+            "scenario key"
+          ]
+        ],
+        "raw_base64": "G1s/MTA0OWgbWz8yNWwbWzE7MUgbWzJKG1szODs1OzNtG1sxbSAgQnJvd3NlIHNlc3Npb25zIOKAlCDihpHihpMgbmF2aWdhdGUgIEVudGVyIHNlbGVjdCAgVHlwZSB0byBmaWx0ZXIgIEVzYyBxdWl0G1swbRtbMUUbWzM4OzU7OG0gICBUaXRsZSAvIFByZXZpZXcgICAgICAgIFN0YXQgICAgTXNncyAgQWN0aXZlICAgICAgU3JjICAgSUQbWzM5bRtbMUUbWzFFG1szODs1OzJtG1sxbSDihpIgc2Vjb25kIHRvcGljICAgICAgICAgIGRvbmUgICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNjYwZjg0MDAbWzBtG1sxRSAgIGRlcGxveSB0aGUgdGhpbmcgICAgICAbWzM4OzU7Mm1kb25lIBtbMzltICAgICAgMSAgMnkgYWdvICAgICAgY2xpICAgNTUwZTg0MDAbWzFFG1szMDsxSBtbMzg7NTs4bSAgMS8yIHNlc3Npb25zICAgZCBkZWxldGUbWzM5bRtbMzA7MUgbWzJLG1szODs1OzFtG1sxbSAgRGVsZXRlIHNlc3Npb24gJ3NlY29uZCB0b3BpYyc/IFt5L05dG1swbQ==",
+        "raw_sha256": "7eb192f622084784ec5afa9a822aaa90ffa287a810981c366770e3d0076353d1",
+        "snapshot_end_byte": 487,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "Browse sessions",
+            "d"
+          ],
+          [
+            "Delete",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "Browse sessions",
+            "end_byte": 421
+          },
+          {
+            "marker": "Delete",
+            "end_byte": 487
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": null,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    },
+    {
+      "id": "picker-empty-80x30",
+      "scenario": "picker-empty",
+      "fixture": {
+        "home": "isolated fresh temporary directory",
+        "credentials": "none supplied",
+        "docker_available": "not controlled",
+        "picker_seed": [],
+        "picker_timestamp_base": 1700000000
+      },
+      "rust": {
+        "command": [
+          "/home/runner/work/hermes-rust-version/hermes-rust-version/target/debug/hermes-rs",
+          "sessions",
+          "browse"
+        ],
+        "environment": {
+          "PATH": "/bin:/usr/bin",
+          "HOME": "/tmp/hermes-ui-rust-7ekr54_k",
+          "HERMES_HOME": "/tmp/hermes-ui-rust-7ekr54_k",
+          "TERM": "xterm-256color",
+          "COLORTERM": "truecolor",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "cwd": "/tmp/hermes-ui-rust-7ekr54_k",
+        "width": 80,
+        "height": 30,
+        "events_base64": [
+          [
+            0.014409,
+            "Tm8gc2Vzc2lvbnMgZm91bmQuDQo="
+          ]
+        ],
+        "inputs_base64": [],
+        "raw_base64": "Tm8gc2Vzc2lvbnMgZm91bmQuDQo=",
+        "raw_sha256": "b0f92eaf584936e281ebada2b493a30c7021a847abdedbdb5a39038e37fff2bd",
+        "snapshot_end_byte": 20,
+        "snapshot_rule": "observed readiness + 300ms output quiet or unchanged screen (including styles/cursor), or explicit exit",
+        "terminal_responder": "pyte 0.8.2 / wcwidth 0.8.3 (responses only; PNG uses xterm)",
+        "steps": [
+          [
+            "No sessions found.",
+            null
+          ]
+        ],
+        "completed_steps": [
+          {
+            "marker": "No sessions found.",
+            "end_byte": 20
+          }
+        ],
+        "error": null,
+        "exit_code_at_snapshot": 0,
+        "termination": "SIGTERM after snapshot if still running"
+      }
+    }
+  ]
+}

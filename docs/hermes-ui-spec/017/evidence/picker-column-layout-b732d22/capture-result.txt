@@ -1,0 +1,15 @@
+Capture run 34861588181 (picker-diagnostic, headSha b732d22, conclusion success)
+
+Capture committed picker and verify original symptom: success
+  clean tree asserted, CLI built, capture_picker_diagnostic.py wrote ten cases
+  check_picker_filter_hint.py, check_picker_counter.py, check_picker_footer_position.py,
+  check_picker_footer_color.py, check_picker_normal_header.py, check_picker_filter_header.py
+  and check_picker_column_layout.py all passed on the committed source
+picker column-layout regression :: capture actual CLI regression verified three times
+visual bundle digest :: sha256=d6860b3d6038f6f3ca117ef969d601eea55fea5b2af34590465389b7c53dbad2; bytes=290389
+column-layout trace digest :: sha256=fc1b5b394f3290bc104bcf60463c70fa823a0eecf09617713b3bc7ea16d638e6; bytes=309756
+
+Ordinary CI 34861587979 (headSha b732d22): CI gate regression tests success, fmt + clippy + test success
+Ordinary CI on the two pre-fix commits stayed red on purpose because the new live gate is part of
+ci.yml: 34860668307 (aface69, no fix) and 34861284979 (d18fd9a, proposal only) failed fmt + clippy
++ test; the capture commit with the fix applied is green.

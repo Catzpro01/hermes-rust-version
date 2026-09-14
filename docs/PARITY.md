@@ -376,6 +376,184 @@ User-facing `docs/hermes-ui-spec/017/MILESTONES.md` now marks M1–M5 complete f
 color ONLY; four picker correction milestones verified. No invented whole-project
 percentage, final acceptance, resize/long-list/clear-filter claims, or merge.
 
+### Filter-header slice delivered at48cf587 (capture9cc5cb4)
+
+Committed-source capture [34859140850] and ordinary CI [34859140646] SUCCESS.
+Ten paired PNGs retained; the filter help header (`Browse sessions — filter: …`)
+now uses palette slot6 plus bold, matching the pinned Python reference. Packet
+`docs/hermes-ui-spec/017/evidence/picker-filter-header-9cc5cb4/REPORT.md` keeps
+raw/casts, the tested 598-byte patch, checksums, the pair/verify scripts and the
+rejected first attempt.
+
+Only row1 of the four filter/no-match cases changes; other six PNGs and the
+Python records are byte-identical to the previous packet. Python palette16 /
+Rust palette256 both select index6+bold, dim=false; the encoding difference is
+retained, not normalized. Four rendered row1 regions are pixel-identical, and
+20 raw/cast roundtrips plus 10 PNG hash checks pass. The gate rejects the bright
+variant (`38;5;14`) that the first attempt produced, so slot selection is
+verified rather than approximated.
+
+Open after this slice: column-header colour, selected-row styling, delete-prompt
+colour, status/`Active`/`ID` column content, remaining body geometry, and the
+wizard/completion evidence gaps. Resize/long-list/clear-filter behaviour is not
+proved by these fixed-size cases. No whole-picker PASS, acceptance or merge.
+
+### Selected-row slice delivered atee11541 (capture b4cb408)
+
+The cursor row now uses palette slot 2 plus bold with no reverse video, the
+styling the retained reference paints the whole selected row (marker included)
+with. Chain: RED 34866264371 → GREEN 34866921566 (exported 1171-byte patch
+byte-identical to the bound proposal; fmt/check, clippy `-D warnings`, whole
+suite) → capture 34868306211 (ten cases; nine checkers green on the committed
+source) → ordinary CI SUCCESS. Packet
+`docs/hermes-ui-spec/017/evidence/picker-selection-b4cb408/REPORT.md`.
+
+34 of 34 pinned renderer regions are pixel-identical, including the two new
+selected-row regions per width and the unselected control row. Cell deltas are
+only row 4 of the three cursor scenarios at both widths: reverse video off,
+foreground default to slot 2, bold on, palette256 mode — text unchanged, Python
+records and cells unchanged, four empty-case PNGs byte-identical.
+
+Three real problems surfaced and were closed inside this cycle, recorded in the
+packet's `attempts-result.txt`: our own checker read the palette index in
+`38;5;2` as SGR dim; the PTY harness hit an intermittent start-up timeout (now a
+45 s allowance plus a diagnostic message naming what the child drew); and one
+GREEN request failed without a reproducible cause (the identical re-request
+passed three times). None of these was converted into a silent success.
+
+Still open in the picker: the status-column ink (no pinned evidence for the Rust
+`done` value), the documented `Active`/`ID` content, and resize/long-list/
+clear-filter. No whole-picker PASS, adaptation, acceptance or merge.
+
+### Status-tag ink slice delivered at1781404 (capture 19bbbd5)
+
+The five-cell status tag on rows that are not the cursor now carries the ink the
+pinned upstream source assigns: `complete`/`done` pair1 green,
+`interrupted`/`intr` pair2 yellow, `error`/`err` pair5 red, `empty` pair4
+palette8, any other tag A_NORMAL, never bold, drawn at
+`3 + name_width + 2`. §F named `_status_attr` without its mapping, so the
+mapping was read from the pinned source (`hermes_cli/main.py` at `63279301`,
+blob `8281cbdd…`, sha256 `89cde75d…`) and kept with provenance under
+`docs/hermes-ui-spec/017/evidence/upstream-status-attr/`; the retained capture
+corroborates it (`intr` measured in slot 3, delete prompt in slot 1). Chain:
+RED 34870302745 → GREEN 34871381451 (6 007-byte request patch, 6 109-byte tested
+patch after the runner's `cargo fmt --all`; fmt/check, clippy `-D warnings`,
+whole suite) → capture 34871743793 (ten cases; ten checkers green on the
+committed source) → ordinary CI 34871741338 SUCCESS. Packet
+`docs/hermes-ui-spec/017/evidence/picker-status-ink-19bbbd5/REPORT.md`.
+
+34 of 34 control regions are still pixel-identical, six PNGs of the cases
+without an unselected row are byte-identical, and the cell delta against the
+previous packet is only row 5 of the normal and delete scenarios at both widths
+(20 cells: foreground default to slot 2 plus palette256 mode, text unchanged;
+Python records and cells unchanged). The four new regions that cover the tag span
+are recorded as declared differences, not parity regions: the tag word is fixture
+data (the retained Python session is interrupted, the Rust fixture complete), so
+their glyphs differ by 270 pixels each while the ink is pinned by the checker on
+both sides.
+
+Two honest failures are in the packet's `attempts-result.txt`: the first GREEN
+patch underflowed `n - 3` on the blank separator row and panicked (exit 101,
+recovered from the retained trace annotation), and the second attempt's new unit
+test mixed 20-column geometry with 100-column offsets. A CI run on the capture
+commit also hit the known PTY start-up flake; the rustfmt-style gate stayed green
+on the identical fixed source and the flake is recorded with its annotation.
+
+Still open in the picker: the live capture exercises only `complete`/`done`, the
+documented `Active`/`ID` content, resize/long-list/clear-filter, and the
+sustained repaint the reference does not do. No whole-picker PASS, adaptation,
+acceptance or merge.
+
+### Redraw-cadence slice delivered atbbd943c (capture b2db435)
+
+The picker now draws because the screen changed, not on every loop turn: a `dirty`
+flag starts set, every accepted key press and every resize sets it again, and the
+100 ms poll loop is unchanged so signals keep being served. That matches the
+reference, which draws at the top of its loop and then blocks in
+`stdscr.getch()` — one frame per key, nothing while it waits. Chain: RED
+34873144309 → GREEN 34873480643 (2801-byte patch, exported byte-identical to the
+bound one — the first picker GREEN that landed on the first attempt) → capture
+34873776470 (ten cases; eleven checkers green on the committed source) →
+ordinary CI 34873775366 and 34873776473 SUCCESS. Packet
+`docs/hermes-ui-spec/017/evidence/picker-redraw-on-input-b2db435/REPORT.md`.
+
+The new live gate `picker_redraw_on_input` splits each record at the scenario
+keystrokes (terminal replies excluded) and counts frames per input window: one
+before the first keystroke, one per typed key after that. The same gate rejects
+8 of 10 cases in the previous packet (5 frames with no input in the normal case,
+25 in the no-match case, 41 in the 80-column filter case) and accepts all ten
+retained Python records, so it measures the behaviour rather than matching one
+capture. Frame content is provably untouched: all ten cell maps and all ten
+paired PNGs are byte-identical to the previous packet, 34/34 control regions are
+pixel-equal, and the four declared tag-span differences stay at 270 pixels each.
+Records shrank everywhere the loop runs (e.g. 13815 to 1463 bytes).
+
+The side effect that mattered operationally: the PTY harness no longer loses its
+quiet-or-stable race against a child that repaints forever, so the start-up flake
+recorded in the two previous packets stops reproducing — both CI runs on the
+fixed source are green.
+
+Still open in the picker: live coverage of the other three status inks, the
+documented `Active`/`ID` content, and resize/long-list/clear-filter. No
+whole-picker PASS, new adaptation, acceptance or merge.
+
+### Prompt/message slice delivered at549fc8d (capture fd674dc)
+
+The delete-confirm prompt is now drawn with palette slot 1 plus bold and the
+no-match message with the dim attribute, the two prompt/message rows the retained
+reference pinned. Chain: RED 34864078749 (live gate failed three times for
+exactly those two reasons) → GREEN 34864360124 (exported 2216-byte patch
+byte-identical to the bound proposal; fmt/check, clippy `-D warnings` and the
+whole suite passed) → capture 34864672852 (ten cases; eight checkers green on the
+committed source) → ordinary CI 34864669012/34864672933 SUCCESS. Packet
+`docs/hermes-ui-spec/017/evidence/picker-message-style-fd674dc/REPORT.md`.
+
+Every pinned renderer region is now pixel-identical: 28 of 28, including the
+no-match message row that differed by 1135 pixels per width before this slice and
+the new delete-prompt row regions. `pyte 0.8.2` cannot decode dim, so the gate
+reads the attribute from the retained byte stream and the packet proves the
+rendered result; the reference's habit of leaving dim open until the footer
+redraw is shown to be invisible because both the message row and the footer row
+compare equal. Cell deltas against the previous packet are only the dim flag
+(62 cells) and the prompt ink (76 cells: foreground slot, bold, palette256 mode);
+Python records and cells are unchanged and the six empty-case PNGs are
+byte-identical.
+
+Still open in the picker: the cursor row (` → ` palette2 green + bold instead of
+reverse video), the status-column ink (no pinned evidence for the Rust `done`
+value), the documented `Active`/`ID` adaptations, and resize/long-list/
+clear-filter. No whole-picker PASS, adaptation, acceptance or merge.
+
+### Column-layout slice delivered at641c304 (capture b732d22)
+
+Source capture [34861588181] and ordinary CI [34861587979] SUCCESS; the two
+pre-fix commits stayed red in ordinary CI on purpose because the new live gate
+ships with the slice. Packet
+`docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/REPORT.md` keeps
+raw/casts, the tested 12824-byte patch, the rejected first attempt, the
+pair/region scripts, checksums and audit.
+
+The picker now draws the pinned three-cell cursor column (` → ` on the cursor
+row, spaces otherwise), keeps one blank row between the column header and the
+body, and puts `Stat` at width-54 in palette8 ink without bold while the body
+columns sit at width-57 — the coordinates the retained 100/80 reference shows.
+Body field width-62 and header field width-59 (floor 20, the 80-column value)
+are derived from those two pinned widths only; narrower terminals are not
+evidenced. Reused Python records and Python cells are unchanged, 14 pinned
+renderer regions are pixel-identical, the two `picker-empty` PNGs are
+byte-identical to the prior packet, and the first GREEN proposal is retained as
+rejected evidence (clippy rejected `format_row` at eight arguments).
+
+Pixel comparison also found that the reference renders
+`  No sessions match the filter.` with the **dim** attribute, which pyte 0.8.2
+cannot decode (1135 differing pixels in that row at both widths). That finding
+is recorded, not normalized; the fix and its gate follow in the next cycle.
+
+Open after this slice: selected-row ` → ` green+bold, delete-prompt colour, the
+dim no-match message, status-column colour (no pinned evidence for `done`), and
+the wizard/completion evidence gaps. No resize/long-list/clear-filter claims,
+new adaptation, whole-picker PASS, acceptance or merge.
+
 ### Normal header H5 delivered at7fef514
 
 Source capture34837424495 and ordinary CI34837424464 SUCCESS. Ten paired PNGs

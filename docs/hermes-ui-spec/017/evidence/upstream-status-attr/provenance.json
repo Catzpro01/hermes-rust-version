@@ -1,0 +1,22 @@
+{
+  "purpose": "Pinned upstream source excerpt used to read the picker status mapping (`_status_attr`, `_session_status_tag`, the tag column formula) after the retained spec \u00a7F named the function without giving its mapping. This is source evidence, corroborated by the retained capture; the retained capture remains the pixel reference.",
+  "repository": "https://github.com/NousResearch/hermes-agent",
+  "commit": "63279301bcbdc185c1b07b98a9312eb0c862f26d",
+  "path": "hermes_cli/main.py",
+  "blob_sha_git": "8281cbdd63d8f7169fc81a8762eec9d8e3b80af3",
+  "file_sha256": "89cde75d388ae3ff0d3512c00a0b4e77fe9f55c438874032b32967b4ab867567",
+  "bytes": 625460,
+  "fetched_with": "gh api repos/NousResearch/hermes-agent/git/blobs/8281cbdd... (content sha re-checked against the contents API for the pinned ref)",
+  "relevant_lines": {
+    "status_tag_map": "1297-1305 (`complete`->done, `interrupted`->intr, `error`->err, `empty`->empty)",
+    "status_attr_map": "1419-1427 (complete/pair1 green, interrupted/pair2 yellow, error/pair5 red, empty/pair4 palette8)",
+    "pair_setup": "1409-1413 (pair1 green, pair2 yellow, pair3 cyan search, pair4 8-or-white dim, pair5 red)",
+    "tag_column": "1517-1523 (tag_x = 3 + max(20, (max_x-3) - _FIXED_COLS) + 2; _FIXED_COLS = 59 at 1364)",
+    "status_only_when_not_cursor": "1518 (`if i != cursor:` recolour in place)"
+  },
+  "corroboration": [
+    "retained capture picker-normal-100x30: python status tag `intr` measured at cols 43..47 with palette index 3",
+    "retained capture delete prompt: python red ink measured as palette index 1 (pair5 is COLOR_RED)",
+    "footer and column header: palette index 8 (pair4 is palette 8 with COLORS>8)"
+  ]
+}

@@ -1,0 +1,9 @@
+test_filter_help_header_matches_reference_style (__main__.PickerFilterHeaderTests.test_filter_help_header_matches_reference_style) ... rust picker-filter 100 CAPTURED_NOT_REVIEWED
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 1.097s
+
+OK
+sha256=a9dd557366f2f391df1daaff4ab75fb88b26c0f034ab72c30ddf646c339dd85c; bytes=98231
+capture actual CLI regression verified three times

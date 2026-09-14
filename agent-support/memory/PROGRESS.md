@@ -1592,3 +1592,267 @@ replacement. This preserves all source work, including later corrections to old
 T10 closure claims, and both roots. Added only these handoff receipts/notes after
 the tree identity check. Not a main update or PR merge; platform source-branch
 restriction retained. Check new official CI and PR mergeability after checkpoint.
+
+### Analisis progres pasca-merge PR7 (sesi 01a0a052)
+
+User meminta analisis dan status progres. Diperiksa langsung, tidak mengandalkan
+prediksi handoff sebelumnya:
+
+- `gh pr view 7`: **MERGED** oleh Catzpro01 pada 2026-09-14T14:28:06Z, merge
+  commit `baa7158`, 1.691 file (+143.671/−954). Jadi seluruh source branch
+  (paket handoff, koreksi picker, bukti) kini berada di `main`, dan sesi ini
+  berbasis commit yang identik dengan `main`. Sesi ini tidak melakukan merge,
+  force-push atau perubahan `main`.
+- `gh run list --branch main`: run `34855804061` pada SHA `baa7158` **SUCCESS**
+  di kedua job. Anotasi check-run `104014924835`:
+  `fmt=success clippy=success test=success picker=success` dengan
+  **584 tes Rust lulus / 0 gagal** di 28 binary tes. Satu anotasi `warning`
+  hanya deprecation Node.js 20 dari action pihak ketiga.
+- Verifikasi lokal baru pada sesi ini (venv `/tmp`, deps dari PyPI yang
+  terjangkau): enam skrip QA CI PASS
+  (`test_ci_workflow`, `test_capture_ui`, tiga `test_picker_*_checks`,
+  `test_audit_ui_evidence`), `automation/verify.py` PASS (7 alias, 37 skill
+  link, 164 file vendor, 9 guide), `automation/test_checkpoint.py` 8 tes OK.
+  Ini verifikasi Python/QA lokal; **bukan** klaim build/test Rust lokal.
+- Blocker lingkungan diukur ulang: `cargo`/`rustc` tidak ada;
+  static.rust-lang.org, crates.io, mirror rsproxy/USTC/TUNA, `sh.rustup.rs`
+  semua gagal (TLS/000); `apt-get download rustc` tidak menemukan paket;
+  hanya `github.com` (200) dan `pypi.org` (200) yang jalan. Jalur resmi tetap
+  runner Actions + patch anotasi ber-checksum.
+- Analisis lengkap termasuk daftar sisa pekerjaan dan urutan rekomendasi:
+  `agent-support/handoff/PROGRESS-ANALYSIS.md`. Ringkasnya: implementasi Spec
+  001–017 sudah mendarat; yang tersisa adalah penutupan bukti §J.7
+  (wizard tiap step, completion dropdown, variasi summary non-nol), sisa
+  perbedaan visual picker/wizard, keputusan produk untuk dropdown, lalu
+  acceptance eksplisit user (T12/T11/T10).
+- Auto-push post-commit diinstal untuk branch sesi ini
+  (`arena/01a0a052-hermes-rust-version`); status menunjukkan enabled dan
+  terikat ke branch aktif. Tidak ada staging otomatis.
+- Tidak ada perubahan runtime Rust, bukti visual, atau vendor pada checkpoint
+  ini; hanya dokumen analisis + catatan progres/memory/handoff.
+
+### Hasil push dan CI checkpoint analisis (terverifikasi)
+
+- Commit analisis `c7668f15a6f4510c55ebd0c33351d462320ce948` berhasil di-push ke
+  `origin/arena/01a0a052-hermes-rust-version`; `git ls-remote` mengembalikan SHA
+  yang sama dan receipt auto-push mencatat `outcome: success`, `no force or
+  merge`.
+- CI run `34856316182` pada commit itu **SUCCESS** di kedua job. Anotasi
+  check-run `104016690749`: `fmt=success clippy=success test=success
+  picker=success`, **584 tes Rust lulus / 0 gagal**. Ketiga regresi terminal
+  picker nyata ikut hijau.
+- Isi commit hanya dokumen: analisis baru, koreksi `CURRENT.md`, catatan
+  MEMORY/PROGRESS. Tidak ada perubahan runtime, bukti visual, atau vendor, dan
+  tidak ada merge/auto-merge.
+
+### Slice picker: header filter palette slot 6 + bold (siklus F1–F5 selesai)
+
+Siklus TDD penuh untuk satu perilaku, mengikuti pola koreksi picker sebelumnya:
+
+- RED nyata di seam CLI/PTY: run `34857289160` (atribut default) lalu
+  `34858664487` (menolak varian bright). Dua-duanya gagal 3× dengan nama tes
+  yang benar dan tanpa error setup.
+- Percobaan pertama memakai `Color::Cyan`; crossterm meng-encode-nya sebagai
+  `38;5;14` (bright cyan) — slot palet berbeda dari `SGR 36` Python. Renderer
+  pinned kebetulan menghasilkan piksel identik, sehingga hanya perbandingan
+  slot di level sel + aturan "jangan normalisasi warna" yang menangkapnya.
+  Gate diperketat ke slot 6 saja (`cyan`/`00cdcd`), dan percobaan yang ditolak
+  disimpan sebagai `first-attempt-bright-variant.txt`.
+- GREEN resmi `34858865863`: patch 598 byte SHA-256 `21fcdead…` diterapkan,
+  fmt/check/clippy + seluruh suite + regresi live 3× PASS; patch hasil ekspor
+  runner identik byte dengan proposal.
+- Capture sumber ter-commit `34859140850` (bundle 98231 byte SHA `a9dd5573…`,
+  commit `9cc5cb4`) + CI biasa `34859140646` SUCCESS.
+- Paket bukti `docs/hermes-ui-spec/017/evidence/picker-filter-header-9cc5cb4/`:
+  10 kasus, 20 raw/cast round trip, 10 hash PNG, 4 cek slot, 4 perbandingan
+  piksel row1 (0 piksel berbeda), `verify.py` + `SHA256SUMS` + `audit.json`.
+  Hanya row1 pada empat kasus filter/no-match yang berubah; enam PNG lain
+  byte-identik dengan paket `picker-header-7fef514`; rekaman Python tidak
+  berubah (reuse `ui-3b39bd7`).
+- Gate CI biasa kini menjalankan regresi live keempat (`test_picker_filter_header.py`)
+  plus `test_picker_filter_header_checks.py`; `scripts/test_ci_workflow.py`
+  diperbarui menjadi 15 tes dan menuntut keempat regresi live.
+- Workflow diagnostik (`picker-diagnostic.yml`, `ui-evidence.yml`,
+  `visual-evidence.yml`) di-rebind ke branch sesi `arena/01a0a052-hermes-rust-version`
+  agar request-file dapat memicu runner lagi.
+
+Sisa picker V2: header kolom (brightblack + indent), baris terpilih (` → ` +
+hijau bold), warna prompt hapus (merah bold), status/`Active`/`ID`, geometri
+badan tabel, lalu wizard V1 dan kelengkapan completion/T12. Tidak ada
+acceptance, penutupan Spec017, atau merge.
+
+### Hasil akhir slice header filter (terverifikasi)
+
+- Commit paket `8e7e82d8a10ce52556b7c381c600e19e8fc82893` auto-push; CI
+  `34859681727` **SUCCESS** di kedua job dengan anotasi
+  `fmt=success clippy=success test=success picker=success` dan 584 tes Rust
+  lulus. Regresi live keempat (filter header) kini benar-benar dijalankan di CI
+  biasa dan hijau.
+- Paket `picker-filter-header-9cc5cb4` lolos `verify.py` (20 round trip
+  raw/cast, 10 hash PNG, 4 cek slot, 4 perbandingan piksel, 6 PNG tidak berubah)
+  dan enam skrip QA CI hijau secara lokal.
+- Sisa picker V2 untuk siklus berikutnya: header kolom (brightblack + indent),
+  baris terpilih, warna prompt hapus, kolom status/Active/ID, geometri badan.
+  Tidak ada acceptance/penutupan/merge.
+
+### Slice picker: tata letak kolom (K1–K5 selesai)
+
+Siklus TDD penuh kedua untuk picker V2, sumber ter-commit `b732d22`, fix `641c304`:
+
+- RED nyata 34860668321: gate live baru `picker_column_layout` gagal 3× dengan
+  nama tes benar (indent 2 sel, `Stat` di x=52, tidak ada baris pemisah, tidak ada
+  kolom kursor) dan tanpa error setup.
+- Usulan GREEN pertama (34860995073, patch `2c79b6d1…`) sudah hijau 3× pada gate
+  live tetapi ditolak `clippy -D warnings` karena `format_row` punya 8 argumen;
+  patch itu disimpan sebagai `rejected-first-attempt.patch` dan perilakunya tidak
+  diubah oleh perbaikan kedua.
+- GREEN resmi 34861285022 (patch 12824 byte `006bdcc7…`): `format_row` menerima
+  `&SessionRow`, gate live 3×, clippy + seluruh suite PASS, patch hasil ekspor
+  identik byte dengan proposal.
+- Capture sumber ter-commit 34861588181: 10 kasus + hint/counter/posisi/warna/
+  header normal/header filter/tata letak kolom semuanya PASS; bundle 290.389 byte
+  `d6860b3d…`; CI biasa 34861587979 SUCCESS (dua commit pra-fix memang merah di CI
+  biasa karena gate barunya sudah ikut rilis).
+- Paket `docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/`:
+  20 round trip raw/cast, 10 hash PNG, 8 jalan checker, 14 region piksel
+  pinned-renderer identik, 2 PNG kasus empty byte-identik, peta baris berubah;
+  `verify.py` + `SHA256SUMS` + audit `COLUMN_LAYOUT_FIXED_NO_MATCH_DIM_STILL_OPEN`.
+- Temuan baru (belum diperbaiki): referensi menggambar pesan no-match dengan
+  atribut **dim**; `pyte 0.8.2` tidak dapat membacanya sehingga seluruh gate pyte
+  sebelumnya tidak melihatnya (1.135 piksel berbeda di baris itu). Siklus
+  berikutnya: dim no-match + gaya baris terpilih hijau+bold, lalu prompt hapus.
+
+Tidak ada adaptasi baru, PASS seluruh picker, acceptance, atau merge.
+
+### Slice picker: prompt hapus + pesan no-match (P1–P5 selesai)
+
+Siklus TDD ketiga untuk picker V2; sumber ter-commit `fd674dc`, fix `549fc8d`:
+
+- RED nyata 34864078749: gate live baru `picker_message_style` gagal 3× dengan nama
+  tes benar dan tanpa error setup — empat masalah: pesan no-match tanpa atribut dim
+  (dua lebar) dan prompt hapus belum merah/bold (dua lebar).
+- GREEN resmi 34864360124: patch 2.216 byte `d1ed7f99…` (dim + reset di tempat;
+  `Color::DarkRed` + bold untuk prompt) diterapkan persis, gate live 3×, fmt/check,
+  clippy `-D warnings` dan seluruh suite PASS; patch hasil ekspor byte-identik
+  dengan proposal.
+- Capture 34864672852 dari sumber ter-commit: 10 kasus, **delapan** checker PASS
+  pada sumber itu (hint, counter, posisi, warna, header normal, header filter,
+  tata letak kolom, prompt/message); bundle 166.599 byte `a8f37c46…`.
+- Paket `docs/hermes-ui-spec/017/evidence/picker-message-style-fd674dc/`:
+  **28 dari 28 region piksel identik** — temuan dim dari slice kolom tertutup
+  (baris yang tadinya berbeda 1.135 piksel kini sama) dan dua region baru untuk
+  baris prompt hapus; 6 PNG kasus empty byte-identik; delta sel hanya flag dim
+  (62 sel) dan tinta prompt (76 sel: slot foreground, bold, mode palet256); sel dan
+  rekaman Python tidak berubah. `verify.py` → audit
+  `MESSAGE_STYLE_FIXED_ALL_PINNED_REGIONS_EQUAL`.
+- CI biasa kini menjalankan gate live keenam; dua commit pra-fix memang merah di CI
+  biasa karena gate barunya sudah ikut rilis (34864078561, 34864360148), sedangkan
+  commit fix dan capture hijau (34864669012, 34864672933).
+- Dokumen: MILESTONES (P1–P5), PARITY, README bukti, T13, serta tampilan roadmap
+  `docs/ROADMAP-VIEW.md`.
+
+Berikutnya: baris terpilih (` → ` palette2 hijau + bold menggantikan reverse
+video), lalu warna kolom status (butuh bukti terpinn), sisanya wizard V1 dan
+keputusan produk dropdown completion. Tidak ada adaptasi baru, PASS seluruh
+picker, acceptance, atau merge.
+
+### Slice picker: baris terpilih (S1–S5 selesai)
+
+Siklus TDD keempat untuk picker V2; sumber ter-commit `b4cb408`, fix `ee11541`:
+
+- RED 34866264371: gate live `picker_selection` gagal 3× dengan nama benar dan
+  tanpa error setup (reverse masih aktif; gaya default bukan palette2+bold).
+- GREEN 34866921566: patch 1.171 byte `8eed758f…` (`Color::DarkGreen` + bold
+  menggantikan `Attribute::Reverse`) diterapkan persis; fmt/check, clippy
+  `-D warnings` dan seluruh suite PASS; patch ekspor identik byte.
+- Capture 34868306211: 10 kasus, sembilan checker PASS di sumber ter-commit;
+  bundle 423.798 byte `fe8bc2c2…`.
+- Paket `docs/hermes-ui-spec/017/evidence/picker-selection-b4cb408/`: `verify.py`
+  → audit `SELECTION_ROW_FIXED_ALL_PINNED_REGIONS_EQUAL` — 20 round trip raw/cast,
+  10 hash PNG, 12 jalan checker, **34/34 region piksel identik**, 4 PNG kasus empty
+  byte-identik; delta sel hanya baris4 di tiga skenario ber-kursor (444 sel:
+  inverse mati, fg slot2, bold hidup, mode palet256), teks baris tidak berubah.
+- Tiga masalah nyata ditemukan dan ditutup sepanjang siklus ini dan dicatat di
+  `attempts-result.txt`: (1) checker kami sendiri membaca indeks palet `38;5;2`
+  sebagai dim (`1c40eea`); (2) flake start-up PTY — izin 45 s + pesan diagnostik
+  yang menyebut isi layar (`400f5e2`, `064e92d`); (3) satu permintaan GREEN gagal
+  tanpa dapat direproduksi dan lulus 3× pada permintaan ulang identik. Tidak ada
+  kegagalan yang diubah menjadi sukses senyap.
+- CI biasa kini menjalankan gate live ketujuh; permintaan capture kini memverifikasi
+  seluruh sembilan gate pada sumber ter-commit.
+
+Berikutnya: warna kolom status (butuh bukti terpinn lebih dulu), lalu resize/
+daftar panjang/clear-filter, kemudian wizard V1 dan keputusan produk dropdown
+completion. Tidak ada adaptasi baru, PASS seluruh picker, acceptance, atau merge.
+
+### Slice picker: tinta kolom status (S1–S5 selesai)
+
+Siklus TDD kelima untuk picker V2; fix `1781404`, sumber ter-commit `19bbbd5`:
+
+- Bukti terpinn dicari lebih dulu (§F hanya menyebut `_status_attr` tanpa peta):
+  sumber upstream pada commit `63279301` (`hermes_cli/main.py`, blob `8281cbdd…`,
+  sha256 `89cde75d…`, 625.460 byte) disimpan bersama provenance di
+  `docs/hermes-ui-spec/017/evidence/upstream-status-attr/`. Pemetaannya:
+  complete→`done` pair1 green, interrupted→`intr` pair2 yellow, error→`err` pair5
+  red, empty→`empty` pair4 palette8, lainnya A_NORMAL, di `3 + name_width + 2`,
+  lima sel, hanya pada baris non-kursor. Capture lama mengonfirmasi (`intr` slot 3,
+  prompt delete slot 1).
+- Gate baru `picker_status_ink` (checker + tes CLI + 12 tes pendukung), terpasang di
+  `picker-diagnostic` (entri plan kedelapan, regresi 3×, retensi trace) dan di
+  `ci.yml` sebagai gate biasa kedelapan.
+- RED 34870302745: gagal 3× dengan assertion pemetaan, tanpa error setup.
+- GREEN 34871381451 setelah dua percobaan gagal yang jujur: patch pertama panik
+  `attempt to subtract with overflow` (`n − 3` pada baris pemisah, exit 101 —
+  teks panik dipulihkan dari anotasi trace `bc0b233a…`), percobaan kedua gagal di
+  unit test yang mencampur geometri 20 kolom dengan offset 100 kolom. Patch final
+  6.007 byte `e88347c8…`; yang diuji ekspor 6.109 byte `73d0322e…` (bedanya hanya
+  pembungkusan `cargo fmt`).
+- Capture 34871743793: 10 kasus, **sepuluh** checker PASS, verifikasi 3×; bundle
+  `119e299b…` 204.818 byte. CI pada sumber tetap `1781404` SUCCESS
+  (`34871741338`); CI pada commit capture kena flake start-up PTY yang sudah
+  dikenal (`34871743697`, layar penuh tapi `stage 0` timeout — dicatat, bukan
+  sukses senyap).
+- Paket `docs/hermes-ui-spec/017/evidence/picker-status-ink-19bbbd5/`: `verify.py`
+  → audit `STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL` — 20 round trip
+  raw/cast, 10 hash PNG, 14 jalan checker, **34/34 region kontrol identik**,
+  6 PNG byte-identik, delta sel hanya baris 5 pada normal/delete kedua lebar
+  (20 sel: fg default→2 + mode palet256, teks tetap), dan 4 region span tag
+  dicatat sebagai **perbedaan yang dinyatakan** (kata tag adalah data fixture).
+
+Berikutnya: siklus picker yang tersisa — perilaku resize/daftar panjang/clear-filter
+dan penyimpangan repaint (referensi hanya menggambar setelah tombol), lalu adaptasi
+`Active`/`ID`, kemudian wizard V1 dan keputusan produk dropdown completion. Tidak ada
+adaptasi baru, PASS seluruh picker, acceptance, atau merge.
+
+### Slice picker: cadence redraw (S1–S5 selesai)
+
+Siklus TDD keenam untuk picker V2; fix `bbd943c`, sumber ter-commit `b2db435`:
+
+- Bukti terpinn dari `_curses_browse` (sumber upstream yang sudah disimpan):
+  referensi menggambar frame di awal loop lalu memblokir di `stdscr.getch()` —
+  satu frame per tombol, tidak ada output selama menunggu. Port Rust memakai poll
+  100 ms untuk tetap responsif terhadap sinyal, tetapi sebelumnya menggambar
+  ulang setiap kali poll timeout.
+- Gate baru `picker_redraw_on_input` (checker + tes CLI + 11 tes pendukung)
+  membelah rekaman pada penulisan tombol skenario dan menghitung frame per jendela
+  input: 1 frame sebelum tombol pertama, satu per tombol sesudahnya. Terpasang di
+  `picker-diagnostic` (entri plan kesembilan, regresi 3×, retensi trace) dan
+  `ci.yml` sebagai gate biasa kesembilan.
+- RED 34873144309: gagal 3× dengan assertion kadens, tanpa error setup.
+- GREEN 34873480643: **percobaan pertama berhasil** — gate live 3×, fmt/check,
+  clippy `-D warnings`, seluruh suite PASS; patch ekspor identik byte dengan yang
+  diikat (`925b963e…`, 2.801 byte). Jejak turun 279.052 → 45.748 byte.
+- Capture 34873776470: 10 kasus, **sebelas** checker PASS, verifikasi 3×; bundle
+  `491713dd…` 46.091 byte. CI `34873775366` dan `34873776473` SUCCESS.
+- Paket `docs/hermes-ui-spec/017/evidence/picker-redraw-on-input-b2db435/`:
+  `verify.py` → audit `REDRAW_ON_INPUT_FIXED_FRAME_CONTENT_UNCHANGED_ALL_REGIONS_EQUAL`
+  — gate yang sama menolak 8/10 kasus paket sebelumnya dan menerima 10/10 rekaman
+  referensi; kesepuluh cell map dan PNG identik byte dengan paket siklus lalu;
+  34/34 region kontrol identik; 4 perbedaan span tag tetap 270 piksel.
+- Efek samping penting: flake start-up PTY hilang (dulu `missing readiness/timeout
+  at stage 0` setelah 207.901 byte walau layar sudah penuh).
+
+Berikutnya: resize/daftar panjang/clear-filter, adaptasi `Active`/`ID`, fixture yang
+menjalankan tinta `interrupted`/`error`/`empty` secara live, lalu wizard V1 dan
+keputusan produk dropdown completion. Tidak ada adaptasi baru, PASS seluruh picker,
+acceptance, atau merge.

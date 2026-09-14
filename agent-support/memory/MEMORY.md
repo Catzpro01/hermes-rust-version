@@ -30,6 +30,69 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- **Picker selected-row slice delivered**: fix `ee11541` (tested patch 1171 B
+  `8eed758f…`: `Color::DarkGreen` + bold replaces reverse video), RED `34866264371`
+  → GREEN `34866921566` → capture `34868306211` (bundle `fe8bc2c2…`, 10 cases) →
+  CI `34867949911`/`34868819214`. Packet
+  `docs/hermes-ui-spec/017/evidence/picker-selection-b4cb408/`:
+  **34 of 34 pinned pixel regions identical** (two new selected-row regions per
+  width), 4 byte-identical empty-case PNGs, 20 round trips, 12 checker runs, cell
+  deltas only on row 4 of the three cursor scenarios (444 cells: inverse off, fg
+  slot 2, bold on, palette256).
+- **Three real defects found and closed in that cycle** (all in the packet's
+  `attempts-result.txt`): `check_picker_message_style.dim_state` read the palette
+  index in `38;5;2` as SGR dim (fix `1c40eea`); the PTY harness hit intermittent
+  start-up timeouts (45 s allowance + diagnostic message, `400f5e2`/`064e92d`);
+  one GREEN request failed unreproducibly and passed on an identical re-request.
+- **Picker still open**: status-column ink (no pinned evidence for the Rust `done`
+  value — next cycle candidate), documented `Active`/`ID` content, resize/
+  long-list/clear-filter, then wizard V1 and the completion product decision.
+- **Picker prompt/message slice delivered**: fix `549fc8d` (tested patch 2216 B
+  `d1ed7f99…`: `Attribute::Dim` on the no-match message reset in place, and
+  `Color::DarkRed` + bold on the delete-confirm prompt), RED `34864078749` →
+  GREEN `34864360124` → capture `34864672852` (bundle `a8f37c46…`, 10 cases) →
+  CI `34864669012`/`34864672933`. Packet
+  `docs/hermes-ui-spec/017/evidence/picker-message-style-fd674dc/`:
+  **28 of 28 pinned pixel regions identical** (the no-match row that differed by
+  1135 px is closed), 6 byte-identical empty-case PNGs, 20 round trips, 10 checker
+  runs; cell deltas are only dim (62 cells) and prompt ink (76 cells). Ordinary CI
+  now also runs `test_picker_message_style.py` (sixth live gate).
+- **Roadmap view**: `docs/ROADMAP-VIEW.md` (consolidated from ROADMAP/MILESTONES/
+  PROGRESS-ANALYSIS; canonical files remain the source of truth).
+- Picker **column-layout slice delivered**: fix `641c304` (tested patch 12824 B
+  `006bdcc7…`), RED `34860668321` → GREEN `34861285022` (first proposal rejected
+  by clippy, kept as `rejected-first-attempt.patch`) → capture `34861588181`
+  (bundle `d6860b3d…`) → CI `34861587979`. Packet
+  `docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/`.
+- **Picker still open**: cursor row (` → ` palette2 green + bold instead of
+  reverse video — next cycle, gate shape already sketched), status-column ink (no
+  pinned evidence for the Rust `done` value), documented `Active`/`ID`
+  adaptations, resize/long-list/clear-filter, then wizard V1 and the completion
+  product decision.
+
+- Picker filter-header slice **delivered**: runtime commit `48cf587` (patch
+  598B SHA `21fcdead…`, DarkCyan = palette slot6). RED `34858664487`, GREEN
+  `34858865863`, capture `34859140850` (bundle SHA `a9dd5573…` @ `9cc5cb4`),
+  CI `34859140646`; packet `docs/hermes-ui-spec/017/evidence/picker-filter-header-9cc5cb4/`
+  with 4 pixel-identical row1 regions and the rejected bright-variant attempt
+  recorded. Ordinary CI now also requires `test_picker_filter_header.py`.
+  Diagnostic workflows rebound to `arena/01a0a052-hermes-rust-version`.
+  Next picker slice: column header colour/indent, then selection + delete prompt.
+
+- **PR7 MERGED ke main** (bukan oleh sesi ini): `Catzpro01`, 2026-09-14T14:28:06Z,
+  merge commit `baa7158`, 1.691 file (+143.671/−954). CI `main` run34855804061
+  pada `baa7158` **SUCCESS**; anotasi check-run104014924835:
+  `fmt=success clippy=success test=success picker=success`, **584 tes lulus**.
+  Source branch kini identik dengan main; handoff lama yang menyebut "main belum
+  diperbarui" sudah usang (lihat koreksi di `agent-support/handoff/CURRENT.md`).
+- Analisis progres menyeluruh ada di `agent-support/handoff/PROGRESS-ANALYSIS.md`:
+  implementasi Spec001–017 mendarat; sisa = bukti §J.7 (wizard step, completion
+  dropdown, variasi summary non-nol), sisa diff visual picker/wizard, keputusan
+  produk dropdown, acceptance user. Verifikasi lokal baru:6 skrip QA CI PASS,
+  verifier paket PASS (7/37/164/9), 8 tes auto-push OK; venv deps dari PyPI.
+  Blocker lokal diukur ulang: tidak ada cargo; rust/crates/mirror/apt semua gagal
+  TLS atau tidak ditemukan; hanya github.com+pypi.org jalan. Auto-push post-commit
+  diinstal untuk branch sesi `arena/01a0a052-hermes-rust-version`.
 - User repeats explicit PR merge request. CI34854268561/f3dfb91 GREEN. Found
   unrelated roots: main8b6a673 vs source root6ded9dd; full diff only four T10 docs,
   no independent main runtime/Cargo/scripts/workflow changes. Connected main as
@@ -354,3 +417,74 @@ Picker reference: hermes_cli/sessions_cmd.py wrapper and main.py
 _session_browse_picker. Wizard: setup.py run_setup_wizard; Rust src/wizard/,
 with tests/wizard_e2e.rs. Inventory every implemented step before capture.
 Preserve Python data; no new features, independent verdict, closure or merge.
+
+## 2026-09-14 — picker V2 cycle 5 delivered (status-tag ink)
+
+Chain: `1781404` (fix, source `804b80f0…`) → `19bbbd5` (capture request) →
+packet `picker-status-ink-19bbbd5`. New live gate `picker_status_ink` (8th live
+gate; plan entry 8 in picker-diagnostic, 3× regression + trace retention; also
+an ordinary CI gate) pins the five-cell status tag on non-cursor rows:
+`done` pair1 green, `intr` pair2 yellow, `err` pair5 red, `empty` pair4 palette8,
+other A_NORMAL, never bold, at `3 + name_width + 2` (43..48 @100, 25..30 @80).
+The mapping came from the pinned upstream source now kept at
+`docs/hermes-ui-spec/017/evidence/upstream-status-attr/` (`hermes_cli/main.py`
+@63279301, blob `8281cbdd…`, sha `89cde75d…`), because §F named `_status_attr`
+without it. RED 34870302745 → GREEN 34871381451 (request patch `e88347c8…`
+6007 B; tested/exported patch `73d0322e…` 6109 B after the runner's rustfmt) →
+capture 34871743793 (bundle `119e299b…` 204818 B; ten checkers PASS, 3× verified)
+→ CI 34871741338 SUCCESS on the fixed source. Audit
+`STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL`: 34/34 control regions equal,
+4 tag-span regions recorded as declared differences (tag word is fixture data),
+cell delta only row 5 in normal/delete @both widths (20 cells: fg −1→2,
+fm 0→33554432, text unchanged), python records/cells unchanged, 6 PNGs identical.
+
+Honest failures kept: GREEN attempt 1 `34870642732` panicked (usize underflow
+`n - 3` on the blank separator row, exit 101 — the panic text is only in the PTY
+bytes, recoverable from the trace annotation); GREEN attempt 2 `34871081677`
+passed the live gate 3× but failed a new unit test that mixed 20-column geometry
+with 100-column offsets; CI `34871743697` (capture commit) hit the known PTY
+start-up flake (screen fully drawn, `missing readiness/timeout at stage 0` after
+207901 bytes) — the picker repaints every poll timeout, so the harness's
+quiet-or-stable snapshot rule can lose the race under load; that repaint
+deviation is queued as the next picker cycle. Also solved: cycle 9's
+"unexplained" GREEN `34866468131` was a real live-gate failure on the committed
+source, masked because `ci.yml`'s picker step is `continue-on-error: true` (step
+list shows success, `steps.picker.outcome` is failure, the aggregate step fails
+the job) — read the `picker terminal` annotation.
+
+Next: picker resize/long-list/clear-filter + the repaint deviation, then the
+`Active`/`ID` documented adaptations, then wizard V1 (14 scenarios / 5 groups)
+and the completion-dropdown product decision. Still no whole-picker PASS, new
+adaptation, acceptance, or merge.
+
+## 2026-09-14 — picker V2 cycle 6 delivered (redraw cadence)
+
+Chain: `bbd943c` (fix, source `e6cad4ba…`) → `b2db435` (capture request) → packet
+`picker-redraw-on-input-b2db435`. The picker now repaints only when the screen
+changed: a `dirty` flag starts set, every accepted key press and every `Resize`
+sets it again, the 100 ms poll loop is untouched. That matches the pinned
+reference (`_curses_browse` draws then blocks in `stdscr.getch()`).
+New live gate `picker_redraw_on_input` (9th live gate, plan entry 9, 3× regression
++ trace retention, also an ordinary CI gate) splits each record at the scenario
+keystroke writes (terminal replies excluded) and counts frames per input window:
+1 before the first keystroke, 1 per typed key after (`topic` = 5, `zzzz` = 4).
+RED 34873144309 → GREEN 34873480643 (**first attempt**; tested patch byte-identical
+to the bound `925b963e…` 2801 B; traces 279052 → 45748 bytes) → capture 34873776470
+(bundle `491713dd…` 46091 B; eleven checkers PASS; 3× verified) → CI 34873775366 and
+34873776473 SUCCESS. Audit
+`REDRAW_ON_INPUT_FIXED_FRAME_CONTENT_UNCHANGED_ALL_REGIONS_EQUAL`: the same gate
+rejects 8/10 cases of the previous packet and accepts all 10 retained Python
+records; all ten cell maps and PNGs byte-identical to the previous packet; 34/34
+control regions equal; 4 declared tag-span differences at 270 px each; records
+shrank wherever the loop runs (13815 → 1463 B in the no-match case).
+
+Side effect: the PTY start-up flake stopped reproducing (the harness's
+quiet-or-stable rule no longer races a child that repaints forever), so both CI
+runs on the fixed source are green — this closes the flake recorded in the last
+two packets. Also reused: cycle 9's "unexplained" GREEN failure was a real
+live-gate failure masked by `continue-on-error: true` on the picker step.
+
+Next: resize/long-list/clear-filter, the documented `Active`/`ID` adaptations, a
+fixture that exercises the interrupted/error/empty inks live, then wizard V1 and
+the completion-dropdown product decision. No whole-picker PASS, new adaptation,
+acceptance, or merge.
