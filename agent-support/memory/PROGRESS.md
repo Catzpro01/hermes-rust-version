@@ -2048,3 +2048,21 @@ test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
   referensi completion (grilling). Frontier: W1, W3, W4 (terbuka, tak
   terblokir, belum di-claim). Sesuai skill: charting tidak meresolusi tiket;
   maksimal satu tiket non-research per sesi berikutnya.
+
+### Wayfinder Spec017 — semua tiket keputusan W1–W4 CLOSED
+
+- **W1** (research inline, AFK): perilaku referensi `_curses_browse` terpinn —
+  resize satu frame redraw + clamp minimal + "Terminal too small" keluar saat
+  <5×40; daftar panjang kursor modulo + scroll minimal; clear-filter reset
+  cursor/offset ke 0. Bukti: `docs/hermes-ui-spec/017/evidence/upstream-browse-control/`.
+- **W2** (grilling): parity PENUH ketiga perilaku + tiga live gate baru pola
+  RED→GREEN; fallback resize capture-only wajib beralasan tercatat.
+- **W3** (grilling): batas frame-vs-model medan wizard (nested model-only via
+  tes unit/registry, secret tak pernah dicapture); matriks T12 per section ×
+  {normal, cancel} + unavailable-feature; vendoring setup.py = tugas bukti
+  terpisah terblokir jaringan.
+- **W4** (grilling): referensi completion = rekaman PTY Python v0.21.0 dari
+  mesin pengguna (tugas pengguna); matriks 4 kasus × 2 lebar; satu live gate
+  deterministik + capture berdampingan.
+- Peta final memuat lane eksekusi: picker residu → wizard V1 → completion →
+  kelengkapan T12 → acceptance bertahap (Q3). Semua ter-push.
