@@ -1,5 +1,5 @@
 diff --git a/crates/hermes-cli/src/session_picker.rs b/crates/hermes-cli/src/session_picker.rs
-index d4887c2..6000443 100644
+index d4887c2..7cef132 100644
 --- a/crates/hermes-cli/src/session_picker.rs
 +++ b/crates/hermes-cli/src/session_picker.rs
 @@ -15,8 +15,13 @@
@@ -63,7 +63,7 @@ index d4887c2..6000443 100644
  /// Three-cell cursor column shared by every body row. The reference draws
  /// ` → ` on the cursor row and three spaces on the others.
  pub fn row_prefix(selected: bool) -> &'static str {
-@@ -483,8 +519,26 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+@@ -483,8 +519,32 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                          SetForegroundColor(Color::Reset)
                      )?;
                  } else {
@@ -73,7 +73,13 @@ index d4887c2..6000443 100644
 +                    // rows that are not the cursor (pinned `_session_browse_picker`).
 +                    use crossterm::style::{Print, SetForegroundColor};
 +                    let span = status_tag_span(name_width(cols));
-+                    let body = shown.get(start + (n - 3)).copied();
++                    // Rows above the body (hint, header, separator) must not
++                    // index into `shown`; `n - 3` would underflow there.
++                    let body = if n < 3 {
++                        None
++                    } else {
++                        shown.get(start + (n - 3)).copied()
++                    };
 +                    match body.filter(|_| line.chars().count() >= span.end) {
 +                        Some(index) => {
 +                            let head = char_offset(line, span.start);
@@ -92,7 +98,7 @@ index d4887c2..6000443 100644
                  }
                  if !is_footer {
                      execute!(out, cursor::MoveToNextLine(1))?;
-@@ -693,6 +747,25 @@ mod tests {
+@@ -693,6 +753,25 @@ mod tests {
          );
      }
  

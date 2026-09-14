@@ -194,3 +194,17 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     (sha256 `a073bedc…`), verified with `git apply --check` against the committed
     source. RED run 34870302745 failed three times as expected (assertion only,
     no setup error). GREEN bound to the patch digest.
+  - [ ] Cycle 5 GREEN attempt 1 (run 34870642732) failed honestly: the patched
+    binary panicked with `attempt to subtract with overflow` at the blank
+    separator row (`n - 3` on `n == 2`), so every case exited 101 at stage 0 and
+    the gate reported a capture error, not an assertion failure. The panic was
+    located by decoding the retained trace annotation
+    (`sha256 bc0b233a…`, 18703 bytes) — the harness's raw bytes carry the Rust
+    panic message. The patch now guards `n < 3` and is re-requested as
+    `60687c1c…` (5840 bytes).
+  - [ ] Lesson for the CI story: `ci.yml`'s picker step uses
+    `continue-on-error: true`, so a real live-gate failure shows up as
+    `step.conclusion == success` while the step's `outcome` is `failure`, and the
+    job still fails at the final aggregate step. Cycle 9's "unexplained" GREEN
+    failure `34866468131` was exactly this: the committed source failed a live
+    gate, not a flake. Read the `picker terminal` annotation, not the step list.
