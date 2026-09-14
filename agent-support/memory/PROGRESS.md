@@ -2066,3 +2066,33 @@ test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
   deterministik + capture berdampingan.
 - Peta final memuat lane eksekusi: picker residu → wizard V1 → completion →
   kelengkapan T12 → acceptance bertahap (Q3). Semua ter-push.
+
+### Lane 1 Spec017 (picker residu W2) — implementasi selesai, menunggu run hijau
+
+- **RED** `b494990`: gate live browse-control (5 skenario × 2 lebar) + ekstensi
+  harness (`@resize WxH` mengirim SIGWINCH tengah-capture; seed 30 sesi
+  deterministik) + wiring CI (11 gate; matriks regresi workflow diperluas).
+  Observasi RED utuh terhalang infrastruktur: run `34902358798` kena bug
+  toolchain usang di worker baru (1.85.1 < MSRV 1.88, diperbaiki `755368f`
+  lewat `rustup which cargo`) lalu dibatalkan konkurensi; run `34903500251`
+  langkah pickernya dibatalkan pada 10m32s; rerun ditolak GitHub.
+- **GREEN** `a916b73` + `ccf157b`: implementasi parity `_curses_browse` —
+  geometri resize diperbarui (+ fallback polling `terminal::size()` per tick),
+  "Terminal too small" mid-sesi, kursor modulo, `scroll_offset` stateful
+  clamp minimal, Esc dua tahap, reset kursor/offset pada mutasi filter.
+  Tes unit Rust baru: wrap modulo, clamp minimal, jendela stateful.
+- **Diagnosis run `34904643455`** (fmt=failure picker=failure; log/artifact
+  tak terunduh): direproduksi lokal lewat biner mock yang meniru perilaku
+  port Rust melewati harness+checker asli — 10/10 kasus PASS setelah tiga
+  koreksi: (1) kontrak footer = cursor+1/total, jadi pasca-clear-filter
+  '1/2 sessions' bukan '2/2' (marker mustahil → timeout); (2) dua assert
+  panjang + panggilan frame_lines dilipat persis keluaran cargo fmt
+  (diverifikasi dari diff konten commit `0b91118`); (3) fallback ukuran.
+- **Insiden `0b91118`**: commit pihak lain "format via cargo fmt" menghapus
+  semua newline session_picker.rs (file jadi satu baris raksasa, modul tak
+  berkompilasi). Digabung di `3917834` dengan resolusi mengambil modul utuh
+  + perbaikan fmt yang benar; tidak ada force-push.
+- Run `34909647469`: fmt=success clippy=success, test gagal karena korupsi
+  cache sccache di worker hermes-8 ("extern location for futures does not
+  exist") — kerusakan lingkungan sisa run terbatalkan, bukan kode. Commit ini
+  memicu run baru; pool 8 worker + timeout job-1 10 menit aktif.
