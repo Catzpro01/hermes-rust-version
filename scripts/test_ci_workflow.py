@@ -265,6 +265,11 @@ class CiGateTests(unittest.TestCase):
         for name in ("Full GREEN validation", "Export exactly tested proposal"):
             step = next(s for s in steps if s.get("name") == name)
             self.assertIn("== 'green'", step["if"], name)
+        export = next(s for s in steps if s.get("name") == "Export exactly tested proposal")
+        # Live gates used to be excluded, so the tree they verified (post-`cargo
+        # fmt --all`) was never exported; cycle 7 GREEN 2 needed exactly that.
+        for live in ("picker_status_ink", "picker_redraw_on_input", "picker_terminal_size"):
+            self.assertNotIn(live, export["if"], live)
         log = next(s for s in steps if s.get("name") == "Export exact regression log")
         self.assertIn("REF_PREPARE", log["env"])
         self.assertIn("reference_failed", log["run"])

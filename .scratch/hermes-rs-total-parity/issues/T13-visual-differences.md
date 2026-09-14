@@ -340,3 +340,10 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     visible — the step tees to `picker-check.log` and emits
     `::error title=cargo check failed::<first error line>`, covered by a new
     `test_ci_workflow.py` case (28 tests).
+  - [x] Cycle 7 (size contract) GREEN attempt 2 (commit `9122443`, run
+    34879746760) SUCCESS: `green actual CLI regression verified three times`,
+    live test `rust picker-narrow 40 CAPTURED_NOT_REVIEWED` +
+    `rust picker-too-small 39 CAPTURED_NOT_REVIEWED`, trace digest
+    `sha256=772b8383…; bytes=5141`. The export step now also runs for live GREEN
+    phases, so the tree the runner formatted (`cargo fmt --all`) is exported and
+    the patch committed here is the patch that was verified.

@@ -1,5 +1,5 @@
 diff --git a/crates/hermes-cli/src/session_picker.rs b/crates/hermes-cli/src/session_picker.rs
-index 8fc6ff9..39832df 100644
+index 8fc6ff9..36db9d7 100644
 --- a/crates/hermes-cli/src/session_picker.rs
 +++ b/crates/hermes-cli/src/session_picker.rs
 @@ -54,10 +54,15 @@ pub const DELETE_FAILED: &str = "Delete failed.";
@@ -10,7 +10,7 @@ index 8fc6ff9..39832df 100644
 -/// Python's threshold; 60×8 fits the fixed columns plus a 10-char name.
 +/// Narrowest terminal that still draws the picker. The pinned reference
 +/// (`_session_browse_picker`) refuses `max_y < 5 or max_x < 40`, so 40 columns is
-+/// usable (the fixed columns are clipped) and anything below it shows the notice.
++/// usable (the fixed columns get clipped) and anything below that shows the notice.
 +pub const PICKER_MIN_COLUMNS: u16 = 40;
 +pub const PICKER_MIN_ROWS: u16 = 5;
 +
@@ -21,24 +21,7 @@ index 8fc6ff9..39832df 100644
  
  /// Hint line while filter text is typed (spec §F, verbatim shape).
  pub fn hint_filter(search: &str) -> String {
-@@ -170,6 +175,16 @@ pub fn row_prefix(selected: bool) -> &'static str {
-     }
- }
- 
-+/// Clip a drawn line the way the reference's `addnstr(..., max_x - 1, ...)` does:
-+/// the last terminal column stays empty and a long line is cut instead of wrapping,
-+/// which would push the rest of the frame onto the wrong rows.
-+pub fn clip_line(text: &str, max: usize) -> String {
-+    if text.chars().count() <= max {
-+        return text.to_owned();
-+    }
-+    text.chars().take(max).collect()
-+}
-+
- fn truncate_chars(text: &str, max: usize) -> String {
-     if text.chars().count() <= max {
-         return text.to_owned();
-@@ -425,16 +440,39 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+@@ -425,16 +430,35 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
      use crossterm::{cursor, execute};
  
      let (cols, term_rows) = terminal::size().context("query terminal size")?;
@@ -56,20 +39,16 @@ index 8fc6ff9..39832df 100644
      let _guard = ScreenGuard::enter()?;
 +    if cols < PICKER_MIN_COLUMNS || term_rows < PICKER_MIN_ROWS {
 +        // The reference clears the screen, writes the notice and then blocks in
-+        // `getch()`: the message stays visible until the user presses a key, and a
-+        // narrow terminal never falls through to the picker.
-+        {
-+            use crossterm::terminal::ClearType;
-+            use crossterm::style::Print;
-+            let mut out = std::io::stdout();
-+            execute!(
-+                out,
-+                cursor::MoveTo(0, 0),
-+                terminal::Clear(ClearType::All),
-+                Print(TOO_SMALL)
-+            )?;
-+            out.flush()?;
-+        }
++        // `getch()`: the notice stays visible until a key is pressed, and a narrow
++        // terminal never falls through to the picker.
++        let mut notice = std::io::stdout();
++        execute!(
++            notice,
++            cursor::MoveTo(0, 0),
++            terminal::Clear(terminal::ClearType::All),
++            crossterm::style::Print(TOO_SMALL)
++        )?;
++        notice.flush()?;
 +        loop {
 +            match event::read()? {
 +                Event::Key(key) if key.kind == event::KeyEventKind::Press => break,
@@ -82,16 +61,16 @@ index 8fc6ff9..39832df 100644
  
      let mut filter = String::new();
      let mut cursor_idx = 0usize;
-@@ -461,6 +499,8 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+@@ -461,6 +485,8 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
              };
              for (n, line) in frame.iter().enumerate() {
                  let is_footer = n == frame.len() - 1;
 +                // `addnstr(..., max_x - 1, ...)` in the reference: clip, never wrap.
-+                let line = clip_line(line, (cols as usize).saturating_sub(1));
++                let line = truncate_chars(line, (cols as usize).saturating_sub(1));
                  if is_footer {
                      execute!(out, cursor::MoveTo(0, term_rows - 1))?;
                  }
-@@ -540,8 +580,8 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+@@ -540,8 +566,8 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                      };
                      match body.filter(|_| line.chars().count() >= span.end) {
                          Some(index) => {
@@ -102,7 +81,7 @@ index 8fc6ff9..39832df 100644
                              execute!(
                                  out,
                                  Print(&line[..head]),
-@@ -766,6 +806,29 @@ mod tests {
+@@ -766,6 +792,29 @@ mod tests {
          );
      }
  
@@ -116,17 +95,17 @@ index 8fc6ff9..39832df 100644
 +    }
 +
 +    #[test]
-+    fn clip_line_cuts_instead_of_wrapping() {
-+        assert_eq!(clip_line("  Browse sessions", 39), "  Browse sessions");
-+        assert_eq!(clip_line("", 5), "");
++    fn a_drawn_row_is_clipped_not_wrapped() {
++        assert_eq!(truncate_chars("  Browse sessions", 39), "  Browse sessions");
++        assert_eq!(truncate_chars("", 5), "");
 +        let wide = format_row(
 +            &row("deploy the thing", "done", 12, "2h ago", "550e8400"),
 +            name_width(40),
 +            false,
 +        );
 +        assert!(wide.chars().count() > 39, "{wide:?}");
-+        assert_eq!(clip_line(&wide, 39).chars().count(), 39);
-+        assert_eq!(&clip_line(&wide, 39), &wide.chars().take(39).collect::<String>());
++        assert_eq!(truncate_chars(&wide, 39).chars().count(), 39);
++        assert_eq!(truncate_chars(&wide, 39), wide.chars().take(39).collect::<String>());
 +    }
 +
      #[test]

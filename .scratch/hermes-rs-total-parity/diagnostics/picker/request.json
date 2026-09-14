@@ -2,5 +2,5 @@
   "phase": "green",
   "test": "picker_terminal_size",
   "source_sha256": "e6cad4ba91d3b83a3b2d2dc16dfcd2e5fb6a2d79913a131b74171adeb4c05f75",
-  "patch_sha256": "91bab2701d876b0b8d1fd3429c25e43b5ef2f804e8e6d60ffeded675fe212043"
+  "patch_sha256": "940c0809e36afcb03ea05fac7602c64e449070743a4626fa031bfd0316edac7c"
 }
