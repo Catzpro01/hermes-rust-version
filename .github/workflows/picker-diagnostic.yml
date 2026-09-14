@@ -37,16 +37,20 @@ jobs:
                    'picker_message_style': 'message-style',
                    'picker_selection': 'selection',
                    'picker_status_ink': 'status-ink',
-                   'picker_redraw_on_input': 'redraw-on-input'}
+                   'picker_redraw_on_input': 'redraw-on-input',
+                   'picker_terminal_size': 'terminal-size'}
           live = ('picker_footer_position', 'picker_footer_color',
                   'picker_normal_header', 'picker_filter_header',
                   'picker_column_layout', 'picker_message_style',
                   'picker_selection', 'picker_status_ink',
-                  'picker_redraw_on_input')
+                  'picker_redraw_on_input', 'picker_terminal_size')
           test = request.get('test', 'picker_footer_tracks_delete_availability')
           assert test in tests, 'non-allowlisted regression'
           folder = folder/tests[test]
-          assert phase in ('red', 'green', 'capture')
+          assert phase in ('red', 'green', 'capture', 'reference')
+          if phase == 'reference':
+              assert test == 'picker_terminal_size', 'only the size contract has a reference phase'
+              raise SystemExit(0)  # Reference capture; no Rust patch is applied.
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write(f'phase={phase}\ntest={test}\n')
           if phase != 'capture':
@@ -70,12 +74,12 @@ jobs:
           cargo fmt --all -- --check
           cargo check --workspace --all-targets --locked
       - name: Build CLI for terminal-coordinate regression
-        if: steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input'
+        if: steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input' || steps.plan.outputs.test == 'picker_terminal_size'
         run: |
           cargo build --locked -p hermes-rs --bin hermes-rs
           python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
       - name: Exact frame regression repeated three times
-        if: steps.plan.outputs.test != 'picker_footer_position' && steps.plan.outputs.test != 'picker_footer_color' && steps.plan.outputs.test != 'picker_normal_header' && steps.plan.outputs.test != 'picker_filter_header' && steps.plan.outputs.test != 'picker_column_layout' && steps.plan.outputs.test != 'picker_message_style' && steps.plan.outputs.test != 'picker_selection' && steps.plan.outputs.test != 'picker_status_ink' && steps.plan.outputs.test != 'picker_redraw_on_input'
+        if: steps.plan.outputs.test != 'picker_footer_position' && steps.plan.outputs.test != 'picker_footer_color' && steps.plan.outputs.test != 'picker_normal_header' && steps.plan.outputs.test != 'picker_filter_header' && steps.plan.outputs.test != 'picker_column_layout' && steps.plan.outputs.test != 'picker_message_style' && steps.plan.outputs.test != 'picker_selection' && steps.plan.outputs.test != 'picker_status_ink' && steps.plan.outputs.test != 'picker_redraw_on_input' && steps.plan.outputs.test != 'picker_terminal_size'
         id: regression
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
@@ -411,6 +415,69 @@ jobs:
           if Path('evidence/redraw-1.json').exists():
               export_annotations(Path('evidence/redraw-1.json'), 0, 'redraw trace')
           PY
+      - name: Exact CLI terminal-size regression repeated three times
+        if: steps.plan.outputs.test == 'picker_terminal_size'
+        id: size
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+        run: |
+          for attempt in 1 2 3; do
+            set +e
+            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/size-$attempt.json python3 scripts/test_picker_terminal_size.py > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F 'FAIL: test_size_contract_follows_the_pinned_threshold' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
+            else
+              test "$status" -eq 0
+              grep -F 'test_size_contract_follows_the_pinned_threshold' "regression-$attempt.log"
+              grep -x 'OK' "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker terminal-size regression::$PHASE actual CLI regression verified three times"
+      - name: Retain primary terminal-size CLI trace
+        if: always() && steps.plan.outputs.test == 'picker_terminal_size'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          if Path('evidence/size-1.json').exists():
+              export_annotations(Path('evidence/size-1.json'), 0, 'size trace')
+          PY
+      - name: Prepare the pinned Python reference
+        if: steps.plan.outputs.phase == 'reference'
+        run: |
+          curl -sSL -o /tmp/hermes-ref.tar.gz https://codeload.github.com/NousResearch/hermes-agent/tar.gz/63279301bcbdc185c1b07b98a9312eb0c862f26d
+          mkdir -p /tmp/hermes-ref
+          tar -xzf /tmp/hermes-ref.tar.gz -C /tmp/hermes-ref --strip-components=1
+          printf '63279301bcbdc185c1b07b98a9312eb0c862f26d\n' > /tmp/hermes-ref/.visual-evidence-reference
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          path = Path('/tmp/hermes-ref/hermes_cli/main.py')
+          digest = hashlib.sha256(path.read_bytes()).hexdigest()
+          assert digest == '89cde75d388ae3ff0d3512c00a0b4e77fe9f55c438874032b32967b4ab867567', digest
+          print('pinned reference main.py', digest, path.stat().st_size, 'bytes')
+          PY
+          python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
+          PYTHONPATH=/tmp/picker-qa python3 scripts/capture_picker_sizes.py reference /tmp/hermes-ref evidence/picker-size-reference.json
+          echo "::notice title=picker size reference::captured $(python3 -c "import json;print(len(json.load(open('evidence/picker-size-reference.json'))['cases']),'cases')")"
+      - name: Export picker size reference recordings
+        if: steps.plan.outputs.phase == 'reference'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          export_annotations(Path('evidence/picker-size-reference.json'), 0, 'size reference bundle')
+          PY
       - name: Full GREEN validation
         if: steps.plan.outputs.phase != 'red'
         run: |
@@ -418,7 +485,7 @@ jobs:
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace --no-fail-fast
       - name: Export exactly tested proposal
-        if: steps.plan.outputs.phase != 'capture' && !((steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input') && steps.plan.outputs.phase == 'red')
+        if: steps.plan.outputs.phase != 'capture' && !((steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input' || steps.plan.outputs.test == 'picker_terminal_size') && steps.plan.outputs.phase == 'red')
         run: |
           mkdir -p evidence
           git diff --binary -- '*.rs' > evidence/tested.patch
@@ -464,7 +531,16 @@ jobs:
             if [ "${{ steps.plan.outputs.test }}" = picker_redraw_on_input ]; then
               PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_redraw_on_input.py evidence/picker.json --side rust
             fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_terminal_size ]; then
+              python3 scripts/capture_picker_sizes.py rust target/debug/hermes-rs evidence/picker-size-rust.json
+              python3 scripts/capture_picker_sizes.py pair evidence/picker-size-rust.json docs/hermes-ui-spec/017/evidence/picker-size-reference/picker-size-reference.json evidence/picker-size-paired.json
+              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_terminal_size.py evidence/picker-size-paired.json --side python
+              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_terminal_size.py evidence/picker-size-paired.json --side rust
+            fi
             python3 scripts/capture_banner.py export evidence/picker.json
+          if [ -f evidence/picker-size-paired.json ]; then
+            python3 scripts/capture_banner.py export evidence/picker-size-paired.json --label 'size bundle'
+          fi
           } 2>&1 | tee capture-verify.log
       - name: Export exact regression log
         if: always()

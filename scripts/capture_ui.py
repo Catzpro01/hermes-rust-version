@@ -26,6 +26,9 @@ ROOT = Path(__file__).resolve().parents[1]
 UPSTREAM = '63279301bcbdc185c1b07b98a9312eb0c862f26d'
 SID_A = '550e8400-e29b-41d4-a716-446655440000'
 SID_B = '660f8400-e29b-41d4-a716-446655440001'
+# Requested explicitly by the size-contract capture; never part of the default
+# matrix, so the existing bundles keep their exact case list.
+PICKER_SIZE_CASES = ('picker-narrow', 'picker-too-small')
 CASES = ('wizard-mode', 'wizard-full', 'wizard-blank', 'wizard-quick',
          'wizard-model', 'wizard-terminal', 'wizard-local', 'wizard-docker',
          'wizard-gateway', 'wizard-gateway-empty', 'wizard-gateway-token',
@@ -167,6 +170,8 @@ def steps_for(name, side):
     if name == 'wizard-tools-toggle': return ([(tools, '\r'), ('Tools for', ' '), ('Tools for', None)] if py else [(tools, ' '), (tools, None)])
     if name == 'wizard-cancel': return [(terminal, '\x1b'), ('@exit', None)]
     if name == 'picker-empty': return [('No sessions found.', None)]
+    if name == 'picker-too-small': return [('Terminal too small', None)]
+    if name == 'picker-narrow': return [('Browse sessions', None)]
     if name == 'picker-normal': return [('Browse sessions', None)]
     if name == 'picker-filter': return [('Browse sessions', 'topic'), ('filter: topic', None)]
     if name == 'picker-no-match': return [('Browse sessions', 'zzzz'), ('No sessions match', None)]

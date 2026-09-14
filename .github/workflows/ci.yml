@@ -38,6 +38,7 @@ jobs:
           python3 scripts/test_picker_selection_checks.py
           python3 scripts/test_picker_status_ink_checks.py
           python3 scripts/test_picker_redraw_on_input_checks.py
+          python3 scripts/test_picker_terminal_size_checks.py
       - run: python3 scripts/test_audit_ui_evidence.py
       - name: Verify agent handoff and safe checkpoint automation
         run: |
@@ -96,6 +97,7 @@ jobs:
           PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-selection.json python3 scripts/test_picker_selection.py 2>&1 | tee -a picker-position.log
           PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-status-ink.json python3 scripts/test_picker_status_ink.py 2>&1 | tee -a picker-position.log
           PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-redraw-on-input.json python3 scripts/test_picker_redraw_on_input.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-terminal-size.json python3 scripts/test_picker_terminal_size.py 2>&1 | tee -a picker-position.log
 
       # Diagnostics are emitted as check-run annotations (readable via the
       # REST API even where raw logs/artifacts are not reachable) and as a
@@ -209,6 +211,7 @@ jobs:
             picker-selection.json
             picker-status-ink.json
             picker-redraw-on-input.json
+            picker-terminal-size.json
 
       - name: Fail if any step failed
         if: always() && (steps.fmt.outcome != 'success' || steps.clippy.outcome != 'success' || steps.test.outcome != 'success' || steps.picker.outcome != 'success')

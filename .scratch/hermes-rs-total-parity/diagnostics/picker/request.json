@@ -1,5 +1,4 @@
 {
-  "phase": "capture",
-  "test": "picker_redraw_on_input",
-  "source_sha256": "e6cad4ba91d3b83a3b2d2dc16dfcd2e5fb6a2d79913a131b74171adeb4c05f75"
+  "phase": "reference",
+  "test": "picker_terminal_size"
 }
