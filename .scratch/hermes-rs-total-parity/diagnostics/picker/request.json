@@ -1,6 +1,6 @@
 {
-  "phase": "red",
+  "phase": "green",
   "test": "picker_terminal_size",
   "source_sha256": "e6cad4ba91d3b83a3b2d2dc16dfcd2e5fb6a2d79913a131b74171adeb4c05f75",
-  "note": "re-request 2: the previous push was refused as an invalid workflow file"
+  "patch_sha256": "776297300b2a7cc13dbb3d5fbbfc7317571267cdefdaf835288364d92c232ca1"
 }

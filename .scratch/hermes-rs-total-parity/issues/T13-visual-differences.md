@@ -323,3 +323,12 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     the whole file (run named after the path, no jobs). Fixed; `test_ci_workflow.py`
     now checks every step expression for balanced parentheses and quotes (27 tests).
     `actionlint-py` was tried for a real validator but its wheel does not build here.
+  - [x] Cycle 7 (size contract) RED: run 34879223385 failed exactly three times
+    with the assertion and no setup error (trace `30c81a2a…`, 4165 bytes) — at 40
+    columns Rust printed the notice instead of drawing the picker, because the
+    check itself (`cols < 60 || rows < 8` with a plain `println!` before the
+    screen) is not the pinned contract. Patch bound: 5204 bytes — threshold becomes
+    `PICKER_MIN_COLUMNS = 40` / `PICKER_MIN_ROWS = 5`, the notice is drawn on the
+    cleared alternate screen and followed by a key wait, the empty-store print
+    keeps its reference order (before curses), and every drawn line is clipped to
+    `cols - 1` like `addnstr(..., max_x - 1, ...)` so a narrow terminal never wraps.
