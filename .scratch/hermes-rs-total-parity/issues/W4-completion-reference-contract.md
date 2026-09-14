@@ -3,7 +3,7 @@
 - Status: OPEN
 - Type: wayfinder:grilling
 - HITL: yes
-- Owner:
+- Owner: Arena agent (sesi arena/01a0a14a)
 - Parent map: [Wayfinder map — Rute penuntasan Spec017](WAYFINDER-spec017-closure.md)
 - Blocked-by: —
 

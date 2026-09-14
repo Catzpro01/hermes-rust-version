@@ -40,7 +40,8 @@ Merge BUKAN bagian destinasi ini.
 
 <!-- satu baris per tiket CLOSED: judul + gist jawaban + tautan -->
 
-(belum ada tiket yang diresolusi)
+- [W1 — Perilaku referensi resize/long-list/clear-filter pada Python v0.21.0](W1-resize-reference-behavior.md): resize = satu frame redraw geometri baru + clamp minimal + "Terminal too small" keluar; daftar panjang = kursor modulo + scroll minimal; clear-filter = reset cursor/offset ke 0. Bukti: `docs/hermes-ui-spec/017/evidence/upstream-browse-control/`.
+- [W2 — Kontrak parity resize/long-list/clear-filter picker Rust](W2-resize-parity-contract.md): parity penuh untuk ketiganya (termasuk keluar saat terminal <5×40) dan tiga live gate baru pola RED→GREEN; fallback capture-only resize hanya dengan alasan tercatat.
 
 ## Not yet specified
 
