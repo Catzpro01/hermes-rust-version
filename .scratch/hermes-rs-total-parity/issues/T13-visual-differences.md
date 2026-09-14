@@ -248,3 +248,8 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     key or a resize changed the screen; the 100 ms poll loop stays for signal
     responsiveness. The runner's `cargo fmt --all` reindents the new block, so
     the tested patch is expected to differ from the bound one, as in cycle 10.
+  - [x] Cycle 6 (a) GREEN: run 34873480643 succeeded, and the exported tested
+    patch is byte-identical to the bound request patch (`925b963e…`, 2801 bytes)
+    — rustfmt had nothing to change. The live gate passed three times and the
+    retained trace fell from 279052 bytes (RED) to 45749 bytes (GREEN), the
+    direct sign that the picker stopped repainting while idle.

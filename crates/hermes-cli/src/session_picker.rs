@@ -24,6 +24,11 @@
 //!   `_status_attr` without its mapping.
 //! * `q` is a filter character in the curses-style browser (the hint lists
 //!   `Esc quit` only); `q to cancel` exists solely in the numbered fallback.
+//! * The frame is drawn when the screen changed, not on every loop turn: the
+//!   reference draws at the top of its loop and then blocks in `getch()`, so it
+//!   paints once per key and nothing while it waits. The port keeps polling (100
+//!   ms) to stay responsive to signals, but only repaints when a key or a resize
+//!   marked the screen dirty.
 
 use std::io::{BufRead, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -437,11 +442,14 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
     // Hint, column header, blank separator and footer occupy four rows.
     let max_rows = (term_rows as usize).saturating_sub(4).max(1);
 
+    // The reference draws once and then blocks in `getch()`; repainting only when
+    // something changed keeps that cadence while the poll loop stays responsive.
+    let mut dirty = true;
     let outcome = loop {
         let shown = apply_filter(&rows, &filter);
         cursor_idx = cursor_idx.min(shown.len().saturating_sub(1));
-        // Full redraw: home + clear + frame (flicker is acceptable here).
-        {
+        if dirty {
+            // Full redraw: home + clear + frame (flicker is acceptable here).
             use crossterm::terminal::ClearType;
             let mut out = std::io::stdout();
             execute!(out, cursor::MoveTo(0, 0), terminal::Clear(ClearType::All))?;
@@ -551,18 +559,23 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                 }
             }
             out.flush()?;
+            dirty = false;
         }
         if !event::poll(std::time::Duration::from_millis(100))? {
             continue;
         }
         match event::read()? {
-            Event::Resize(_, _) => continue,
+            Event::Resize(_, _) => {
+                dirty = true;
+                continue;
+            }
             Event::Key(key) => {
                 // Like the TUI renderer: only press events drive input, so a
                 // terminal that reports release/repeat never double-applies.
                 if key.kind != event::KeyEventKind::Press {
                     continue;
                 }
+                dirty = true;
                 if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
                     anyhow::bail!("interrupted");
                 }
