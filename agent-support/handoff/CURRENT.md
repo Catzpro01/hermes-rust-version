@@ -32,6 +32,13 @@ hook/config lokal tidak ikut clone. Sesi baru harus mengaktifkan secara eksplisi
 sesuai [panduan](START-NEXT-SESSION.md).42 tes pendukung baru PASS;164 file upstream,
 37 skill links dan bukti produk tetap utuh. Lihat [hasil](VERIFICATION.md) serta
 entri progress terbaru untuk commit/push/CI aktual. Tidak ada watcher/auto-stage.
+Checkpoint paket **b5facfc** terbukti auto-push dan SHA remote cocok;
+[CI34843454979](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34843454979)
+SUCCESS termasuk tes handoff, fmt/clippy/full suite dan actual picker regressions.
+Clone baru juga lolos verifier/8 tes; hook/config memang perlu bootstrap.
+[Draft PR #7](https://github.com/Catzpro01/hermes-rust-version/pull/7) menjadi jalur
+review main, bukan merge/acceptance. Catatan hasil ini disimpan sesudah checkpoint
+paket; cek `git log`/Actions untuk commit catatan terbaru.
 
 ## Status produk terverifikasi
 

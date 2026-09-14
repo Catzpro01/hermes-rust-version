@@ -1528,3 +1528,31 @@ on the same assigned branch, no worktree overwrite. Do not repeat blindly.
 Next: verify actual auto-push/remote SHA and CI; provide main review route without
 claiming integration. Successor reads root AGENTS -> CURRENT -> START-NEXT-SESSION,
 then continues breadth-first Wayfinder interview with settled Q1–Q8 preserved.
+
+### Handoff checkpoint b5facfc saved; official CI GREEN; draft main review route
+
+b5facfcd6aeac43bb5d15695f2c060aab8a59e63 committed and automatically pushed by the
+new post-commit hook. `status --require-pushed` PASS; independent `git ls-remote`
+returned the same SHA. No manual push/force/merge was needed. Worktree clean after
+checkpoint. Fresh Git clone also passes package verifier +8 offline automation
+tests; hook/state correctly do not transfer and must be bootstrapped explicitly.
+
+Official CI34843454979 SUCCESS on b5facfc: workflow QA, added handoff/automation
+checks, fmt, clippy, full workspace tests and three actual picker regressions.
+Run/job/step receipt saved at agent-support/handoff/verification-runs.json.
+Nonblocking Node20 action deprecation/forced Node24 warning remains; no unrelated
+pin/permissions change made. Previous delivery CI34838109837/bf0fd81 and interview
+CI34839170321/4785700 were also checked: both SUCCESS.
+
+Created https://github.com/Catzpro01/hermes-rust-version/pull/7 as OPEN / DRAFT,
+head arena/01a09c1e-hermes-rust-version -> main, to support the user's requested
+integration in an authorized context. It contains the cumulative source branch,
+not only folder moves. No merge/auto-merge; MAIN REMAINS UNCHANGED by this task.
+The draft explicitly preserves Spec017 WIP/non-acceptance and all pending scope.
+No Rust changes or fresh visual/Python capture from this handoff.
+
+This follow-up commit saves observed proof and PR link, and will auto-push too;
+its own head/CI should be checked after commit rather than inferred from parent.
+Successor: use source branch as session basis until main integration is complete;
+read AGENTS and START-NEXT-SESSION prompt. Resume /wayfinder breadth-first interview
+for confirmed Spec017 destination, not another destination question or coding.

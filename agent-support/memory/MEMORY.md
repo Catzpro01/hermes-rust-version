@@ -38,6 +38,10 @@ user's private Python installation.
   is blocked by this session's assigned-branch restriction; do not claim main
   updated. Auto-push is opt-in after reviewed commits, not automatic file staging.
   Local hooks/config must be bootstrapped in a new clone; inspect current status.
+  Package b5facfc really auto-pushed; remote SHA matched and CI34843454979 SUCCESS.
+  Fresh-clone verifier and8 offline tests also PASS. Draft PR#7 is OPEN toward
+  main, not merged/auto-merged; no Spec017 closure. Run receipt is tracked at
+  `agent-support/handoff/verification-runs.json`.
 
 - Active `/wayfinder`: user selected **Spec017 completion route** in the destination
   UI. Do NOT ask that destination again. Planning is paused for this handoff;

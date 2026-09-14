@@ -5,6 +5,14 @@ Pengguna meminta semua progres/ingatan/skill/konteks ditata dan disimpan ke main
 commit/push ke `arena/01a09c1e-hermes-rust-version`. Tidak ada perpindahan branch,
 force-push, merge, atau auto-merge yang dilakukan oleh paket auto-push.
 
+## Draft PR sudah tersedia
+
+[PR #7 — Preserve Hermes progress and organized agent handoff (Spec017 WIP)](https://github.com/Catzpro01/hermes-rust-version/pull/7)
+berstatus **OPEN / DRAFT**, dari branch sumber ke main. Tidak ada merge/auto-merge.
+Checkpoint paket `b5facfc` sudah ter-push otomatis dan CI34843454979 SUCCESS.
+Cek ulang CI head terbaru setelah checkpoint catatan berikutnya; PR mengikuti
+push branch sumber. **Main belum diperbarui.**
+
 ## Jalur integrasi yang aman
 
 - Seluruh perubahan dipertahankan pada branch sumber; gunakan branch tersebut

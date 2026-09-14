@@ -87,3 +87,18 @@ link lengkap dan receipts. CI akhir penataan harus dicek terpisah melalui `gh`.
   SHA256 `1a3b9ea63392175d75878b3a6a65a9448ca32af439c644a7cce4bb5cff071b0e`
   tetap sama. Pembuktian push nyata/CI dilakukan setelah commit checkpoint;
   hasil aktual berikutnya dicatat di PROGRESS, bukan diasumsikan dari tes offline.
+
+### Pembuktian remote dan runner resmi
+
+Checkpoint `b5facfcd6aeac43bb5d15695f2c060aab8a59e63` otomatis ter-push dari
+post-commit; `status --require-pushed` PASS dan `git ls-remote` cocok persis.
+[CI34843454979](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34843454979)
+SUCCESS: package/automation, QA gates, fmt, clippy, full Rust suite dan tiga
+actual picker regressions. [Run/job/step receipt](verification-runs.json) disimpan.
+Warnings nonblocking: pinned actions masih mendeklarasikan Node20, runner memaksa
+Node24; tidak mengubah pin/allowlist tanpa task terpisah.
+
+Fresh clone Git dari commit itu: verifier7/37/164/9 PASS dan8 automation tests PASS.
+Hook/state tidak ikut clone, sesuai desain. CI lama bf0fd81/34838109837 dan
+4785700/34839170321 juga dikonfirmasi SUCCESS, bukan lagi status unknown.
+Catatan hasil ini ada pada commit lanjutan; cek Actions untuk head terbaru.
