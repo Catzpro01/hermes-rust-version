@@ -376,6 +376,28 @@ User-facing `docs/hermes-ui-spec/017/MILESTONES.md` now marks M1–M5 complete f
 color ONLY; four picker correction milestones verified. No invented whole-project
 percentage, final acceptance, resize/long-list/clear-filter claims, or merge.
 
+### Filter-header slice delivered at48cf587 (capture9cc5cb4)
+
+Committed-source capture [34859140850] and ordinary CI [34859140646] SUCCESS.
+Ten paired PNGs retained; the filter help header (`Browse sessions — filter: …`)
+now uses palette slot6 plus bold, matching the pinned Python reference. Packet
+`docs/hermes-ui-spec/017/evidence/picker-filter-header-9cc5cb4/REPORT.md` keeps
+raw/casts, the tested 598-byte patch, checksums, the pair/verify scripts and the
+rejected first attempt.
+
+Only row1 of the four filter/no-match cases changes; other six PNGs and the
+Python records are byte-identical to the previous packet. Python palette16 /
+Rust palette256 both select index6+bold, dim=false; the encoding difference is
+retained, not normalized. Four rendered row1 regions are pixel-identical, and
+20 raw/cast roundtrips plus 10 PNG hash checks pass. The gate rejects the bright
+variant (`38;5;14`) that the first attempt produced, so slot selection is
+verified rather than approximated.
+
+Open after this slice: column-header colour, selected-row styling, delete-prompt
+colour, status/`Active`/`ID` column content, remaining body geometry, and the
+wizard/completion evidence gaps. Resize/long-list/clear-filter behaviour is not
+proved by these fixed-size cases. No whole-picker PASS, acceptance or merge.
+
 ### Normal header H5 delivered at7fef514
 
 Source capture34837424495 and ordinary CI34837424464 SUCCESS. Ten paired PNGs

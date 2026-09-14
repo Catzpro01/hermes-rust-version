@@ -123,25 +123,32 @@ class CiGateTests(unittest.TestCase):
 
     def test_ordinary_picker_gate_requires_all_live_tests(self):
         step = STEPS["Picker terminal regressions"]
-        for position, color, header in [(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)]:
-            with self.subTest(position=position, color=color, header=header), tempfile.TemporaryDirectory() as tmp:
+        cases = [(0, 0, 0, 0), (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)]
+        for position, color, header, filter_header in cases:
+            with self.subTest(position=position, color=color, header=header,
+                              filter_header=filter_header), tempfile.TemporaryDirectory() as tmp:
                 cargo = Path(tmp) / "cargo"
                 cargo.write_text("#!/bin/sh\necho build-ok\n")
                 cargo.chmod(0o700)
                 python = Path(tmp) / "python3"
-                python.write_text('#!/bin/bash\ncase "$*" in\n  *test_picker_footer_position.py*) echo position-test; exit "$POSITION";;\n  *test_picker_footer_color.py*) echo color-test; exit "$COLOR";;\n  *test_picker_normal_header.py*) echo header-test; exit "$HEADER";;\n  *) exit 0;;\nesac\n')
+                python.write_text('#!/bin/bash\ncase "$*" in\n  *test_picker_footer_position.py*) echo position-test; exit "$POSITION";;\n  *test_picker_footer_color.py*) echo color-test; exit "$COLOR";;\n  *test_picker_normal_header.py*) echo header-test; exit "$HEADER";;\n  *test_picker_filter_header.py*) echo filter-header-test; exit "$FILTER_HEADER";;\n  *) exit 0;;\nesac\n')
                 python.chmod(0o700)
                 env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}",
-                           POSITION=str(position), COLOR=str(color), HEADER=str(header))
+                           POSITION=str(position), COLOR=str(color), HEADER=str(header),
+                           FILTER_HEADER=str(filter_header))
                 result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
                                         env=env, capture_output=True, text=True)
-                self.assertEqual(result.returncode, int(bool(position or color or header)), result.stdout + result.stderr)
+                self.assertEqual(result.returncode, int(bool(position or color or header or filter_header)),
+                                 result.stdout + result.stderr)
                 log = (Path(tmp) / "picker-position.log").read_text()
                 self.assertIn("position-test", log)
                 if not position:
                     self.assertIn("color-test", log)
                     if not color:
                         self.assertIn("header-test", log)
+                        if not header:
+                            self.assertIn("filter-header-test", log)
+                            self.assertIn("test_picker_filter_header.py", step["run"])
 
     def test_picker_color_gate_rejects_setup_errors(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
@@ -170,6 +177,28 @@ class CiGateTests(unittest.TestCase):
         step = next(s for s in workflow["jobs"]["diagnose"]["steps"] if s.get("id") == "header")
         failure = "FAIL: test_normal_help_header_matches_reference_style\nRan 1 test in 0.1s\nFAILED (failures=1)"
         success = "test_normal_help_header_matches_reference_style ... ok\nRan 1 test in 0.1s\nOK"
+        for phase, output, code, accepted in [
+            ("red", failure, 1, True),
+            ("red", "ERROR: missing dependency", 1, False),
+            ("red", failure + "\nERROR: setup also failed", 1, False),
+            ("green", success, 0, True),
+            ("green", "Ran 0 tests\nOK", 0, False),
+        ]:
+            with self.subTest(phase=phase, output=output), tempfile.TemporaryDirectory() as tmp:
+                python = Path(tmp) / "python3"
+                python.write_text('#!/bin/bash\nprintf "%s\\n" "$FAKE_OUTPUT"\nexit "$FAKE_CODE"\n')
+                python.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}", PHASE=phase,
+                           FAKE_OUTPUT=output, FAKE_CODE=str(code))
+                result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
+
+    def test_picker_filter_header_gate_rejects_setup_errors(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        step = next(s for s in workflow["jobs"]["diagnose"]["steps"] if s.get("id") == "filter_header")
+        failure = "FAIL: test_filter_help_header_matches_reference_style\nRan 1 test in 0.1s\nFAILED (failures=1)"
+        success = "test_filter_help_header_matches_reference_style ... ok\nRan 1 test in 0.1s\nOK"
         for phase, output, code, accepted in [
             ("red", failure, 1, True),
             ("red", "ERROR: missing dependency", 1, False),

@@ -1,9 +1,17 @@
 # Bukti visual Spec 017
 
-**Terbaru: fixture banner 5a8e12c cocok selain branding terdokumentasi;
-keseluruhan §J.7 belum selesai atau diterima user.**
+**Terbaru: header filter picker memakai palette slot 6 + bold, terverifikasi
+lewat regresi CLI nyata, patch hasil runner, dan perbandingan piksel.
+Keseluruhan §J.7 belum selesai atau diterima user.**
 
-[Laporan terbaru](banner-5a8e12c/REPORT.md): CI 34785921216 dan capture
+[Laporan terbaru](../evidence/picker-filter-header-9cc5cb4/REPORT.md) (paket
+`picker-filter-header-9cc5cb4`): RED 34858664487 → GREEN 34858865863 → capture
+34859140850 → CI 34859140646 SUCCESS. Hanya row1 kasus filter/no-match yang
+berubah; enam PNG lain byte-identik dengan paket sebelumnya, empat piksel row1
+identik dengan pane Python. Siklus ini juga menolak percobaan pertama
+(`Color::Cyan` = slot14) dan menyimpannya sebagai bukti.
+
+[Laporan banner 5a8e12c](banner-5a8e12c/REPORT.md): CI 34785921216 dan capture
 34785921221 SUCCESS; semua delapan PNG diperiksa, delapan raw/event/cast round
 trip terverifikasi. Tools 51/41/48/49 dan Session 4/17/21/21 cocok; tidak ada
 perbedaan posisi glyph non-judul atau atribut glyph sama. Ini bukan klaim

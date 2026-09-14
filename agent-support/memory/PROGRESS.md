@@ -1644,3 +1644,39 @@ prediksi handoff sebelumnya:
 - Isi commit hanya dokumen: analisis baru, koreksi `CURRENT.md`, catatan
   MEMORY/PROGRESS. Tidak ada perubahan runtime, bukti visual, atau vendor, dan
   tidak ada merge/auto-merge.
+
+### Slice picker: header filter palette slot 6 + bold (siklus F1–F5 selesai)
+
+Siklus TDD penuh untuk satu perilaku, mengikuti pola koreksi picker sebelumnya:
+
+- RED nyata di seam CLI/PTY: run `34857289160` (atribut default) lalu
+  `34858664487` (menolak varian bright). Dua-duanya gagal 3× dengan nama tes
+  yang benar dan tanpa error setup.
+- Percobaan pertama memakai `Color::Cyan`; crossterm meng-encode-nya sebagai
+  `38;5;14` (bright cyan) — slot palet berbeda dari `SGR 36` Python. Renderer
+  pinned kebetulan menghasilkan piksel identik, sehingga hanya perbandingan
+  slot di level sel + aturan "jangan normalisasi warna" yang menangkapnya.
+  Gate diperketat ke slot 6 saja (`cyan`/`00cdcd`), dan percobaan yang ditolak
+  disimpan sebagai `first-attempt-bright-variant.txt`.
+- GREEN resmi `34858865863`: patch 598 byte SHA-256 `21fcdead…` diterapkan,
+  fmt/check/clippy + seluruh suite + regresi live 3× PASS; patch hasil ekspor
+  runner identik byte dengan proposal.
+- Capture sumber ter-commit `34859140850` (bundle 98231 byte SHA `a9dd5573…`,
+  commit `9cc5cb4`) + CI biasa `34859140646` SUCCESS.
+- Paket bukti `docs/hermes-ui-spec/017/evidence/picker-filter-header-9cc5cb4/`:
+  10 kasus, 20 raw/cast round trip, 10 hash PNG, 4 cek slot, 4 perbandingan
+  piksel row1 (0 piksel berbeda), `verify.py` + `SHA256SUMS` + `audit.json`.
+  Hanya row1 pada empat kasus filter/no-match yang berubah; enam PNG lain
+  byte-identik dengan paket `picker-header-7fef514`; rekaman Python tidak
+  berubah (reuse `ui-3b39bd7`).
+- Gate CI biasa kini menjalankan regresi live keempat (`test_picker_filter_header.py`)
+  plus `test_picker_filter_header_checks.py`; `scripts/test_ci_workflow.py`
+  diperbarui menjadi 15 tes dan menuntut keempat regresi live.
+- Workflow diagnostik (`picker-diagnostic.yml`, `ui-evidence.yml`,
+  `visual-evidence.yml`) di-rebind ke branch sesi `arena/01a0a052-hermes-rust-version`
+  agar request-file dapat memicu runner lagi.
+
+Sisa picker V2: header kolom (brightblack + indent), baris terpilih (` → ` +
+hijau bold), warna prompt hapus (merah bold), status/`Active`/`ID`, geometri
+badan tabel, lalu wizard V1 dan kelengkapan completion/T12. Tidak ada
+acceptance, penutupan Spec017, atau merge.

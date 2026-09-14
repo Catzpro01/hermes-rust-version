@@ -1,6 +1,6 @@
 # Milestone Hermes — visual parity Spec017
 
-**Pembaruan: 14 September 2026 · Header bantuan mode normal selesai diverifikasi.**
+**Pembaruan: 14 September 2026 · Header bantuan mode normal dan header filter picker selesai diverifikasi.**
 
 Halaman ini melacak pekerjaan visual parity yang sedang aktif, **bukan persentase
 seluruh proyek Hermes**. “Terverifikasi” berlaku untuk scope yang disebutkan;
@@ -16,9 +16,30 @@ bukan berarti seluruh layar identik atau Spec017 sudah diterima pengguna.
 | Footer berada di baris terakhir terminal | ✅ Terverifikasi | [0c0704d: 10 pasangan diperiksa](evidence/picker-position-0c0704d/REPORT.md) |
 | Warna footer sesuai Python | ✅ Terverifikasi | [ae220ff: 10 gambar, 6 footer pixel-identik](evidence/picker-color-ae220ff/REPORT.md) |
 | Header bantuan mode normal | ✅ Terverifikasi | [7fef514: palette3 + bold, 4 header pixel-identik](evidence/picker-header-7fef514/REPORT.md) |
-| Header filter, seleksi, konfirmasi hapus, sisa tata letak picker | ⏳ Belum selesai | Siklus terpisah; tidak ikut dianggap selesai oleh warna footer |
+| Header filter picker (palette6 + bold) | ✅ Terverifikasi | [9cc5cb4: 4 piksel row1 identik, slot6+bold](evidence/picker-filter-header-9cc5cb4/REPORT.md) |
+| Seleksi, konfirmasi hapus, header kolom, sisa tata letak picker | ⏳ Belum selesai | Siklus terpisah; tidak ikut dianggap selesai oleh header filter |
 | Sisa perbedaan wizard/completion dan kelengkapan bukti | ⏳ Belum selesai | T12/T13 tetap terbuka |
 | Penerimaan akhir Spec017 | 🔒 Belum siap | Memerlukan bukti lengkap, CI relevan GREEN, dan persetujuan eksplisit pengguna |
+
+## Header filter picker — F1–F5 selesai
+
+Scope: baris bantuan `Browse sessions` ketika filter sedang diketik
+(`picker-filter` dan `picker-no-match`), **palette slot 6 + bold**. Header
+normal (tanpa filter, palette3), footer, counter, hint hapus dan geometri tidak
+ikut diubah.
+
+| Tahap | Status | Bukti / kriteria |
+|---|---|---|
+| F1 · Kontrak dan referensi | ✅ Selesai | Referensi Python v0.21.0 yang dipertahankan (`ui-3b39bd7`): `SGR 0;1` + `36` = palette6 + bold di empat kasus |
+| F2 · RED nyata | ✅ Selesai | [34858664487](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34858664487) menolak percobaan slot14; RED pertama [34857289160](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34857289160) mencatat kegagalan atribut default |
+| F3 · Perubahan minimal | ✅ Selesai | Patch 598 byte (`Color::DarkCyan`) diterapkan persis setelah validasi runner |
+| F4 · GREEN resmi | ✅ Selesai | [34858865863](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34858865863): regresi primer3×, fmt/check/clippy/suite PASS |
+| F5 · Capture dan review | ✅ Selesai | [Capture34859140850](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34859140850) + [CI34859140646](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34859140646) GREEN; 10 kasus, 4 piksel row1 identik |
+
+Tes regresi live keempat kini diwajibkan di CI biasa bersama posisi, warna
+footer, dan header normal. Paket mencatat percobaan yang ditolak
+(`first-attempt-bright-variant.txt`) sebagai bukti bahwa slot warna tidak
+dinormalisasi.
 
 ## Header bantuan mode normal — H1–H5 selesai
 

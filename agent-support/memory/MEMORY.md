@@ -30,6 +30,15 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Picker filter-header slice **delivered**: runtime commit `48cf587` (patch
+  598B SHA `21fcdead…`, DarkCyan = palette slot6). RED `34858664487`, GREEN
+  `34858865863`, capture `34859140850` (bundle SHA `a9dd5573…` @ `9cc5cb4`),
+  CI `34859140646`; packet `docs/hermes-ui-spec/017/evidence/picker-filter-header-9cc5cb4/`
+  with 4 pixel-identical row1 regions and the rejected bright-variant attempt
+  recorded. Ordinary CI now also requires `test_picker_filter_header.py`.
+  Diagnostic workflows rebound to `arena/01a0a052-hermes-rust-version`.
+  Next picker slice: column header colour/indent, then selection + delete prompt.
+
 - **PR7 MERGED ke main** (bukan oleh sesi ini): `Catzpro01`, 2026-09-14T14:28:06Z,
   merge commit `baa7158`, 1.691 file (+143.671/−954). CI `main` run34855804061
   pada `baa7158` **SUCCESS**; anotasi check-run104014924835:

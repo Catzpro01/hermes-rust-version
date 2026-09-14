@@ -60,7 +60,12 @@ This supersedes the historical pending-counter entries above.
   Public frame RED three times → official full GREEN → exact2008-byte patch
   applied → source capture34826757031 and CI34826756998 GREEN. Six paired PNGs
   directly inspected; four normal/filter PNGs byte-identical to prior packet.
-- [ ] Footer placement and picker palette/header/selection/delete styling.
+- [x] Footer placement: preserved; six PTY checks pass.
+- [x] Filter help header: palette slot6 + bold reached and pixel-verified at
+  both widths (RED34858664487 → GREEN34858865863 → capture34859140850/CI34859140646).
+  The strict gate rejects the bright variant, so the slot is verified.
+  Packet: `docs/hermes-ui-spec/017/evidence/picker-filter-header-9cc5cb4/REPORT.md`.
+- [ ] Column header colour/indent, selection styling, delete-prompt colour.
 - [ ] Wizard/completion discrepancies and T12 field/full-Python-CLI evidence.
 
 Report: `docs/hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md`.

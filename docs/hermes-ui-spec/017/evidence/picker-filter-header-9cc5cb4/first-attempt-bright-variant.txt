@@ -1,0 +1,6 @@
+Rejected intermediate attempt, kept for honesty about the process:
+  Color::Cyan encodes as 38;5;14 (bright cyan, pyte `00ffff`) - a different palette
+  entry from the reference. The gate accepted it briefly; the strict slot check then
+  rejected it (RED run 34858664487) and the corrected DarkCyan proposal replaced it.
+  Renderer pixels happened to match, so only the cell-level slot comparison and the
+  explicit rule against colour normalization caught it.

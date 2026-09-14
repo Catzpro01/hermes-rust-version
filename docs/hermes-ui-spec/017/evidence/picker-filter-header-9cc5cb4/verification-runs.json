@@ -1,0 +1,675 @@
+[
+  {
+    "databaseId": 34857289160,
+    "headSha": "4caab440a2ba4f7d0883ae144d3a33ccc28906ed",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/Catzpro01/hermes-rust-version/actions/runs/34857289160",
+    "jobs": [
+      {
+        "name": "diagnose",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Official Rust tools",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify and apply bounded diagnostic proposal",
+            "conclusion": "success"
+          },
+          {
+            "name": "Format and type check",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build CLI for terminal-coordinate regression",
+            "conclusion": "success"
+          },
+          {
+            "name": "Exact frame regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI terminal-coordinate regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI footer-color regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary color CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI normal-header regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary header CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI filter-header regression repeated three times",
+            "conclusion": "success"
+          },
+          {
+            "name": "Retain primary filter-header CLI trace",
+            "conclusion": "success"
+          },
+          {
+            "name": "Full GREEN validation",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Export exactly tested proposal",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Capture committed picker and verify original symptom",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Export exact regression log",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "databaseId": 34857534441,
+    "headSha": "ca796f113b6792bc4cfb697859abe847afb132e6",
+    "status": "completed",
+    "conclusion": "failure",
+    "url": "https://github.com/Catzpro01/hermes-rust-version/actions/runs/34857534441",
+    "jobs": [
+      {
+        "name": "diagnose",
+        "conclusion": "failure",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Official Rust tools",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify and apply bounded diagnostic proposal",
+            "conclusion": "success"
+          },
+          {
+            "name": "Format and type check",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build CLI for terminal-coordinate regression",
+            "conclusion": "success"
+          },
+          {
+            "name": "Exact frame regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI terminal-coordinate regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI footer-color regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary color CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI normal-header regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary header CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI filter-header regression repeated three times",
+            "conclusion": "failure"
+          },
+          {
+            "name": "Retain primary filter-header CLI trace",
+            "conclusion": "success"
+          },
+          {
+            "name": "Full GREEN validation",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Export exactly tested proposal",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Capture committed picker and verify original symptom",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Export exact regression log",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "databaseId": 34857850898,
+    "headSha": "fdb6613cf8a7c72bbf70551236c595e0db9797fb",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/Catzpro01/hermes-rust-version/actions/runs/34857850898",
+    "jobs": [
+      {
+        "name": "diagnose",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Official Rust tools",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify and apply bounded diagnostic proposal",
+            "conclusion": "success"
+          },
+          {
+            "name": "Format and type check",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build CLI for terminal-coordinate regression",
+            "conclusion": "success"
+          },
+          {
+            "name": "Exact frame regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI terminal-coordinate regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI footer-color regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary color CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI normal-header regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary header CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI filter-header regression repeated three times",
+            "conclusion": "success"
+          },
+          {
+            "name": "Retain primary filter-header CLI trace",
+            "conclusion": "success"
+          },
+          {
+            "name": "Full GREEN validation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Export exactly tested proposal",
+            "conclusion": "success"
+          },
+          {
+            "name": "Capture committed picker and verify original symptom",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Export exact regression log",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "databaseId": 34858664487,
+    "headSha": "566948b50ce2d93df91f2cbc355b70fd0023ead4",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/Catzpro01/hermes-rust-version/actions/runs/34858664487",
+    "jobs": [
+      {
+        "name": "diagnose",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Official Rust tools",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify and apply bounded diagnostic proposal",
+            "conclusion": "success"
+          },
+          {
+            "name": "Format and type check",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build CLI for terminal-coordinate regression",
+            "conclusion": "success"
+          },
+          {
+            "name": "Exact frame regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI terminal-coordinate regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI footer-color regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary color CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI normal-header regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary header CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI filter-header regression repeated three times",
+            "conclusion": "success"
+          },
+          {
+            "name": "Retain primary filter-header CLI trace",
+            "conclusion": "success"
+          },
+          {
+            "name": "Full GREEN validation",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Export exactly tested proposal",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Capture committed picker and verify original symptom",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Export exact regression log",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "databaseId": 34858865863,
+    "headSha": "4d974d89db7f53b47414960394b9aa5e8ae78d55",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/Catzpro01/hermes-rust-version/actions/runs/34858865863",
+    "jobs": [
+      {
+        "name": "diagnose",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Official Rust tools",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify and apply bounded diagnostic proposal",
+            "conclusion": "success"
+          },
+          {
+            "name": "Format and type check",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build CLI for terminal-coordinate regression",
+            "conclusion": "success"
+          },
+          {
+            "name": "Exact frame regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI terminal-coordinate regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI footer-color regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary color CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI normal-header regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary header CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI filter-header regression repeated three times",
+            "conclusion": "success"
+          },
+          {
+            "name": "Retain primary filter-header CLI trace",
+            "conclusion": "success"
+          },
+          {
+            "name": "Full GREEN validation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Export exactly tested proposal",
+            "conclusion": "success"
+          },
+          {
+            "name": "Capture committed picker and verify original symptom",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Export exact regression log",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "databaseId": 34859140850,
+    "headSha": "9cc5cb4c416df66f43cd30c33adf8055b82269ab",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/Catzpro01/hermes-rust-version/actions/runs/34859140850",
+    "jobs": [
+      {
+        "name": "diagnose",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Official Rust tools",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify and apply bounded diagnostic proposal",
+            "conclusion": "success"
+          },
+          {
+            "name": "Format and type check",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build CLI for terminal-coordinate regression",
+            "conclusion": "success"
+          },
+          {
+            "name": "Exact frame regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI terminal-coordinate regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI footer-color regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary color CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI normal-header regression repeated three times",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Retain primary header CLI trace",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Exact CLI filter-header regression repeated three times",
+            "conclusion": "success"
+          },
+          {
+            "name": "Retain primary filter-header CLI trace",
+            "conclusion": "success"
+          },
+          {
+            "name": "Full GREEN validation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Export exactly tested proposal",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Capture committed picker and verify original symptom",
+            "conclusion": "success"
+          },
+          {
+            "name": "Export exact regression log",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "databaseId": 34859140646,
+    "headSha": "9cc5cb4c416df66f43cd30c33adf8055b82269ab",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/Catzpro01/hermes-rust-version/actions/runs/34859140646",
+    "jobs": [
+      {
+        "name": "CI gate regression tests",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install QA dependency",
+            "conclusion": "success"
+          },
+          {
+            "name": "Test workflow gates",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python3 scripts/test_audit_ui_evidence.py",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify agent handoff and safe checkpoint automation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  }
+]
