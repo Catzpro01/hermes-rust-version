@@ -1694,3 +1694,32 @@ acceptance, penutupan Spec017, atau merge.
 - Sisa picker V2 untuk siklus berikutnya: header kolom (brightblack + indent),
   baris terpilih, warna prompt hapus, kolom status/Active/ID, geometri badan.
   Tidak ada acceptance/penutupan/merge.
+
+### Slice picker: tata letak kolom (K1–K5 selesai)
+
+Siklus TDD penuh kedua untuk picker V2, sumber ter-commit `b732d22`, fix `641c304`:
+
+- RED nyata 34860668321: gate live baru `picker_column_layout` gagal 3× dengan
+  nama tes benar (indent 2 sel, `Stat` di x=52, tidak ada baris pemisah, tidak ada
+  kolom kursor) dan tanpa error setup.
+- Usulan GREEN pertama (34860995073, patch `2c79b6d1…`) sudah hijau 3× pada gate
+  live tetapi ditolak `clippy -D warnings` karena `format_row` punya 8 argumen;
+  patch itu disimpan sebagai `rejected-first-attempt.patch` dan perilakunya tidak
+  diubah oleh perbaikan kedua.
+- GREEN resmi 34861285022 (patch 12824 byte `006bdcc7…`): `format_row` menerima
+  `&SessionRow`, gate live 3×, clippy + seluruh suite PASS, patch hasil ekspor
+  identik byte dengan proposal.
+- Capture sumber ter-commit 34861588181: 10 kasus + hint/counter/posisi/warna/
+  header normal/header filter/tata letak kolom semuanya PASS; bundle 290.389 byte
+  `d6860b3d…`; CI biasa 34861587979 SUCCESS (dua commit pra-fix memang merah di CI
+  biasa karena gate barunya sudah ikut rilis).
+- Paket `docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/`:
+  20 round trip raw/cast, 10 hash PNG, 8 jalan checker, 14 region piksel
+  pinned-renderer identik, 2 PNG kasus empty byte-identik, peta baris berubah;
+  `verify.py` + `SHA256SUMS` + audit `COLUMN_LAYOUT_FIXED_NO_MATCH_DIM_STILL_OPEN`.
+- Temuan baru (belum diperbaiki): referensi menggambar pesan no-match dengan
+  atribut **dim**; `pyte 0.8.2` tidak dapat membacanya sehingga seluruh gate pyte
+  sebelumnya tidak melihatnya (1.135 piksel berbeda di baris itu). Siklus
+  berikutnya: dim no-match + gaya baris terpilih hijau+bold, lalu prompt hapus.
+
+Tidak ada adaptasi baru, PASS seluruh picker, acceptance, atau merge.

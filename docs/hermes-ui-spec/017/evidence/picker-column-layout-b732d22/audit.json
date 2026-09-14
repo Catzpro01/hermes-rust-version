@@ -1,0 +1,109 @@
+{
+  "status": "COLUMN_LAYOUT_FIXED_NO_MATCH_DIM_STILL_OPEN",
+  "source": "b732d2273f2e55f2674aad56ee10a7b70f512514",
+  "fix_commit": "641c3041f6e0e94421173552cacc0adeae3c0de6",
+  "raw_cast_roundtrips": 20,
+  "png_hash_checks": 10,
+  "python_records_and_cells_unchanged": true,
+  "renderer_script_sha256": "201091eef5007e9a45889da7b4725b658ce39df1bf977a48677e435df9f9c074",
+  "renderer_settings_match_prior": true,
+  "checker_runs": [
+    "check_picker_column_layout:python:4",
+    "check_picker_column_layout:rust:4",
+    "check_picker_footer_position:rust:10",
+    "check_picker_footer_color:rust:6",
+    "check_picker_normal_header:rust:4",
+    "check_picker_filter_header:rust:4",
+    "check_picker_counter:rust:12",
+    "check_picker_filter_hint:rust:6"
+  ],
+  "checker_failures": 0,
+  "encoding_modes": {
+    "python": "palette16",
+    "rust": "palette256"
+  },
+  "tested_patch": {
+    "sha256": "006bdcc75217da662ca838e1ffb2c4f27d215a21d5465b8a39605f6f68358271",
+    "bytes": 12824
+  },
+  "rejected_first_attempt": {
+    "sha256": "2c79b6d1181e74e75f0661071ce625ae9cb35ae20e3f150cd68844b2bfdd65f2",
+    "reason": "clippy::too_many_arguments (8/7) in format_row"
+  },
+  "changed_rows_1_based": {
+    "picker-normal-100x30": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "picker-filter-100x30": [
+      2,
+      3,
+      4
+    ],
+    "picker-no-match-100x30": [
+      2,
+      3,
+      4
+    ],
+    "picker-delete-100x30": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "picker-empty-100x30": [],
+    "picker-normal-80x30": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "picker-filter-80x30": [
+      2,
+      3,
+      4
+    ],
+    "picker-no-match-80x30": [
+      2,
+      3,
+      4
+    ],
+    "picker-delete-80x30": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "picker-empty-80x30": []
+  },
+  "unchanged_paired_pngs": [
+    "picker-empty-100x30-bottom.png",
+    "picker-empty-80x30-bottom.png"
+  ],
+  "pixel_equal_regions": [
+    "picker-filter-100x30:footer row control",
+    "picker-no-match-100x30:column header row",
+    "picker-no-match-100x30:footer row",
+    "picker-no-match-80x30:column header row",
+    "picker-no-match-80x30:footer row",
+    "picker-normal-100x30:blank separator row",
+    "picker-normal-100x30:column header row",
+    "picker-normal-100x30:footer row control",
+    "picker-normal-100x30:hint row control",
+    "picker-normal-100x30:unselected body row up to the status column",
+    "picker-normal-80x30:blank separator row",
+    "picker-normal-80x30:column header row",
+    "picker-normal-80x30:hint row control",
+    "picker-normal-80x30:unselected body row up to the status column"
+  ],
+  "pixel_differing_regions": [
+    "picker-no-match-100x30:no-match message row",
+    "picker-no-match-100x30:no-match message row",
+    "picker-no-match-80x30:no-match message row",
+    "picker-no-match-80x30:no-match message row"
+  ],
+  "open_finding": "reference renders \"No sessions match the filter.\" with the dim attribute; pyte 0.8.2 cannot decode dim, so the fix and its gate follow in the next cycle",
+  "normalization": "none"
+}

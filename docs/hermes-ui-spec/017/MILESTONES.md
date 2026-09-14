@@ -1,6 +1,6 @@
 # Milestone Hermes — visual parity Spec017
 
-**Pembaruan: 14 September 2026 · Header bantuan mode normal dan header filter picker selesai diverifikasi.**
+**Pembaruan: 14 September 2026 · Tata letak kolom picker selesai diverifikasi; temuan atribut dim pada baris no-match dicatat terbuka.**
 
 Halaman ini melacak pekerjaan visual parity yang sedang aktif, **bukan persentase
 seluruh proyek Hermes**. “Terverifikasi” berlaku untuk scope yang disebutkan;
@@ -18,6 +18,8 @@ bukan berarti seluruh layar identik atau Spec017 sudah diterima pengguna.
 | Header bantuan mode normal | ✅ Terverifikasi | [7fef514: palette3 + bold, 4 header pixel-identik](evidence/picker-header-7fef514/REPORT.md) |
 | Header filter picker (palette6 + bold) | ✅ Terverifikasi | [9cc5cb4: 4 piksel row1 identik, slot6+bold](evidence/picker-filter-header-9cc5cb4/REPORT.md) |
 | Seleksi, konfirmasi hapus, header kolom, sisa tata letak picker | ⏳ Belum selesai | Siklus terpisah; tidak ikut dianggap selesai oleh header filter |
+| Tata letak kolom picker (kolom kursor, baris pemisah, medan nama, tinta header) | ✅ Terverifikasi | [b732d22: 14 region piksel identik, 2 PNG byte-identik](evidence/picker-column-layout-b732d22/REPORT.md) |
+| Pesan no-match atribut dim (temuan piksel slice kolom) | ⏳ Belum selesai | pyte0.8.2 tidak bisa membaca dim; fix + gate di siklus berikutnya |
 | Sisa perbedaan wizard/completion dan kelengkapan bukti | ⏳ Belum selesai | T12/T13 tetap terbuka |
 | Penerimaan akhir Spec017 | 🔒 Belum siap | Memerlukan bukti lengkap, CI relevan GREEN, dan persetujuan eksplisit pengguna |
 
@@ -54,6 +56,27 @@ header filter/kolom, seleksi, footer dan posisi teks tidak ikut diubah.
 | H3 · Perubahan minimal | ✅ Selesai | Patch1171 byte resmi diterapkan persis; DarkYellow + Bold untuk header filter kosong, lalu reset |
 | H4 · GREEN resmi | ✅ Selesai | [34837102702 / 645f86d](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837102702): primer3, fmt/check/clippy/full workspace PASS |
 | H5 · Capture dan review | ✅ Selesai | [Capture34837424495](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837424495) + [CI34837424464](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837424464) GREEN; 10 gambar diperiksa, audit isolasi PASS |
+
+### Tata letak kolom picker — K1–K5 selesai
+
+Scope: kolom kursor 3 sel (` → `/tiga spasi), baris kosong antara header dan
+badan, medan nama badan (width-62) dan header (width-59, `Stat` di width-54),
+serta tinta header palette8 tanpa bold. Isi kolom status/`Active`/`ID`, gaya
+baris terpilih dan warna prompt hapus tidak ikut diubah.
+
+| Tahap | Status | Bukti / kriteria |
+|---|---|---|
+| K1 · Kontrak dan referensi | ✅ Selesai | Referensi Python v0.21.0 (`ui-3b39bd7`) mematok100×30 dan80×30: indent3, `Stat` width-54, kolom status width-57, baris2/3/4 |
+| K2 · RED nyata | ✅ Selesai | [34860668321](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34860668321): gate baru FAIL3× dengan nama tes benar, tanpa error setup |
+| K3 · Perubahan minimal | ✅ Selesai | Usulan pertama ditolak clippy (`too_many_arguments 8/7`) dan disimpan; patch12824 byte `006bdcc7…` diterapkan persis |
+| K4 · GREEN resmi | ✅ Selesai | [34861285022](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34861285022): gate live3×, clippy `-D warnings` dan seluruh suite PASS |
+| K5 · Capture dan review | ✅ Selesai | [Capture34861588181](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34861588181) + [CI34861587979](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34861587979) GREEN; 14 region pixel-identik,2 PNG byte-identik |
+
+Gate live kelima (`picker_column_layout`) kini dijalankan CI biasa bersama posisi,
+warna footer, header normal dan header filter. Perbandingan piksel menemukan
+temuan terpisah: pesan no-match digambar referensi dengan atribut **dim**;
+`pyte0.8.2` tidak menyimpannya, jadi temuan itu dicatat terbuka (1.135 piksel
+berbeda di baris tersebut) dan fix-nya menjadi siklus berikutnya.
 
 ### Hasil terbaru
 

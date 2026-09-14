@@ -1,15 +1,20 @@
 # Bukti visual Spec 017
 
-**Terbaru: header filter picker memakai palette slot 6 + bold, terverifikasi
-lewat regresi CLI nyata, patch hasil runner, dan perbandingan piksel.
-Keseluruhan §J.7 belum selesai atau diterima user.**
+**Terbaru: tata letak kolom picker mengikuti koordinat referensi yang dipatok
+(kolom kursor, baris pemisah, medan nama, tinta header). Keseluruhan §J.7 belum
+selesai atau diterima user.**
 
-[Laporan terbaru](../evidence/picker-filter-header-9cc5cb4/REPORT.md) (paket
-`picker-filter-header-9cc5cb4`): RED 34858664487 → GREEN 34858865863 → capture
-34859140850 → CI 34859140646 SUCCESS. Hanya row1 kasus filter/no-match yang
-berubah; enam PNG lain byte-identik dengan paket sebelumnya, empat piksel row1
-identik dengan pane Python. Siklus ini juga menolak percobaan pertama
-(`Color::Cyan` = slot14) dan menyimpannya sebagai bukti.
+[Laporan terbaru](../evidence/picker-column-layout-b732d22/REPORT.md) (paket
+`picker-column-layout-b732d22`): RED 34860668321 → GREEN 34861285022 → capture
+34861588181 → CI 34861587979 SUCCESS. Kolom header, baris kosong pemisah dan
+kolom kursor kini pada koordinat referensi; 14 region piksel identik dengan pane
+Python, dua PNG kasus empty byte-identik dengan paket sebelumnya. Perbandingan
+piksel juga menemukan atribut **dim** pada pesan no-match referensi — dicatat
+terbuka, karena pyte tidak dapat membacanya.
+
+[Laporan sebelumnya](../evidence/picker-filter-header-9cc5cb4/REPORT.md) (paket
+`picker-filter-header-9cc5cb4`): header filter memakai palette slot 6 + bold;
+percobaan pertama (`Color::Cyan` = slot14) ditolak dan disimpan sebagai bukti.
 
 [Laporan banner 5a8e12c](banner-5a8e12c/REPORT.md): CI 34785921216 dan capture
 34785921221 SUCCESS; semua delapan PNG diperiksa, delapan raw/event/cast round

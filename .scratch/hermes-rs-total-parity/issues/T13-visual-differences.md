@@ -66,11 +66,17 @@ This supersedes the historical pending-counter entries above.
   The strict gate rejects the bright variant, so the slot is verified.
   Packet: `docs/hermes-ui-spec/017/evidence/picker-filter-header-9cc5cb4/REPORT.md`.
 - [ ] Column header colour/indent, selection styling, delete-prompt colour.
-  - [ ] Cycle 2 (column layout) in progress: the new live gate
-    `picker_column_layout` pins the three-cell cursor column (` → `/`   `), the
-    blank row 3, the header at width-54 with palette8 ink without bold and the
-    body columns at width-57 as the retained 100/80 reference shows. RED
-    requested against source `8f05d71f…`; fix not applied yet.
+  - [x] Cycle 2 (column layout) delivered: kursor column, blank row 3, header at
+    width-54 in palette8 without bold and body columns at width-57 as the pinned
+    100/80 reference shows (RED 34860668321 → GREEN 34861285022 → capture
+    34861588181 / CI 34861587979). The first GREEN proposal was rejected by
+    clippy (8/7 arguments) and kept as `rejected-first-attempt.patch`.
+    Packet: `docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/REPORT.md`.
+  - [ ] Cycle 3 (body styling) found by the pinned-renderer pixels: the reference
+    draws `  No sessions match the filter.` with the **dim** attribute
+    (`ESC[0;2m`); pyte 0.8.2 cannot decode dim, so the gate must assert the SGR-2
+    spelling and the packet the rendered equality. Cursor row must also become
+    ` → ` + palette2 green + bold instead of reverse video.
 - [ ] Wizard/completion discrepancies and T12 field/full-Python-CLI evidence.
 
 Report: `docs/hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md`.

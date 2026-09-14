@@ -30,6 +30,19 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Picker **column-layout slice delivered**: fix `641c304` (tested patch 12824 B
+  `006bdcc7…`), RED `34860668321` → GREEN `34861285022` (first proposal rejected
+  by clippy, kept as `rejected-first-attempt.patch`) → capture `34861588181`
+  (bundle `d6860b3d…`, 10 cases) → CI `34861587979`. Packet
+  `docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/` (verify.py OK:
+  20 round trips, 8 checker runs, 14 equal pixel regions, 2 byte-identical PNGs).
+  Ordinary CI now also runs `test_picker_column_layout.py`.
+- **New open finding (pixel-only)**: the reference renders
+  `  No sessions match the filter.` with the *dim* attribute; pyte 0.8.2 cannot
+  decode dim, so pyte gates are blind to it. Next cycle: dim no-match + cursor row
+  ` → ` palette2 green+bold (replace reverse video), then delete-prompt red+bold.
+  Status-column colour has no pinned evidence for `done` and stays open.
+
 - Picker filter-header slice **delivered**: runtime commit `48cf587` (patch
   598B SHA `21fcdead…`, DarkCyan = palette slot6). RED `34858664487`, GREEN
   `34858865863`, capture `34859140850` (bundle SHA `a9dd5573…` @ `9cc5cb4`),

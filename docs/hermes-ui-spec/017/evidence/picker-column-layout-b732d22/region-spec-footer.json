@@ -1,0 +1,11 @@
+{"note": "footer and message rows only", "cases": [
+ {"id": "picker-no-match-100x30", "columns": 100, "regions": [
+   {"label": "no-match message row", "row": 4, "colStart": 0, "colEnd": 40},
+   {"label": "footer row", "row": 30, "colStart": 0, "colEnd": 14}]},
+ {"id": "picker-no-match-80x30", "columns": 80, "regions": [
+   {"label": "no-match message row", "row": 4, "colStart": 0, "colEnd": 40},
+   {"label": "footer row", "row": 30, "colStart": 0, "colEnd": 14}]},
+ {"id": "picker-normal-100x30", "columns": 100, "regions": [
+   {"label": "footer row control", "row": 30, "colStart": 0, "colEnd": 14}]},
+ {"id": "picker-filter-100x30", "columns": 100, "regions": [
+   {"label": "footer row control", "row": 30, "colStart": 0, "colEnd": 32}]}]}

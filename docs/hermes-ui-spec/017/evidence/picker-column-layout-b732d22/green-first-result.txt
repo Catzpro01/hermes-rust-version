@@ -1,0 +1,13 @@
+First GREEN attempt (patch SHA-256 2c79b6d1...) — proposal applied, live gate green, full validation FAILED
+
+Run 34860995073 (picker-diagnostic, headSha 196c220, conclusion failure)
+
+Exact CLI column-layout regression repeated three times: success
+picker column-layout regression :: green actual CLI regression verified three times
+picker exact result: Ran 1 test in 5.297s / OK
+Full GREEN validation: failure
+picker full validation (annotation):
+    Checking hermes-rs v0.1.0 (/home/runner/work/hermes-rust-version/hermes-rust-version/crates/hermes-cli)
+error: this function has too many arguments (8/7)
+  --> crates/hermes-cli/src/session_picker.rs:80:1
+error: could not compile `hermes-rs` (bin "hermes-rs") due to 1 previous error

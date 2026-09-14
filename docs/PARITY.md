@@ -398,6 +398,36 @@ colour, status/`Active`/`ID` column content, remaining body geometry, and the
 wizard/completion evidence gaps. Resize/long-list/clear-filter behaviour is not
 proved by these fixed-size cases. No whole-picker PASS, acceptance or merge.
 
+### Column-layout slice delivered at641c304 (capture b732d22)
+
+Source capture [34861588181] and ordinary CI [34861587979] SUCCESS; the two
+pre-fix commits stayed red in ordinary CI on purpose because the new live gate
+ships with the slice. Packet
+`docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/REPORT.md` keeps
+raw/casts, the tested 12824-byte patch, the rejected first attempt, the
+pair/region scripts, checksums and audit.
+
+The picker now draws the pinned three-cell cursor column (` → ` on the cursor
+row, spaces otherwise), keeps one blank row between the column header and the
+body, and puts `Stat` at width-54 in palette8 ink without bold while the body
+columns sit at width-57 — the coordinates the retained 100/80 reference shows.
+Body field width-62 and header field width-59 (floor 20, the 80-column value)
+are derived from those two pinned widths only; narrower terminals are not
+evidenced. Reused Python records and Python cells are unchanged, 14 pinned
+renderer regions are pixel-identical, the two `picker-empty` PNGs are
+byte-identical to the prior packet, and the first GREEN proposal is retained as
+rejected evidence (clippy rejected `format_row` at eight arguments).
+
+Pixel comparison also found that the reference renders
+`  No sessions match the filter.` with the **dim** attribute, which pyte 0.8.2
+cannot decode (1135 differing pixels in that row at both widths). That finding
+is recorded, not normalized; the fix and its gate follow in the next cycle.
+
+Open after this slice: selected-row ` → ` green+bold, delete-prompt colour, the
+dim no-match message, status-column colour (no pinned evidence for `done`), and
+the wizard/completion evidence gaps. No resize/long-list/clear-filter claims,
+new adaptation, whole-picker PASS, acceptance or merge.
+
 ### Normal header H5 delivered at7fef514
 
 Source capture34837424495 and ordinary CI34837424464 SUCCESS. Ten paired PNGs

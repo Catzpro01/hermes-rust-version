@@ -1,0 +1,11 @@
+RED run 34860668321 (picker-diagnostic, headSha aface69, conclusion success as a phase-aware RED gate)
+
+picker column-layout regression :: red actual CLI regression verified three times
+picker exact result:
+FAIL: test_column_layout_matches_pinned_reference (__main__.PickerColumnLayoutTests.test_column_layout_matches_pinned_reference)
+AssertionError: Lists differ: ["picker-normal-100x30: header does not st[1404 chars]=''"] != []
+First list contains 14 additional elements.
+First extra element 0:
+"picker-normal-100x30: header does not start with the three-cell indent: '  Title / Preview                                   Stat    Msgs  Active      Src   ID'"
+Ran 1 test in 3.144s
+FAILED (failures=1)
