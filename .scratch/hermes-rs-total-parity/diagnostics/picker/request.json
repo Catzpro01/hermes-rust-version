@@ -1,5 +1,5 @@
 {
-  "phase": "capture",
-  "test": "picker_filter_header",
+  "phase": "red",
+  "test": "picker_column_layout",
   "source_sha256": "8f05d71fd16e67958668e3775d8f2ae13e784dcd8b86af1d70c9e5e2b78162bc"
 }

@@ -66,6 +66,11 @@ This supersedes the historical pending-counter entries above.
   The strict gate rejects the bright variant, so the slot is verified.
   Packet: `docs/hermes-ui-spec/017/evidence/picker-filter-header-9cc5cb4/REPORT.md`.
 - [ ] Column header colour/indent, selection styling, delete-prompt colour.
+  - [ ] Cycle 2 (column layout) in progress: the new live gate
+    `picker_column_layout` pins the three-cell cursor column (` → `/`   `), the
+    blank row 3, the header at width-54 with palette8 ink without bold and the
+    body columns at width-57 as the retained 100/80 reference shows. RED
+    requested against source `8f05d71f…`; fix not applied yet.
 - [ ] Wizard/completion discrepancies and T12 field/full-Python-CLI evidence.
 
 Report: `docs/hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md`.

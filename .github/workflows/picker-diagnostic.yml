@@ -32,9 +32,11 @@ jobs:
                    'picker_footer_position': 'position',
                    'picker_footer_color': 'color',
                    'picker_normal_header': 'header',
-                   'picker_filter_header': 'filter-header'}
+                   'picker_filter_header': 'filter-header',
+                   'picker_column_layout': 'column-layout'}
           live = ('picker_footer_position', 'picker_footer_color',
-                  'picker_normal_header', 'picker_filter_header')
+                  'picker_normal_header', 'picker_filter_header',
+                  'picker_column_layout')
           test = request.get('test', 'picker_footer_tracks_delete_availability')
           assert test in tests, 'non-allowlisted regression'
           folder = folder/tests[test]
@@ -62,12 +64,12 @@ jobs:
           cargo fmt --all -- --check
           cargo check --workspace --all-targets --locked
       - name: Build CLI for terminal-coordinate regression
-        if: steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header'
+        if: steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout'
         run: |
           cargo build --locked -p hermes-rs --bin hermes-rs
           python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
       - name: Exact frame regression repeated three times
-        if: steps.plan.outputs.test != 'picker_footer_position' && steps.plan.outputs.test != 'picker_footer_color' && steps.plan.outputs.test != 'picker_normal_header' && steps.plan.outputs.test != 'picker_filter_header'
+        if: steps.plan.outputs.test != 'picker_footer_position' && steps.plan.outputs.test != 'picker_footer_color' && steps.plan.outputs.test != 'picker_normal_header' && steps.plan.outputs.test != 'picker_filter_header' && steps.plan.outputs.test != 'picker_column_layout'
         id: regression
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
@@ -228,6 +230,41 @@ jobs:
           if Path('evidence/filter-header-1.json').exists():
               export_annotations(Path('evidence/filter-header-1.json'), 0, 'filter-header trace')
           PY
+      - name: Exact CLI column-layout regression repeated three times
+        if: steps.plan.outputs.test == 'picker_column_layout'
+        id: column_layout
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+        run: |
+          for attempt in 1 2 3; do
+            set +e
+            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/column-layout-$attempt.json python3 scripts/test_picker_column_layout.py > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F 'FAIL: test_column_layout_matches_pinned_reference' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
+            else
+              test "$status" -eq 0
+              grep -F 'test_column_layout_matches_pinned_reference' "regression-$attempt.log"
+              grep -x 'OK' "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker column-layout regression::$PHASE actual CLI regression verified three times"
+      - name: Retain primary column-layout CLI trace
+        if: always() && steps.plan.outputs.test == 'picker_column_layout'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          if Path('evidence/column-layout-1.json').exists():
+              export_annotations(Path('evidence/column-layout-1.json'), 0, 'column-layout trace')
+          PY
       - name: Full GREEN validation
         if: steps.plan.outputs.phase != 'red'
         run: |
@@ -235,7 +272,7 @@ jobs:
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace --no-fail-fast
       - name: Export exactly tested proposal
-        if: steps.plan.outputs.phase != 'capture' && !((steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header') && steps.plan.outputs.phase == 'red')
+        if: steps.plan.outputs.phase != 'capture' && !((steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout') && steps.plan.outputs.phase == 'red')
         run: |
           mkdir -p evidence
           git diff --binary -- '*.rs' > evidence/tested.patch
@@ -251,17 +288,20 @@ jobs:
           if [ "${{ steps.plan.outputs.test }}" != picker_footer_tracks_delete_availability ]; then
             PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_counter.py evidence/picker.json --side rust
           fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_footer_position ] || [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ]; then
+          if [ "${{ steps.plan.outputs.test }}" = picker_footer_position ] || [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
             PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_position.py evidence/picker.json --side rust
           fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ]; then
+          if [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
             PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_color.py evidence/picker.json --side rust
           fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_normal_header ]; then
+          if [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
             PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_normal_header.py evidence/picker.json --side rust
           fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_filter_header ]; then
+          if [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
             PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_filter_header.py evidence/picker.json --side rust
+          fi
+          if [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
+            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_column_layout.py evidence/picker.json --side rust
           fi
           python3 scripts/capture_banner.py export evidence/picker.json
       - name: Export exact regression log
