@@ -1,6 +1,5 @@
 {
-  "phase": "capture",
-  "test": "picker_no_match_counter_preserves_total",
-  "green_run": 34826518574,
-  "patch_sha256": "40ce7a929dbba8376ec5abf3181d32e2ec18d6ea959f4b6bcf27b6f45c28c66f"
+  "phase": "red",
+  "test": "picker_footer_position",
+  "source_sha256": "e1cd28bcb45b6ea761caa0b64cbfead89e4b5424908bd74d1f36a9a5b5da4550"
 }

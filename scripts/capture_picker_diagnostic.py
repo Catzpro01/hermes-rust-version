@@ -1,4 +1,4 @@
-"""Capture only the six picker states in the diagnosis, using the real recorder."""
+"""Capture only the picker states in the diagnosis, using the real recorder."""
 import hashlib
 import json
 from pathlib import Path
@@ -16,7 +16,7 @@ bundle = {'rust_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], t
           'rustc_version': subprocess.check_output(['rustc', '--version'], text=True).strip(),
           'cargo_version': subprocess.check_output(['cargo', '--version'], text=True).strip(),
           'capture_script_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-          'cases': capture_side('rust', binary=binary.resolve(), names=('picker-normal', 'picker-filter', 'picker-no-match'))}
-assert len(bundle['cases']) == 6 and all(c['rust']['error'] is None for c in bundle['cases'])
+          'cases': capture_side('rust', binary=binary.resolve(), names=('picker-normal', 'picker-filter', 'picker-no-match', 'picker-delete', 'picker-empty'))}
+assert len(bundle['cases']) == 10 and all(c['rust']['error'] is None for c in bundle['cases'])
 output.parent.mkdir(parents=True, exist_ok=True)
 output.write_text(json.dumps(bundle, indent=2)+'\n')

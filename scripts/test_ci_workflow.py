@@ -82,6 +82,7 @@ class CiGateTests(unittest.TestCase):
         for selected, accepted in [
             ("picker_footer_tracks_delete_availability", True),
             ("picker_no_match_counter_preserves_total", True),
+            ("picker_footer_position", True),
             ("unknown_test", False),
         ]:
             with self.subTest(selected=selected), tempfile.TemporaryDirectory() as tmp:

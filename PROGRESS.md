@@ -1240,3 +1240,21 @@ Ten workflow policy +five recorder +three retained-packet audit checks pass;
 full Rust result is official remote GREEN. Updated T12/T13, memory and PARITY;
 no merge, blanket parity PASS or closure acceptance. Local scratch/dependencies
 remain in excluded cache; current runtime source is the validated a8d5e8c code.
+
+### Next `/tdd` — actual CLI seam for footer coordinates
+
+User continued TDD. Use the already agreed actual CLI/PTy boundary for physical
+footer placement: frame_lines text alone cannot prove a terminal row. Announced
+one primary normal100x30 regression, then ten-state acceptance including filter,
+no-match, delete confirmation and empty store at100/80 widths. Historical Python
+geometry checks10/10 PASS; Rust has six footer row4/5 failures and four existing
+empty/delete controls PASS. No production fix written yet.
+
+New primary test invokes real CLI via the existing isolated recorder, writes
+original trace, and asserts row30 from terminal state. Setup/capture corruption
+raises ERROR, not geometry FAIL. Existing bounded runner gains one allowlisted
+position test path: RED uses unchanged committed Rust (no dummy Rust patch);
+exact geometry FAIL required three times. GREEN still needs official fmt/check,
+clippy/full suite before applying Rust. Broaden capture helper to ten picker
+states so anchoring cannot silently collide with bottom-row delete confirmation.
+No palette/header/body-row or resize feature change authorized by this slice.
