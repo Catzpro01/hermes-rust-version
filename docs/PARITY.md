@@ -245,6 +245,10 @@ stdout; Python reference outputs at `/tmp/t06_py_help.txt` and
 
 ## Spec 017 — total v0.21.0 parity
 
+**Picker hint correction:** [c07f0c5 diagnosis](hermes-ui-spec/017/evidence/picker-hint-c07f0c5/REPORT.md)
+fixes `d delete` being displayed when filtering; six real paired frames inspected
+and relevant CI green. Counter/geometry/palette differences remain; no new waiver.
+
 **Visual audit update:** [48-pair report](hermes-ui-spec/017/evidence/ui-3b39bd7/REPORT.md)
 records actual 100/80-column captures and direct inspection. Summary 0/3-tools
 and empty picker fixtures match; wizard, other picker states and completion

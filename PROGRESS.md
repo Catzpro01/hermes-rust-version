@@ -1121,8 +1121,30 @@ clippy and full workspace tests. Exact exported3397-byte patch
 SHAc866c9cb5f555527e151ab0e16efffde2a84cfc9af5790bff48e88493bef0e15
 verified, applied, and local Rust diff matched byte-for-byte. Confirmed cause:
 footer omitted the actual delete-eligibility predicate. New regression includes
-filter matching all rows, no matches, clearing to no filter, and empty frame.
+filter matching all rows, no matches, an unfiltered control, and empty frame.
 Only hint eligibility changed; counter/placement/palette remain open. Next run
 must capture this committed source and rerun original six-case PTY replay.
 Stored unified-diff proposals contain required space-prefixed blank context;
 source/docs whitespace checks are clean (do not strip valid patch context).
+
+### Picker hint diagnosis complete — committed source and six images verified
+
+c07f0c5 capture34791652216 and ordinary CI34791652229 SUCCESS. Original six-case
+PTY scenario now6/6 PASS; historical Rust replay still4 FAIL with2 normal PASS,
+Python6 PASS. All six new paired PNGs directly inspected at100/80 columns.
+Packet `docs/hermes-ui-spec/017/evidence/picker-hint-c07f0c5/REPORT.md` includes
+raw/casts/cells, inputs/provenance, replay results and checksums.12 raw/cast and
+6 PNG hashes verified; reused Python records AND cell dumps byte-equivalent in
+meaning, same renderer/font/browser settings. No normalization or overwritten
+old packets. No new Python run claimed; original pinned streams reused.
+
+Cause fixed: footer always advertised delete instead of receiving the d-key
+eligibility predicate from frame_lines. Real frame seam is adequate; no broad
+architecture change needed. Direct Standards/Spec review recorded, not independent
+or personal Matt approval. No runtime debug logs introduced. Proposals retained
+in the clearly marked diagnostics folder; cache tooling not added to Git.
+
+Current scope fixed ONLY the misleading hint. No-match counter, palette/footer
+placement, wizard/completion differences and T12 coverage remain open. Corrected
+prior reproduction package-name error through sibling evidence/ERRATA.md, without
+changing immutable ui-3b39bd7/REPORT.md or its checksum. No merge or closure.

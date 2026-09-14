@@ -1,0 +1,106 @@
+{
+  "status": "CAPTURED_NOT_REVIEWED",
+  "browser": "138.0.7204.0",
+  "xterm": "5.5.0",
+  "font": "DejaVu Mono @fontsource 5.2.5",
+  "fontSize": 16,
+  "deviceScaleFactor": 1,
+  "normalization": "none",
+  "input_sha256": "bcb521aacada912c0d6bccf1cd245889a69bc239076fa967c28ba3b4458a8bd2",
+  "fonts": [
+    {
+      "weight": 400,
+      "style": "normal",
+      "sha256": "6242d5eac0a8e83fc2668f1e219b1eaa276a97ba9945747cc9a2918eab209580"
+    },
+    {
+      "weight": 700,
+      "style": "normal",
+      "sha256": "d118121ca2f1629c66c9709ac99649248f696ddf6d432bb4cca53a0f5bf0f49c"
+    },
+    {
+      "weight": 400,
+      "style": "italic",
+      "sha256": "59bcbc3678d621937a63c4b47b7d3b2118a707565c75c7c7664797db6f024c7b"
+    },
+    {
+      "weight": 700,
+      "style": "italic",
+      "sha256": "517464d76704e1c94d8066f9c01ebce165b7d3bd2ca25fc3e41f034d61cf3c49"
+    }
+  ],
+  "cases": [
+    {
+      "id": "picker-normal-100x30",
+      "width": 100,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-normal-100x30-bottom.png",
+          "sha256": "32c7fa3234414f39b5cec6e9480f0a00e9bd2ec31ad309a556f34b2a7434e1eb",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-filter-100x30",
+      "width": 100,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-filter-100x30-bottom.png",
+          "sha256": "ede61fa874e8885c96cbe1ebfbac588dbd41150cad6be8ca3c97c80dc2905680",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-no-match-100x30",
+      "width": 100,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-no-match-100x30-bottom.png",
+          "sha256": "609c670af76a807bb1fe62ee0b337d9600c4612993212504eca6edc778b3f5e1",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-normal-80x30",
+      "width": 80,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-normal-80x30-bottom.png",
+          "sha256": "a408f0f39292eaf148a5b37028534cec9f1416bd7572aa5c210bf805b19c6d92",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-filter-80x30",
+      "width": 80,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-filter-80x30-bottom.png",
+          "sha256": "be5420fca660b27bd5c45661ea3f3e2c03fa4ef9fbeced015664c3a2f587c58a",
+          "viewport": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "picker-no-match-80x30",
+      "width": 80,
+      "height": 30,
+      "images": [
+        {
+          "file": "picker-no-match-80x30-bottom.png",
+          "sha256": "b29832a76f934e46c8d2c71912cc5c27839e6e04519f0d2773dff965bfcdb0b5",
+          "viewport": "bottom"
+        }
+      ]
+    }
+  ]
+}

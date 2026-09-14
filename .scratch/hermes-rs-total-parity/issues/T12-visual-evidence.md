@@ -296,3 +296,11 @@ V3 inline cycling vs menu are not covered by blanket crate adaptations.
 Summary and empty picker fixtures match. Four-area files are no longer absent,
 but original Spec1 is not closed or relabeled overall PASS.
 See T13 for scoped follow-up evidence/fixes. No merge/user closure acceptance.
+
+### Picker delete-hint follow-up
+
+At c07f0c5 the hint bug has a minimal-frame RED/GREEN and six fresh Rust PTY
+captures paired with immutable Python streams; all six PNGs inspected. See
+`docs/hermes-ui-spec/017/evidence/picker-hint-c07f0c5/REPORT.md`. This fixes only
+the hint, not no-match counts/palette/placement, wizard/completion coverage or
+overall closure. No previous evidence was overwritten.

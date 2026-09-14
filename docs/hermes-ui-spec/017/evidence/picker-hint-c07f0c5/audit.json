@@ -1,0 +1,10 @@
+{
+  "status": "DELETE_HINT_FIXED_NOT_WHOLE_SCREEN_PARITY",
+  "raw_cast_roundtrips": 12,
+  "png_hash_checks": 6,
+  "directly_inspected_images": 6,
+  "python_records_and_cells_unchanged": true,
+  "renderer_fonts_browser_settings_match_prior": true,
+  "source": "c07f0c593c1842795b6dcb20a3d0911062e193ad",
+  "normalization": "none"
+}

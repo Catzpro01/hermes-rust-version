@@ -30,6 +30,26 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Latest runtime correction c07f0c5: picker delete hint now follows actual
+  filter-empty/nonempty-selection eligibility. RED34791212317 (3 exact failures);
+  first GREEN34791352664 failed full validation due a stale expected hint found
+  in source (full log unavailable); corrected GREEN34791539009, exact3397-byte
+  patch c866c9cb5f555527e151ab0e16efffde2a84cfc9af5790bff48e88493bef0e15 applied.
+  Source capture34791652216 + CI34791652229 GREEN; six images directly inspected
+  in `evidence/picker-hint-c07f0c5/REPORT.md`, original-symptom replay6/6 PASS.
+  Other T12/T13 findings remain. No-match0/0 vs0/2 counter NOT fixed.
+- Diagnosis tools: `scripts/check_picker_filter_hint.py` (pyte0.8.2/wcwidth0.8.3)
+  replays either packet; `scripts/capture_picker_diagnostic.py` captures six states.
+  Scoped workflow `.github/workflows/picker-diagnostic.yml` uses request phases
+  red/green/capture and bounds proposals to session_picker.rs. 9 workflow tests.
+- Cache paths may disappear between environments; install isolated deps again
+  if needed. Chromium NSS/NSPR come from pinned Sparticuz al2023.tar.br, not apt.
+  Git metadata may start at base while worktree preserves previous delivery: only
+  align to assigned remote branch after verifying every tracked blob; never lose
+  user edits or force-push. Signed artifact/log URLs still fail EOF; checksum
+  annotation transport works. Correct package is hermes-rs (see evidence/ERRATA.md).
+
+
 - Final four-area packet: `docs/hermes-ui-spec/017/evidence/ui-3b39bd7/REPORT.md`.
   48/48 actual paired PNGs directly inspected, including all narrow images.
   96 raw/cast checks, 48 PNG hashes, all5128 Python source hashes verified.
