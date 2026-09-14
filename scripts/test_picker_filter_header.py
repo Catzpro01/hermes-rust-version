@@ -29,8 +29,8 @@ class PickerFilterHeaderTests(unittest.TestCase):
                                      'rust_diff_sha256': hashlib.sha256(subprocess.check_output(['git', 'diff', '--binary', '--', '*.rs'])).hexdigest(),
                                      'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest()}, indent=2)+'\n')
         style = filter_header_style(case['rust'])
-        self.assertIn(style, ({('cyan', True)}, {('00ffff', True)}),
-                      'Python reference: filter help header uses palette6 and bold')
+        self.assertIn(style, ({('cyan', True)}, {('00cdcd', True)}),
+                      'Python reference: filter help header uses palette6 (not the bright variant) and bold')
 
 
 if __name__ == '__main__':
