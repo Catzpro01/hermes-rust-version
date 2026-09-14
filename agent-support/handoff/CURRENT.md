@@ -94,6 +94,15 @@ whole-picker PASS, acceptance akhir, penutupan Spec017, atau merge.
 
 ## Branch dan main
 
+> **Koreksi 2026-09-14 (sesi `arena/01a0a052`).** Paragraf historis di bawah
+> sudah **usang**: PR #7 ternyata **MERGED** ke `main` oleh `Catzpro01` pada
+> 2026-09-14T14:28:06Z (merge commit `baa7158`, 1.691 file, +143.671/−954), dan
+> CI `main` run `34855804061` pada `baa7158` **SUCCESS** dengan 584 tes Rust
+> lulus. Sesi baru karena itu boleh memakai `main` sebagai basis bila platform
+> memberikannya; analisis lengkap: [PROGRESS-ANALYSIS](PROGRESS-ANALYSIS.md).
+> Larangan merge tanpa instruksi eksplisit dan larangan menyamakan permintaan
+> menyimpan progres dengan acceptance visual tetap berlaku.
+
 Sesi sumber terikat pada `arena/01a09c1e-hermes-rust-version`. Checkpoint sebelum
 penataan adalah478570080f0064beab25885d2b3e500161120cc5; kode runtime7fef514 tidak
 diubah oleh tugas handoff. Ambil commit penataan terbaru dengan `git log -1`.

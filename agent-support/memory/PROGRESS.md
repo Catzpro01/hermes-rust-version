@@ -1592,3 +1592,46 @@ replacement. This preserves all source work, including later corrections to old
 T10 closure claims, and both roots. Added only these handoff receipts/notes after
 the tree identity check. Not a main update or PR merge; platform source-branch
 restriction retained. Check new official CI and PR mergeability after checkpoint.
+
+### Analisis progres pasca-merge PR7 (sesi 01a0a052)
+
+User meminta analisis dan status progres. Diperiksa langsung, tidak mengandalkan
+prediksi handoff sebelumnya:
+
+- `gh pr view 7`: **MERGED** oleh Catzpro01 pada 2026-09-14T14:28:06Z, merge
+  commit `baa7158`, 1.691 file (+143.671/−954). Jadi seluruh source branch
+  (paket handoff, koreksi picker, bukti) kini berada di `main`, dan sesi ini
+  berbasis commit yang identik dengan `main`. Sesi ini tidak melakukan merge,
+  force-push atau perubahan `main`.
+- `gh run list --branch main`: run `34855804061` pada SHA `baa7158` **SUCCESS**
+  di kedua job. Anotasi check-run `104014924835`:
+  `fmt=success clippy=success test=success picker=success` dengan
+  **584 tes Rust lulus / 0 gagal** di 28 binary tes. Satu anotasi `warning`
+  hanya deprecation Node.js 20 dari action pihak ketiga.
+- Verifikasi lokal baru pada sesi ini (venv `/tmp`, deps dari PyPI yang
+  terjangkau): enam skrip QA CI PASS
+  (`test_ci_workflow`, `test_capture_ui`, tiga `test_picker_*_checks`,
+  `test_audit_ui_evidence`), `automation/verify.py` PASS (7 alias, 37 skill
+  link, 164 file vendor, 9 guide), `automation/test_checkpoint.py` 8 tes OK.
+  Ini verifikasi Python/QA lokal; **bukan** klaim build/test Rust lokal.
+- Blocker lingkungan diukur ulang: `cargo`/`rustc` tidak ada;
+  static.rust-lang.org, crates.io, mirror rsproxy/USTC/TUNA, `sh.rustup.rs`
+  semua gagal (TLS/000); `apt-get download rustc` tidak menemukan paket;
+  hanya `github.com` (200) dan `pypi.org` (200) yang jalan. Jalur resmi tetap
+  runner Actions + patch anotasi ber-checksum.
+- Analisis lengkap termasuk daftar sisa pekerjaan dan urutan rekomendasi:
+  `agent-support/handoff/PROGRESS-ANALYSIS.md`. Ringkasnya: implementasi Spec
+  001–017 sudah mendarat; yang tersisa adalah penutupan bukti §J.7
+  (wizard tiap step, completion dropdown, variasi summary non-nol), sisa
+  perbedaan visual picker/wizard, keputusan produk untuk dropdown, lalu
+  acceptance eksplisit user (T12/T11/T10).
+- Auto-push post-commit diinstal untuk branch sesi ini
+  (`arena/01a0a052-hermes-rust-version`); status menunjukkan enabled dan
+  terikat ke branch aktif. Tidak ada staging otomatis.
+- Tidak ada perubahan runtime Rust, bukti visual, atau vendor pada checkpoint
+  ini; hanya dokumen analisis + catatan progres/memory/handoff.
+
+### Hasil push dan CI checkpoint analisis
+
+Diperbarui setelah push terverifikasi; lihat entri berikutnya atau `git log -1`
+pada branch sesi. Tidak ada merge/auto-merge yang dilakukan.

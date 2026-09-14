@@ -30,6 +30,20 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- **PR7 MERGED ke main** (bukan oleh sesi ini): `Catzpro01`, 2026-09-14T14:28:06Z,
+  merge commit `baa7158`, 1.691 file (+143.671/−954). CI `main` run34855804061
+  pada `baa7158` **SUCCESS**; anotasi check-run104014924835:
+  `fmt=success clippy=success test=success picker=success`, **584 tes lulus**.
+  Source branch kini identik dengan main; handoff lama yang menyebut "main belum
+  diperbarui" sudah usang (lihat koreksi di `agent-support/handoff/CURRENT.md`).
+- Analisis progres menyeluruh ada di `agent-support/handoff/PROGRESS-ANALYSIS.md`:
+  implementasi Spec001–017 mendarat; sisa = bukti §J.7 (wizard step, completion
+  dropdown, variasi summary non-nol), sisa diff visual picker/wizard, keputusan
+  produk dropdown, acceptance user. Verifikasi lokal baru:6 skrip QA CI PASS,
+  verifier paket PASS (7/37/164/9), 8 tes auto-push OK; venv deps dari PyPI.
+  Blocker lokal diukur ulang: tidak ada cargo; rust/crates/mirror/apt semua gagal
+  TLS atau tidak ditemukan; hanya github.com+pypi.org jalan. Auto-push post-commit
+  diinstal untuk branch sesi `arena/01a0a052-hermes-rust-version`.
 - User repeats explicit PR merge request. CI34854268561/f3dfb91 GREEN. Found
   unrelated roots: main8b6a673 vs source root6ded9dd; full diff only four T10 docs,
   no independent main runtime/Cargo/scripts/workflow changes. Connected main as
