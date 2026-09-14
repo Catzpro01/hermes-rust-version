@@ -253,3 +253,11 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     — rustfmt had nothing to change. The live gate passed three times and the
     retained trace fell from 279052 bytes (RED) to 45749 bytes (GREEN), the
     direct sign that the picker stopped repainting while idle.
+  - [x] Cycle 6 (a) delivered: fix `bbd943c`, capture `b2db435`, packet
+    `docs/hermes-ui-spec/017/evidence/picker-redraw-on-input-b2db435/` (78 files)
+    with audit `REDRAW_ON_INPUT_FIXED_FRAME_CONTENT_UNCHANGED_ALL_REGIONS_EQUAL` —
+    eleven checkers PASS, the same gate rejects 8/10 cases of the previous packet,
+    frame content byte-identical, and the PTY start-up flake stops reproducing.
+  - [ ] Cycle 7 candidates: (a) resize/long-list/clear-filter behaviour;
+    (b) the documented Active/ID adaptations; (c) a fixture that exercises the
+    interrupted/error/empty inks in a live capture.

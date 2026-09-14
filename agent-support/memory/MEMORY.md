@@ -456,3 +456,35 @@ Next: picker resize/long-list/clear-filter + the repaint deviation, then the
 `Active`/`ID` documented adaptations, then wizard V1 (14 scenarios / 5 groups)
 and the completion-dropdown product decision. Still no whole-picker PASS, new
 adaptation, acceptance, or merge.
+
+## 2026-09-14 — picker V2 cycle 6 delivered (redraw cadence)
+
+Chain: `bbd943c` (fix, source `e6cad4ba…`) → `b2db435` (capture request) → packet
+`picker-redraw-on-input-b2db435`. The picker now repaints only when the screen
+changed: a `dirty` flag starts set, every accepted key press and every `Resize`
+sets it again, the 100 ms poll loop is untouched. That matches the pinned
+reference (`_curses_browse` draws then blocks in `stdscr.getch()`).
+New live gate `picker_redraw_on_input` (9th live gate, plan entry 9, 3× regression
++ trace retention, also an ordinary CI gate) splits each record at the scenario
+keystroke writes (terminal replies excluded) and counts frames per input window:
+1 before the first keystroke, 1 per typed key after (`topic` = 5, `zzzz` = 4).
+RED 34873144309 → GREEN 34873480643 (**first attempt**; tested patch byte-identical
+to the bound `925b963e…` 2801 B; traces 279052 → 45748 bytes) → capture 34873776470
+(bundle `491713dd…` 46091 B; eleven checkers PASS; 3× verified) → CI 34873775366 and
+34873776473 SUCCESS. Audit
+`REDRAW_ON_INPUT_FIXED_FRAME_CONTENT_UNCHANGED_ALL_REGIONS_EQUAL`: the same gate
+rejects 8/10 cases of the previous packet and accepts all 10 retained Python
+records; all ten cell maps and PNGs byte-identical to the previous packet; 34/34
+control regions equal; 4 declared tag-span differences at 270 px each; records
+shrank wherever the loop runs (13815 → 1463 B in the no-match case).
+
+Side effect: the PTY start-up flake stopped reproducing (the harness's
+quiet-or-stable rule no longer races a child that repaints forever), so both CI
+runs on the fixed source are green — this closes the flake recorded in the last
+two packets. Also reused: cycle 9's "unexplained" GREEN failure was a real
+live-gate failure masked by `continue-on-error: true` on the picker step.
+
+Next: resize/long-list/clear-filter, the documented `Active`/`ID` adaptations, a
+fixture that exercises the interrupted/error/empty inks live, then wizard V1 and
+the completion-dropdown product decision. No whole-picker PASS, new adaptation,
+acceptance, or merge.

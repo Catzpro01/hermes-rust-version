@@ -1823,3 +1823,36 @@ Berikutnya: siklus picker yang tersisa — perilaku resize/daftar panjang/clear-
 dan penyimpangan repaint (referensi hanya menggambar setelah tombol), lalu adaptasi
 `Active`/`ID`, kemudian wizard V1 dan keputusan produk dropdown completion. Tidak ada
 adaptasi baru, PASS seluruh picker, acceptance, atau merge.
+
+### Slice picker: cadence redraw (S1–S5 selesai)
+
+Siklus TDD keenam untuk picker V2; fix `bbd943c`, sumber ter-commit `b2db435`:
+
+- Bukti terpinn dari `_curses_browse` (sumber upstream yang sudah disimpan):
+  referensi menggambar frame di awal loop lalu memblokir di `stdscr.getch()` —
+  satu frame per tombol, tidak ada output selama menunggu. Port Rust memakai poll
+  100 ms untuk tetap responsif terhadap sinyal, tetapi sebelumnya menggambar
+  ulang setiap kali poll timeout.
+- Gate baru `picker_redraw_on_input` (checker + tes CLI + 11 tes pendukung)
+  membelah rekaman pada penulisan tombol skenario dan menghitung frame per jendela
+  input: 1 frame sebelum tombol pertama, satu per tombol sesudahnya. Terpasang di
+  `picker-diagnostic` (entri plan kesembilan, regresi 3×, retensi trace) dan
+  `ci.yml` sebagai gate biasa kesembilan.
+- RED 34873144309: gagal 3× dengan assertion kadens, tanpa error setup.
+- GREEN 34873480643: **percobaan pertama berhasil** — gate live 3×, fmt/check,
+  clippy `-D warnings`, seluruh suite PASS; patch ekspor identik byte dengan yang
+  diikat (`925b963e…`, 2.801 byte). Jejak turun 279.052 → 45.748 byte.
+- Capture 34873776470: 10 kasus, **sebelas** checker PASS, verifikasi 3×; bundle
+  `491713dd…` 46.091 byte. CI `34873775366` dan `34873776473` SUCCESS.
+- Paket `docs/hermes-ui-spec/017/evidence/picker-redraw-on-input-b2db435/`:
+  `verify.py` → audit `REDRAW_ON_INPUT_FIXED_FRAME_CONTENT_UNCHANGED_ALL_REGIONS_EQUAL`
+  — gate yang sama menolak 8/10 kasus paket sebelumnya dan menerima 10/10 rekaman
+  referensi; kesepuluh cell map dan PNG identik byte dengan paket siklus lalu;
+  34/34 region kontrol identik; 4 perbedaan span tag tetap 270 piksel.
+- Efek samping penting: flake start-up PTY hilang (dulu `missing readiness/timeout
+  at stage 0` setelah 207.901 byte walau layar sudah penuh).
+
+Berikutnya: resize/daftar panjang/clear-filter, adaptasi `Active`/`ID`, fixture yang
+menjalankan tinta `interrupted`/`error`/`empty` secara live, lalu wizard V1 dan
+keputusan produk dropdown completion. Tidak ada adaptasi baru, PASS seluruh picker,
+acceptance, atau merge.

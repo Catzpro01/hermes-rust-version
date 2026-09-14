@@ -40,10 +40,12 @@ implementasi fitur baru.
   test=success picker=success`, **584 tes Rust lulus / 0 gagal** (28 binary tes).
 - Branch kerja sesi: `arena/01a0a052-hermes-rust-version` (berbasis `baa7158`).
   Commit paket terakhir `8b89b12` → CI `34862320398` **SUCCESS**.
-- CI biasa menjalankan 8 gate live PTY picker (posisi footer, warna footer,
+- CI biasa menjalankan 9 gate live PTY picker (posisi footer, warna footer,
   header normal, header filter, tata letak kolom, prompt hapus + pesan no-match,
-  baris terpilih, tinta kolom status); setiap perilaku baru menambah satu gate
-  sebelum siklusnya ditutup.
+  baris terpilih, tinta kolom status, cadence redraw); setiap perilaku baru
+  menambah satu gate sebelum siklusnya ditutup. Sejak siklus cadence redraw,
+  picker tidak lagi menggambar ulang saat menunggu input, jadi flake start-up
+  PTY tidak lagi muncul.
 - **Tidak ada toolchain Rust di sandbox** — setiap perubahan Rust diverifikasi di
   GitHub Actions (RED → GREEN → capture), lalu diangkut sebagai patch ber-checksum
   lewat anotasi run. Tidak ada klaim `cargo` lokal.
@@ -54,7 +56,7 @@ implementasi fitur baru.
 |---|---|---|---|
 | 1 | Banner panel (judul + grid) | 🟡 Sebagian | Bukti berpasangan terakhir `banner-5a8e12c` (8 PNG diperiksa, kolom `Available Tools` 51/41/48/49 dan `Session` 4/17/21/21 cocok); bukan klaim pixel/raw identity seluruh variasi |
 | 2 | Wizard tiap step | ⏳ V1 | 14 skenario × 2 lebar sudah di-capture; palette, geometri, hint, label, checklist tools masih berbeda |
-| 3 | Session picker frame | 🔄 V2 berjalan | 10 siklus selesai; 34/34 region kontrol picker identik + 4 region span tag sebagai perbedaan yang dinyatakan, sisa 2 perilaku + adaptasi (lihat §4) |
+| 3 | Session picker frame | 🔄 V2 berjalan | 11 siklus selesai; 34/34 region kontrol picker identik + 4 perbedaan yang dinyatakan, konten frame tidak berubah oleh siklus cadence; sisa resize/daftar panjang/clear-filter + adaptasi |
 | 4 | Completion dropdown | ⏳ Butuh keputusan | Python (`prompt_toolkit`) menampilkan daftar alternatif; Rust melakukan cycling inline — perlu keputusan produk: bangun dropdown atau amandemen §J.7 |
 | 5 | Summary line | 🟡 Sebagian | Kasus 0/3 tool sudah cocok (teks counter, posisi, gaya); variasi non-nol (skills/MCP) belum ada buktinya |
 
@@ -73,8 +75,8 @@ implementasi fitur baru.
 | 9 | Baris terpilih ` → ` hijau + bold (mengganti reverse video) | ✅ | `ee11541` + paket `picker-selection-b4cb408` (34/34 region piksel identik) |
 | 10 | Warna kolom status | ✅ | `1781404` + paket `picker-status-ink-19bbbd5` (34/34 region kontrol identik, 4 region span tag = perbedaan yang dinyatakan); pemetaan dibaca dari sumber upstream terpinned dan disimpan di `evidence/upstream-status-attr/` |
 | 11 | Konten kolom `Active` / `ID` | 🅿️ adaptasi | `8`-karakter sid dan format `Active` adalah adaptasi terdokumentasi di `docs/PARITY.md` |
-| 12 | Resize, daftar panjang, clear-filter | ⏳ berikutnya | belum dibuktikan oleh fixture ukuran tetap ini |
-| 13 | Repaint: referensi menggambar hanya setelah tombol, Rust setiap poll timeout | ⏳ | kandidat berikutnya; juga penyebab flake start-up gate PTY |
+| 12 | Resize, daftar panjang, clear-filter | ⏳ berikutnya | belum dibuktikan oleh fixture ukuran tetap ini (resize baru tercakup sebatas penandaan dirty) |
+| 13 | Cadence redraw: gambar hanya saat layar berubah | ✅ | `bbd943c` + paket `picker-redraw-on-input-b2db435` (gate menolak 8/10 kasus paket lama, menerima 10/10 referensi; konten identik byte; flake start-up hilang) |
 
 Setiap siklus punya rantai bukti yang sama: **RED nyata** (gagal karena alasan
 benar, bukan error setup) → **patch minimal** → **GREEN resmi** (gate live 3×,
@@ -96,7 +98,7 @@ SHA-256** → **capture dari sumber ter-commit** → **audit + laporan + CI hija
 
 | Prioritas | Isi | Status sekarang |
 |---|---|---|
-| **P1** | Siklus TDD picker V2 satu per satu (temuan harness H1–H5 sudah menjadi gate CI) | 🔄 siklus 10 dari 12 (perilaku) |
+| **P1** | Siklus TDD picker V2 satu per satu (temuan harness H1–H5 sudah menjadi gate CI) | 🔄 siklus 11 dari 12 (perilaku) |
 | **P1** | Habiskan daftar V2, lalu masuk **V1 wizard** memakai 14 skenario baseline | ⏳ |
 | **P2** | **Keputusan produk completion dropdown** (implementasi vs amandemen §J.7) | ⏳ butuh jawaban pengguna |
 | **P2** | Bukti **summary non-nol** (skills/MCP) untuk melengkapi area kelima | ⏳ |
