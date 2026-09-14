@@ -418,7 +418,7 @@ jobs:
               export_annotations(Path('evidence/redraw-1.json'), 0, 'redraw trace')
           PY
       - name: Exact CLI terminal-size regression repeated three times
-        if: steps.plan.outputs.test == 'picker_terminal_size'
+        if: steps.plan.outputs.test == 'picker_terminal_size' && steps.plan.outputs.phase != 'reference'
         id: size
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
@@ -442,7 +442,7 @@ jobs:
           done
           echo "::notice title=picker terminal-size regression::$PHASE actual CLI regression verified three times"
       - name: Retain primary terminal-size CLI trace
-        if: always() && steps.plan.outputs.test == 'picker_terminal_size'
+        if: always() && steps.plan.outputs.test == 'picker_terminal_size' && steps.plan.outputs.phase != 'reference'
         run: |
           python3 - <<'PY'
           import sys

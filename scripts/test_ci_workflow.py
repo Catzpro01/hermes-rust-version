@@ -189,6 +189,8 @@ class CiGateTests(unittest.TestCase):
     def test_picker_size_gate_rejects_setup_errors(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
         step = next(s for s in workflow["jobs"]["diagnose"]["steps"] if s.get("id") == "size")
+        self.assertIn("!= 'reference'", step["if"],
+                      "the reference phase must not be judged by the live Rust gate")
         failure = ("FAIL: test_size_contract_follows_the_pinned_threshold\n"
                    "Ran 1 test in 0.1s\nFAILED (failures=1)")
         success = "test_size_contract_follows_the_pinned_threshold ... ok\nRan 1 test in 0.1s\nOK"

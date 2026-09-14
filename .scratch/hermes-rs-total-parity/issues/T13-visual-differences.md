@@ -270,3 +270,9 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     missing `test` made every `!=` step condition true and the generic Rust unit
     test step ran instead. Fixed by writing the outputs first; 
     `test_ci_workflow.py` now asserts the written outputs.
+  - [x] Reference-phase attempt 2 (run 34876621220) failed honestly too: the live
+    Rust size gate ran during the reference phase (its guard only checked `test`)
+    and failed, stopping the job before the reference steps. The live step and its
+    trace step now skip `phase == 'reference'`, and `test_ci_workflow.py` asserts
+    that guard. Incidentally this run shows the new live gate is RED-shaped: it
+    fails on the assertion with no setup error.

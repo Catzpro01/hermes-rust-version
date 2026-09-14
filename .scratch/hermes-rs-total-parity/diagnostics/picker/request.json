@@ -1,5 +1,5 @@
 {
   "phase": "reference",
   "test": "picker_terminal_size",
-  "note": "re-request after the plan step was fixed to publish phase/test before any step guard (run 34876400782)"
+  "note": "re-request 3: the reference phase must not run the live Rust gate (run 34876621220)"
 }
