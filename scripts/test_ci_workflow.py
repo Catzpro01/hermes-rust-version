@@ -602,6 +602,34 @@ class CiGateTests(unittest.TestCase):
                     self.assertIn("Formatting check did not succeed.", result.stdout)
 
 
+    def test_picker_type_check_reports_the_first_error(self):
+        # The diagnostic job's `cargo check` used to fail with an invisible exit
+        # code 101 (cycle-7 GREEN attempt, run 34879520834). Whatever the cause,
+        # the annotation must carry the first compiler error line.
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        step = next(s for s in workflow["jobs"]["diagnose"]["steps"]
+                    if s.get("name") == "Format and type check")
+        for code, log, expected in (
+            (0, "    Finished dev profile target(s)\n", None),
+            (101, "error[E0308]: mismatched types\n  --> src/lib.rs:1:1\n", "error[E0308]: mismatched types"),
+            (101, "warning: unused\n", "cargo check failed"),
+        ):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as tmp:
+                cargo = Path(tmp) / "cargo"
+                cargo.write_text("#!/bin/sh\n[ \"$1\" = fmt ] && exit 0\n"
+                                 "printf '%s' \"$CARGO_LOG\"\nexit $CARGO_CODE\n")
+                cargo.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}",
+                           CARGO_LOG=log, CARGO_CODE=str(code))
+                result = subprocess.run(["bash", "-e", "-c", step["run"]],
+                                        cwd=tmp, env=env, capture_output=True, text=True, check=False)
+                self.assertEqual(result.returncode, code, result.stderr)
+                if expected is None:
+                    self.assertNotIn("::error title=cargo check failed::", result.stdout)
+                else:
+                    self.assertIn(f"::error title=cargo check failed::{expected}", result.stdout)
+                self.assertEqual((Path(tmp) / "picker-check.log").read_text(), log)
+
     def test_diagnostics_still_report_a_real_test_build_failure(self):
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / "test.log").write_text("error[E0425]: unknown value\n")

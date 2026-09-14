@@ -84,7 +84,15 @@ jobs:
         run: |
           cargo fmt --all
           cargo fmt --all -- --check
-          cargo check --workspace --all-targets --locked
+          set +e
+          cargo check --workspace --all-targets --locked 2>&1 | tee picker-check.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            first="$(grep -m1 -E '^error(\[E[0-9]+\])?:' picker-check.log || echo 'cargo check failed')"
+            echo "::error title=cargo check failed::$first"
+            exit "$status"
+          fi
       - name: Build CLI for terminal-coordinate regression
         if: steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input' || steps.plan.outputs.test == 'picker_terminal_size'
         run: |
@@ -648,4 +656,5 @@ jobs:
             capture-verify.log
             reference-prepare.log
             reference-child.log
+            picker-check.log
           retention-days: 90

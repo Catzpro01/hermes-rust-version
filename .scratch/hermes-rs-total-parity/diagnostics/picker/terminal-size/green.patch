@@ -1,5 +1,5 @@
 diff --git a/crates/hermes-cli/src/session_picker.rs b/crates/hermes-cli/src/session_picker.rs
-index 8fc6ff9..7f814c5 100644
+index 8fc6ff9..39832df 100644
 --- a/crates/hermes-cli/src/session_picker.rs
 +++ b/crates/hermes-cli/src/session_picker.rs
 @@ -54,10 +54,15 @@ pub const DELETE_FAILED: &str = "Delete failed.";
@@ -91,6 +91,17 @@ index 8fc6ff9..7f814c5 100644
                  if is_footer {
                      execute!(out, cursor::MoveTo(0, term_rows - 1))?;
                  }
+@@ -540,8 +580,8 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+                     };
+                     match body.filter(|_| line.chars().count() >= span.end) {
+                         Some(index) => {
+-                            let head = char_offset(line, span.start);
+-                            let tag = char_offset(line, span.end);
++                            let head = char_offset(&line, span.start);
++                            let tag = char_offset(&line, span.end);
+                             execute!(
+                                 out,
+                                 Print(&line[..head]),
 @@ -766,6 +806,29 @@ mod tests {
          );
      }

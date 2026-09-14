@@ -332,3 +332,11 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     cleared alternate screen and followed by a key wait, the empty-store print
     keeps its reference order (before curses), and every drawn line is clipped to
     `cols - 1` like `addnstr(..., max_x - 1, ...)` so a narrow terminal never wraps.
+  - [x] Cycle 7 (size contract) GREEN attempt 1 (commit `e2272b3`, run
+    34879520834) failed in `Format and type check` with an invisible exit code
+    101. Cause: `clip_line` returns an owned `String`, so the later
+    `char_offset(line, …)` calls needed `&line`. Fix: borrow at both call sites
+    (patch now 5852 bytes, digest `91bab27…`) and make `cargo check` failures
+    visible — the step tees to `picker-check.log` and emits
+    `::error title=cargo check failed::<first error line>`, covered by a new
+    `test_ci_workflow.py` case (28 tests).
