@@ -714,6 +714,9 @@ class CiGateTests(unittest.TestCase):
                 self.assertEqual("RUSTC_WRAPPER=sccache" in written, present, written)
                 if present:
                     self.assertIn("SCCACHE_IDLE_TIMEOUT=0", written)
+                    self.assertIn("::notice title=sccache enabled::", result.stdout)
+                else:
+                    self.assertIn("::notice title=sccache::", result.stdout)
                 output = out_file.read_text() if out_file.exists() else ""
                 self.assertIn(f"sccache={'present' if present else 'absent'}", output)
 
@@ -743,6 +746,8 @@ class CiGateTests(unittest.TestCase):
                 self.assertIn("== dmesg OOM kills ==", log)
                 self.assertEqual("::error title=OOM kill detected::" in result.stdout, oom,
                                  result.stdout)
+                self.assertIn("::notice title=memory::mem 1400MiB used of 1977MiB",
+                              result.stdout)
 
     def test_memory_log_is_included_in_the_uploaded_logs(self):
         step = STEPS["Upload logs"]

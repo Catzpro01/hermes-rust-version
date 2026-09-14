@@ -82,9 +82,11 @@ jobs:
             echo "SCCACHE_IDLE_TIMEOUT=0" >> "$GITHUB_ENV"
             sccache --zero-stats || true
             echo "sccache=present" >> "$GITHUB_OUTPUT"
+            echo "::notice title=sccache enabled::RUSTC_WRAPPER=sccache for the cargo steps"
           else
             echo "sccache not found on this runner; building without a wrapper"
             echo "sccache=absent" >> "$GITHUB_OUTPUT"
+            echo "::notice title=sccache::not present on this runner; building without a wrapper"
           fi
 
       - name: cargo fmt --check
@@ -155,6 +157,8 @@ jobs:
           if grep -qiE 'out of memory|oom-kill' memory-oom.log; then
             echo "::error title=OOM kill detected::kernel OOM events found during this job; see the memory/OOM diagnostics step"
           fi
+          mem_summary=$(free -m 2>/dev/null | awk '/^Mem:/ {printf "mem %sMiB used of %sMiB", $3, $2} /^Swap:/ {printf "; swap %sMiB used of %sMiB", $3, $2}')
+          echo "::notice title=memory::${mem_summary:-memory summary unavailable on this runner}"
 
       # Diagnostics are emitted as check-run annotations (readable via the
       # REST API even where raw logs/artifacts are not reachable) and as a
