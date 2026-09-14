@@ -87,8 +87,15 @@ This supersedes the historical pending-counter entries above.
     `docs/hermes-ui-spec/017/evidence/picker-selection-b4cb408/REPORT.md`; 34/34
     pinned pixel regions equal, and `attempts-result.txt` records the dim-scanner
     bug, the PTY start-up flake fix and the one unexplained GREEN failure.
-  - [ ] Cycle 5 candidates: status-column ink (needs pinned evidence for the Rust
-    `done` value), resize/long-list/clear-filter behaviour.
+  - [ ] Cycle 5 (status-tag ink) in flight: the new live gate
+    `picker_status_ink` pins the tag ink from the upstream mapping read out of the
+    pinned source (`docs/hermes-ui-spec/017/evidence/upstream-status-attr/`): the
+    tag is drawn at `3 + name_width + 2`, five cells wide, never bold, and only on
+    rows that are not the cursor — `done`/complete green slot 2, `intr` yellow
+    slot 3 (corroborated by the retained capture), `err` red slot 1, `empty`
+    palette 8. RED requested against the unchanged Rust source; the reference
+    passes and the Rust capture misses the ink on `done`.
+  - [ ] Cycle 6 candidates: resize/long-list/clear-filter behaviour.
 - [ ] Wizard/completion discrepancies and T12 field/full-Python-CLI evidence.
 
 Report: `docs/hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md`.
