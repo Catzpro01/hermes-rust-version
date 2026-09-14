@@ -347,3 +347,8 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     `sha256=772b8383…; bytes=5141`. The export step now also runs for live GREEN
     phases, so the tree the runner formatted (`cargo fmt --all`) is exported and
     the patch committed here is the patch that was verified.
+  - [x] Cycle 7 (size contract) fix committed from the exported tested patch
+    (`f74411bf…`, 5178 bytes; source sha256 now `72909a5c…`). The runner's
+    `cargo fmt --all` re-wrapped one `assert_eq!`, which is exactly why the export
+    now covers live gates: committing the bound patch would have failed the CI fmt
+    gate on that line.
