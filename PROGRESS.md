@@ -1221,3 +1221,22 @@ footer subset accurately and includes compiler/Cargo/capture-script versions.
 Original recorder and dummy inputs unchanged. No change to geometry/palette or
 broader T12/T13 scope; fresh source evidence is still required before claiming
 this slice verified end-to-end.
+
+### Counter source capture and direct inspection complete
+
+a8d5e8c capture34826757031 and ordinary CI34826756998 SUCCESS. Actual six-case
+PTY capture passes all counters AND all delete hints. New packet
+`docs/hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md`: all six
+paired PNGs directly inspected, 12 raw/cast roundtrips and six PNG hashes
+verified. Reused Python records and cells unchanged; parent digest/renderer/
+fonts/browser settings verified. Four normal/filter paired PNGs byte-identical
+to picker-hint-c07f0c5; only Rust cell row4 changes in two no-match cases.
+No normalization, overwritten originals, new Python run or source rehash claim.
+
+Limited direct Standards/Spec review of0329c7d…a8d5e8c recorded in REPORT: no new
+hard Standards issue found; counter slice passes, geometry/palette and broader
+T12 coverage remain open. No speculative refactor or personal/independent review.
+Ten workflow policy +five recorder +three retained-packet audit checks pass;
+full Rust result is official remote GREEN. Updated T12/T13, memory and PARITY;
+no merge, blanket parity PASS or closure acceptance. Local scratch/dependencies
+remain in excluded cache; current runtime source is the validated a8d5e8c code.

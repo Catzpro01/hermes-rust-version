@@ -245,9 +245,14 @@ stdout; Python reference outputs at `/tmp/t06_py_help.txt` and
 
 ## Spec 017 — total v0.21.0 parity
 
+**Picker counter correction:** [a8d5e8c TDD evidence](hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md)
+now shows `0/2 sessions` for the two-session no-match fixture and preserves
+delete-hint behavior. Six actual pairs inspected; relevant CI green. Footer
+placement/palette and other T12/T13 requirements remain open.
+
 **Picker hint correction:** [c07f0c5 diagnosis](hermes-ui-spec/017/evidence/picker-hint-c07f0c5/REPORT.md)
 fixes `d delete` being displayed when filtering; six real paired frames inspected
-and relevant CI green. Counter/geometry/palette differences remain; no new waiver.
+and relevant CI green. Geometry/palette differences remain; no new waiver.
 
 **Visual audit update:** [48-pair report](hermes-ui-spec/017/evidence/ui-3b39bd7/REPORT.md)
 records actual 100/80-column captures and direct inspection. Summary 0/3-tools

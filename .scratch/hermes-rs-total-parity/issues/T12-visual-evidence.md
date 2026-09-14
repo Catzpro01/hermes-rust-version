@@ -304,3 +304,12 @@ captures paired with immutable Python streams; all six PNGs inspected. See
 `docs/hermes-ui-spec/017/evidence/picker-hint-c07f0c5/REPORT.md`. This fixes only
 the hint, not no-match counts/palette/placement, wizard/completion coverage or
 overall closure. No previous evidence was overwritten.
+
+### Counter follow-up at a8d5e8c
+
+No-match counter now matches the Python two-session fixture, with hint behavior
+preserved. Six actual paired frames inspected; source capture34826757031 and
+CI34826756998 pass. Four normal/filter paired images byte-identical to c07 packet.
+See `docs/hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md`.
+Footer geometry/palette and other coverage/discrepancy requirements remain open;
+this does not close the five-area visual acceptance or user sign-off gate.

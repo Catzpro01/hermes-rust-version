@@ -30,6 +30,25 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Latest counter correction a8d5e8c: no-match footer now `0/2 sessions` for
+  two original rows; delete-hint behavior preserved. User `/tdd` + continued
+  the recommended public frame_lines seam. RED34826295910/f232480 (3 exact
+  failures) → GREEN34826518574/bdd3cb0 (fmt/check/clippy/full suite). Exact
+  2008-byte patch SHA40ce7a929dbba8376ec5abf3181d32e2ec18d6ea959f4b6bcf27b6f45c28c66f
+  applied unchanged before committed-source capture34826757031 + CI34826756998
+  GREEN. New `evidence/picker-counter-a8d5e8c/REPORT.md`: six images inspected,
+  counters6/6 and hints6/6 PASS. Four normal/filter PNGs byte-identical to c07
+  packet; only Rust cell row4 changes in the two no-match frames.
+- Current remaining scope: footer placement/palette, other wizard/completion
+  discrepancies and T12 field/full-CLI coverage. Hint AND no-match counter are
+  now fixed; older “counter NOT fixed” entries below describe earlier state.
+- `scripts/check_picker_counter.py` validates independent Python footer literals
+  plus prior hint checks. Existing runner accepts only two named regressions;
+  counter proposals are isolated under diagnostics/picker/counter. Selection
+  lives in request.json test field; preserve it for counter capture. Ten workflow
+  policy tests. Capture metadata includes rustc/Cargo/capture-script hashes.
+
+
 - Latest runtime correction c07f0c5: picker delete hint now follows actual
   filter-empty/nonempty-selection eligibility. RED34791212317 (3 exact failures);
   first GREEN34791352664 failed full validation due a stale expected hint found

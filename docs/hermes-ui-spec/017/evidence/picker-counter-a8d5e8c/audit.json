@@ -1,0 +1,27 @@
+{
+  "status": "NO_MATCH_COUNTER_FIXED_NOT_WHOLE_SCREEN_PARITY",
+  "source": "a8d5e8c28fed8212791f0b97d48526fb150381e8",
+  "counter_checks": 6,
+  "hint_checks": 6,
+  "png_hash_checks": 6,
+  "raw_cast_roundtrips": 12,
+  "directly_inspected_images": 6,
+  "python_records_and_cells_unchanged": true,
+  "renderer_script_sha256": "201091eef5007e9a45889da7b4725b658ce39df1bf977a48677e435df9f9c074",
+  "renderer_fonts_browser_settings_match_prior": true,
+  "unchanged_paired_pngs": [
+    "picker-normal-100x30-bottom.png",
+    "picker-filter-100x30-bottom.png",
+    "picker-normal-80x30-bottom.png",
+    "picker-filter-80x30-bottom.png"
+  ],
+  "changed_rust_cell_rows_1_based": {
+    "picker-no-match-100x30": [
+      4
+    ],
+    "picker-no-match-80x30": [
+      4
+    ]
+  },
+  "normalization": "none"
+}

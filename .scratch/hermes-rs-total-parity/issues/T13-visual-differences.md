@@ -1,6 +1,6 @@
 # T13 — Resolve retained UI discrepancies and coverage boundaries
 
-- Status: IN PROGRESS (delete-hint slice fixed and recaptured; other gaps remain)
+- Status: IN PROGRESS (delete hint and no-match counter fixed/recaptured; layout/palette and coverage remain)
 - Label: `ready-for-agent`
 - Basis: Spec017 §J.7 / Q1–Q8; no new waiver, feature implementation or merge.
 - Evidence: `docs/hermes-ui-spec/017/evidence/ui-3b39bd7/REPORT.md`.
@@ -50,3 +50,18 @@ show Python's `0/2 sessions`, not Rust's `0/0 sessions (filtered from 2)`.
 First establish the exact RED; retain delete-hint and normal/filter controls.
 Official remote validation → exact patch application → committed-source capture
 and direct review. This routing is not a new fix or overall acceptance.
+
+## Current checklist after counter TDD at a8d5e8c
+
+This supersedes the historical pending-counter entries above.
+
+- [x] Delete-hint eligibility: preserved; six actual PTY checks PASS.
+- [x] No-match counter: literal Python `0/2 sessions` reached at both widths.
+  Public frame RED three times → official full GREEN → exact2008-byte patch
+  applied → source capture34826757031 and CI34826756998 GREEN. Six paired PNGs
+  directly inspected; four normal/filter PNGs byte-identical to prior packet.
+- [ ] Footer placement and picker palette/header/selection/delete styling.
+- [ ] Wizard/completion discrepancies and T12 field/full-Python-CLI evidence.
+
+Report: `docs/hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md`.
+No new adaptation, whole-picker PASS, Spec017 closure, or merge.
