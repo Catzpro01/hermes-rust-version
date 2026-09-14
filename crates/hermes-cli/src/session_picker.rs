@@ -462,10 +462,15 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                         SetAttribute(Attribute::Reset)
                     )?;
                 } else if is_cursor_row {
-                    use crossterm::style::{Attribute, Print, SetAttribute};
+                    // The reference paints the whole selected row with palette
+                    // slot 2 + bold and never uses reverse video.
+                    use crossterm::style::{
+                        Attribute, Color, Print, SetAttribute, SetForegroundColor,
+                    };
                     execute!(
                         out,
-                        SetAttribute(Attribute::Reverse),
+                        SetForegroundColor(Color::DarkGreen),
+                        SetAttribute(Attribute::Bold),
                         Print(line),
                         SetAttribute(Attribute::Reset)
                     )?;
