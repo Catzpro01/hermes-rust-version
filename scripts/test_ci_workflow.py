@@ -758,6 +758,24 @@ class CiGateTests(unittest.TestCase):
         step = STEPS["Upload logs"]
         self.assertIn("memory-oom.log", step["with"]["path"])
 
+    def test_test_job_provisions_python_before_picker_regressions(self):
+        """The self-hosted VPS system python3 has no pip (run 34891514988
+        died at the picker step's pip guard), so the test job must provision
+        Python via setup-python before the picker regressions install their
+        pinned QA dependencies."""
+        workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+        steps = workflow["jobs"]["test"]["steps"]
+        setup_idx = picker_idx = None
+        for i, step in enumerate(steps):
+            if str(step.get("uses", "")).startswith("actions/setup-python"):
+                setup_idx = i
+            if step.get("name") == "Picker terminal regressions":
+                picker_idx = i
+        self.assertIsNotNone(setup_idx, "test job lost its actions/setup-python step")
+        self.assertIsNotNone(picker_idx, "picker regressions step disappeared")
+        self.assertLess(setup_idx, picker_idx,
+                        "setup-python must precede the picker regressions")
+
     def test_jobs_run_on_the_tuned_self_hosted_vps(self):
         """User instruction 2026-09-15: this repo's jobs must always run on
         the tuned self-hosted VPS runner (sccache + mold), never the shared
