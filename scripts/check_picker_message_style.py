@@ -28,6 +28,32 @@ ESCAPES = re.compile(rb'\x1b\[[0-9;?]*[A-Za-z]|\x1b[()][A-Z0-9]|\x1b[=>]')
 CONTROLS = re.compile(rb'[\x00-\x1f\x7f]')
 
 
+def dim_state(codes, initial=False):
+    """Track SGR dim, skipping colour parameter lists.
+
+    `2` is dim only as a standalone parameter: inside `38;5;2` / `48;5;2` /
+    `58;5;2` it is a palette index and inside `38;2;r;g;b` a truecolour
+    component, so those lists are consumed whole. Without this the palette2
+    selection ink of a later slice would look like a dim window.
+    """
+    dim = initial
+    index = 0
+    while index < len(codes):
+        code = codes[index]
+        if code in (38, 48, 58):
+            kind = codes[index + 1] if index + 1 < len(codes) else None
+            index += 3 if kind == 5 else (5 if kind == 2 else 1)
+            continue
+        if code == 0:
+            dim = False
+        elif code == 2:
+            dim = True
+        elif code == 22:
+            dim = False
+        index += 1
+    return dim
+
+
 def printable(segment):
     return CONTROLS.sub(b'', ESCAPES.sub(b'', segment)).decode('utf-8', 'replace')
 
@@ -42,14 +68,8 @@ def dim_events(record):
     events = []
     for match in SGR.finditer(raw):
         stream.feed(raw[position:match.start()])
-        state = dim
-        for code in (int(code) for code in match.group(1).split(b';') if code):
-            if code == 0:
-                state = False
-            elif code == 2:
-                state = True
-            elif code == 22:
-                state = False
+        state = dim_state([int(code) for code in match.group(1).split(b';') if code],
+                          initial=dim) if match.group(1) else dim
         if state != dim:
             events.append({'state': 'on' if state else 'off', 'row': screen.cursor.y + 1,
                            'col': screen.cursor.x + 1, 'start': match.start(),

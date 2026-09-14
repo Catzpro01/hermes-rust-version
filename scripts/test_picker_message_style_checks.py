@@ -8,7 +8,7 @@ from pathlib import Path
 import unittest
 
 from check_picker_message_style import (DELETE_PROMPT, NO_MATCH, PROMPT_INKS, case_problems,
-                                        check, dim_windows, printable)
+                                        check, dim_state, dim_windows, printable)
 from check_picker_footer_position import screen_for
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,6 +48,23 @@ class MessageStyleChecks(unittest.TestCase):
         # message row is what the packet compares pixel by pixel.
         windows = dim_windows(record(MESSAGE_RECORD + '\x1b[30;1H\x1b[0m'))
         self.assertEqual([w['text'] for w in windows], [NO_MATCH])
+
+    def test_colour_parameter_lists_are_not_dim(self):
+        # `2` inside these lists is a palette index or a truecolour component;
+        # reading it as dim made the palette2 selection ink look like a dim
+        # window in the capture phase of a later slice.
+        for codes in [[38, 5, 2], [48, 5, 2], [58, 5, 2], [1, 38, 5, 2], [38, 2, 1, 2, 3]]:
+            with self.subTest(codes=codes):
+                self.assertFalse(dim_state(codes))
+        # A colour-only list never clears an active dim either; only an explicit
+        # reset or normal-intensity code does.
+        for codes in [[38, 5, 2], [1, 38, 5, 2], [48, 5, 2]]:
+            with self.subTest(carried=codes):
+                self.assertTrue(dim_state(codes, initial=True))
+        self.assertFalse(dim_state([0, 38, 5, 2], initial=True))
+        # A genuine standalone 2 after a palette list still turns dim on.
+        self.assertTrue(dim_state([38, 2, 1, 2, 3, 2]))
+        self.assertTrue(dim_state([0, 38, 5, 2, 2]))
 
     def test_normal_intensity_code_clears_dim(self):
         self.assertEqual(dim_windows(record(MESSAGE_RECORD.replace('0;2', '0;2;22'))), [])
