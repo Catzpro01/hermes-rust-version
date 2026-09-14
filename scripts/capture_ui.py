@@ -201,10 +201,13 @@ def seed_rust(home, empty=False):
 
 
 def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
-                 widths=(100,80), timeout=15):
+                 widths=(100,80), timeout=15, pairs=None):
+    """Record cases. By default every name is recorded at every width; pass
+    `pairs` of (name, width) when the case set is width-specific (the size
+    contract records 40 and 39 columns only in their own scenarios)."""
     cases = []
-    for width in widths:
-        for name in names:
+    plan = pairs if pairs else [(name, width) for width in widths for name in names]
+    for name, width in plan:
             with tempfile.TemporaryDirectory(prefix='hermes-ui-'+side+'-') as tmp:
                 home = Path(tmp)
                 if name.startswith('picker') and side == 'rust': seed_rust(home, name=='picker-empty')

@@ -276,3 +276,14 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     trace step now skip `phase == 'reference'`, and `test_ci_workflow.py` asserts
     that guard. Incidentally this run shows the new live gate is RED-shaped: it
     fails on the assertion with no setup error.
+  - [x] Reference-phase attempt 6 (run 34877481167) finally ran the pinned Python
+    picker: the environment fix worked. Findings from its per-case lines:
+    * 40 columns: the reference draws the picker frame (369 bytes, no error) —
+      `Browse sessions — ↑↓ navigate Enter …`, `Title / Preview  Stat Msgs`,
+      `→ second topic  intr 1`, footer `1/2 sessions  d delete`;
+    * 39 columns: `Terminal too small` is what it draws (99 bytes) — and the
+      harness therefore timed out waiting for `Browse sessions`, which is exactly
+      the notice case.
+    So the contract is per width (40 usable, 39 notice), not a cross product: the
+    case/width matrix is now explicit (`PAIRS`), `capture_side` accepts
+    `pairs`, and the live test uses the same pairing.

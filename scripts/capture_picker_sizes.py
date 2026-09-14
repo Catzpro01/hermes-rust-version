@@ -20,7 +20,12 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from capture_ui import PICKER_SIZE_CASES, UPSTREAM, capture_side  # noqa: E402
 
-WIDTHS = (40, 39)
+# The contract is per width: 40 columns is the narrowest usable terminal (the
+# reference draws the picker, clipped), 39 must show the notice. The reference
+# capture settled which is which: at 40 the pinned source draws the frame, at 39
+# it prints `Terminal too small` and waits.
+PAIRS = (('picker-narrow', 40), ('picker-too-small', 39))
+WIDTHS = tuple(width for _, width in PAIRS)
 # The pinned blob this work reads the contract from; the reference tree must
 # carry exactly this file.
 MAIN_PY_SHA256 = '89cde75d388ae3ff0d3512c00a0b4e77fe9f55c438874032b32967b4ab867567'
@@ -62,7 +67,8 @@ def reference(tree, out):
     main_py = tree / 'hermes_cli' / 'main.py'
     digest = hashlib.sha256(main_py.read_bytes()).hexdigest()
     assert digest == MAIN_PY_SHA256, digest
-    cases = capture_side('python', reference=tree, names=PICKER_SIZE_CASES, widths=WIDTHS, timeout=45)
+    cases = capture_side('python', reference=tree, names=PICKER_SIZE_CASES, widths=WIDTHS,
+                         timeout=45, pairs=PAIRS)
     summarize(cases, 'python')
     write(out, {'python_reference': UPSTREAM,
                 'python_version': sys.version,
@@ -74,7 +80,8 @@ def reference(tree, out):
 
 def rust(binary, out):
     binary = Path(binary).resolve()
-    cases = capture_side('rust', binary=binary, names=PICKER_SIZE_CASES, widths=WIDTHS, timeout=45)
+    cases = capture_side('rust', binary=binary, names=PICKER_SIZE_CASES, widths=WIDTHS,
+                         timeout=45, pairs=PAIRS)
     summarize(cases, 'rust')
     write(out, {'rust_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
                 'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),

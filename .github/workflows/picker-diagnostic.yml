@@ -10,14 +10,28 @@ jobs:
     if: github.ref == 'refs/heads/arena/01a0a052-hermes-rust-version'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Per-job QA directory: `runner.temp` is unique per job, so concurrent jobs
+      # on the same machine (self-hosted or hosted) never share site-packages.
+      QA: ${{ runner.temp }}/picker-qa
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
       - name: Official Rust tools
         run: |
-          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
-          rustup default stable
+          if command -v rustup >/dev/null 2>&1; then
+            rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+            rustup default stable
+          fi
+          for tool in rustc cargo rustfmt cargo-clippy; do
+            command -v "$tool" >/dev/null 2>&1 || {
+              echo "this runner is missing $tool; install the stable Rust toolchain with rustfmt and clippy"
+              exit 1
+            }
+          done
+          rustc --version
+          cargo --version
       - name: Verify and apply bounded diagnostic proposal
         id: plan
         run: |
@@ -79,7 +93,10 @@ jobs:
         if: steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input' || steps.plan.outputs.test == 'picker_terminal_size'
         run: |
           cargo build --locked -p hermes-rs --bin hermes-rs
-          python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
+          rm -rf "$QA"
+          python3 -m pip --version || { echo 'python3 -m pip is required on this runner'; exit 1; }
+          python3 -m pip install --target "$QA" pyte==0.8.2 wcwidth==0.8.3 \
+            || python3 -m pip install --target "$QA" --break-system-packages pyte==0.8.2 wcwidth==0.8.3
       - name: Exact frame regression repeated three times
         if: steps.plan.outputs.test != 'picker_footer_position' && steps.plan.outputs.test != 'picker_footer_color' && steps.plan.outputs.test != 'picker_normal_header' && steps.plan.outputs.test != 'picker_filter_header' && steps.plan.outputs.test != 'picker_column_layout' && steps.plan.outputs.test != 'picker_message_style' && steps.plan.outputs.test != 'picker_selection' && steps.plan.outputs.test != 'picker_status_ink' && steps.plan.outputs.test != 'picker_redraw_on_input' && steps.plan.outputs.test != 'picker_terminal_size'
         id: regression
@@ -110,7 +127,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/position-$attempt.json python3 scripts/test_picker_footer_position.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/position-$attempt.json python3 scripts/test_picker_footer_position.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -145,7 +162,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/color-$attempt.json python3 scripts/test_picker_footer_color.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/color-$attempt.json python3 scripts/test_picker_footer_color.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -180,7 +197,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/header-$attempt.json python3 scripts/test_picker_normal_header.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/header-$attempt.json python3 scripts/test_picker_normal_header.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -215,7 +232,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/filter-header-$attempt.json python3 scripts/test_picker_filter_header.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/filter-header-$attempt.json python3 scripts/test_picker_filter_header.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -250,7 +267,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/column-layout-$attempt.json python3 scripts/test_picker_column_layout.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/column-layout-$attempt.json python3 scripts/test_picker_column_layout.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -285,7 +302,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/message-style-$attempt.json python3 scripts/test_picker_message_style.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/message-style-$attempt.json python3 scripts/test_picker_message_style.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -320,7 +337,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/selection-$attempt.json python3 scripts/test_picker_selection.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/selection-$attempt.json python3 scripts/test_picker_selection.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -355,7 +372,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/status-ink-$attempt.json python3 scripts/test_picker_status_ink.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/status-ink-$attempt.json python3 scripts/test_picker_status_ink.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -390,7 +407,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/redraw-$attempt.json python3 scripts/test_picker_redraw_on_input.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/redraw-$attempt.json python3 scripts/test_picker_redraw_on_input.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -425,7 +442,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             set +e
-            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/size-$attempt.json python3 scripts/test_picker_terminal_size.py > "regression-$attempt.log" 2>&1
+            PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/size-$attempt.json python3 scripts/test_picker_terminal_size.py > "regression-$attempt.log" 2>&1
             status=$?
             set -e
             cat "regression-$attempt.log"
@@ -475,8 +492,10 @@ jobs:
         if: steps.plan.outputs.phase == 'reference'
         run: |
           set -o pipefail
-          python3 -m pip install --target /tmp/picker-qa -r scripts/visual-renderer/requirements-banner.txt pyte==0.8.2 wcwidth==0.8.3 2>&1 | tail -2
-          PYTHONPATH=/tmp/picker-qa python3 scripts/capture_picker_sizes.py reference /tmp/hermes-ref evidence/picker-size-reference.json 2>&1 | tee -a reference-prepare.log
+          command -v curl >/dev/null 2>&1 || { echo 'curl is required to fetch the pinned reference'; exit 1; }
+          python3 -m pip install --target "$QA" -r scripts/visual-renderer/requirements-banner.txt pyte==0.8.2 wcwidth==0.8.3 2>&1 | tail -2 \
+            || python3 -m pip install --target "$QA" --break-system-packages -r scripts/visual-renderer/requirements-banner.txt pyte==0.8.2 wcwidth==0.8.3 2>&1 | tail -2
+          PYTHONPATH="$QA" python3 scripts/capture_picker_sizes.py reference /tmp/hermes-ref evidence/picker-size-reference.json 2>&1 | tee -a reference-prepare.log
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -514,44 +533,46 @@ jobs:
           {
             test -z "$(git diff --name-only -- '*.rs')"
             cargo build --locked -p hermes-rs --bin hermes-rs
-            python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
-            PYTHONPATH=/tmp/picker-qa python3 scripts/capture_picker_diagnostic.py target/debug/hermes-rs evidence/picker.json
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_filter_hint.py evidence/picker.json --side rust
+            rm -rf "$QA"
+            python3 -m pip install --target "$QA" pyte==0.8.2 wcwidth==0.8.3 \
+              || python3 -m pip install --target "$QA" --break-system-packages pyte==0.8.2 wcwidth==0.8.3
+            PYTHONPATH="$QA" python3 scripts/capture_picker_diagnostic.py target/debug/hermes-rs evidence/picker.json
+            PYTHONPATH="$QA" python3 scripts/check_picker_filter_hint.py evidence/picker.json --side rust
             if [ "${{ steps.plan.outputs.test }}" != picker_footer_tracks_delete_availability ]; then
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_counter.py evidence/picker.json --side rust
+              PYTHONPATH="$QA" python3 scripts/check_picker_counter.py evidence/picker.json --side rust
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_footer_position ] || [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_position.py evidence/picker.json --side rust
+              PYTHONPATH="$QA" python3 scripts/check_picker_footer_position.py evidence/picker.json --side rust
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_color.py evidence/picker.json --side rust
+              PYTHONPATH="$QA" python3 scripts/check_picker_footer_color.py evidence/picker.json --side rust
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_normal_header.py evidence/picker.json --side rust
+              PYTHONPATH="$QA" python3 scripts/check_picker_normal_header.py evidence/picker.json --side rust
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_filter_header.py evidence/picker.json --side rust
+              PYTHONPATH="$QA" python3 scripts/check_picker_filter_header.py evidence/picker.json --side rust
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_column_layout ] || [ "${{ steps.plan.outputs.test }}" = picker_message_style ]; then
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_column_layout.py evidence/picker.json --side rust
+              PYTHONPATH="$QA" python3 scripts/check_picker_column_layout.py evidence/picker.json --side rust
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_message_style ] || [ "${{ steps.plan.outputs.test }}" = picker_selection ]; then
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_message_style.py evidence/picker.json --side rust
+              PYTHONPATH="$QA" python3 scripts/check_picker_message_style.py evidence/picker.json --side rust
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_selection ] || [ "${{ steps.plan.outputs.test }}" = picker_status_ink ]; then
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_selection.py evidence/picker.json --side rust
+              PYTHONPATH="$QA" python3 scripts/check_picker_selection.py evidence/picker.json --side rust
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_status_ink ]; then
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_status_ink.py evidence/picker.json --side rust
+              PYTHONPATH="$QA" python3 scripts/check_picker_status_ink.py evidence/picker.json --side rust
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_redraw_on_input ]; then
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_redraw_on_input.py evidence/picker.json --side rust
+              PYTHONPATH="$QA" python3 scripts/check_picker_redraw_on_input.py evidence/picker.json --side rust
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_terminal_size ]; then
               python3 scripts/capture_picker_sizes.py rust target/debug/hermes-rs evidence/picker-size-rust.json
               python3 scripts/capture_picker_sizes.py pair evidence/picker-size-rust.json docs/hermes-ui-spec/017/evidence/picker-size-reference/picker-size-reference.json evidence/picker-size-paired.json
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_terminal_size.py evidence/picker-size-paired.json --side python
-              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_terminal_size.py evidence/picker-size-paired.json --side rust
+              PYTHONPATH="$QA" python3 scripts/check_picker_terminal_size.py evidence/picker-size-paired.json --side python
+              PYTHONPATH="$QA" python3 scripts/check_picker_terminal_size.py evidence/picker-size-paired.json --side rust
             fi
             python3 scripts/capture_banner.py export evidence/picker.json
           if [ -f evidence/picker-size-paired.json ]; then

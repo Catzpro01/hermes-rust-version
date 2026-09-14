@@ -15,6 +15,9 @@ import unittest
 from capture_ui import PICKER_SIZE_CASES, capture_side
 from check_picker_terminal_size import NARROW, TOO_SMALL, size_problems
 
+# Each scenario belongs to one width: see capture_picker_sizes.PAIRS.
+PAIRS = (('picker-narrow', NARROW), ('picker-too-small', TOO_SMALL))
+
 
 class PickerTerminalSizeTests(unittest.TestCase):
     def test_size_contract_follows_the_pinned_threshold(self):
@@ -22,7 +25,7 @@ class PickerTerminalSizeTests(unittest.TestCase):
         if not binary.is_file():
             raise RuntimeError('Build the actual CLI first')
         cases = capture_side('rust', binary=binary, names=PICKER_SIZE_CASES,
-                             widths=(NARROW, TOO_SMALL), timeout=45)
+                             widths=(NARROW, TOO_SMALL), timeout=45, pairs=PAIRS)
         output = Path(os.environ['HERMES_PICKER_RECORDING'])
         if output.exists():
             raise RuntimeError('Never overwrite a recording')

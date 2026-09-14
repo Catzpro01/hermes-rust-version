@@ -211,6 +211,16 @@ class CiGateTests(unittest.TestCase):
                                         env=env, capture_output=True, text=True)
                 self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
 
+    def test_runner_environment_is_not_assumed_to_be_fresh(self):
+        """Self-hosted runners persist /tmp and may already have a toolchain."""
+        for name in ("ci.yml", "picker-diagnostic.yml"):
+            text = (ROOT / ".github/workflows" / name).read_text()
+            self.assertIn("QA: ${{ runner.temp }}/picker-qa", text, name)
+            self.assertNotIn("/tmp/picker-qa", text, name)
+            self.assertIn("rm -rf \"$QA\"", text, name)
+            self.assertIn("--break-system-packages", text, name)
+            self.assertIn('command -v "$tool"', text, name)
+
     def test_reference_steps_log_and_are_exported(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
         steps = workflow["jobs"]["diagnose"]["steps"]

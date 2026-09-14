@@ -18,13 +18,20 @@ jobs:
     name: CI gate regression tests
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      # Per-job QA directory: `runner.temp` is unique per job, so concurrent jobs
+      # on the same machine (self-hosted or hosted) never share site-packages.
+      QA: ${{ runner.temp }}/picker-qa
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
       - name: Install QA dependency
-        run: python3 -m pip install PyYAML==6.0.3 pyte==0.8.2 wcwidth==0.8.3
+        run: |
+          python3 -m pip --version || { echo 'python3 -m pip is required on this runner'; exit 1; }
+          python3 -m pip install PyYAML==6.0.3 pyte==0.8.2 wcwidth==0.8.3 \
+            || python3 -m pip install --break-system-packages PyYAML==6.0.3 pyte==0.8.2 wcwidth==0.8.3
       - name: Test workflow gates
         run: |
           python3 scripts/test_ci_workflow.py
@@ -49,13 +56,25 @@ jobs:
     name: fmt + clippy + test
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      # Per-job QA directory: `runner.temp` is unique per job, so concurrent jobs
+      # on the same machine (self-hosted or hosted) never share site-packages.
+      QA: ${{ runner.temp }}/picker-qa
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install official Rust toolchain
         run: |
-          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
-          rustup default stable
+          if command -v rustup >/dev/null 2>&1; then
+            rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+            rustup default stable
+          fi
+          for tool in rustc cargo rustfmt cargo-clippy; do
+            command -v "$tool" >/dev/null 2>&1 || {
+              echo "this runner is missing $tool; install the stable Rust toolchain with rustfmt and clippy"
+              exit 1
+            }
+          done
           rustc --version
           cargo --version
 
@@ -87,17 +106,20 @@ jobs:
         run: |
           set -o pipefail
           cargo build --locked -p hermes-rs --bin hermes-rs 2>&1 | tee picker-position.log
-          python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3 2>&1 | tee -a picker-position.log
-          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-position.json python3 scripts/test_picker_footer_position.py 2>&1 | tee -a picker-position.log
-          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-color.json python3 scripts/test_picker_footer_color.py 2>&1 | tee -a picker-position.log
-          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-header.json python3 scripts/test_picker_normal_header.py 2>&1 | tee -a picker-position.log
-          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-filter-header.json python3 scripts/test_picker_filter_header.py 2>&1 | tee -a picker-position.log
-          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-column-layout.json python3 scripts/test_picker_column_layout.py 2>&1 | tee -a picker-position.log
-          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-message-style.json python3 scripts/test_picker_message_style.py 2>&1 | tee -a picker-position.log
-          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-selection.json python3 scripts/test_picker_selection.py 2>&1 | tee -a picker-position.log
-          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-status-ink.json python3 scripts/test_picker_status_ink.py 2>&1 | tee -a picker-position.log
-          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-redraw-on-input.json python3 scripts/test_picker_redraw_on_input.py 2>&1 | tee -a picker-position.log
-          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-terminal-size.json python3 scripts/test_picker_terminal_size.py 2>&1 | tee -a picker-position.log
+          rm -rf "$QA"
+          python3 -m pip --version || { echo 'python3 -m pip is required on this runner'; exit 1; }
+          python3 -m pip install --target "$QA" pyte==0.8.2 wcwidth==0.8.3 2>&1 | tee -a picker-position.log \
+            || python3 -m pip install --target "$QA" --break-system-packages pyte==0.8.2 wcwidth==0.8.3 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-position.json python3 scripts/test_picker_footer_position.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-color.json python3 scripts/test_picker_footer_color.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-header.json python3 scripts/test_picker_normal_header.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-filter-header.json python3 scripts/test_picker_filter_header.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-column-layout.json python3 scripts/test_picker_column_layout.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-message-style.json python3 scripts/test_picker_message_style.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-selection.json python3 scripts/test_picker_selection.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-status-ink.json python3 scripts/test_picker_status_ink.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-redraw-on-input.json python3 scripts/test_picker_redraw_on_input.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-terminal-size.json python3 scripts/test_picker_terminal_size.py 2>&1 | tee -a picker-position.log
 
       # Diagnostics are emitted as check-run annotations (readable via the
       # REST API even where raw logs/artifacts are not reachable) and as a
