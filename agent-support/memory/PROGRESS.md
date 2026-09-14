@@ -2020,3 +2020,31 @@ cancel-in-progress (commit pengguna `e7e170b`), tes sccache hermetis
 (`ffab4f1`), `rustup update stable` untuk MSRV (`0d53bd9`), setup-python job
 test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
 (`30dc775`). Tidak ada merge; tidak ada pengubahan bukti/evidence lama.
+
+### Wayfinder Spec017 — wawancara ronde 1 + charting peta keputusan (selesai)
+
+- Wawancara breadth-first (grilling) ronde 1 via UI; pengguna memilih semua
+  rekomendasi: (Q1) destinasi = penutupan T12/T13 lengkap + acceptance
+  eksplisit, merge terpisah; (Q2) urutan picker residu → wizard → completion
+  → kelengkapan T12 → acceptance; (Q3) acceptance bertahap per area;
+  (Q4) completion = Rust inline dropdown + bukti terpinn.
+- Prasyarat charting dikerjakan: bagian **Wayfinding operations** ditambahkan
+  ke `agent-support/guidance/issue-tracker.md` (identitas file, parent map,
+  label `wayfinder:*`, Owner-as-claim, Blocked-by, frontier, resolusi
+  bertanggal) — commit `c2b3ade` ter-push.
+- Insiden metadata Git di awal sesi: branch ref lokal sempat mundur ke basis
+  `5617ab8` sementara file kerja utuh; diverifikasi `git diff` worktree vs
+  remote hanya beda dokumen baru, lalu metadata diselaraskan soft (tanpa
+  menyentuh file), commit `00e0151` yang divergen digantikan `c2b3ade` di atas
+  `7639e90`; hook auto-push sempat hilang dan diinstal ulang. Tidak ada
+  force-push; bukti diverifikasi sebelum penyelarasan, sesuai panduan handoff.
+- Peta dibuat: `.scratch/hermes-rs-total-parity/issues/WAYFINDER-spec017-closure.md`
+  (Destination/Notes terisi dari Q1–Q4; Decisions-so-far kosong; fog: detail
+  dropdown, fixture resize/long-list, batas bukti full-CLI; out of scope:
+  OAuth/backend/registry dan merge).
+- Tiket keputusan dibuat dan di-wire: **W1** research referensi resize/
+  long-list/clear-filter (AFK, inline), **W2** kontrak parity resize (grilling,
+  diblok W1), **W3** batas medan nested wizard (grilling), **W4** kontrak
+  referensi completion (grilling). Frontier: W1, W3, W4 (terbuka, tak
+  terblokir, belum di-claim). Sesuai skill: charting tidak meresolusi tiket;
+  maksimal satu tiket non-research per sesi berikutnya.
