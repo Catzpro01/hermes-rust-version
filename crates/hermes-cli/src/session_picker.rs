@@ -436,7 +436,7 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                     let ink = if filter.is_empty() {
                         Color::DarkYellow
                     } else {
-                        Color::Cyan
+                        Color::DarkCyan
                     };
                     execute!(
                         out,
