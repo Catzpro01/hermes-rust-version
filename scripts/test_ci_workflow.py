@@ -242,6 +242,17 @@ class CiGateTests(unittest.TestCase):
                         self.assertIn(context, allowed,
                                       f"{name}:{job_name} uses the {context!r} context at job level")
 
+    def test_only_green_runs_the_validation_and_patch_export(self):
+        """A reference/capture phase must not validate GREEN or export an empty patch."""
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        steps = workflow["jobs"]["diagnose"]["steps"]
+        for name in ("Full GREEN validation", "Export exactly tested proposal"):
+            step = next(s for s in steps if s.get("name") == name)
+            self.assertIn("== 'green'", step["if"], name)
+        log = next(s for s in steps if s.get("name") == "Export exact regression log")
+        self.assertIn("REF_PREPARE", log["env"])
+        self.assertIn("reference_failed", log["run"])
+
     def test_reference_steps_log_and_are_exported(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
         steps = workflow["jobs"]["diagnose"]["steps"]

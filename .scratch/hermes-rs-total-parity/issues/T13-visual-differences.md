@@ -295,3 +295,21 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     `QA="${RUNNER_TEMP:-/tmp}/picker-qa"` at the top of each step that uses it, and
     `test_ci_workflow.py` now rejects any job-level use of a context GitHub does not
     allow there (25 tests).
+  - [x] Reference-phase attempt 7 (run 34878644103) succeeded and the retained
+    records are gold:
+    * `picker-narrow-40x30`: 368 bytes, the reference enters the alternate screen
+      (`ESC[?1049h`) and draws the whole picker (hint, `Title / Preview  Stat  Msgs`,
+      `→ second topic  intr  1`, footer `1/2 sessions  d delete`);
+    * `picker-too-small-39x30`: 99 bytes, the reference still enters the alternate
+      screen, clears it and writes plain `Terminal too small` at row 1 with no
+      attributes, then waits — `exit_code_at_snapshot` is None, so it had not
+      returned before the key.
+    The bundle is retained at `docs/hermes-ui-spec/017/evidence/picker-size-reference/`
+    (sha256 2c84be67…), and the checker passes on it 2/2 (the local gate now also
+    pins that narrow lines are clipped, never wrapped, and that hint/header/footer
+    keep their rows).
+  - [x] Annotation hygiene found in that same run: the reference export shouted
+    "error" even on success (it printed whenever the phase was `reference`), the
+    full-validation annotation fired on the benign `error: interrupted` SIGINT
+    line, and the GREEN-only steps (validation + empty tested-patch export) ran
+    during the reference phase. All three are fixed and covered by tests.

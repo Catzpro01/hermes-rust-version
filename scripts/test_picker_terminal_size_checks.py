@@ -20,7 +20,9 @@ def record(body, width, exited=False):
 
 
 FRAME = ('\x1b[1;1H  Browse sessions — ↑↓ navigate  Enter select  Type to filter  Esc quit'
-         '\x1b[2;1H   Title / Preview                            Stat    Msgs  Active')
+         '\x1b[2;1H   Title / Preview       Stat    Msgs'
+         '\x1b[4;1H → second topic          intr       1'
+         '\x1b[30;1H  1/2 sessions   d delete')
 NOTICE = '\x1b[1;1HTerminal too small'
 
 
@@ -42,6 +44,19 @@ class TerminalSizeChecks(unittest.TestCase):
 
     def test_narrow_screen_draws_the_frame(self):
         self.assertEqual(size_problems(record(FRAME, NARROW), NARROW), [])
+
+    def test_wrapped_narrow_screen_is_reported(self):
+        # A line longer than the terminal wraps and pushes the next row down,
+        # which is what `addnstr(..., max_x - 1, ...)` prevents in the reference.
+        wrapped = record('\x1b[1;1H  Browse sessions — ↑↓ navigate  Enter select  Type to filter  '
+                         'Esc quit\x1b[2;1H   Title / Preview       Stat    Msgs', NARROW)
+        problems = size_problems(wrapped, NARROW)
+        self.assertTrue(any('clipped, never wrapped' in p for p in problems), problems)
+
+    def test_missing_footer_in_narrow_screen_is_reported(self):
+        problems = size_problems(record('\x1b[1;1H  Browse sessions\x1b[2;1H   Title / Preview',
+                                        NARROW), NARROW)
+        self.assertTrue(any("row 30 must hold" in p for p in problems), problems)
 
     def test_refusing_a_usable_terminal_is_reported(self):
         problems = size_problems(record(NOTICE, NARROW), NARROW)

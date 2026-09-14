@@ -522,13 +522,13 @@ jobs:
           export_annotations(Path('evidence/picker-size-reference.json'), 0, 'size reference bundle')
           PY
       - name: Full GREEN validation
-        if: steps.plan.outputs.phase != 'red'
+        if: steps.plan.outputs.phase == 'green'
         run: |
           exec > >(tee full-validation.log) 2>&1
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace --no-fail-fast
       - name: Export exactly tested proposal
-        if: steps.plan.outputs.phase != 'capture' && !((steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input' || steps.plan.outputs.test == 'picker_terminal_size') && steps.plan.outputs.phase == 'red')
+        if: steps.plan.outputs.phase == 'green' && !((steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input' || steps.plan.outputs.test == 'picker_terminal_size')
         run: |
           mkdir -p evidence
           git diff --binary -- '*.rs' > evidence/tested.patch
@@ -593,6 +593,8 @@ jobs:
         env:
           CAPTURE: ${{ steps.capture.outcome }}
           PHASE: ${{ steps.plan.outputs.phase }}
+          REF_PREPARE: ${{ steps.prepare.outcome }}
+          REF_RECORD: ${{ steps.record.outcome }}
         run: |
           python3 - <<'PY'
           import os
@@ -609,11 +611,13 @@ jobs:
               tail=lines[-40:]
               text='\n'.join(signals[-20:] + ['--- last 40 lines ---'] + tail)
               print('::error title=picker capture verify::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
+          reference_failed = (os.environ.get('REF_PREPARE') not in (None, 'success')
+                              or os.environ.get('REF_RECORD') not in (None, 'success'))
           p=Path('reference-child.log')
-          if p.exists() and os.environ.get('PHASE') == 'reference':
+          if p.exists() and os.environ.get('PHASE') == 'reference' and reference_failed:
               print('::error title=picker reference child output::' + p.read_text()[-3000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
           p=Path('reference-prepare.log')
-          if p.exists() and os.environ.get('PHASE') == 'reference':
+          if p.exists() and os.environ.get('PHASE') == 'reference' and reference_failed:
               lines=p.read_text().splitlines()
               signals=[line for line in lines if line.startswith(('FAIL','ERROR','AssertionError','RuntimeError'))
                        or 'Traceback' in line or 'Error' in line or 'error' in line]
@@ -626,7 +630,8 @@ jobs:
               lines=p.read_text().splitlines()
               signals=[]
               for i,line in enumerate(lines):
-                  if 'panicked at' in line or line.startswith('error:'):
+                  if 'panicked at' in line or (line.startswith('error:')
+                                               and 'interrupted' not in line):
                       signals.extend(lines[max(0,i-1):i+7])
               if signals:
                   text='\n'.join(signals)

@@ -60,6 +60,15 @@ def size_problems(record, width):
                 problems.append(f'{width} columns must draw the picker frame; {marker!r} is missing')
         if NOTICE in text:
             problems.append(f'{width} columns is usable and must not show the {NOTICE!r} notice')
+        # The reference draws with `addnstr(..., max_x - 1, ...)`, so a line is
+        # clipped, never wrapped: the frame keeps its rows even when the fixed
+        # columns are wider than the terminal.
+        for row, expected in ((1, 'Browse sessions'), (2, 'Title / Preview'),
+                              (record['height'], 'sessions')):
+            line = display[row - 1]
+            if expected not in line:
+                problems.append(f'row {row} must hold the {expected!r} part of the frame, '
+                                f'found {line!r} (lines are clipped, never wrapped)')
     return problems
 
 
