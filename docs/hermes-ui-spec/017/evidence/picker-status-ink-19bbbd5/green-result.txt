@@ -1,0 +1,24 @@
+GREEN run 34871381451 (picker-diagnostic, headSha 288cdc3, conclusion success)
+
+Verify and apply bounded diagnostic proposal: success (source ac713f9a, patch
+e88347c8, 6007 bytes; the runner applies it to the committed source)
+Format and type check, build of the actual CLI, and the three-times live regression: success
+Full GREEN validation: success (clippy -D warnings + whole workspace suite)
+green actual CLI regression verified three times
+test_status_tag_ink_matches_the_pinned_mapping (__main__.PickerStatusInkTests.test_status_tag_ink_matches_the_pinned_mapping) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+rust picker-filter 100 CAPTURED_NOT_REVIEWED
+rust picker-delete 100 CAPTURED_NOT_REVIEWED
+rust picker-normal 80 CAPTURED_NOT_REVIEWED
+rust picker-filter 80 CAPTURED_NOT_REVIEWED
+rust picker-delete 80 CAPTURED_NOT_REVIEWED
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 19.464s
+
+OK
+
+Exported tested proposal: sha256=73d0322e913ecf5b80493f4f6725eb802ae3542b0912bf9dc40a8bb55312ffed; bytes=6109
+The exported patch is the bound request patch after the runner's `cargo fmt --all`
+(the only difference is rustfmt's line wrapping of two test calls), and it is the patch
+applied to the tree.

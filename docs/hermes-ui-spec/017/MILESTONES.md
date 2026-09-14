@@ -162,6 +162,20 @@ dibandingkan dan pixel-identik. Tidak ada normalisasi warna/geometry.
 - Kedua regresi CLI (posisi dan warna) sekarang wajib lolos di CI biasa.
 - [Laporan dan seluruh gambar](evidence/picker-color-ae220ff/REPORT.md).
 
+### Slice tinta kolom status picker (fix `1781404`, capture `19bbbd5`)
+
+- Sumber peta warna: sumber upstream terpinned (`hermes_cli/main.py` di `63279301`)
+  disimpan bersama provenance di `evidence/upstream-status-attr/`; §F sebelumnya hanya
+  menyebut `_status_attr` tanpa pemetaan.
+- Lengkap: RED `34870302745` → GREEN `34871381451` → capture `34871743793` →
+  CI `34871741338` SUCCESS. Sepuluh checker PASS pada sumber ter-commit.
+- Paket [laporan](evidence/picker-status-ink-19bbbd5/REPORT.md):
+  `STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL` — 34/34 region kontrol identik,
+  4 region span tag dicatat sebagai perbedaan yang dinyatakan, delta sel hanya baris 5
+  (20 sel: fg default→2 + mode palet256, teks tetap).
+- Dua kegagalan jujur (underflow `n - 3` pada patch pertama, geometri unit test pada
+  percobaan kedua) dan satu flake start-up PTY tercatat di `attempts-result.txt`.
+
 ### Sisa milestone berikutnya
 
 1. Styling header filter/kolom, seleksi, prompt hapus/no-match dan sisa tata letak picker —

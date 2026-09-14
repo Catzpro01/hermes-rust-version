@@ -417,3 +417,42 @@ Picker reference: hermes_cli/sessions_cmd.py wrapper and main.py
 _session_browse_picker. Wizard: setup.py run_setup_wizard; Rust src/wizard/,
 with tests/wizard_e2e.rs. Inventory every implemented step before capture.
 Preserve Python data; no new features, independent verdict, closure or merge.
+
+## 2026-09-14 — picker V2 cycle 5 delivered (status-tag ink)
+
+Chain: `1781404` (fix, source `804b80f0…`) → `19bbbd5` (capture request) →
+packet `picker-status-ink-19bbbd5`. New live gate `picker_status_ink` (8th live
+gate; plan entry 8 in picker-diagnostic, 3× regression + trace retention; also
+an ordinary CI gate) pins the five-cell status tag on non-cursor rows:
+`done` pair1 green, `intr` pair2 yellow, `err` pair5 red, `empty` pair4 palette8,
+other A_NORMAL, never bold, at `3 + name_width + 2` (43..48 @100, 25..30 @80).
+The mapping came from the pinned upstream source now kept at
+`docs/hermes-ui-spec/017/evidence/upstream-status-attr/` (`hermes_cli/main.py`
+@63279301, blob `8281cbdd…`, sha `89cde75d…`), because §F named `_status_attr`
+without it. RED 34870302745 → GREEN 34871381451 (request patch `e88347c8…`
+6007 B; tested/exported patch `73d0322e…` 6109 B after the runner's rustfmt) →
+capture 34871743793 (bundle `119e299b…` 204818 B; ten checkers PASS, 3× verified)
+→ CI 34871741338 SUCCESS on the fixed source. Audit
+`STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL`: 34/34 control regions equal,
+4 tag-span regions recorded as declared differences (tag word is fixture data),
+cell delta only row 5 in normal/delete @both widths (20 cells: fg −1→2,
+fm 0→33554432, text unchanged), python records/cells unchanged, 6 PNGs identical.
+
+Honest failures kept: GREEN attempt 1 `34870642732` panicked (usize underflow
+`n - 3` on the blank separator row, exit 101 — the panic text is only in the PTY
+bytes, recoverable from the trace annotation); GREEN attempt 2 `34871081677`
+passed the live gate 3× but failed a new unit test that mixed 20-column geometry
+with 100-column offsets; CI `34871743697` (capture commit) hit the known PTY
+start-up flake (screen fully drawn, `missing readiness/timeout at stage 0` after
+207901 bytes) — the picker repaints every poll timeout, so the harness's
+quiet-or-stable snapshot rule can lose the race under load; that repaint
+deviation is queued as the next picker cycle. Also solved: cycle 9's
+"unexplained" GREEN `34866468131` was a real live-gate failure on the committed
+source, masked because `ci.yml`'s picker step is `continue-on-error: true` (step
+list shows success, `steps.picker.outcome` is failure, the aggregate step fails
+the job) — read the `picker terminal` annotation.
+
+Next: picker resize/long-list/clear-filter + the repaint deviation, then the
+`Active`/`ID` documented adaptations, then wizard V1 (14 scenarios / 5 groups)
+and the completion-dropdown product decision. Still no whole-picker PASS, new
+adaptation, acceptance, or merge.

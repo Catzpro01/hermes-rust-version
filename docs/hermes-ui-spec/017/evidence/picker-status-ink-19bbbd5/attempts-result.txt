@@ -1,0 +1,27 @@
+Failed attempts on 2026-09-14, kept because they changed the outcome
+
+1. GREEN attempt 1, run 34870642732 (headSha 9690e27): every case reported
+   `process exit 101 at stage 0`. The patched binary panicked with `attempt to subtract with
+   overflow` at session_picker.rs:526: the blank separator row reaches the same redraw branch
+   as body rows and `n - 3` underflows for `n == 2`. The panic text was only recoverable from
+   the retained trace annotation (sha256 bc0b233a..., 18703 bytes), because the PTY bytes carry
+   the Rust panic message while the harness only reports the exit code. Fixed by guarding
+   `n < 3`.
+2. GREEN attempt 2, run 34871081677 (headSha af886d1): the live gate passed all six cases and
+   `green actual CLI regression verified three times`, but the new unit test sliced a
+   20-column row at the 100-column tag offsets ("go   " vs "done "), so step 24 failed on that
+   assertion alone. Test corrected to format each row with the width it asserts.
+3. Ordinary CI 34871743697 (headSha 19bbbd5, the capture request commit) failed in the
+   footer-colour gate with `missing readiness/timeout at stage 0: Browse sessions (207901
+   bytes)`. The diagnostic annotation shows the screen was fully drawn (hint, column header,
+   cursor row, footer), so this is the known PTY startup flake, not a product failure: the
+   Rust picker repaints the whole frame every poll timeout, so the harness's "quiet or stable"
+   snapshot rule can lose the race under load. The same commit's capture run and the CI run on
+   the identical fixed source (34871741338) are green. Recorded as a flake with its evidence;
+   the sustained-repaint deviation itself is queued as the next picker cycle.
+4. Ordinary CI runs during the RED window (34870302516, 34870642767, 34871081337, 34871381217)
+   are red on purpose: the committed source is unfixed until the tested patch is applied, and
+   the picker step is `continue-on-error: true`, so the step list shows success while
+   `steps.picker.outcome` is failure and the final aggregate step fails the job. That is also
+   what cycle 9's "unexplained" GREEN run 34866468131 was; read the `picker terminal`
+   annotation, not the step list.

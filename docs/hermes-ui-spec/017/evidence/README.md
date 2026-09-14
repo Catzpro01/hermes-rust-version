@@ -141,6 +141,16 @@ Signed artifact ZIP gagal di sandbox; tidak ada bagian hilang yang diabaikan.
   tidak adanya modifikasi lokal historis pada VM.
 - Semua bukti akhir harus ditinjau user sebelum closure. Tidak ada izin merge.
 
+## Paket terbaru
+
+- [picker-status-ink-19bbbd5](picker-status-ink-19bbbd5/REPORT.md) — tinta tag status
+  (slot 2/3/1/8 sesuai pemetaan upstream), audit
+  `STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL`; 34 region kontrol identik, 4 region
+  span tag sebagai perbedaan yang dinyatakan, 10 verifikasi PNG, 20 round trip raw/cast.
+- Paket-paket picker sebelumnya tetap berlaku sebagai kontrol:
+  `picker-selection-b4cb408`, `picker-message-style-fd674dc`,
+  `picker-column-layout-b732d22`, `picker-filter-header-9cc5cb4`, `picker-header-7fef514`.
+
 ## Reproduksi
 
 Lihat [instruksi tooling](../../../../scripts/visual-renderer/README.md).

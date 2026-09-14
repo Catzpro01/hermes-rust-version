@@ -1,0 +1,123 @@
+{
+  "status": "STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL",
+  "source": "19bbbd5c3309efc50b4d9af0ee02641193f59c92",
+  "fix_commit": "1781404",
+  "raw_cast_roundtrips": 20,
+  "png_hash_checks": 10,
+  "python_records_and_cells_unchanged": true,
+  "renderer_script_sha256": "201091eef5007e9a45889da7b4725b658ce39df1bf977a48677e435df9f9c074",
+  "renderer_settings_match_prior": true,
+  "checker_runs": [
+    "check_picker_status_ink:python:6",
+    "check_picker_status_ink:rust:6",
+    "check_picker_selection:python:6",
+    "check_picker_selection:rust:6",
+    "check_picker_message_style:python:6",
+    "check_picker_message_style:rust:6",
+    "check_picker_column_layout:python:4",
+    "check_picker_column_layout:rust:4",
+    "check_picker_footer_position:rust:10",
+    "check_picker_footer_color:rust:6",
+    "check_picker_normal_header:rust:4",
+    "check_picker_filter_header:rust:4",
+    "check_picker_counter:rust:12",
+    "check_picker_filter_hint:rust:6"
+  ],
+  "checker_failures": 0,
+  "encoding_modes": {
+    "python": "palette16",
+    "rust": "palette256"
+  },
+  "tested_patch": {
+    "sha256": "73d0322e913ecf5b80493f4f6725eb802ae3542b0912bf9dc40a8bb55312ffed",
+    "bytes": 6109
+  },
+  "request_patch": {
+    "sha256": "e88347c88d89f19dcc48f97d1ff7ec46dc9420c07875d076c91f7e44a2fd56fb",
+    "bytes": 6007,
+    "note": "bound request patch; tested.patch is the same diff after the runner's cargo fmt --all"
+  },
+  "changed_rows_1_based": {
+    "picker-normal-100x30": [
+      5
+    ],
+    "picker-filter-100x30": [],
+    "picker-no-match-100x30": [],
+    "picker-delete-100x30": [
+      5
+    ],
+    "picker-empty-100x30": [],
+    "picker-normal-80x30": [
+      5
+    ],
+    "picker-filter-80x30": [],
+    "picker-no-match-80x30": [],
+    "picker-delete-80x30": [
+      5
+    ],
+    "picker-empty-80x30": []
+  },
+  "status_tag_cells_changed": 20,
+  "attribute_deltas": {
+    "status_tag_ink": 20
+  },
+  "unchanged_paired_pngs": [
+    "picker-empty-100x30-bottom.png",
+    "picker-empty-80x30-bottom.png",
+    "picker-filter-100x30-bottom.png",
+    "picker-filter-80x30-bottom.png",
+    "picker-no-match-100x30-bottom.png",
+    "picker-no-match-80x30-bottom.png"
+  ],
+  "pixel_equal_regions": [
+    "picker-delete-100x30:column header row",
+    "picker-delete-100x30:delete-confirm prompt row",
+    "picker-delete-100x30:selected row up to the status column",
+    "picker-delete-100x30:unselected row up to the status column",
+    "picker-delete-80x30:column header row",
+    "picker-delete-80x30:delete-confirm prompt row",
+    "picker-delete-80x30:selected row up to the status column",
+    "picker-delete-80x30:unselected row up to the status column",
+    "picker-empty-100x30:empty-store message row",
+    "picker-empty-80x30:empty-store message row",
+    "picker-filter-100x30:filter help header row",
+    "picker-filter-100x30:footer row control",
+    "picker-filter-100x30:selected row up to the status column",
+    "picker-filter-80x30:filter help header row",
+    "picker-filter-80x30:footer row control",
+    "picker-filter-80x30:selected row up to the status column",
+    "picker-no-match-100x30:column header row",
+    "picker-no-match-100x30:footer row control",
+    "picker-no-match-100x30:no-match message row",
+    "picker-no-match-80x30:column header row",
+    "picker-no-match-80x30:footer row control",
+    "picker-no-match-80x30:no-match message row",
+    "picker-normal-100x30:blank separator row",
+    "picker-normal-100x30:column header row",
+    "picker-normal-100x30:footer row control",
+    "picker-normal-100x30:hint row control",
+    "picker-normal-100x30:selected row up to the status column",
+    "picker-normal-100x30:unselected row up to the status column",
+    "picker-normal-80x30:blank separator row",
+    "picker-normal-80x30:column header row",
+    "picker-normal-80x30:footer row control",
+    "picker-normal-80x30:hint row control",
+    "picker-normal-80x30:selected row up to the status column",
+    "picker-normal-80x30:unselected row up to the status column"
+  ],
+  "pixel_differing_regions": [],
+  "declared_differing_regions": [
+    "picker-delete-100x30:unselected row status tag",
+    "picker-delete-80x30:unselected row status tag",
+    "picker-normal-100x30:unselected row status tag",
+    "picker-normal-80x30:unselected row status tag"
+  ],
+  "declared_difference_reason": "status tag word is fixture data (retained Python session is interrupted, Rust fixture complete); the ink at this span is pinned by check_picker_status_ink.py on both sides and by the unit tests for the other three mappings",
+  "still_open_outside_regions": [
+    "the live capture exercises only the complete->done mapping; interrupted/error/empty inks are pinned by the upstream source, the unit tests and the checker fixtures",
+    "Active/ID column content is a documented adaptation",
+    "resize, long lists and clear-filter are unproved by these fixed-size fixtures",
+    "the picker repaints every poll timeout instead of only after a key; queued as the next picker cycle"
+  ],
+  "normalization": "none"
+}

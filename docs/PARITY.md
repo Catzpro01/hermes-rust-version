@@ -425,6 +425,45 @@ Still open in the picker: the status-column ink (no pinned evidence for the Rust
 `done` value), the documented `Active`/`ID` content, and resize/long-list/
 clear-filter. No whole-picker PASS, adaptation, acceptance or merge.
 
+### Status-tag ink slice delivered at1781404 (capture 19bbbd5)
+
+The five-cell status tag on rows that are not the cursor now carries the ink the
+pinned upstream source assigns: `complete`/`done` pair1 green,
+`interrupted`/`intr` pair2 yellow, `error`/`err` pair5 red, `empty` pair4
+palette8, any other tag A_NORMAL, never bold, drawn at
+`3 + name_width + 2`. §F named `_status_attr` without its mapping, so the
+mapping was read from the pinned source (`hermes_cli/main.py` at `63279301`,
+blob `8281cbdd…`, sha256 `89cde75d…`) and kept with provenance under
+`docs/hermes-ui-spec/017/evidence/upstream-status-attr/`; the retained capture
+corroborates it (`intr` measured in slot 3, delete prompt in slot 1). Chain:
+RED 34870302745 → GREEN 34871381451 (6 007-byte request patch, 6 109-byte tested
+patch after the runner's `cargo fmt --all`; fmt/check, clippy `-D warnings`,
+whole suite) → capture 34871743793 (ten cases; ten checkers green on the
+committed source) → ordinary CI 34871741338 SUCCESS. Packet
+`docs/hermes-ui-spec/017/evidence/picker-status-ink-19bbbd5/REPORT.md`.
+
+34 of 34 control regions are still pixel-identical, six PNGs of the cases
+without an unselected row are byte-identical, and the cell delta against the
+previous packet is only row 5 of the normal and delete scenarios at both widths
+(20 cells: foreground default to slot 2 plus palette256 mode, text unchanged;
+Python records and cells unchanged). The four new regions that cover the tag span
+are recorded as declared differences, not parity regions: the tag word is fixture
+data (the retained Python session is interrupted, the Rust fixture complete), so
+their glyphs differ by 270 pixels each while the ink is pinned by the checker on
+both sides.
+
+Two honest failures are in the packet's `attempts-result.txt`: the first GREEN
+patch underflowed `n - 3` on the blank separator row and panicked (exit 101,
+recovered from the retained trace annotation), and the second attempt's new unit
+test mixed 20-column geometry with 100-column offsets. A CI run on the capture
+commit also hit the known PTY start-up flake; the rustfmt-style gate stayed green
+on the identical fixed source and the flake is recorded with its annotation.
+
+Still open in the picker: the live capture exercises only `complete`/`done`, the
+documented `Active`/`ID` content, resize/long-list/clear-filter, and the
+sustained repaint the reference does not do. No whole-picker PASS, adaptation,
+acceptance or merge.
+
 ### Prompt/message slice delivered at549fc8d (capture fd674dc)
 
 The delete-confirm prompt is now drawn with palette slot 1 plus bold and the

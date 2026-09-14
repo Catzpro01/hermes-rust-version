@@ -220,3 +220,15 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     rustfmt line wrapping the runner applies; it is now applied to the tree.
     (The earlier commit message quoted `3b7f…`; the correct bound digest is
     `e88347c8…`.)
+  - [x] Cycle 5 (status-tag ink) delivered: fix `1781404`, capture `19bbbd5`,
+    packet `docs/hermes-ui-spec/017/evidence/picker-status-ink-19bbbd5/`
+    (79 files) with audit `STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL` —
+    10 checkers PASS on the committed source, 34/34 control regions equal,
+    4 declared tag-span differences, 20 changed cells (row 5 only).
+  - [ ] Cycle 6 candidates (in order): (a) the picker repaints the whole frame
+    every poll timeout while the reference redraws only after a key
+    (`_curses_browse` blocks in `stdscr.getch()`) — this is also what makes the
+    PTY gates flaky; (b) resize/long-list/clear-filter behaviour; (c) the
+    documented `Active`/`ID` adaptations; (d) a fixture that exercises the
+    `interrupted`/`error`/`empty` inks in a live capture (today only
+    `complete`/`done` is captured).

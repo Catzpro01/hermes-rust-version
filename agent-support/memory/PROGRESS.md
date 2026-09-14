@@ -1784,3 +1784,42 @@ Siklus TDD keempat untuk picker V2; sumber ter-commit `b4cb408`, fix `ee11541`:
 Berikutnya: warna kolom status (butuh bukti terpinn lebih dulu), lalu resize/
 daftar panjang/clear-filter, kemudian wizard V1 dan keputusan produk dropdown
 completion. Tidak ada adaptasi baru, PASS seluruh picker, acceptance, atau merge.
+
+### Slice picker: tinta kolom status (S1–S5 selesai)
+
+Siklus TDD kelima untuk picker V2; fix `1781404`, sumber ter-commit `19bbbd5`:
+
+- Bukti terpinn dicari lebih dulu (§F hanya menyebut `_status_attr` tanpa peta):
+  sumber upstream pada commit `63279301` (`hermes_cli/main.py`, blob `8281cbdd…`,
+  sha256 `89cde75d…`, 625.460 byte) disimpan bersama provenance di
+  `docs/hermes-ui-spec/017/evidence/upstream-status-attr/`. Pemetaannya:
+  complete→`done` pair1 green, interrupted→`intr` pair2 yellow, error→`err` pair5
+  red, empty→`empty` pair4 palette8, lainnya A_NORMAL, di `3 + name_width + 2`,
+  lima sel, hanya pada baris non-kursor. Capture lama mengonfirmasi (`intr` slot 3,
+  prompt delete slot 1).
+- Gate baru `picker_status_ink` (checker + tes CLI + 12 tes pendukung), terpasang di
+  `picker-diagnostic` (entri plan kedelapan, regresi 3×, retensi trace) dan di
+  `ci.yml` sebagai gate biasa kedelapan.
+- RED 34870302745: gagal 3× dengan assertion pemetaan, tanpa error setup.
+- GREEN 34871381451 setelah dua percobaan gagal yang jujur: patch pertama panik
+  `attempt to subtract with overflow` (`n − 3` pada baris pemisah, exit 101 —
+  teks panik dipulihkan dari anotasi trace `bc0b233a…`), percobaan kedua gagal di
+  unit test yang mencampur geometri 20 kolom dengan offset 100 kolom. Patch final
+  6.007 byte `e88347c8…`; yang diuji ekspor 6.109 byte `73d0322e…` (bedanya hanya
+  pembungkusan `cargo fmt`).
+- Capture 34871743793: 10 kasus, **sepuluh** checker PASS, verifikasi 3×; bundle
+  `119e299b…` 204.818 byte. CI pada sumber tetap `1781404` SUCCESS
+  (`34871741338`); CI pada commit capture kena flake start-up PTY yang sudah
+  dikenal (`34871743697`, layar penuh tapi `stage 0` timeout — dicatat, bukan
+  sukses senyap).
+- Paket `docs/hermes-ui-spec/017/evidence/picker-status-ink-19bbbd5/`: `verify.py`
+  → audit `STATUS_TAG_INK_FIXED_ALL_CONTROL_REGIONS_EQUAL` — 20 round trip
+  raw/cast, 10 hash PNG, 14 jalan checker, **34/34 region kontrol identik**,
+  6 PNG byte-identik, delta sel hanya baris 5 pada normal/delete kedua lebar
+  (20 sel: fg default→2 + mode palet256, teks tetap), dan 4 region span tag
+  dicatat sebagai **perbedaan yang dinyatakan** (kata tag adalah data fixture).
+
+Berikutnya: siklus picker yang tersisa — perilaku resize/daftar panjang/clear-filter
+dan penyimpangan repaint (referensi hanya menggambar setelah tombol), lalu adaptasi
+`Active`/`ID`, kemudian wizard V1 dan keputusan produk dropdown completion. Tidak ada
+adaptasi baru, PASS seluruh picker, acceptance, atau merge.

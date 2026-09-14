@@ -1,0 +1,27 @@
+Capture run 34871743793 (picker-diagnostic, headSha 19bbbd5, conclusion success)
+
+Capture committed picker and verify original symptom: success
+  clean tree asserted, CLI built, capture_picker_diagnostic.py wrote ten cases, then the
+  hint, counter, footer-position, footer-color, normal-header, filter-header,
+  column-layout, prompt/message-style, selected-row and status-tag checkers all passed on
+  the committed source
+capture actual CLI regression verified three times
+test_status_tag_ink_matches_the_pinned_mapping (__main__.PickerStatusInkTests.test_status_tag_ink_matches_the_pinned_mapping) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+rust picker-filter 100 CAPTURED_NOT_REVIEWED
+rust picker-delete 100 CAPTURED_NOT_REVIEWED
+rust picker-normal 80 CAPTURED_NOT_REVIEWED
+rust picker-filter 80 CAPTURED_NOT_REVIEWED
+rust picker-delete 80 CAPTURED_NOT_REVIEWED
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 15.482s
+
+OK
+
+Committed capture bundle: sha256=119e299b47dbe6878162ba394e686a2619a95bec70935e1246fdc883f6c24d30; bytes=204818
+Retained capture trace: sha256=8cfa0cba85526794e3a2ada804e339174f54d2ba846335f3019f05a541c482a3; bytes=213278
+Ordinary CI on the fixed source 34871741338 (headSha 1781404): success
+  fmt=success clippy=success test=success picker=success
+The `error: interrupted` line inside the full-validation annotation is the SIGINT smoke
+test (`smoke_sigint_returns_130 ... ok`), not a failure.
