@@ -207,10 +207,10 @@ def steps_for(name, side):
                 ('@exit', None)]
     if name == 'picker-clear-filter-esc':
         return [('Browse sessions', 'sec'), ('filter: sec', '\x1b'),
-                ('2/2 sessions', '\x1b'), ('@exit', None)]
+                ('1/2 sessions', '\x1b'), ('@exit', None)]
     if name == 'picker-clear-filter-backspace':
         return [('Browse sessions', 'sec'), ('filter: sec', '\x7f\x7f\x7f'),
-                ('2/2 sessions', '\x1b'), ('@exit', None)]
+                ('1/2 sessions', '\x1b'), ('@exit', None)]
     if name.startswith('completion-'):
         text = {'completion-command':'/mod', 'completion-subcommand':'/skills ', 'completion-alternatives':'/s'}[name]
         return [('❯' if py else 'Welcome to Hermes Agent!', text+'\t\t'), (text.rstrip(), None)]

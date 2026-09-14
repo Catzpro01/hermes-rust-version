@@ -252,9 +252,10 @@ def check_clear_filter(record, ins, screens, chunks, cleared_key):
         problems.append(f'after clearing the filter the top row must be the normal '
                         f'hint, got {after[0].strip()!r}')
     footer = footer_of(after)
-    if '2/2 sessions' not in footer:
+    if '1/2 sessions' not in footer:
         problems.append(f'after clearing the filter the footer must show the full '
-                        f'list (2/2 sessions), got {footer.strip()!r}')
+                        f'list with the cursor back on item 1 (1/2 sessions), '
+                        f'got {footer.strip()!r}')
     if '(filtered from' in footer:
         problems.append('after clearing the filter the footer still reports a filter')
     top = body_rows(after)[0]

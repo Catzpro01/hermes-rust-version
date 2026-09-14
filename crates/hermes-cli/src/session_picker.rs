@@ -506,15 +506,8 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
             use crossterm::terminal::ClearType;
             let mut out = std::io::stdout();
             execute!(out, cursor::MoveTo(0, 0), terminal::Clear(ClearType::All))?;
-            let frame = frame_lines(
-                &rows,
-                &shown,
-                cursor_idx,
-                scroll_offset,
-                &filter,
-                cols,
-                max_rows,
-            );
+            let frame =
+                frame_lines(&rows, &shown, cursor_idx, scroll_offset, &filter, cols, max_rows);
             for (n, line) in frame.iter().enumerate() {
                 let is_footer = n == frame.len() - 1;
                 // `addnstr(..., max_x - 1, ...)` in the reference: clip, never wrap.
@@ -619,10 +612,20 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
             out.flush()?;
             dirty = false;
         }
-        if !event::poll(std::time::Duration::from_millis(100))? {
-            continue;
-        }
-        match event::read()? {
+        // The reference re-reads its geometry at the top of every loop turn.
+        // Crossterm surfaces SIGWINCH as `Event::Resize`; as a fallback also
+        // poll the size on a wait timeout, so a missed signal costs at most
+        // one 100 ms tick instead of leaving a stale frame (and the
+        // redraw-on-input cadence is untouched: no size change, no repaint).
+        let event = if !event::poll(std::time::Duration::from_millis(100))? {
+            match terminal::size() {
+                Ok(size) if size != (cols, term_rows) => Event::Resize(size.0, size.1),
+                _ => continue,
+            }
+        } else {
+            event::read()?
+        };
+        match event {
             Event::Resize(width, height) => {
                 cols = width;
                 term_rows = height;

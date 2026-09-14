@@ -43,7 +43,11 @@ def two_session_frame(cursor, filtered=False, hint=HINT):
     rows = {0: hint, 1: COL, 2: ''}
     for i, name in enumerate(names):
         rows[3 + i] = session_row(name, selected=i == cursor)
-    footer = '  1/2 sessions (filtered from 2)' if filtered else '  2/2 sessions   d delete'
+    if filtered:
+        footer = '  1/2 sessions (filtered from 2)'
+    else:
+        # The reference footer counter is cursor+1/total, not the list size.
+        footer = f'  {cursor + 1}/2 sessions   d delete'
     rows[29] = footer
     return paint(rows)
 
@@ -179,8 +183,8 @@ class BrowseControlCheckerTests(unittest.TestCase):
         # Footer still claims a filter although the filter text is gone.
         windows = [two_session_frame(0), two_session_frame(1, filtered=True,
                                                            hint=FILTER_HINT),
-                   cleared.replace(b'2/2 sessions   d delete',
-                                   b'2/2 sessions (filtered from 2)'), b'']
+                   cleared.replace(b'1/2 sessions   d delete',
+                                   b'1/2 sessions (filtered from 2)'), b'']
         record = make_record(100, 30, windows, inputs)
         problems = case_problems(record, 'picker-clear-filter-backspace')
         self.assertTrue(any('still reports a filter' in p for p in problems), problems)
