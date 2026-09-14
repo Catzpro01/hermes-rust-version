@@ -1104,3 +1104,14 @@ filter.is_empty() && !shown.is_empty(); frame_lines did not pass that state.
 Proposed GREEN passes that actual guard predicate into footer; existing counter,
 geometry, palette and delete-key behavior are unchanged. Not yet applied locally.
 RED transport1115 bytes SHA108b6403537ca7ad946ba52a99c346597a9d27c12d4943f0a9c1bd89d50bb9f6 verified.
+
+First GREEN candidate96d3eea/34791352664: named regression passed three times,
+but Full GREEN validation failed (exit101). Signed log/artifact downloads still
+fail EOF; no complete failure log recovered, so do not claim the precise failing
+test was read from that run. Source inspection found an old no-match frame test
+still expecting `0/0 sessions (filtered from 2) d delete`. Update only that stale
+expectation to the new hint contract; keep all counter assertions and add no
+waiver. First proposal preserved as green-first.patch. Retry complete validation,
+now retaining full logs and bounded error annotations. Added exact-gate policy
+test: compile failures / zero selected tests must not count as RED/GREEN (9 pass).
+Runtime source still unchanged pending full validation.

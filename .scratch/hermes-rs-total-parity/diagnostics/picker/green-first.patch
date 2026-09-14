@@ -67,12 +67,3 @@
          );
          assert_eq!(delete_prompt("deploy"), "  Delete session 'deploy'? [y/N]");
          assert_eq!(NO_SESSIONS, "No sessions found.");
-@@ -647,7 +669,7 @@
-         assert!(frame.contains(&NO_MATCH.to_owned()), "{frame:?}");
-         assert_eq!(
-             *frame.last().unwrap(),
--            "  0/0 sessions (filtered from 2)   d delete"
-+            "  0/0 sessions (filtered from 2)"
-         );
-     }
- 

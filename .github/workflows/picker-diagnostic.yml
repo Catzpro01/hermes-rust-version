@@ -70,6 +70,7 @@ jobs:
       - name: Full GREEN validation
         if: steps.plan.outputs.phase != 'red'
         run: |
+          exec > >(tee full-validation.log) 2>&1
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace --no-fail-fast
       - name: Export exactly tested proposal
@@ -96,6 +97,16 @@ jobs:
           if p.exists():
               text='\n'.join(p.read_text().splitlines()[-30:])
               print('::notice title=picker exact result::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
+          p=Path('full-validation.log')
+          if p.exists():
+              lines=p.read_text().splitlines()
+              signals=[]
+              for i,line in enumerate(lines):
+                  if 'panicked at' in line or line.startswith('error:'):
+                      signals.extend(lines[max(0,i-1):i+7])
+              if signals:
+                  text='\n'.join(signals)
+                  print('::error title=picker full validation::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
@@ -104,4 +115,5 @@ jobs:
           path: |
             evidence/
             regression-*.log
+            full-validation.log
           retention-days: 90

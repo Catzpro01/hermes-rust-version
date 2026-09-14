@@ -73,6 +73,28 @@ class CiGateTests(unittest.TestCase):
                 self.assertIn(selected, args)
                 self.assertEqual(args[-2:], ["--", "--exact"])
 
+    def test_picker_gate_rejects_compile_errors_and_missing_regression(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        step = next(s for s in workflow["jobs"]["diagnose"]["steps"] if s.get("id") == "regression")
+        selected = "session_picker::tests::picker_footer_tracks_delete_availability"
+        for phase, output, code, accepted in [
+            ("red", f"test {selected} ... FAILED", 101, True),
+            ("red", "error: could not compile", 101, False),
+            ("red", "0 tests", 0, False),
+            ("green", f"test {selected} ... ok", 0, True),
+            ("green", "0 tests", 0, False),
+            ("capture", f"test {selected} ... ok", 0, True),
+        ]:
+            with self.subTest(phase=phase, output=output), tempfile.TemporaryDirectory() as tmp:
+                cargo = Path(tmp) / "cargo"
+                cargo.write_text('#!/bin/bash\nprintf "%s\\n" "$FAKE_OUTPUT"\nexit "$FAKE_CODE"\n')
+                cargo.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}", PHASE=phase,
+                           TEST=selected, FAKE_OUTPUT=output, FAKE_CODE=str(code))
+                run = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                                     env=env, capture_output=True, text=True)
+                self.assertEqual(run.returncode == 0, accepted, run.stdout + run.stderr)
+
     def test_workflows_use_approved_readonly_artifact_policy(self):
         allowed = {
             "actions/checkout", "actions/setup-python", "actions/upload-artifact",
