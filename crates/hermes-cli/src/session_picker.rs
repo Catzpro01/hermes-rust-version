@@ -53,40 +53,40 @@ pub fn hint_filter(search: &str) -> String {
     format!("  Browse sessions — filter: {search}█")
 }
 
-/// Column header (spec §F, verbatim shape).
-pub fn column_header(name_width: usize) -> String {
+/// Column-header name field. The pinned 100/80 reference draws the header with
+/// its own field (width-59, floored at the 80-column value of 20), so `Stat`
+/// lands three cells right of the body status column, as the reference does.
+pub fn header_name_width(term_width: u16) -> usize {
+    (term_width as usize).saturating_sub(59).max(20)
+}
+
+/// Column header (spec §F, verbatim shape; the pinned three-cell indent).
+pub fn column_header(term_width: u16) -> String {
     format!(
-        "  {:<nw$}  {:<5}  {:>5}  {:<10}  {:<5} {}",
+        "   {:<nw$}  {:<5}  {:>5}  {:<10}  {:<5} {}",
         "Title / Preview",
         "Stat",
         "Msgs",
         "Active",
         "Src",
         "ID",
-        nw = name_width,
+        nw = header_name_width(term_width),
     )
 }
 
-/// One session row (spec §F, verbatim shape). The f-string in L1387 carries
-/// no leading indent but curses draws it under the indented header, so the
-/// two spaces are part of the rendered row.
-pub fn format_row(
-    name: &str,
-    status: &str,
-    msgs: usize,
-    last_active: &str,
-    source: &str,
-    sid: &str,
-    name_width: usize,
-) -> String {
+/// One session row (spec §F, verbatim shape). The f-string in L1387 carries no
+/// leading indent, but curses draws it behind the three-cell cursor column the
+/// reference shows (` → ` on the cursor row, three spaces otherwise).
+pub fn format_row(row: &SessionRow, name_width: usize, selected: bool) -> String {
     format!(
-        "  {:<nw$}  {:<5}  {:>5}  {:<10}  {:<5} {}",
-        truncate_chars(name, name_width),
-        status,
-        msgs,
-        last_active,
-        source,
-        sid,
+        "{}{:<nw$}  {:<5}  {:>5}  {:<10}  {:<5} {}",
+        row_prefix(selected),
+        truncate_chars(&row.name, name_width),
+        row.status,
+        row.msgs,
+        row.last_active,
+        row.source,
+        row.sid,
         nw = name_width,
     )
 }
@@ -111,11 +111,22 @@ pub fn delete_prompt(label: &str) -> String {
     format!("  Delete session '{label}'? [y/N]")
 }
 
-/// Name-column width for a terminal width. Fixed columns occupy 44 cells
-/// (`  ` + `  Stat ` + `   Msgs ` + `  Active    ` + `  Src  ` + ` ` + 8-char
-/// sid); the remainder goes to the name, clamped to a readable range.
+/// Body name-column width for a terminal width. The pinned 100/80 reference
+/// puts the body status column at width-57, i.e. a name field of width-62
+/// floored at the 80-column value of 20; terminals narrower than the reference
+/// are not evidenced.
 pub fn name_width(term_width: u16) -> usize {
-    (term_width as usize).saturating_sub(44).clamp(10, 48)
+    (term_width as usize).saturating_sub(62).max(20)
+}
+
+/// Three-cell cursor column shared by every body row. The reference draws
+/// ` → ` on the cursor row and three spaces on the others.
+pub fn row_prefix(selected: bool) -> &'static str {
+    if selected {
+        " \u{2192} "
+    } else {
+        "   "
+    }
 }
 
 fn truncate_chars(text: &str, max: usize) -> String {
@@ -272,14 +283,15 @@ pub enum BrowseOutcome {
 }
 
 /// Pure frame builder for the curses-style browser (no SGR; the interactive
-/// layer wraps the cursor line in reverse video). Returns the lines to draw
-/// top to bottom, footer last.
+/// layer styles the hint, the column header, the cursor row and the footer).
+/// Returns the lines to draw top to bottom, footer last. The reference keeps
+/// one blank row between the column header and the body.
 pub fn frame_lines(
     rows: &[SessionRow],
     shown: &[usize],
     cursor: usize,
     filter: &str,
-    name_width: usize,
+    term_width: u16,
     max_rows: usize,
 ) -> Vec<String> {
     let mut lines = Vec::new();
@@ -288,7 +300,8 @@ pub fn frame_lines(
     } else {
         lines.push(hint_filter(filter));
     }
-    lines.push(column_header(name_width));
+    lines.push(column_header(term_width));
+    lines.push(String::new());
     if shown.is_empty() {
         lines.push(NO_MATCH.to_owned());
     } else {
@@ -297,17 +310,10 @@ pub fn frame_lines(
         } else {
             0
         };
+        let nw = name_width(term_width);
+        let selected = shown.get(cursor).copied();
         for &i in shown.iter().skip(start).take(max_rows) {
-            let r = &rows[i];
-            lines.push(format_row(
-                &r.name,
-                r.status,
-                r.msgs,
-                &r.last_active,
-                &r.source,
-                &r.sid,
-                name_width,
-            ));
+            lines.push(format_row(&rows[i], nw, selected == Some(i)));
         }
     }
     let cursor_one_based = if shown.is_empty() { 0 } else { cursor + 1 };
@@ -338,21 +344,14 @@ pub fn browse_numbered<R: BufRead, W: Write>(
         output.flush()?;
         return Ok(BrowseOutcome::Empty);
     }
-    let nw = name_width(term_width.max(MIN_WIDTH));
+    let term_width = term_width.max(MIN_WIDTH);
+    let nw = name_width(term_width);
     write!(output, "{FALLBACK_HEADER}")?;
     // Number gutter is 7 cells (`  [ 1] `); the header is padded equally so
     // the columns stay aligned with the numbered rows.
-    writeln!(output, "       {}", column_header(nw).trim_start())?;
+    writeln!(output, "       {}", column_header(term_width).trim_start())?;
     for (n, r) in rows.iter().enumerate() {
-        let body = format_row(
-            &r.name,
-            r.status,
-            r.msgs,
-            &r.last_active,
-            &r.source,
-            &r.sid,
-            nw,
-        );
+        let body = format_row(r, nw, false);
         writeln!(output, "  [{:>2}] {}", n + 1, body.trim_start())?;
     }
     loop {
@@ -394,14 +393,12 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
         println!("{NO_SESSIONS}");
         return Ok(BrowseOutcome::Empty);
     }
-    let nw = name_width(cols);
-
     let _guard = ScreenGuard::enter()?;
 
     let mut filter = String::new();
     let mut cursor_idx = 0usize;
     let mut notices: Vec<&str> = Vec::new();
-    // Header (2) + footer (1) + one spare row.
+    // Hint, column header, blank separator and footer occupy four rows.
     let max_rows = (term_rows as usize).saturating_sub(4).max(1);
 
     let outcome = loop {
@@ -412,7 +409,7 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
             use crossterm::terminal::ClearType;
             let mut out = std::io::stdout();
             execute!(out, cursor::MoveTo(0, 0), terminal::Clear(ClearType::All))?;
-            let frame = frame_lines(&rows, &shown, cursor_idx, &filter, nw, max_rows);
+            let frame = frame_lines(&rows, &shown, cursor_idx, &filter, cols, max_rows);
             let start = if cursor_idx >= max_rows {
                 cursor_idx + 1 - max_rows
             } else {
@@ -423,11 +420,11 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                 if is_footer {
                     execute!(out, cursor::MoveTo(0, term_rows - 1))?;
                 }
-                // Row lines sit between header (1) and footer (last); the
-                // cursor row gets reverse video.
+                // Body rows sit between the blank separator (index 2) and the
+                // footer; the cursor row still gets reverse video.
                 let is_cursor_row = !shown.is_empty()
-                    && n >= 2
-                    && n - 2 == cursor_idx.saturating_sub(start)
+                    && n >= 3
+                    && n - 3 == cursor_idx.saturating_sub(start)
                     && n < frame.len() - 1;
                 if n == 0 {
                     use crossterm::style::{
@@ -444,6 +441,14 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                         SetAttribute(Attribute::Bold),
                         Print(line),
                         SetAttribute(Attribute::Reset)
+                    )?;
+                } else if n == 1 {
+                    use crossterm::style::{Color, Print, SetForegroundColor};
+                    execute!(
+                        out,
+                        SetForegroundColor(Color::DarkGrey),
+                        Print(line),
+                        SetForegroundColor(Color::Reset)
                     )?;
                 } else if is_cursor_row {
                     use crossterm::style::{Attribute, Print, SetAttribute};
@@ -592,6 +597,24 @@ mod tests {
         ]
     }
 
+    fn row(
+        name: &str,
+        status: &'static str,
+        msgs: usize,
+        last_active: &str,
+        sid: &str,
+    ) -> SessionRow {
+        SessionRow {
+            id: "550e8400-e29b-41d4-a716-446655440000".parse().unwrap(),
+            name: name.into(),
+            status,
+            msgs,
+            last_active: last_active.into(),
+            source: "cli".into(),
+            sid: sid.into(),
+        }
+    }
+
     #[test]
     fn picker_no_match_counter_preserves_total() {
         let rows = fixture_rows();
@@ -627,12 +650,12 @@ mod tests {
         );
         assert_eq!(hint_filter("dep"), "  Browse sessions — filter: dep█");
         assert_eq!(
-            column_header(20),
-            "  Title / Preview       Stat    Msgs  Active      Src   ID"
+            column_header(100),
+            "   Title / Preview                            Stat    Msgs  Active      Src   ID"
         );
         assert_eq!(
-            format_row("deploy", "done", 12, "2h ago", "cli", "550e8400", 20),
-            "  deploy                done      12  2h ago      cli   550e8400"
+            format_row(&row("deploy", "done", 12, "2h ago", "550e8400"), 20, false),
+            "   deploy                done      12  2h ago      cli   550e8400"
         );
         assert_eq!(footer(1, 2, 2, true), "  1/2 sessions   d delete");
         assert_eq!(footer(1, 1, 2, false), "  1/1 sessions (filtered from 2)");
@@ -648,25 +671,34 @@ mod tests {
 
     #[test]
     fn row_truncates_long_names_to_the_column() {
-        let row = format_row(
-            "abcdefghijklmnopqrstuvwxyz",
-            "done",
-            1,
-            "now",
-            "cli",
-            "abcdef01",
+        let line = format_row(
+            &row("abcdefghijklmnopqrstuvwxyz", "done", 1, "now", "abcdef01"),
             10,
+            false,
         );
-        assert!(row.contains("abcdefghij"), "{row}");
-        assert!(!row.contains("klmnop"), "{row}");
+        assert!(line.contains("abcdefghij"), "{line}");
+        assert!(!line.contains("klmnop"), "{line}");
     }
 
     #[test]
-    fn name_width_fits_an_80_column_terminal() {
-        assert_eq!(name_width(80), 36);
-        assert_eq!(name_width(60), 16);
-        assert_eq!(name_width(40), 10);
-        assert_eq!(name_width(200), 48);
+    fn name_width_matches_the_two_pinned_widths() {
+        // Body field width-62 and header field width-59, both floored at the
+        // 80-column value 20, reproduce the retained 100/80 reference rows.
+        assert_eq!(name_width(100), 38);
+        assert_eq!(name_width(80), 20);
+        assert_eq!(name_width(60), 20);
+        assert_eq!(header_name_width(100), 41);
+        assert_eq!(header_name_width(80), 21);
+        assert_eq!(
+            format_row(
+                &row("second topic", "done", 1, "2023-11-14", "660f8400"),
+                name_width(100),
+                true,
+            ),
+            " → second topic                            done       1  2023-11-14  cli   660f8400"
+        );
+        assert_eq!(column_header(100).find("Stat"), Some(46));
+        assert_eq!(column_header(80).find("Stat"), Some(26));
     }
 
     #[test]
@@ -703,8 +735,9 @@ mod tests {
         let frame = frame_lines(&rows, &shown, 0, "", 20, 10);
         assert_eq!(frame[0], HINT_BROWSE);
         assert_eq!(frame[1], column_header(20));
-        assert!(frame[2].contains("deploy the thing"), "{frame:?}");
-        assert!(frame[3].contains("(empty)"), "{frame:?}");
+        assert_eq!(frame[2], "");
+        assert!(frame[3].contains("deploy the thing"), "{frame:?}");
+        assert!(frame[4].contains("(empty)"), "{frame:?}");
         assert_eq!(*frame.last().unwrap(), "  1/2 sessions   d delete");
 
         let shown = apply_filter(&rows, "zzz");
