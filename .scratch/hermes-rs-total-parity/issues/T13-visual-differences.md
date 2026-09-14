@@ -313,3 +313,8 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     full-validation annotation fired on the benign `error: interrupted` SIGINT
     line, and the GREEN-only steps (validation + empty tested-patch export) ran
     during the reference phase. All three are fixed and covered by tests.
+  - [ ] Cycle 7 (size contract) RED requested against the unchanged Rust source:
+    Rust still refuses anything below 60x8 with a plain `println!` before the
+    screen exists, so at 40 columns it must show the notice where the reference
+    draws the picker, and at 39 it returns before the key (the reference stays in
+    `getch()`).
