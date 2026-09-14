@@ -1680,3 +1680,17 @@ Sisa picker V2: header kolom (brightblack + indent), baris terpilih (` → ` +
 hijau bold), warna prompt hapus (merah bold), status/`Active`/`ID`, geometri
 badan tabel, lalu wizard V1 dan kelengkapan completion/T12. Tidak ada
 acceptance, penutupan Spec017, atau merge.
+
+### Hasil akhir slice header filter (terverifikasi)
+
+- Commit paket `8e7e82d8a10ce52556b7c381c600e19e8fc82893` auto-push; CI
+  `34859681727` **SUCCESS** di kedua job dengan anotasi
+  `fmt=success clippy=success test=success picker=success` dan 584 tes Rust
+  lulus. Regresi live keempat (filter header) kini benar-benar dijalankan di CI
+  biasa dan hijau.
+- Paket `picker-filter-header-9cc5cb4` lolos `verify.py` (20 round trip
+  raw/cast, 10 hash PNG, 4 cek slot, 4 perbandingan piksel, 6 PNG tidak berubah)
+  dan enam skrip QA CI hijau secara lokal.
+- Sisa picker V2 untuk siklus berikutnya: header kolom (brightblack + indent),
+  baris terpilih, warna prompt hapus, kolom status/Active/ID, geometri badan.
+  Tidak ada acceptance/penutupan/merge.
