@@ -242,3 +242,9 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     input at all, 25 frames in the no-match case) while the empty-store case is a
     control. This deviation is also the cause of the PTY start-up flake, so fixing
     it makes every live gate deterministic.
+  - [x] Cycle 6 (a) RED: run 34873144309 failed exactly three times with the
+    assertion and no setup error (trace `65cf8b28…`, 279052 bytes). Patch bound:
+    2801 bytes `925b963e…` — a `dirty` flag makes the redraw happen only when a
+    key or a resize changed the screen; the 100 ms poll loop stays for signal
+    responsiveness. The runner's `cargo fmt --all` reindents the new block, so
+    the tested patch is expected to differ from the bound one, as in cycle 10.
