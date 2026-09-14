@@ -39,6 +39,10 @@ CASES = ('wizard-mode', 'wizard-full', 'wizard-blank', 'wizard-quick',
 
 
 def record(command, home, width, steps, extra_env=None, timeout=15):
+    """`steps` are (marker, key) pairs. A key of the form `@resize WxH` does
+    not type anything: it re-sets the PTY winsize mid-session (the kernel then
+    delivers SIGWINCH to the child), exercising live terminal resizes. Every
+    other key is written to the PTY verbatim."""
     env = {'PATH': os.defpath, 'HOME': str(home), 'HERMES_HOME': str(home),
            'TERM': 'xterm-256color', 'COLORTERM': 'truecolor', 'LANG': 'C.UTF-8',
            'LC_ALL': 'C.UTF-8', 'PYTHONDONTWRITEBYTECODE': '1'}
@@ -69,6 +73,7 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
     screen.write_process_input = terminal_reply
     terminal = pyte.ByteStream(screen)
     eof = False
+    cols_now, rows_now = width, 30
     try:
         while index < len(steps):
             now = time.monotonic()
@@ -100,7 +105,7 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
                     # Respond using terminal state, never hard-code cursor 1,1.
                     terminal.feed(data)
                     state = (screen.cursor.x, screen.cursor.y,
-                             tuple(tuple(screen.buffer[y][x] for x in range(width)) for y in range(30)))
+                             tuple(tuple(screen.buffer[y][x] for x in range(cols_now)) for y in range(rows_now)))
                     if state != previous_screen:
                         previous_screen = state
                         stable_since = time.monotonic()
@@ -121,9 +126,19 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
                 completed.append({'marker': marker, 'end_byte': len(output)})
                 index += 1
                 if key is not None:
-                    data = key.encode()
-                    os.write(master, data)
-                    inputs.append([round(time.monotonic()-begin, 6), base64.b64encode(data).decode(), 'scenario key'])
+                    if key.startswith('@resize '):
+                        new_cols, new_rows = (int(part) for part in key[len('@resize '):].split('x'))
+                        cols_now, rows_now = new_cols, new_rows
+                        fcntl.ioctl(master, termios.TIOCSWINSZ,
+                                    struct.pack('HHHH', new_rows, new_cols, 0, 0))
+                        screen.resize(new_rows, new_cols)
+                        inputs.append([round(time.monotonic()-begin, 6),
+                                       base64.b64encode(key.encode()).decode(),
+                                       f'scenario resize {new_cols}x{new_rows}'])
+                    else:
+                        data = key.encode()
+                        os.write(master, data)
+                        inputs.append([round(time.monotonic()-begin, 6), base64.b64encode(data).decode(), 'scenario key'])
                     cursor = len(output)
                     stage_begin = last = stable_since = time.monotonic()
             elif code is not None:
@@ -176,6 +191,26 @@ def steps_for(name, side):
     if name == 'picker-filter': return [('Browse sessions', 'topic'), ('filter: topic', None)]
     if name == 'picker-no-match': return [('Browse sessions', 'zzzz'), ('No sessions match', None)]
     if name == 'picker-delete': return [('Browse sessions', 'd'), ('Delete', None)]
+    # Spec017 W2 browse-control contracts (resize / long list / clear filter).
+    # Every step's key is the action that produces the NEXT step's marker — the
+    # harness only sends a key once its own marker is ready.
+    if name == 'picker-resize-too-small':
+        return [('Browse sessions', '@resize 60x4'),
+                ('Terminal too small', '\r'), ('@exit', None)]
+    if name == 'picker-resize-redraw':
+        return [('Browse sessions', '@resize 80x20'),
+                ('\x1b[2J', '\x1b'), ('@exit', None)]
+    if name == 'picker-long-list':
+        return [('Browse sessions', '\x1b[B' * 26),
+                ('27/30 sessions', '\x1b[B' * 3), ('30/30 sessions', '\x1b[B'),
+                ('1/30 sessions', '\x1b[A'), ('30/30 sessions', '\x1b'),
+                ('@exit', None)]
+    if name == 'picker-clear-filter-esc':
+        return [('Browse sessions', 'sec'), ('filter: sec', '\x1b'),
+                ('2/2 sessions', '\x1b'), ('@exit', None)]
+    if name == 'picker-clear-filter-backspace':
+        return [('Browse sessions', 'sec'), ('filter: sec', '\x7f\x7f\x7f'),
+                ('2/2 sessions', '\x1b'), ('@exit', None)]
     if name.startswith('completion-'):
         text = {'completion-command':'/mod', 'completion-subcommand':'/skills ', 'completion-alternatives':'/s'}[name]
         return [('❯' if py else 'Welcome to Hermes Agent!', text+'\t\t'), (text.rstrip(), None)]
@@ -189,13 +224,24 @@ def section_for(name):
     return 'model' if name == 'wizard-model' else None
 
 
-def seed_rust(home, empty=False):
+DEFAULT_PICKER_SEED = ((SID_A, 'deploy the thing'), (SID_B, 'second topic'))
+
+
+def long_list_seed(count):
+    """Deterministic multi-window fixture: names sort in index order and each
+    session carries one user message, so every row renders with a preview."""
+    return ((f'{i:08x}-0000-4000-8000-{i:012x}', f'session-{i:02d}')
+            for i in range(count))
+
+
+def seed_rust(home, empty=False, count=2):
     with sqlite3.connect(home/'state.db') as db:
         db.executescript('''CREATE TABLE sessions(id TEXT PRIMARY KEY,source TEXT NOT NULL,started_at REAL NOT NULL);
         CREATE TABLE messages(id INTEGER PRIMARY KEY AUTOINCREMENT,session_id TEXT NOT NULL,role TEXT NOT NULL,content TEXT,timestamp REAL NOT NULL);
         CREATE TABLE tool_calls(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,turn_index INTEGER NOT NULL,tool_name TEXT NOT NULL,arguments TEXT NOT NULL,result TEXT,status TEXT NOT NULL,created_at REAL NOT NULL);''')
         if not empty:
-            for i,(sid,text) in enumerate(((SID_A,'deploy the thing'),(SID_B,'second topic'))):
+            seed = DEFAULT_PICKER_SEED if count == 2 else tuple(long_list_seed(count))
+            for i,(sid,text) in enumerate(seed):
                 db.execute('INSERT INTO sessions VALUES (?,?,?)',(sid,'cli',1700000000+i))
                 db.execute('INSERT INTO messages(session_id,role,content,timestamp) VALUES (?,?,?,?)',(sid,'user',text,1700000000.5+i))
 
@@ -210,7 +256,9 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
     for name, width in plan:
             with tempfile.TemporaryDirectory(prefix='hermes-ui-'+side+'-') as tmp:
                 home = Path(tmp)
-                if name.startswith('picker') and side == 'rust': seed_rust(home, name=='picker-empty')
+                if name.startswith('picker') and side == 'rust':
+                    seed_rust(home, name=='picker-empty',
+                              count=30 if name == 'picker-long-list' else 2)
                 if name.startswith('completion'):
                     (home/'config.yaml').write_text('model:\n  provider: auto\n  name: parity-fixture\n')
                 if side == 'rust':
@@ -243,7 +291,11 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
                         result['snapshot_end_byte'] = end
                         result['snapshot_rule'] = boundary + '; full later output retained unchanged'
                 print(side,name,width,result['error'] or 'CAPTURED_NOT_REVIEWED',file=sys.stderr)
-                cases.append({'id':f'{name}-{width}x30','scenario':name,'fixture':{'home':'isolated fresh temporary directory', 'credentials':'none supplied', 'docker_available':False if name=='wizard-docker' else 'not controlled', 'picker_seed':[SID_A,SID_B] if name.startswith('picker') and name!='picker-empty' else [], 'picker_timestamp_base':1700000000 if name.startswith('picker') else None},side:result})
+                picker_seed = ([SID_A, SID_B] if name.startswith('picker') and name != 'picker-empty'
+                               and name != 'picker-long-list'
+                               else [sid for sid, _ in long_list_seed(30)] if name == 'picker-long-list'
+                               else [])
+                cases.append({'id':f'{name}-{width}x30','scenario':name,'fixture':{'home':'isolated fresh temporary directory', 'credentials':'none supplied', 'docker_available':False if name=='wizard-docker' else 'not controlled', 'picker_seed':picker_seed, 'picker_seed_note':'long list uses deterministic session-00..session-29 names' if name=='picker-long-list' else None, 'picker_timestamp_base':1700000000 if name.startswith('picker') else None},side:result})
     return cases
 
 

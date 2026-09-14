@@ -130,35 +130,36 @@ class CiGateTests(unittest.TestCase):
 
     def test_ordinary_picker_gate_requires_all_live_tests(self):
         step = STEPS["Picker terminal regressions"]
-        cases = [(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), (1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-                 (0, 1, 0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 1, 0, 0, 0, 0, 0, 0, 0),
-                 (0, 0, 0, 1, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 1, 0, 0, 0, 0, 0),
-                 (0, 0, 0, 0, 0, 1, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 1, 0, 0, 0),
-                 (0, 0, 0, 0, 0, 0, 0, 1, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0, 1, 0),
-                 (0, 0, 0, 0, 0, 0, 0, 0, 0, 1)]
+        cases = [(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                 (0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0),
+                 (0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0),
+                 (0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0),
+                 (0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0),
+                 (0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)]
         for (position, color, header, filter_header, layout, message, selection, status,
-             redraw, size) in cases:
+             redraw, size, control) in cases:
             with self.subTest(position=position, color=color, header=header,
                               filter_header=filter_header, layout=layout,
                               message=message, selection=selection,
                               status=status, redraw=redraw,
-                              size=size), tempfile.TemporaryDirectory() as tmp:
+                              size=size, control=control), tempfile.TemporaryDirectory() as tmp:
                 cargo = Path(tmp) / "cargo"
                 cargo.write_text("#!/bin/sh\necho build-ok\n")
                 cargo.chmod(0o700)
                 python = Path(tmp) / "python3"
-                python.write_text('#!/bin/bash\ncase "$*" in\n  *test_picker_footer_position.py*) echo position-test; exit "$POSITION";;\n  *test_picker_footer_color.py*) echo color-test; exit "$COLOR";;\n  *test_picker_normal_header.py*) echo header-test; exit "$HEADER";;\n  *test_picker_filter_header.py*) echo filter-header-test; exit "$FILTER_HEADER";;\n  *test_picker_column_layout.py*) echo column-layout-test; exit "$LAYOUT";;\n  *test_picker_message_style.py*) echo message-style-test; exit "$MESSAGE";;\n  *test_picker_selection.py*) echo selection-test; exit "$SELECTION";;\n  *test_picker_status_ink.py*) echo status-ink-test; exit "$STATUS";;\n  *test_picker_redraw_on_input.py*) echo redraw-test; exit "$REDRAW";;\n  *test_picker_terminal_size.py*) echo size-test; exit "$SIZE";;\n  *) exit 0;;\nesac\n')
+                python.write_text('#!/bin/bash\ncase "$*" in\n  *test_picker_footer_position.py*) echo position-test; exit "$POSITION";;\n  *test_picker_footer_color.py*) echo color-test; exit "$COLOR";;\n  *test_picker_normal_header.py*) echo header-test; exit "$HEADER";;\n  *test_picker_filter_header.py*) echo filter-header-test; exit "$FILTER_HEADER";;\n  *test_picker_column_layout.py*) echo column-layout-test; exit "$LAYOUT";;\n  *test_picker_message_style.py*) echo message-style-test; exit "$MESSAGE";;\n  *test_picker_selection.py*) echo selection-test; exit "$SELECTION";;\n  *test_picker_status_ink.py*) echo status-ink-test; exit "$STATUS";;\n  *test_picker_redraw_on_input.py*) echo redraw-test; exit "$REDRAW";;\n  *test_picker_terminal_size.py*) echo size-test; exit "$SIZE";;\n  *test_picker_browse_control.py*) echo control-test; exit "$CONTROL";;\n  *) exit 0;;\nesac\n')
                 python.chmod(0o700)
                 env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}",
                            POSITION=str(position), COLOR=str(color), HEADER=str(header),
                            FILTER_HEADER=str(filter_header), LAYOUT=str(layout),
                            MESSAGE=str(message), SELECTION=str(selection), STATUS=str(status),
-                           REDRAW=str(redraw), SIZE=str(size))
+                           REDRAW=str(redraw), SIZE=str(size), CONTROL=str(control))
                 result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
                                         env=env, capture_output=True, text=True)
                 self.assertEqual(result.returncode,
                                  int(bool(position or color or header or filter_header or layout
-                                          or message or selection or status or redraw or size)),
+                                          or message or selection or status or redraw or size
+                                          or control)),
                                  result.stdout + result.stderr)
                 log = (Path(tmp) / "picker-position.log").read_text()
                 self.assertIn("position-test", log)
@@ -186,6 +187,9 @@ class CiGateTests(unittest.TestCase):
                                                 if not redraw:
                                                     self.assertIn("size-test", log)
                                                     self.assertIn("test_picker_terminal_size.py", step["run"])
+                                                    if not size:
+                                                        self.assertIn("control-test", log)
+                                                        self.assertIn("test_picker_browse_control.py", step["run"])
 
     def test_picker_size_gate_rejects_setup_errors(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
