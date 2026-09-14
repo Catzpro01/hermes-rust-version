@@ -33,7 +33,10 @@ user's private Python installation.
 - Active footer-position TDD: test-first eedd9a0; one real CLI/PTy normal100x30
   regression requires footer row30. Historical Python10/10 geometry PASS,
   historical Rust6 footer FAIL (rows4/5), delete/empty4 PASS. Live official
-  RED34829070839 is running; no production footer fix proposed/applied yet.
+  RED34829070839/eedd9a0 verified three actual row5 !=30 failures (no ERROR).
+  Trace24779 bytes SHAfc71b1f359b1ea7d40ee06e359b26d8a3308340db9298dfd1163b8aa2c6c43c7.
+  Minimal GREEN proposal now anchors final frame line, omits its next-line move;
+  source remains unchanged pending official full GREEN.
   Allowlisted runner now supports `picker_footer_position`; capture grows to
   ten normal/filter/no-match/delete/empty cases. A local policy negative test
   exposed Bash `! grep`/errexit bypass for mixed FAIL+ERROR; explicit exit fixes

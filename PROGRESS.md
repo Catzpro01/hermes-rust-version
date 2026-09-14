@@ -1263,3 +1263,15 @@ Validation follow-up: a negative policy test demonstrated that Bash `! grep`
 can bypass errexit for mixed FAIL+ERROR logs. Replaced it with explicit exit1
 and required exactly one test execution. Local policy RED→GREEN (11 tests).
 Live geometry RED34829070839/eedd9a0 is in progress; no Rust fix proposed yet.
+
+### Footer live RED verified → minimal GREEN candidate
+
+Official34829070839/eedd9a0 SUCCESS expected-RED gate: fmt/check/build PASS;
+three actual CLI regressions FAIL at row5 !=30, one test run each. Retrieved
+checksummed original primary trace24779 bytes, SHA
+fc71b1f359b1ea7d40ee06e359b26d8a3308340db9298dfd1163b8aa2c6c43c7.
+No setup errors in real log. Runner policy hardened separately in8f067a7.
+Only now proposing final-frame MoveTo(0, term_rows-1) and skipping its newline.
+Text/filter/counter/selection style and other body geometry remain unchanged.
+Rust source is still unchanged locally; bounded official GREEN precedes exact
+source application, ordinary CI integration and fresh ten-case capture.
