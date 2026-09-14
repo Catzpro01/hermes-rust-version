@@ -189,3 +189,8 @@ Standards/Spec review:0 new hard violations,1 nonblocking duplicated-runner/setu
 observation; filter/column headers, selection/delete/no-match styles, other layout,
 wizard/completion and T12 coverage remain open. No resize/clear-filter/long-list
 claims, new adaptation, whole-picker acceptance, closure or merge.
+  - [x] Cycle 5 (status-tag ink) patch authored: `status_ink()` + `status_tag_span()`
+    + the per-row tag redraw in `session_picker.rs`, 5567 bytes
+    (sha256 `a073bedc…`), verified with `git apply --check` against the committed
+    source. RED run 34870302745 failed three times as expected (assertion only,
+    no setup error). GREEN bound to the patch digest.

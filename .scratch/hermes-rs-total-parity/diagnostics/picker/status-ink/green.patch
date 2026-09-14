@@ -1,0 +1,120 @@
+diff --git a/crates/hermes-cli/src/session_picker.rs b/crates/hermes-cli/src/session_picker.rs
+index d4887c2..6000443 100644
+--- a/crates/hermes-cli/src/session_picker.rs
++++ b/crates/hermes-cli/src/session_picker.rs
+@@ -15,8 +15,13 @@
+ //!   `intr`/`err` cannot be distinguished (column kept for parity).
+ //! * `name` is the first user message (single-lined); Hermes-RS has no
+ //!   session titles yet, so there is no title half of `Title / Preview`.
+-//! * The cursor row is reverse video; Python colors rows via `_status_attr`,
+-//!   whose palette was not captured in §F.
++//! * The cursor row is painted with palette slot 2 + bold, and every row that
++//!   is not the cursor gets its five-cell status tag recoloured by Python's
++//!   `_status_attr` contract (complete/pair1 green, interrupted/pair2 yellow,
++//!   error/pair5 red, empty/pair4 palette8, otherwise A_NORMAL). Both the tag
++//!   wording and the ink were read out of the pinned upstream source, kept at
++//!   `docs/hermes-ui-spec/017/evidence/upstream-status-attr/`, because §F named
++//!   `_status_attr` without its mapping.
+ //! * `q` is a filter character in the curses-style browser (the hint lists
+ //!   `Esc quit` only); `q to cancel` exists solely in the numbered fallback.
+ 
+@@ -24,6 +29,7 @@ use std::io::{BufRead, Write};
+ use std::time::{SystemTime, UNIX_EPOCH};
+ 
+ use anyhow::Context;
++use crossterm::style::Color;
+ use hermes_core::session::{SessionId, SessionStore};
+ 
+ use crate::output::sanitize_untrusted_output;
+@@ -119,6 +125,36 @@ pub fn name_width(term_width: u16) -> usize {
+     (term_width as usize).saturating_sub(62).max(20)
+ }
+ 
++/// Ink of the five-cell status tag (`_status_attr` in the pinned upstream
++/// source, kept under `docs/hermes-ui-spec/017/evidence/upstream-status-attr/`):
++/// `done` pair1 green, `intr` pair2 yellow, `err` pair5 red, `empty` pair4
++/// palette8; any other tag keeps the terminal's normal ink (A_NORMAL).
++pub fn status_ink(status: &str) -> Color {
++    match status {
++        "done" => Color::DarkGreen,
++        "intr" => Color::DarkYellow,
++        "err" => Color::DarkRed,
++        "empty" => Color::DarkGrey,
++        _ => Color::Reset,
++    }
++}
++
++/// Character span of the status tag inside a body row: the three-cell cursor
++/// column, the name field and its two separator cells, i.e. `3 + name + 2`
++/// cells in, exactly `_status_attr`'s `tag_x = 3 + max(20, max_x - 62) + 2`.
++pub fn status_tag_span(name_width: usize) -> std::ops::Range<usize> {
++    let start = 3 + name_width + 2;
++    start..start + 5
++}
++
++/// Byte offset of a character index, clamped to the end of the string.
++fn char_offset(line: &str, char_index: usize) -> usize {
++    line.char_indices()
++        .nth(char_index)
++        .map(|(offset, _)| offset)
++        .unwrap_or(line.len())
++}
++
+ /// Three-cell cursor column shared by every body row. The reference draws
+ /// ` → ` on the cursor row and three spaces on the others.
+ pub fn row_prefix(selected: bool) -> &'static str {
+@@ -483,8 +519,26 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
+                         SetForegroundColor(Color::Reset)
+                     )?;
+                 } else {
+-                    use crossterm::style::Print;
+-                    execute!(out, Print(line))?;
++                    // Only the five-cell status tag is recoloured, and only on
++                    // rows that are not the cursor (pinned `_session_browse_picker`).
++                    use crossterm::style::{Print, SetForegroundColor};
++                    let span = status_tag_span(name_width(cols));
++                    let body = shown.get(start + (n - 3)).copied();
++                    match body.filter(|_| line.chars().count() >= span.end) {
++                        Some(index) => {
++                            let head = char_offset(line, span.start);
++                            let tag = char_offset(line, span.end);
++                            execute!(
++                                out,
++                                Print(&line[..head]),
++                                SetForegroundColor(status_ink(rows[index].status)),
++                                Print(&line[head..tag]),
++                                SetForegroundColor(Color::Reset),
++                                Print(&line[tag..])
++                            )?;
++                        }
++                        None => execute!(out, Print(line))?,
++                    }
+                 }
+                 if !is_footer {
+                     execute!(out, cursor::MoveToNextLine(1))?;
+@@ -693,6 +747,25 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn status_ink_follows_the_pinned_mapping() {
++        assert_eq!(status_ink("done"), Color::DarkGreen);
++        assert_eq!(status_ink("intr"), Color::DarkYellow);
++        assert_eq!(status_ink("err"), Color::DarkRed);
++        assert_eq!(status_ink("empty"), Color::DarkGrey);
++        assert_eq!(status_ink("-"), Color::Reset);
++    }
++
++    #[test]
++    fn status_tag_span_sits_three_plus_name_width_plus_two() {
++        assert_eq!(status_tag_span(name_width(100)), 43..48);
++        assert_eq!(status_tag_span(name_width(80)), 25..30);
++        let line = format_row(&row("deploy", "done", 12, "2h ago", "550e8400"), 20, false);
++        assert_eq!(&line[43..48], "done ");
++        assert_eq!(char_offset(&line, 43), 43);
++        assert_eq!(char_offset("  → deploy", 4), 6);
++    }
++
+     #[test]
+     fn row_truncates_long_names_to_the_column() {
+         let line = format_row(
