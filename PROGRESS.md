@@ -1429,3 +1429,12 @@ actual CLI regression fails3 at default/false vs palette3/bold. Original trace
 No missing-test/setup error. Only now proposed one header branch: empty filter,
 first frame line, DarkYellow + Bold + Print + Reset. No production application
 before official full GREEN. Four supporting checker tests PASS; milestone updated.
+
+### Header H3/H4 complete → H5
+
+GREEN34837102702/645f86d SUCCESS: fmt/check, primary CLI3, clippy/full workspace.
+Verified1171-byte patch SHA90fa6de6e8c260cb783260bafb4bc1502fad98ec6a332fc42c7fa5363c4dfd54
+applied byte-identically to full Rust diff. No local cargo. Ordinary CI now runs
+three live picker regressions; policy test ensures failure of any survives the
+pipeline and existing final gate.14 policy +4 header-checker tests PASS. Updated
+milestone; H5 capture/review not yet complete. No unrelated styling or merge.

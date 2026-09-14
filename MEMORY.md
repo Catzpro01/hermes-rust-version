@@ -34,8 +34,11 @@ user's private Python installation.
   Python target indexed3 + bold=true; pyte brown/cdcd00 aliases (NOT palette11).
   RED34836863589/4aa0858: real CLI style FAIL3, fmt/check/build PASS.
   Trace11973 bytes SHA56ecf3af0ea8fc93b369d0f23120277926f6ae2d9b6605c957a8b0cb754d5e7e.
-  Only now proposing DarkYellow/Bold/Reset on n0 with empty filter; source
-  unchanged pending official GREEN. Four supporting checker tests PASS. Historical normal/
+  GREEN34837102702/645f86d exact3/fmt/check/clippy/full suite PASS.
+  Tested1171-byte patch 90fa6de6e8c260cb783260bafb4bc1502fad98ec6a332fc42c7fa5363c4dfd54
+  applied byte-identically; DarkYellow/Bold/Reset on n0 with empty filter.
+  H3/H4 complete; fresh committed-source capture/CI next. Ordinary CI now
+  requires live position, color and normal-header tests. Header checker4 PASS. Historical normal/
   delete4 header checks fail for Rust, Python4 PASS;14 policy tests PASS.
   `MILESTONES.md` H1 done/H2 test-first. Preserve other rows, filter header and
   all four completed footer fixes. Final ten-case capture/xterm audit required.

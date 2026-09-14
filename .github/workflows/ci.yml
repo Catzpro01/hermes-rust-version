@@ -31,6 +31,7 @@ jobs:
           python3 scripts/test_capture_ui.py
           python3 scripts/test_picker_footer_position_checks.py
           python3 scripts/test_picker_footer_color_checks.py
+          python3 scripts/test_picker_normal_header_checks.py
       - run: python3 scripts/test_audit_ui_evidence.py
 
   test:
@@ -68,7 +69,7 @@ jobs:
           cargo test --workspace --no-fail-fast 2>&1 | tee test.log
         continue-on-error: true
 
-      - name: Picker footer terminal regression
+      - name: Picker terminal regressions
         id: picker
         if: steps.test.outcome == 'success'
         continue-on-error: true
@@ -78,6 +79,7 @@ jobs:
           python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3 2>&1 | tee -a picker-position.log
           PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-position.json python3 scripts/test_picker_footer_position.py 2>&1 | tee -a picker-position.log
           PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-color.json python3 scripts/test_picker_footer_color.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-header.json python3 scripts/test_picker_normal_header.py 2>&1 | tee -a picker-position.log
 
       # Diagnostics are emitted as check-run annotations (readable via the
       # REST API even where raw logs/artifacts are not reachable) and as a
@@ -112,7 +114,7 @@ jobs:
           if os.environ.get('PICKER') != 'success':
               try: picker_log = open('picker-position.log').read().splitlines()
               except FileNotFoundError: picker_log = ['CLI terminal regression did not succeed.']
-              emit('error', 'picker position', picker_log[-30:])
+              emit('error', 'picker terminal', picker_log[-30:])
           n = 0
           for b in blocks('clippy.log', r'^(error|warning)(\[|:)'):
               if n >= 45: break
@@ -184,6 +186,7 @@ jobs:
             picker-position.log
             picker-position.json
             picker-color.json
+            picker-header.json
 
       - name: Fail if any step failed
         if: always() && (steps.fmt.outcome != 'success' || steps.clippy.outcome != 'success' || steps.test.outcome != 'success' || steps.picker.outcome != 'success')

@@ -30,9 +30,9 @@ header filter/kolom, seleksi, footer dan posisi teks tidak ikut diubah.
 |---|---|---|
 | H1 · Kontrak dan referensi | ✅ Selesai | CLI/PTY nyata normal100×30 disepakati; referensi Python4/4 normal/delete pada100/80 memakai palette3 + bold |
 | H2 · RED nyata | ✅ Selesai | [34836863589 / 4aa0858](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34836863589): tes primer FAIL3, default/tidak bold; fmt/check/build PASS |
-| H3 · Perubahan minimal | 🔄 Kandidat | DarkYellow + Bold untuk header ketika filter kosong, lalu reset; source belum diterapkan |
-| H4 · GREEN resmi | 🔄 Menunggu runner | Tes primer, fmt/check/clippy/full workspace sebelum patch diterapkan |
-| H5 · Capture dan review | ⏳ Menunggu H4 | 10 pasangan normal/filter/no-match/delete/empty; style header dan isolasi perubahan, semua perbaikan footer tetap benar |
+| H3 · Perubahan minimal | ✅ Selesai | Patch1171 byte resmi diterapkan persis; DarkYellow + Bold untuk header filter kosong, lalu reset |
+| H4 · GREEN resmi | ✅ Selesai | [34837102702 / 645f86d](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837102702): primer3, fmt/check/clippy/full workspace PASS |
+| H5 · Capture dan review | 🔄 Berjalan | Capture source committed + CI, lalu 10 pasangan dan audit isolasi perubahan; semua perbaikan footer harus tetap benar |
 
 ## Milestone warna footer picker — M1–M5 selesai
 
