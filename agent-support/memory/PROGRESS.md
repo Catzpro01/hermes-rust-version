@@ -1894,3 +1894,9 @@ head `main`; working tree bersih saat mulai).
   sesuai VERIFICATION bila ingin menjalankan tes `scripts/` di luar CI.
 - Tugas substantif berikutnya tetap sesuai handoff: wawancara Wayfinder rute
   penuntasan Spec017 (bukan coding baru); tidak ada merge/acceptance di sesi ini.
+- **Hasil push aktual:** checkpoint `c731a144444aed37d6516fad93ac4dd6a21763ce`
+  ter-push otomatis; receipt `--require-pushed` PASS dan `git ls-remote` cocok.
+  CI run [34884794870](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34884794870)
+  pada `c731a14` **SUCCESS** (kedua job: fmt+clippy+test dan gate regression).
+  Ini run verifikasi baru untuk commit sesi ini, bukan hasil historis.
+  Warning nonblocking tetap sama: pin actions Node20 dipaksa Node24 oleh runner.
