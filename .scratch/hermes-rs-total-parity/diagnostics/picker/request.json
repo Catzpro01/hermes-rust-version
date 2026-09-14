@@ -1,5 +1,5 @@
 {
-  "phase": "capture",
-  "test": "picker_status_ink",
+  "phase": "red",
+  "test": "picker_redraw_on_input",
   "source_sha256": "804b80f0bf4805a407456b66c88a8f439c9727f4a050e4ff96fb4af697cdebe9"
 }

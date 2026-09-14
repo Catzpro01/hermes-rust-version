@@ -232,3 +232,13 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     documented `Active`/`ID` adaptations; (d) a fixture that exercises the
     `interrupted`/`error`/`empty` inks in a live capture (today only
     `complete`/`done` is captured).
+  - [ ] Cycle 6 (a) in flight: the picker redraws the whole frame on every poll
+    timeout while the pinned reference draws the frame and then blocks in
+    `stdscr.getch()` (one draw per key, nothing while idle). The new live gate
+    `picker_redraw_on_input` splits each record at the scenario keystrokes and
+    counts frames per input window (allowance 1 before the first keystroke, one
+    per typed key afterwards). The retained Python reference passes 10/10 on the
+    cycle-10 bundle; the committed Rust capture fails 8/10 (e.g. 5 frames with no
+    input at all, 25 frames in the no-match case) while the empty-store case is a
+    control. This deviation is also the cause of the PTY start-up flake, so fixing
+    it makes every live gate deterministic.

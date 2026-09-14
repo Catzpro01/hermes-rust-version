@@ -36,11 +36,13 @@ jobs:
                    'picker_column_layout': 'column-layout',
                    'picker_message_style': 'message-style',
                    'picker_selection': 'selection',
-                   'picker_status_ink': 'status-ink'}
+                   'picker_status_ink': 'status-ink',
+                   'picker_redraw_on_input': 'redraw-on-input'}
           live = ('picker_footer_position', 'picker_footer_color',
                   'picker_normal_header', 'picker_filter_header',
                   'picker_column_layout', 'picker_message_style',
-                  'picker_selection', 'picker_status_ink')
+                  'picker_selection', 'picker_status_ink',
+                  'picker_redraw_on_input')
           test = request.get('test', 'picker_footer_tracks_delete_availability')
           assert test in tests, 'non-allowlisted regression'
           folder = folder/tests[test]
@@ -68,12 +70,12 @@ jobs:
           cargo fmt --all -- --check
           cargo check --workspace --all-targets --locked
       - name: Build CLI for terminal-coordinate regression
-        if: steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink'
+        if: steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input'
         run: |
           cargo build --locked -p hermes-rs --bin hermes-rs
           python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
       - name: Exact frame regression repeated three times
-        if: steps.plan.outputs.test != 'picker_footer_position' && steps.plan.outputs.test != 'picker_footer_color' && steps.plan.outputs.test != 'picker_normal_header' && steps.plan.outputs.test != 'picker_filter_header' && steps.plan.outputs.test != 'picker_column_layout' && steps.plan.outputs.test != 'picker_message_style' && steps.plan.outputs.test != 'picker_selection' && steps.plan.outputs.test != 'picker_status_ink'
+        if: steps.plan.outputs.test != 'picker_footer_position' && steps.plan.outputs.test != 'picker_footer_color' && steps.plan.outputs.test != 'picker_normal_header' && steps.plan.outputs.test != 'picker_filter_header' && steps.plan.outputs.test != 'picker_column_layout' && steps.plan.outputs.test != 'picker_message_style' && steps.plan.outputs.test != 'picker_selection' && steps.plan.outputs.test != 'picker_status_ink' && steps.plan.outputs.test != 'picker_redraw_on_input'
         id: regression
         env:
           PHASE: ${{ steps.plan.outputs.phase }}
@@ -374,6 +376,41 @@ jobs:
           if Path('evidence/status-ink-1.json').exists():
               export_annotations(Path('evidence/status-ink-1.json'), 0, 'status-ink trace')
           PY
+      - name: Exact CLI redraw-on-input regression repeated three times
+        if: steps.plan.outputs.test == 'picker_redraw_on_input'
+        id: redraw
+        env:
+          PHASE: ${{ steps.plan.outputs.phase }}
+        run: |
+          for attempt in 1 2 3; do
+            set +e
+            PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=evidence/redraw-$attempt.json python3 scripts/test_picker_redraw_on_input.py > "regression-$attempt.log" 2>&1
+            status=$?
+            set -e
+            cat "regression-$attempt.log"
+            grep -E '^Ran 1 test in ' "regression-$attempt.log"
+            if [ "$PHASE" = red ]; then
+              test "$status" -ne 0
+              grep -F 'FAIL: test_picker_draws_on_input_not_on_its_poll_timeout' "regression-$attempt.log"
+              if grep -F 'ERROR:' "regression-$attempt.log"; then exit 1; fi
+            else
+              test "$status" -eq 0
+              grep -F 'test_picker_draws_on_input_not_on_its_poll_timeout' "regression-$attempt.log"
+              grep -x 'OK' "regression-$attempt.log"
+            fi
+          done
+          echo "::notice title=picker redraw-on-input regression::$PHASE actual CLI regression verified three times"
+      - name: Retain primary redraw-on-input CLI trace
+        if: always() && steps.plan.outputs.test == 'picker_redraw_on_input'
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from capture_banner import export_annotations
+          if Path('evidence/redraw-1.json').exists():
+              export_annotations(Path('evidence/redraw-1.json'), 0, 'redraw trace')
+          PY
       - name: Full GREEN validation
         if: steps.plan.outputs.phase != 'red'
         run: |
@@ -381,7 +418,7 @@ jobs:
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace --no-fail-fast
       - name: Export exactly tested proposal
-        if: steps.plan.outputs.phase != 'capture' && !((steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink') && steps.plan.outputs.phase == 'red')
+        if: steps.plan.outputs.phase != 'capture' && !((steps.plan.outputs.test == 'picker_footer_position' || steps.plan.outputs.test == 'picker_footer_color' || steps.plan.outputs.test == 'picker_normal_header' || steps.plan.outputs.test == 'picker_filter_header' || steps.plan.outputs.test == 'picker_column_layout' || steps.plan.outputs.test == 'picker_message_style' || steps.plan.outputs.test == 'picker_selection' || steps.plan.outputs.test == 'picker_status_ink' || steps.plan.outputs.test == 'picker_redraw_on_input') && steps.plan.outputs.phase == 'red')
         run: |
           mkdir -p evidence
           git diff --binary -- '*.rs' > evidence/tested.patch
@@ -423,6 +460,9 @@ jobs:
             fi
             if [ "${{ steps.plan.outputs.test }}" = picker_status_ink ]; then
               PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_status_ink.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_redraw_on_input ]; then
+              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_redraw_on_input.py evidence/picker.json --side rust
             fi
             python3 scripts/capture_banner.py export evidence/picker.json
           } 2>&1 | tee capture-verify.log
