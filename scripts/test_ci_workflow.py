@@ -693,6 +693,61 @@ class CiGateTests(unittest.TestCase):
             self.assertNotIn(b"do-not-export", patch)
             subprocess.run(["git", "apply", "--check", "--reverse", "fmt.patch"], cwd=tmp, check=True)
 
+    def test_sccache_enabled_only_when_present(self):
+        """The wrapper must be exported exactly when sccache exists on the
+        runner, so hosted runners without it keep building unchanged."""
+        step = STEPS["Enable sccache if available"]
+        for present in (True, False):
+            with self.subTest(present=present), tempfile.TemporaryDirectory() as tmp:
+                if present:
+                    sccache = Path(tmp) / "sccache"
+                    sccache.write_text("#!/bin/sh\nexit 0\n")
+                    sccache.chmod(0o700)
+                env_file = Path(tmp) / "gh_env"
+                out_file = Path(tmp) / "gh_output"
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}",
+                           GITHUB_ENV=str(env_file), GITHUB_OUTPUT=str(out_file))
+                result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True, check=False)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                written = env_file.read_text() if env_file.exists() else ""
+                self.assertEqual("RUSTC_WRAPPER=sccache" in written, present, written)
+                if present:
+                    self.assertIn("SCCACHE_IDLE_TIMEOUT=0", written)
+                output = out_file.read_text() if out_file.exists() else ""
+                self.assertIn(f"sccache={'present' if present else 'absent'}", output)
+
+    def test_memory_diagnostics_report_oom_only_when_present(self):
+        """The small self-hosted VPS needs OOM visibility, but unreadable
+        dmesg or missing tools must never fail the job."""
+        step = STEPS["Record memory and OOM diagnostics"]
+        self.assertEqual(step["if"], "always()")
+        for oom in (True, False):
+            with self.subTest(oom=oom), tempfile.TemporaryDirectory() as tmp:
+                dmesg_line = ("echo '[91234.5] Out of memory: Killed process 4242 (hermes-rs)'"
+                              if oom else "echo '[1.0] normal boot message'")
+                for name, body in (
+                        ("dmesg", f"#!/bin/sh\n{dmesg_line}\n"),
+                        ("free", "#!/bin/sh\necho '              total        used        free'\necho 'Mem:           1977        1400         200'\n"),
+                        ("swapon", "#!/bin/sh\necho 'NAME      TYPE SIZE USED PRIO'\necho '/swapfile file   4G   0B  -2'\n"),
+                        ("sccache", "#!/bin/sh\necho 'Cache hits: 12'\n")):
+                    tool = Path(tmp) / name
+                    tool.write_text(body)
+                    tool.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}")
+                result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True, check=False)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                log = (Path(tmp) / "memory-oom.log").read_text()
+                self.assertIn("== free -m ==", log)
+                self.assertIn("== dmesg OOM kills ==", log)
+                self.assertEqual("::error title=OOM kill detected::" in result.stdout, oom,
+                                 result.stdout)
+
+    def test_memory_log_is_included_in_the_uploaded_logs(self):
+        step = STEPS["Upload logs"]
+        self.assertIn("memory-oom.log", step["with"]["path"])
+
 
 if __name__ == "__main__":
     unittest.main()

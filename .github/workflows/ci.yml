@@ -70,6 +70,23 @@ jobs:
           rustc --version
           cargo --version
 
+      # Self-hosted runners may provide sccache (e.g. via the runner .env).
+      # Enable it only when present so hosted runners keep working unchanged.
+      # Never set CARGO_INCREMENTAL here: incremental compilation defeats
+      # sccache caching.
+      - name: Enable sccache if available
+        id: sccache_probe
+        run: |
+          if command -v sccache >/dev/null 2>&1; then
+            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+            echo "SCCACHE_IDLE_TIMEOUT=0" >> "$GITHUB_ENV"
+            sccache --zero-stats || true
+            echo "sccache=present" >> "$GITHUB_OUTPUT"
+          else
+            echo "sccache not found on this runner; building without a wrapper"
+            echo "sccache=absent" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: cargo fmt --check
         id: fmt
         run: |
@@ -113,6 +130,31 @@ jobs:
           PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-status-ink.json python3 scripts/test_picker_status_ink.py 2>&1 | tee -a picker-position.log
           PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-redraw-on-input.json python3 scripts/test_picker_redraw_on_input.py 2>&1 | tee -a picker-position.log
           PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-terminal-size.json python3 scripts/test_picker_terminal_size.py 2>&1 | tee -a picker-position.log
+
+      # Small self-hosted runners (2 core / 2 GB) need OOM visibility. Capture
+      # memory and any kernel OOM kills; dmesg may be unreadable without root,
+      # which is fine and must not fail the job. Never set CARGO_INCREMENTAL.
+      - name: Record memory and OOM diagnostics
+        if: always()
+        run: |
+          set +e
+          {
+            echo "== host =="
+            uname -a
+            echo "== free -m =="
+            free -m 2>/dev/null || cat /proc/meminfo 2>/dev/null | head -5
+            echo "== swap =="
+            swapon --show 2>/dev/null || grep -i swap /proc/meminfo 2>/dev/null
+            echo "== dmesg OOM kills =="
+            dmesg 2>/dev/null | grep -iE "out of memory|oom-kill|killed process" | tail -20 || echo "(dmesg unavailable or no OOM lines)"
+            echo "== sccache =="
+            if command -v sccache >/dev/null 2>&1; then sccache --show-stats 2>/dev/null || true; else echo "(no sccache on PATH)"; fi
+          } > memory-oom.log 2>&1
+          set -e
+          cat memory-oom.log
+          if grep -qiE 'out of memory|oom-kill' memory-oom.log; then
+            echo "::error title=OOM kill detected::kernel OOM events found during this job; see the memory/OOM diagnostics step"
+          fi
 
       # Diagnostics are emitted as check-run annotations (readable via the
       # REST API even where raw logs/artifacts are not reachable) and as a
@@ -216,6 +258,7 @@ jobs:
             test.log
             format-recovery-check.log
             fmt.patch
+            memory-oom.log
             picker-position.log
             picker-position.json
             picker-color.json
