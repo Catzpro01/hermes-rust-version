@@ -294,6 +294,35 @@ pub fn apply_filter(rows: &[SessionRow], query: &str) -> Vec<usize> {
         .collect()
 }
 
+/// Reference `_curses_browse` navigation: the cursor is modulo — Down on the
+/// last item lands on the first, Up on the first item lands on the last.
+pub fn wrapped_cursor(cursor: usize, len: usize, down: bool) -> usize {
+    if len == 0 {
+        return 0;
+    }
+    if down {
+        (cursor + 1) % len
+    } else if cursor == 0 {
+        len - 1
+    } else {
+        cursor - 1
+    }
+}
+
+/// Reference `_curses_browse` scroll window: `scroll_offset` only moves when
+/// the cursor leaves the visible window, and then by exactly enough to bring
+/// it back (moving up never recentres; wrapping to item 0 snaps to the top).
+pub fn clamped_offset(offset: usize, cursor: usize, max_rows: usize) -> usize {
+    let rows = max_rows.max(1);
+    if cursor < offset {
+        cursor
+    } else if cursor >= offset + rows {
+        cursor + 1 - rows
+    } else {
+        offset
+    }
+}
+
 /// Restores the terminal (leave alternate screen, raw mode off, show cursor)
 /// on every exit path, mirroring the TUI's `RawGuard`.
 struct ScreenGuard;
@@ -336,6 +365,7 @@ pub fn frame_lines(
     rows: &[SessionRow],
     shown: &[usize],
     cursor: usize,
+    start: usize,
     filter: &str,
     term_width: u16,
     max_rows: usize,
@@ -351,11 +381,6 @@ pub fn frame_lines(
     if shown.is_empty() {
         lines.push(NO_MATCH.to_owned());
     } else {
-        let start = if cursor >= max_rows {
-            cursor + 1 - max_rows
-        } else {
-            0
-        };
         let nw = name_width(term_width);
         let selected = shown.get(cursor).copied();
         for &i in shown.iter().skip(start).take(max_rows) {
@@ -429,7 +454,7 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
     use crossterm::terminal;
     use crossterm::{cursor, execute};
 
-    let (cols, term_rows) = terminal::size().context("query terminal size")?;
+    let (mut cols, mut term_rows) = terminal::size().context("query terminal size")?;
     let mut rows = collect_rows(store)?;
     // The reference reports an empty store before curses ever starts, so an empty
     // store on a small terminal still prints `No sessions found.`.
@@ -462,9 +487,12 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
 
     let mut filter = String::new();
     let mut cursor_idx = 0usize;
+    // Reference `_curses_browse` keeps `scroll_offset` as state: it only moves
+    // when the cursor leaves the window, and every filter change resets it.
+    let mut scroll_offset = 0usize;
     let mut notices: Vec<&str> = Vec::new();
     // Hint, column header, blank separator and footer occupy four rows.
-    let max_rows = (term_rows as usize).saturating_sub(4).max(1);
+    let mut max_rows = (term_rows as usize).saturating_sub(4).max(1);
 
     // The reference draws once and then blocks in `getch()`; repainting only when
     // something changed keeps that cadence while the poll loop stays responsive.
@@ -472,17 +500,21 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
     let outcome = loop {
         let shown = apply_filter(&rows, &filter);
         cursor_idx = cursor_idx.min(shown.len().saturating_sub(1));
+        scroll_offset = clamped_offset(scroll_offset, cursor_idx, max_rows);
         if dirty {
             // Full redraw: home + clear + frame (flicker is acceptable here).
             use crossterm::terminal::ClearType;
             let mut out = std::io::stdout();
             execute!(out, cursor::MoveTo(0, 0), terminal::Clear(ClearType::All))?;
-            let frame = frame_lines(&rows, &shown, cursor_idx, &filter, cols, max_rows);
-            let start = if cursor_idx >= max_rows {
-                cursor_idx + 1 - max_rows
-            } else {
-                0
-            };
+            let frame = frame_lines(
+                &rows,
+                &shown,
+                cursor_idx,
+                scroll_offset,
+                &filter,
+                cols,
+                max_rows,
+            );
             for (n, line) in frame.iter().enumerate() {
                 let is_footer = n == frame.len() - 1;
                 // `addnstr(..., max_x - 1, ...)` in the reference: clip, never wrap.
@@ -494,7 +526,7 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                 // footer; the cursor row still gets reverse video.
                 let is_cursor_row = !shown.is_empty()
                     && n >= 3
-                    && n - 3 == cursor_idx.saturating_sub(start)
+                    && n - 3 == cursor_idx.saturating_sub(scroll_offset)
                     && n < frame.len() - 1;
                 if n == 0 {
                     use crossterm::style::{
@@ -562,7 +594,7 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                     let body = if n < 3 {
                         None
                     } else {
-                        shown.get(start + (n - 3)).copied()
+                        shown.get(scroll_offset + (n - 3)).copied()
                     };
                     match body.filter(|_| line.chars().count() >= span.end) {
                         Some(index) => {
@@ -591,7 +623,30 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
             continue;
         }
         match event::read()? {
-            Event::Resize(_, _) => {
+            Event::Resize(width, height) => {
+                cols = width;
+                term_rows = height;
+                if cols < PICKER_MIN_COLUMNS || term_rows < PICKER_MIN_ROWS {
+                    // The reference re-checks its minimum at the top of every
+                    // loop turn: a terminal that shrank below 5 rows / 40
+                    // columns shows the notice and exits at the next key.
+                    let mut notice = std::io::stdout();
+                    execute!(
+                        notice,
+                        cursor::MoveTo(0, 0),
+                        terminal::Clear(terminal::ClearType::All),
+                        crossterm::style::Print(TOO_SMALL)
+                    )?;
+                    notice.flush()?;
+                    loop {
+                        match event::read()? {
+                            Event::Key(key) if key.kind == event::KeyEventKind::Press => break,
+                            _ => continue,
+                        }
+                    }
+                    break BrowseOutcome::Cancelled;
+                }
+                max_rows = (term_rows as usize).saturating_sub(4).max(1);
                 dirty = true;
                 continue;
             }
@@ -606,21 +661,28 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                     anyhow::bail!("interrupted");
                 }
                 match key.code {
-                    KeyCode::Esc => break BrowseOutcome::Cancelled,
+                    KeyCode::Esc => {
+                        if filter.is_empty() {
+                            break BrowseOutcome::Cancelled;
+                        }
+                        // Reference: the first Esc clears the search — full
+                        // list, cursor and window back to zero; only the
+                        // second Esc exits.
+                        filter.clear();
+                        cursor_idx = 0;
+                        scroll_offset = 0;
+                    }
                     KeyCode::Enter => {
                         if let Some(&i) = shown.get(cursor_idx) {
                             break BrowseOutcome::Selected(rows[i].id);
                         }
                     }
-                    KeyCode::Up => cursor_idx = cursor_idx.saturating_sub(1),
-                    KeyCode::Down => {
-                        if cursor_idx + 1 < shown.len() {
-                            cursor_idx += 1;
-                        }
-                    }
+                    KeyCode::Up => cursor_idx = wrapped_cursor(cursor_idx, shown.len(), false),
+                    KeyCode::Down => cursor_idx = wrapped_cursor(cursor_idx, shown.len(), true),
                     KeyCode::Backspace => {
                         filter.pop();
                         cursor_idx = 0;
+                        scroll_offset = 0;
                     }
                     KeyCode::Char('d') if filter.is_empty() && !shown.is_empty() => {
                         let target = &rows[shown[cursor_idx]];
@@ -667,6 +729,7 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                             }
                         }
                         cursor_idx = 0;
+                        scroll_offset = 0;
                     }
                     KeyCode::Char(c)
                         if !key.modifiers.contains(KeyModifiers::CONTROL)
@@ -676,6 +739,7 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                     {
                         filter.push(c);
                         cursor_idx = 0;
+                        scroll_offset = 0;
                     }
                     _ => {}
                 }
@@ -742,7 +806,7 @@ mod tests {
     fn picker_no_match_counter_preserves_total() {
         let rows = fixture_rows();
         let shown = apply_filter(&rows, "zzzz");
-        let frame = frame_lines(&rows, &shown, 0, "zzzz", 20, 10);
+        let frame = frame_lines(&rows, &shown, 0, 0, "zzzz", 20, 10);
         // Independent pinned Python two-session fixture, not a recomputed count.
         assert_eq!(frame.last().unwrap(), "  0/2 sessions");
     }
@@ -758,10 +822,10 @@ mod tests {
             ("zzzz", "  0/1 sessions"),
         ] {
             let shown = apply_filter(&rows, query);
-            let frame = frame_lines(&rows, &shown, 0, query, 20, 10);
+            let frame = frame_lines(&rows, &shown, 0, 0, query, 20, 10);
             assert_eq!(frame.last().unwrap(), expected, "query={query:?}");
         }
-        let frame = frame_lines(&[], &[], 0, "", 20, 10);
+        let frame = frame_lines(&[], &[], 0, 0, "", 20, 10);
         assert_eq!(frame.last().unwrap(), "  0/0 sessions");
     }
 
@@ -910,7 +974,7 @@ mod tests {
     fn frame_lines_cover_hint_header_rows_footer_and_no_match() {
         let rows = fixture_rows();
         let shown = apply_filter(&rows, "");
-        let frame = frame_lines(&rows, &shown, 0, "", 20, 10);
+        let frame = frame_lines(&rows, &shown, 0, 0, "", 20, 10);
         assert_eq!(frame[0], HINT_BROWSE);
         assert_eq!(frame[1], column_header(20));
         assert_eq!(frame[2], "");
@@ -919,10 +983,67 @@ mod tests {
         assert_eq!(*frame.last().unwrap(), "  1/2 sessions   d delete");
 
         let shown = apply_filter(&rows, "zzz");
-        let frame = frame_lines(&rows, &shown, 0, "zzz", 20, 10);
+        let frame = frame_lines(&rows, &shown, 0, 0, "zzz", 20, 10);
         assert_eq!(frame[0], "  Browse sessions — filter: zzz█");
         assert!(frame.contains(&NO_MATCH.to_owned()), "{frame:?}");
         assert_eq!(*frame.last().unwrap(), "  0/2 sessions");
+    }
+
+    #[test]
+    fn picker_cursor_wraps_modulo_like_the_reference() {
+        assert_eq!(wrapped_cursor(0, 3, false), 2, "Up from the first item wraps to the last");
+        assert_eq!(wrapped_cursor(2, 3, true), 0, "Down from the last item wraps to the first");
+        assert_eq!(wrapped_cursor(1, 3, true), 2);
+        assert_eq!(wrapped_cursor(1, 3, false), 0);
+        assert_eq!(wrapped_cursor(0, 0, true), 0, "an empty list never moves");
+        assert_eq!(wrapped_cursor(0, 0, false), 0);
+    }
+
+    #[test]
+    fn picker_window_moves_only_enough_to_keep_cursor_visible() {
+        // Down: the window is still until the cursor passes its bottom edge,
+        // then shifts by exactly the overflow.
+        assert_eq!(clamped_offset(0, 4, 5), 0);
+        assert_eq!(clamped_offset(0, 5, 5), 1);
+        assert_eq!(clamped_offset(1, 6, 5), 2);
+        // Up: the window is still until the cursor passes its top edge —
+        // moving up never recentres (the stale recompute did).
+        assert_eq!(clamped_offset(3, 4, 5), 3);
+        assert_eq!(clamped_offset(3, 2, 5), 2);
+        // Wrapping down to item 0 snaps the window back to the top.
+        assert_eq!(clamped_offset(25, 0, 26), 0);
+    }
+
+    fn long_fixture_rows(count: usize) -> Vec<SessionRow> {
+        (0..count)
+            .map(|i| SessionRow {
+                id: "550e8400-e29b-41d4-a716-446655440000".parse().unwrap(),
+                name: format!("session-{i:02}"),
+                status: "done",
+                msgs: 1,
+                last_active: "just now".into(),
+                source: "cli".into(),
+                sid: "550e8400".into(),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn frame_lines_render_the_stateful_window_not_a_cursor_pinned_one() {
+        let rows = long_fixture_rows(30);
+        let shown: Vec<usize> = (0..30).collect();
+        // After wrapping up to the last item the window clamps to the bottom:
+        // offset 4 shows sessions 04..=29 with the cursor on the final row.
+        let frame = frame_lines(&rows, &shown, 29, 4, "", 100, 26);
+        assert!(frame[3].contains("session-04"), "{frame:?}");
+        assert!(frame[28].contains("session-29"), "{frame:?}");
+        assert!(frame[28].contains("→"), "cursor row keeps the arrow: {frame:?}");
+        assert_eq!(frame[29].trim(), "30/30 sessions   d delete");
+        // Wrap down to item 0: window snapped to the top, cursor on row 3.
+        let frame = frame_lines(&rows, &shown, 0, 0, "", 100, 26);
+        assert!(frame[3].contains("session-00"), "{frame:?}");
+        assert!(frame[3].contains("→"), "{frame:?}");
+        assert!(frame[28].contains("session-25"), "{frame:?}");
     }
 
     fn temp_store() -> (tempfile::TempDir, SessionStore) {
