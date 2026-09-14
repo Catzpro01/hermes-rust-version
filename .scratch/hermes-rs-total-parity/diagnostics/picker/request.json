@@ -1,6 +1,5 @@
 {
-  "phase": "green",
+  "phase": "capture",
   "test": "picker_filter_header",
-  "source_sha256": "2c6f1fec0a6fa2b630038293ffdb4e0b04ac6ea2f4b76b0a865b2fb315cb464e",
-  "patch_sha256": "21fcdead245179fb4eda6032fd39f5f5593b3ae8c4c5efe01b78bb676ef2a6d1"
+  "source_sha256": "8f05d71fd16e67958668e3775d8f2ae13e784dcd8b86af1d70c9e5e2b78162bc"
 }
