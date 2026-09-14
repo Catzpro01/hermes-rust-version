@@ -58,7 +58,12 @@ jobs:
       - name: Install official Rust toolchain
         run: |
           if command -v rustup >/dev/null 2>&1; then
-            rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+            # `rustup update` installs stable when missing AND upgrades a stale
+            # one: self-hosted runners can lag behind the locked Cargo.lock's
+            # MSRV (run 34889606785 failed with rustc 1.85.1 < 1.88).
+            rustup update stable --profile minimal --component rustfmt --component clippy \
+              || rustup toolchain install stable --profile minimal --component rustfmt --component clippy \
+              || echo "::warning::rustup could not update the stable toolchain; continuing with whatever is installed"
             rustup default stable
           fi
           for tool in rustc cargo rustfmt cargo-clippy; do
