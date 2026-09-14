@@ -1,7 +1,5 @@
 {
-  "phase": "green",
+  "phase": "capture",
   "test": "picker_selection",
-  "source_sha256": "44279ec508af453015fda4086bfd778cc9862fa8de2eefde31245b20711f22c1",
-  "patch_sha256": "8eed758f33bb38b6409517f31f0faccaded907706be97dbe7443f2f064253ee5",
-  "attempt_note": "re-request after the live gate passed but the three-times loop failed; same bound source and patch"
+  "source_sha256": "ac713f9a1a0e0d41a22637095d0e90c534ecd61c7e61b1f0eaf7e93bd98cc21f"
 }
