@@ -1723,3 +1723,35 @@ Siklus TDD penuh kedua untuk picker V2, sumber ter-commit `b732d22`, fix `641c30
   berikutnya: dim no-match + gaya baris terpilih hijau+bold, lalu prompt hapus.
 
 Tidak ada adaptasi baru, PASS seluruh picker, acceptance, atau merge.
+
+### Slice picker: prompt hapus + pesan no-match (P1–P5 selesai)
+
+Siklus TDD ketiga untuk picker V2; sumber ter-commit `fd674dc`, fix `549fc8d`:
+
+- RED nyata 34864078749: gate live baru `picker_message_style` gagal 3× dengan nama
+  tes benar dan tanpa error setup — empat masalah: pesan no-match tanpa atribut dim
+  (dua lebar) dan prompt hapus belum merah/bold (dua lebar).
+- GREEN resmi 34864360124: patch 2.216 byte `d1ed7f99…` (dim + reset di tempat;
+  `Color::DarkRed` + bold untuk prompt) diterapkan persis, gate live 3×, fmt/check,
+  clippy `-D warnings` dan seluruh suite PASS; patch hasil ekspor byte-identik
+  dengan proposal.
+- Capture 34864672852 dari sumber ter-commit: 10 kasus, **delapan** checker PASS
+  pada sumber itu (hint, counter, posisi, warna, header normal, header filter,
+  tata letak kolom, prompt/message); bundle 166.599 byte `a8f37c46…`.
+- Paket `docs/hermes-ui-spec/017/evidence/picker-message-style-fd674dc/`:
+  **28 dari 28 region piksel identik** — temuan dim dari slice kolom tertutup
+  (baris yang tadinya berbeda 1.135 piksel kini sama) dan dua region baru untuk
+  baris prompt hapus; 6 PNG kasus empty byte-identik; delta sel hanya flag dim
+  (62 sel) dan tinta prompt (76 sel: slot foreground, bold, mode palet256); sel dan
+  rekaman Python tidak berubah. `verify.py` → audit
+  `MESSAGE_STYLE_FIXED_ALL_PINNED_REGIONS_EQUAL`.
+- CI biasa kini menjalankan gate live keenam; dua commit pra-fix memang merah di CI
+  biasa karena gate barunya sudah ikut rilis (34864078561, 34864360148), sedangkan
+  commit fix dan capture hijau (34864669012, 34864672933).
+- Dokumen: MILESTONES (P1–P5), PARITY, README bukti, T13, serta tampilan roadmap
+  `docs/ROADMAP-VIEW.md`.
+
+Berikutnya: baris terpilih (` → ` palette2 hijau + bold menggantikan reverse
+video), lalu warna kolom status (butuh bukti terpinn), sisanya wizard V1 dan
+keputusan produk dropdown completion. Tidak ada adaptasi baru, PASS seluruh
+picker, acceptance, atau merge.

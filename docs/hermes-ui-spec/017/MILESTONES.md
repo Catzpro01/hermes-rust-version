@@ -1,6 +1,6 @@
 # Milestone Hermes — visual parity Spec017
 
-**Pembaruan: 14 September 2026 · Tata letak kolom picker selesai diverifikasi; temuan atribut dim pada baris no-match dicatat terbuka.**
+**Pembaruan: 14 September 2026 · Tata letak kolom, prompt hapus dan pesan no-match picker selesai diverifikasi; seluruh region piksel yang dipatok kini identik.**
 
 Halaman ini melacak pekerjaan visual parity yang sedang aktif, **bukan persentase
 seluruh proyek Hermes**. “Terverifikasi” berlaku untuk scope yang disebutkan;
@@ -17,9 +17,9 @@ bukan berarti seluruh layar identik atau Spec017 sudah diterima pengguna.
 | Warna footer sesuai Python | ✅ Terverifikasi | [ae220ff: 10 gambar, 6 footer pixel-identik](evidence/picker-color-ae220ff/REPORT.md) |
 | Header bantuan mode normal | ✅ Terverifikasi | [7fef514: palette3 + bold, 4 header pixel-identik](evidence/picker-header-7fef514/REPORT.md) |
 | Header filter picker (palette6 + bold) | ✅ Terverifikasi | [9cc5cb4: 4 piksel row1 identik, slot6+bold](evidence/picker-filter-header-9cc5cb4/REPORT.md) |
-| Seleksi, konfirmasi hapus, header kolom, sisa tata letak picker | ⏳ Belum selesai | Siklus terpisah; tidak ikut dianggap selesai oleh header filter |
 | Tata letak kolom picker (kolom kursor, baris pemisah, medan nama, tinta header) | ✅ Terverifikasi | [b732d22: 14 region piksel identik, 2 PNG byte-identik](evidence/picker-column-layout-b732d22/REPORT.md) |
-| Pesan no-match atribut dim (temuan piksel slice kolom) | ⏳ Belum selesai | pyte0.8.2 tidak bisa membaca dim; fix + gate di siklus berikutnya |
+| Prompt konfirmasi hapus (palette1 + bold) dan pesan no-match (atribut dim) | ✅ Terverifikasi | [fd674dc: 28 dari 28 region piksel identik](evidence/picker-message-style-fd674dc/REPORT.md) |
+| Seleksi (baris terpilih hijau + bold), warna kolom status, sisa bukti tata letak picker | ⏳ Belum selesai | Siklus terpisah; `pyte` tidak dapat membaca dim sehingga bukti piksel yang menentukan |
 | Sisa perbedaan wizard/completion dan kelengkapan bukti | ⏳ Belum selesai | T12/T13 tetap terbuka |
 | Penerimaan akhir Spec017 | 🔒 Belum siap | Memerlukan bukti lengkap, CI relevan GREEN, dan persetujuan eksplisit pengguna |
 
@@ -56,6 +56,27 @@ header filter/kolom, seleksi, footer dan posisi teks tidak ikut diubah.
 | H3 · Perubahan minimal | ✅ Selesai | Patch1171 byte resmi diterapkan persis; DarkYellow + Bold untuk header filter kosong, lalu reset |
 | H4 · GREEN resmi | ✅ Selesai | [34837102702 / 645f86d](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837102702): primer3, fmt/check/clippy/full workspace PASS |
 | H5 · Capture dan review | ✅ Selesai | [Capture34837424495](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837424495) + [CI34837424464](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34837424464) GREEN; 10 gambar diperiksa, audit isolasi PASS |
+
+### Baris prompt/pesan picker — P1–P5 selesai
+
+Scope: prompt konfirmasi hapus (palette slot 1 + bold) dan pesan
+`  No sessions match the filter.` (atribut **dim**). Gaya baris terpilih, warna
+kolom status, geometri dan teks tidak ikut diubah.
+
+| Tahap | Status | Bukti / kriteria |
+|---|---|---|
+| P1 · Kontrak dan referensi | ✅ Selesai | Referensi v0.21.0 (`ui-3b39bd7`): prompt `SGR 31` + bold di baris terakhir; dim dibuka `ESC[0;2m` di baris4 kolom1 dan baru di-reset saat footer digambar ulang |
+| P2 · RED nyata | ✅ Selesai | [34864078749](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34864078749): tes primer FAIL3× dengan nama benar, 4 masalah, tanpa error setup |
+| P3 · Perubahan minimal | ✅ Selesai | Patch2.216 byte `d1ed7f99…` diterapkan persis (dim + reset di tempat; `Color::DarkRed` + bold untuk prompt) |
+| P4 · GREEN resmi | ✅ Selesai | [34864360124](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34864360124): gate live3×, fmt/check, clippy `-D warnings` dan seluruh suite PASS |
+| P5 · Capture dan review | ✅ Selesai | [Capture34864672852](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34864672852) + CI34864669012/34864672933 GREEN; 28/28 region piksel identik, 6 PNG byte-identik, 8 checker PASS di sumber ter-commit |
+
+Temuan `dim` dari slice tata letak kolom kini tertutup: baris pesan yang tadinya
+berbeda1.135 piksel di kedua lebar sudah identik, dan urutan escape referensi
+(dim aktif sampai redraw footer) terbukti tidak terlihat. Gate live keenam
+(`picker_message_style`) menyusul di CI biasa pada siklus berikutnya; yang masih
+terbuka adalah baris terpilih, warna kolom status, konten `Active`/`ID`, serta
+resize/daftar panjang/clear-filter.
 
 ### Tata letak kolom picker — K1–K5 selesai
 

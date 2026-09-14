@@ -30,18 +30,28 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- **Picker prompt/message slice delivered**: fix `549fc8d` (tested patch 2216 B
+  `d1ed7f99…`: `Attribute::Dim` on the no-match message reset in place, and
+  `Color::DarkRed` + bold on the delete-confirm prompt), RED `34864078749` →
+  GREEN `34864360124` → capture `34864672852` (bundle `a8f37c46…`, 10 cases) →
+  CI `34864669012`/`34864672933`. Packet
+  `docs/hermes-ui-spec/017/evidence/picker-message-style-fd674dc/`:
+  **28 of 28 pinned pixel regions identical** (the no-match row that differed by
+  1135 px is closed), 6 byte-identical empty-case PNGs, 20 round trips, 10 checker
+  runs; cell deltas are only dim (62 cells) and prompt ink (76 cells). Ordinary CI
+  now also runs `test_picker_message_style.py` (sixth live gate).
+- **Roadmap view**: `docs/ROADMAP-VIEW.md` (consolidated from ROADMAP/MILESTONES/
+  PROGRESS-ANALYSIS; canonical files remain the source of truth).
 - Picker **column-layout slice delivered**: fix `641c304` (tested patch 12824 B
   `006bdcc7…`), RED `34860668321` → GREEN `34861285022` (first proposal rejected
   by clippy, kept as `rejected-first-attempt.patch`) → capture `34861588181`
-  (bundle `d6860b3d…`, 10 cases) → CI `34861587979`. Packet
-  `docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/` (verify.py OK:
-  20 round trips, 8 checker runs, 14 equal pixel regions, 2 byte-identical PNGs).
-  Ordinary CI now also runs `test_picker_column_layout.py`.
-- **New open finding (pixel-only)**: the reference renders
-  `  No sessions match the filter.` with the *dim* attribute; pyte 0.8.2 cannot
-  decode dim, so pyte gates are blind to it. Next cycle: dim no-match + cursor row
-  ` → ` palette2 green+bold (replace reverse video), then delete-prompt red+bold.
-  Status-column colour has no pinned evidence for `done` and stays open.
+  (bundle `d6860b3d…`) → CI `34861587979`. Packet
+  `docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/`.
+- **Picker still open**: cursor row (` → ` palette2 green + bold instead of
+  reverse video — next cycle, gate shape already sketched), status-column ink (no
+  pinned evidence for the Rust `done` value), documented `Active`/`ID`
+  adaptations, resize/long-list/clear-filter, then wizard V1 and the completion
+  product decision.
 
 - Picker filter-header slice **delivered**: runtime commit `48cf587` (patch
   598B SHA `21fcdead…`, DarkCyan = palette slot6). RED `34858664487`, GREEN

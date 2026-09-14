@@ -398,6 +398,33 @@ colour, status/`Active`/`ID` column content, remaining body geometry, and the
 wizard/completion evidence gaps. Resize/long-list/clear-filter behaviour is not
 proved by these fixed-size cases. No whole-picker PASS, acceptance or merge.
 
+### Prompt/message slice delivered at549fc8d (capture fd674dc)
+
+The delete-confirm prompt is now drawn with palette slot 1 plus bold and the
+no-match message with the dim attribute, the two prompt/message rows the retained
+reference pinned. Chain: RED 34864078749 (live gate failed three times for
+exactly those two reasons) → GREEN 34864360124 (exported 2216-byte patch
+byte-identical to the bound proposal; fmt/check, clippy `-D warnings` and the
+whole suite passed) → capture 34864672852 (ten cases; eight checkers green on the
+committed source) → ordinary CI 34864669012/34864672933 SUCCESS. Packet
+`docs/hermes-ui-spec/017/evidence/picker-message-style-fd674dc/REPORT.md`.
+
+Every pinned renderer region is now pixel-identical: 28 of 28, including the
+no-match message row that differed by 1135 pixels per width before this slice and
+the new delete-prompt row regions. `pyte 0.8.2` cannot decode dim, so the gate
+reads the attribute from the retained byte stream and the packet proves the
+rendered result; the reference's habit of leaving dim open until the footer
+redraw is shown to be invisible because both the message row and the footer row
+compare equal. Cell deltas against the previous packet are only the dim flag
+(62 cells) and the prompt ink (76 cells: foreground slot, bold, palette256 mode);
+Python records and cells are unchanged and the six empty-case PNGs are
+byte-identical.
+
+Still open in the picker: the cursor row (` → ` palette2 green + bold instead of
+reverse video), the status-column ink (no pinned evidence for the Rust `done`
+value), the documented `Active`/`ID` adaptations, and resize/long-list/
+clear-filter. No whole-picker PASS, adaptation, acceptance or merge.
+
 ### Column-layout slice delivered at641c304 (capture b732d22)
 
 Source capture [34861588181] and ordinary CI [34861587979] SUCCESS; the two

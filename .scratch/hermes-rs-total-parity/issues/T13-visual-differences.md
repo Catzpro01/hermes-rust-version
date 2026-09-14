@@ -72,13 +72,15 @@ This supersedes the historical pending-counter entries above.
     34861588181 / CI 34861587979). The first GREEN proposal was rejected by
     clippy (8/7 arguments) and kept as `rejected-first-attempt.patch`.
     Packet: `docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/REPORT.md`.
-  - [ ] Cycle 3 (prompt/message rows) in flight: the new live gate
-    `picker_message_style` pins the delete-confirm prompt (palette1 red + bold)
-    and the no-match message (the **dim** attribute, `ESC[0;2m`, which pyte 0.8.2
-    cannot decode, so it is read from the retained byte stream and the packet
-    compares the rendered pixels). RED requested against source `caf8336d…`;
-    fix not applied yet. The reference passes 6/6, the current Rust source fails
-    6/6 for exactly those two reasons.
+  - [x] Cycle 3 (prompt/message rows) delivered: the delete-confirm prompt is
+    palette1 + bold and the no-match message carries the **dim** attribute
+    (`ESC[0;2m`, unreadable by pyte 0.8.2, so verified from the retained byte
+    stream plus rendered pixels). RED 34864078749 → GREEN 34864360124 → capture
+    34864672852 → CI 34864669012/34864672933. The tested 2216-byte patch is
+    `message-style/green.patch`; packet
+    `docs/hermes-ui-spec/017/evidence/picker-message-style-fd674dc/REPORT.md`.
+    All 28 pinned pixel regions are equal, so the dim finding from cycle 2 is
+    closed.
   - [ ] Cycle 4 (selection row) stays separate: ` → ` + palette2 green + bold
     instead of reverse video, found by the pinned-renderer pixels.
 - [ ] Wizard/completion discrepancies and T12 field/full-Python-CLI evidence.

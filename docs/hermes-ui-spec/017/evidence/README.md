@@ -1,16 +1,21 @@
 # Bukti visual Spec 017
 
-**Terbaru: tata letak kolom picker mengikuti koordinat referensi yang dipatok
-(kolom kursor, baris pemisah, medan nama, tinta header). Keseluruhan §J.7 belum
-selesai atau diterima user.**
+**Terbaru: baris prompt/no-match picker sudah sesuai referensi — prompt hapus
+palette1 + bold, pesan no-match dengan atribut dim — dan seluruh region piksel
+yang dipatok kini identik. Keseluruhan §J.7 belum selesai atau diterima user.**
 
-[Laporan terbaru](../evidence/picker-column-layout-b732d22/REPORT.md) (paket
+[Laporan terbaru](../evidence/picker-message-style-fd674dc/REPORT.md) (paket
+`picker-message-style-fd674dc`): RED 34864078749 → GREEN 34864360124 → capture
+34864672852 → CI 34864669012/34864672933 SUCCESS. Prompt konfirmasi hapus kini
+palette1 + bold dan pesan no-match memakai atribut **dim**; 28 dari 28 region
+piksel identik dengan pane Python (baris pesan yang sebelumnya berbeda 1.135
+piksel kini sama), enam PNG kasus empty byte-identik. `pyte` tidak dapat membaca
+dim, jadi atribut itu diverifikasi dari byte stream dan piksel.
+
+[Laporan sebelumnya](../evidence/picker-column-layout-b732d22/REPORT.md) (paket
 `picker-column-layout-b732d22`): RED 34860668321 → GREEN 34861285022 → capture
-34861588181 → CI 34861587979 SUCCESS. Kolom header, baris kosong pemisah dan
-kolom kursor kini pada koordinat referensi; 14 region piksel identik dengan pane
-Python, dua PNG kasus empty byte-identik dengan paket sebelumnya. Perbandingan
-piksel juga menemukan atribut **dim** pada pesan no-match referensi — dicatat
-terbuka, karena pyte tidak dapat membacanya.
+34861588181 → CI 34861587979 SUCCESS; kolom header, baris kosong pemisah dan
+kolom kursor pada koordinat referensi, 14 region piksel identik.
 
 [Laporan sebelumnya](../evidence/picker-filter-header-9cc5cb4/REPORT.md) (paket
 `picker-filter-header-9cc5cb4`): header filter memakai palette slot 6 + bold;
