@@ -30,6 +30,15 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Handoff rechecked at95f9319 (organized by b5facfc): verifier7 aliases/37 skills/
+  164 originals PASS,8 auto-push tests PASS, installed hook/receipt current.
+  CI34843728495/95f9319 SUCCESS. User now explicitly requests PR merge; user
+  authorization exists but session cannot write main. PR7 remains OPEN/DRAFT,
+  CONFLICTING/DIRTY as checked. No merge/auto-merge attempted. See canonical
+  handoff/MAIN-INTEGRATION.md and pr-status-95f9319.json. Preserve source history
+  needed by evidence git-show verifiers; fresh-clone validation after integration.
+  Selected Wayfinder destination is Spec017 completion; do not ask it again.
+
 - Latest user request: persist all relevant progress/memory/skills/context for
   another session, organize agent-only files, add successor rules/guides and
   automatic checkpoint pushes; also requested main. Canonical package now lives

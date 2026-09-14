@@ -1,5 +1,15 @@
 # Current handoff — tujuan berikutnya sudah dipilih
 
+## Pemeriksaan terakhir — handoff tersimpan, merge masih terblokir
+
+Paket penataan sudah ada pada `b5facfc`, hasilnya dicatat pada `95f9319`.
+Pemeriksaan ulang: verifier7 alias/37 skill/164 file PASS dan8 tes auto-push PASS;
+auto-push aktif, receipt95f9319 sukses dan sesuai head saat diperiksa.
+CI34843728495/95f9319 SUCCESS. Pengguna kini meminta merge secara eksplisit,
+tetapi PR #7 masih draft/CONFLICTING dan sesi sumber tidak boleh menulis main.
+**Belum merged.** Baca [status/jalur main](MAIN-INTEGRATION.md) sebelum integrasi.
+Tugas berikutnya setelah handoff tetap wawancara Wayfinder, bukan coding baru.
+
 ## Tugas aktif (bukan implementasi)
 
 Pengguna menjalankan `/wayfinder`, kemudian memilih **rute penuntasan Spec017**

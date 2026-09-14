@@ -45,3 +45,10 @@ Pengguna meminta seluruh progres disimpan ke main. Pelaksanaan tidak mungkin
 pada sesi sumber yang branch-nya dikunci. Permintaan itu dicatat sebagai target
 integrasi, bukan diam-diam dilaksanakan, bukan waiver CI/Spec017, dan bukan izin
 untuk agent berikutnya melanggar pembatasan platformnya sendiri.
+
+## Instruksi integrasi terbaru
+
+Pengguna secara eksplisit meminta merge PR setelah meminta penyimpanan di main.
+Instruksi pengguna untuk merge kini ada, tetapi tidak mengatasi batas platform
+sesi sumber atau konflik PR. [Status dan langkah integrasi](MAIN-INTEGRATION.md)
+adalah sumber detail operasional; Spec017 tetap WIP, belum diterima/ditutup.

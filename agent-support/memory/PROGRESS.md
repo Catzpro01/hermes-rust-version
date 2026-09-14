@@ -1556,3 +1556,22 @@ its own head/CI should be checked after commit rather than inferred from parent.
 Successor: use source branch as session basis until main integration is complete;
 read AGENTS and START-NEXT-SESSION prompt. Resume /wayfinder breadth-first interview
 for confirmed Spec017 destination, not another destination question or coding.
+
+### Handoff rechecked; explicit merge request blocked, not executed
+
+User repeated save/organize/auto-push/next-session requests and explicitly asked
+for PR merge. Workspace already contains b5facfc organization and95f9319 receipts;
+did not repeat folder moves or overwrite artifacts. Re-read canonical handoff and
+automation. Verifier PASS (7 aliases,37 skill links,164 vendor files,9 guides),
+8 offline auto-push tests PASS. Existing hook installed/enabled on assigned branch;
+receipt95f9319 success/current. Official CI34843728495 on95f9319 SUCCESS.
+
+PR7 was observed OPEN/DRAFT, CONFLICTING/DIRTY to main; JSON snapshot retained.
+User merge authorization now exists, but this session can push only its assigned
+source branch and cannot merge into main. No merge/auto-merge, target-branch push,
+branch switch or conflict-resolution attempt. Updated integration guide with
+conflict/review/CI/fresh-clone steps and warning that squash/rebase may lose source
+SHA reachability required by evidence verifiers. No product or vendor changes.
+Wayfinder destination remains confirmed Spec017; next substantive work is the
+breadth-first interview. This checkpoint will use the existing post-commit push;
+verify its new receipt/remote separately instead of inheriting parent success.
