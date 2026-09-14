@@ -1169,3 +1169,15 @@ Routing only: no runtime fix, new test result, personal Matt approval, closure
 or merge claimed. Startup Git metadata again lagged the saved worktree; fetched
 only the assigned branch, verified every tracked blob matched370423e, and aligned
 HEAD/index without changing working files. No force push or lost user edits.
+
+### `/tdd` invoked — confirm counter regression seam (2026-09-14)
+
+Read installed TDD skill/tests/mocking references and tracked context. Scope is
+only T13's no-match counter, with two-session Python fixture `0/2 sessions` as
+independent expected output. Skill requires user-confirmed seams before writing
+new tests. Proposed first-cycle seam: public session_picker::frame_lines(), then
+existing real CLI/PTy capture as acceptance verification. Alternative: actual
+CLI/PTy as the primary regression seam. Preserve delete-hint and normal/filtered
+controls, immutable originals, official remote validation before Rust application,
+and no merge/closure. This confirms test placement only, not a new Q1–Q8 interview.
+No new test or runtime change written while awaiting that seam selection.
