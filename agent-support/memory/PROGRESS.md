@@ -1928,3 +1928,36 @@ runner self-hosted VPS (2 core, 2 GB RAM, 38 GB disk).
   hasil `cargo build`; tidak ada toolchain Rust di sandbox (unduhan TLS-blocked,
   diverifikasi ulang 2026-09-14) dan ingress artifact juga blocked, jadi tes itu
   tercakup oleh CI yang hijau pada setiap commit — termasuk `9bf9b8c`.
+
+### Slice CI runner: sccache guard + diagnostik memori/OOM untuk VPS self-hosted (selesai)
+
+**Request:** lanjutkan pembaruan sisi repositori setelah pengguna menata VPS
+self-hosted (hapus `CARGO_INCREMENTAL` dari .env runner agar tidak meniadakan
+sccache, swap 4 GB aktif, kedua runner direstart).
+
+- `ci.yml` job `test` mendapat dua step baru (terjaga, tak mengubah step
+  ter-pin yang diuji): `Enable sccache if available` (ekspor
+  `RUSTC_WRAPPER=sccache` hanya bila biner ada; `SCCACHE_IDLE_TIMEOUT=0`;
+  zero-stats; no-op di runner tanpa sccache) dan `Record memory and OOM
+  diagnostics` (always(): uname/free/swapon/dmesg-OOM/sccache-stats ke
+  `memory-oom.log`; tidak pernah menggagalkan job bila dmesg tak terbaca;
+  anotasi `::error title=OOM kill detected::` bila ada event kernel OOM).
+  `memory-oom.log` ikut artefak ci-logs (retensi 90 hari).
+- Anotasi notice ditambahkan agar status terlihat lewat API (log/artefak tak
+  terjangkau dari sandbox review): `sccache enabled`/absen + ringkasan
+  memori/swap per run.
+- 3 tes regresi workflow baru mem-pin perilaku tersebut; suite regresi
+  workflow 32/32 PASS; suite scripts total 137 tes → 127 PASS dengan 10 error
+  `HERMES_PICKER_BINARY` baseline (CI-only); verifier paket dan 8 tes
+  checkpoint PASS.
+- Commit `d3ae7b0` dan `6616b52` ter-push (receipt PASS). CI pada keduanya
+  SUCCESS di VPS: run [34888051806](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34888051806)
+  dan [34888457106](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34888457106);
+  anotasi hanya notice ringkasan + diagnostik baru, tanpa warning/error.
+- **Temuan penting dari diagnostik baru:** run 34888457106 ternyata dieksekusi
+  runner dengan **RAM ±16 GB dan swap ±3 GB, tanpa sccache di PATH** — bukan
+  VPS 2 GB/4 GB-swap/bersccache yang baru ditata pengguna, dan nama runner
+  berbeda antar run (pool `ubuntu-latest` berisi lebih dari satu runner).
+  Step baru sudah aman untuk kedua kondisi, tetapi bila job harus selalu mendarat
+  di VPS tertata, label runner perlu dikonfirmasi pengguna (API daftar runner
+  403 untuk token sesi ini).
