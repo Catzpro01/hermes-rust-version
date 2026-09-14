@@ -33,6 +33,10 @@ jobs:
           python3 scripts/test_picker_footer_color_checks.py
           python3 scripts/test_picker_normal_header_checks.py
       - run: python3 scripts/test_audit_ui_evidence.py
+      - name: Verify agent handoff and safe checkpoint automation
+        run: |
+          python3 agent-support/automation/verify.py
+          python3 agent-support/automation/test_checkpoint.py
 
   test:
     name: fmt + clippy + test

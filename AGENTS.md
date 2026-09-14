@@ -1,56 +1,26 @@
-# Hermes-RS Agent Instructions
+# Hermes-RS — agent entry point
 
-Read `CONTEXT.md` before changing domain terms or architecture. Read relevant ADRs under `docs/adr/` before making an irreversible design choice.
+Read these files before editing:
 
-## Agent skills
+1. [Rules](agent-support/RULES.md) — project constraints and safe checkpointing.
+2. [Current handoff](agent-support/handoff/CURRENT.md) — active work and next action.
+3. [Start next session](agent-support/handoff/START-NEXT-SESSION.md) — bootstrap/checks.
+4. [Working memory](agent-support/memory/MEMORY.md) and the latest entries of
+   [progress](agent-support/memory/PROGRESS.md).
+5. [Context](agent-support/context/CONTEXT.md), relevant `docs/adr/`, and the active
+   local issue under `.scratch/` before domain or architecture changes.
 
-### Matt Pocock toolkit
+## Non-negotiable defaults
 
-The official toolkit is installed at `.agents/skills/<name>/SKILL.md`.
-On a matching slash request, read the original skill and its references;
-use model-invoked disciplines when their trigger fits. Preserve user-only
-invocation gates. `/ask-matt` is a workflow router, not a personal reviewer.
-Read [`docs/agents/matt-pocock-skills.md`](docs/agents/matt-pocock-skills.md)
-for the full catalog, pinned source, existing setup, and capability limits.
-Project permission and branch rules below remain binding.
+- Use only the branch assigned to the active session. Do not force-push or discard work.
+- No branch/PR merge or auto-merge without explicit user instruction AND platform permission.
+- Preserve Python Hermes and its data; never commit secrets or real credentials.
+- Work in small verified slices; commit and push meaningful progress with notes.
+- Rust changes require fmt/check; if unavailable locally, use verified official
+  runner results and the exact tested patch, never invent a local PASS.
+- Read requested skill originals in `.agents/skills/<name>/SKILL.md`. Preserve
+  invocation gates. Do not claim unavailable subagents, personal reviews or tools.
 
-### Issue tracker
-
-Issues are local Markdown files under `.scratch/<feature>/issues/`. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Use `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-This is a single-context repository with root `CONTEXT.md` and ADRs in `docs/adr/`. See `docs/agents/domain.md`.
-
-### Progress, skill inheritance, and memory
-
-Follow [`docs/agents/skills/progress-handoff/SKILL.md`](docs/agents/skills/progress-handoff/SKILL.md).
-At the start of work, read `MEMORY.md`, the latest `PROGRESS.md` entry,
-and the active ticket as well as this file and `CONTEXT.md`. Load the
-relevant skills and ADRs; pass their paths, decisions, verification results,
-and blockers to the next agent instead of relying on chat-only memory.
-
-User-confirmed workflow (2026-09-14):
-
-- Always commit meaningful work together with its progress notes, and push
-  to GitHub on the branch assigned to the session. If blocked, record and
-  report the failure; never claim an unpushed commit is on GitHub.
-- Fix errors found in the current scope, rerun the relevant checks, and
-  distinguish a historical CI result from a new verification run.
-- **Never merge branches or pull requests, or enable auto-merge, without
-  an explicit user instruction. Commit/push permission is not merge permission.**
-- Keep reusable decisions in `MEMORY.md`, chronological evidence in
-  `PROGRESS.md`, and feature details in the local issue tracker. Do not
-  store credentials or private conversation transcripts in these files.
-
-## Engineering rules
-
-- Preserve the Python Hermes installation; do not delete or mutate it as part of Hermes-RS work.
-- Prefer small vertical slices with tests before broad rewrites.
-- Keep provider and tool integrations behind explicit interfaces.
-- Never commit API keys, passwords, private keys, or `.env` files.
-- Run `cargo fmt --all` and `cargo check` before committing Rust changes.
+Canonical agent-only material lives in `agent-support/`. Legacy entry paths
+`MEMORY.md`, `PROGRESS.md`, `CONTEXT.md`, `docs/agents`, and `.agents/skills`
+are compatibility symlinks, not duplicate sources. See [folder guide](agent-support/README.md).
