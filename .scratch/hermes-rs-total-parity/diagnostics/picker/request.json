@@ -1,5 +1,5 @@
 {
   "phase": "reference",
   "test": "picker_terminal_size",
-  "note": "re-request 3: the reference phase must not run the live Rust gate (run 34876621220)"
+  "note": "re-request 4: the reference steps now tee reference-prepare.log and export it as an annotation"
 }

@@ -455,11 +455,14 @@ jobs:
       - name: Prepare the pinned Python reference
         if: steps.plan.outputs.phase == 'reference'
         run: |
-          curl -sSL -o /tmp/hermes-ref.tar.gz https://codeload.github.com/NousResearch/hermes-agent/tar.gz/63279301bcbdc185c1b07b98a9312eb0c862f26d
-          mkdir -p /tmp/hermes-ref
-          tar -xzf /tmp/hermes-ref.tar.gz -C /tmp/hermes-ref --strip-components=1
-          printf '63279301bcbdc185c1b07b98a9312eb0c862f26d\n' > /tmp/hermes-ref/.visual-evidence-reference
-          python3 - <<'PY'
+          set -o pipefail
+          {
+            curl -sSL -o /tmp/hermes-ref.tar.gz https://codeload.github.com/NousResearch/hermes-agent/tar.gz/63279301bcbdc185c1b07b98a9312eb0c862f26d
+            ls -l /tmp/hermes-ref.tar.gz
+            mkdir -p /tmp/hermes-ref
+            tar -xzf /tmp/hermes-ref.tar.gz -C /tmp/hermes-ref --strip-components=1
+            printf '63279301bcbdc185c1b07b98a9312eb0c862f26d\n' > /tmp/hermes-ref/.visual-evidence-reference
+            python3 - <<'PY'
           import hashlib
           from pathlib import Path
           path = Path('/tmp/hermes-ref/hermes_cli/main.py')
@@ -467,9 +470,19 @@ jobs:
           assert digest == '89cde75d388ae3ff0d3512c00a0b4e77fe9f55c438874032b32967b4ab867567', digest
           print('pinned reference main.py', digest, path.stat().st_size, 'bytes')
           PY
-          python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
-          PYTHONPATH=/tmp/picker-qa python3 scripts/capture_picker_sizes.py reference /tmp/hermes-ref evidence/picker-size-reference.json
-          echo "::notice title=picker size reference::captured $(python3 -c "import json;print(len(json.load(open('evidence/picker-size-reference.json'))['cases']),'cases')")"
+          } 2>&1 | tee reference-prepare.log
+      - name: Record the reference side of the size contract
+        if: steps.plan.outputs.phase == 'reference'
+        run: |
+          set -o pipefail
+          PYTHONPATH=/tmp/picker-qa python3 scripts/capture_picker_sizes.py reference /tmp/hermes-ref evidence/picker-size-reference.json 2>&1 | tee -a reference-prepare.log
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          cases = json.loads(Path('evidence/picker-size-reference.json').read_text())['cases']
+          print('::notice title=picker size reference::captured ' + str(len(cases)) + ' cases: ' +
+                ', '.join(f"{c['id']} ({c['python']['error']})" for c in cases))
+          PY
       - name: Export picker size reference recordings
         if: steps.plan.outputs.phase == 'reference'
         run: |
@@ -548,6 +561,7 @@ jobs:
         if: always()
         env:
           CAPTURE: ${{ steps.capture.outcome }}
+          PHASE: ${{ steps.plan.outputs.phase }}
         run: |
           python3 - <<'PY'
           import os
@@ -564,6 +578,13 @@ jobs:
               tail=lines[-40:]
               text='\n'.join(signals[-20:] + ['--- last 40 lines ---'] + tail)
               print('::error title=picker capture verify::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
+          p=Path('reference-prepare.log')
+          if p.exists() and os.environ.get('PHASE') == 'reference':
+              lines=p.read_text().splitlines()
+              signals=[line for line in lines if line.startswith(('FAIL','ERROR','AssertionError','RuntimeError'))
+                       or 'Traceback' in line or 'Error' in line or 'error' in line]
+              text='\n'.join((signals[-15:] + ['--- last 25 lines ---'] + lines[-25:]))
+              print('::error title=picker reference prepare::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
           p=Path('full-validation.log')
           if p.exists():
               lines=p.read_text().splitlines()
@@ -584,4 +605,5 @@ jobs:
             regression-*.log
             full-validation.log
             capture-verify.log
+            reference-prepare.log
           retention-days: 90

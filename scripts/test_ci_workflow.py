@@ -211,6 +211,21 @@ class CiGateTests(unittest.TestCase):
                                         env=env, capture_output=True, text=True)
                 self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
 
+    def test_reference_steps_log_and_are_exported(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
+        steps = workflow["jobs"]["diagnose"]["steps"]
+        prepare = next(s for s in steps if s.get("name") == "Prepare the pinned Python reference")
+        record = next(s for s in steps if s.get("name") == "Record the reference side of the size contract")
+        export = next(s for s in steps if s.get("name") == "Export exact regression log")
+        for step in (prepare, record):
+            self.assertIn("== 'reference'", step["if"])
+            self.assertIn("tee", step["run"], step["name"])
+            self.assertIn("89cde75d388ae3ff0d3512c00a0b4e77fe9f55c438874032b32967b4ab867567",
+                          step["run"] + prepare["run"])
+        self.assertIn("reference-prepare.log", export["run"])
+        upload = next(s for s in steps if s.get("uses", "").startswith("actions/upload-artifact"))
+        self.assertIn("reference-prepare.log", upload["with"]["path"])
+
     def test_reference_phase_is_limited_to_the_size_gate(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
         plan = next(s for s in workflow["jobs"]["diagnose"]["steps"] if s.get("id") == "plan")
