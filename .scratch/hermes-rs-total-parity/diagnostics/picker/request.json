@@ -1,6 +1,5 @@
 {
-  "phase": "green",
+  "phase": "capture",
   "test": "picker_status_ink",
-  "source_sha256": "ac713f9a1a0e0d41a22637095d0e90c534ecd61c7e61b1f0eaf7e93bd98cc21f",
-  "patch_sha256": "e88347c88d89f19dcc48f97d1ff7ec46dc9420c07875d076c91f7e44a2fd56fb"
+  "source_sha256": "804b80f0bf4805a407456b66c88a8f439c9727f4a050e4ff96fb4af697cdebe9"
 }
