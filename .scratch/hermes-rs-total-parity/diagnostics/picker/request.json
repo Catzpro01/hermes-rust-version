@@ -2,5 +2,5 @@
   "phase": "capture",
   "test": "picker_selection",
   "source_sha256": "ac713f9a1a0e0d41a22637095d0e90c534ecd61c7e61b1f0eaf7e93bd98cc21f",
-  "attempt_note": "re-request with the capture verification log retained and exported"
+  "attempt_note": "re-request after fixing the dim scanner false positive on 38;5;2"
 }
