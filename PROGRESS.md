@@ -1210,3 +1210,14 @@ paths and eligibility predicate unchanged. Update the two old no-match literal
 expectations to the corrected contract, retaining all assertions including
 empty store/frame and existing hint controls. No runtime source applied yet.
 GREEN must pass exact regression3 times, fmt/check/clippy/full suite remotely.
+
+Counter GREEN34826518574/bdd3cb0 passed fmt/check, exact named regression three
+times, clippy and full workspace. Verified exported2008-byte patch
+SHA40ce7a929dbba8376ec5abf3181d32e2ec18d6ea959f4b6bcf27b6f45c28c66f,
+applied locally only after GREEN, with byte-identical full Rust diff.
+Capture request retains explicit counter selection; the committed-source job
+must check BOTH counters and fixed delete hints. Capture metadata now names the
+footer subset accurately and includes compiler/Cargo/capture-script versions.
+Original recorder and dummy inputs unchanged. No change to geometry/palette or
+broader T12/T13 scope; fresh source evidence is still required before claiming
+this slice verified end-to-end.

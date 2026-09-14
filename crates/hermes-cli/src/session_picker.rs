@@ -93,6 +93,9 @@ pub fn format_row(
 
 /// Footer line (spec §F, verbatim shape).
 pub fn footer(cursor_one_based: usize, shown: usize, total: usize, can_delete: bool) -> String {
+    if shown == 0 {
+        return format!("  0/{total} sessions");
+    }
     let mut out = format!("  {cursor_one_based}/{shown} sessions");
     if shown != total {
         out.push_str(&format!(" (filtered from {total})"));
@@ -560,6 +563,15 @@ mod tests {
     }
 
     #[test]
+    fn picker_no_match_counter_preserves_total() {
+        let rows = fixture_rows();
+        let shown = apply_filter(&rows, "zzzz");
+        let frame = frame_lines(&rows, &shown, 0, "zzzz", 20, 10);
+        // Independent pinned Python two-session fixture, not a recomputed count.
+        assert_eq!(frame.last().unwrap(), "  0/2 sessions");
+    }
+
+    #[test]
     fn picker_footer_tracks_delete_availability() {
         let mut rows = fixture_rows();
         rows.truncate(1);
@@ -567,7 +579,7 @@ mod tests {
         for (query, expected) in [
             ("", "  1/1 sessions   d delete"),
             ("CLI", "  1/1 sessions"),
-            ("zzzz", "  0/0 sessions (filtered from 1)"),
+            ("zzzz", "  0/1 sessions"),
         ] {
             let shown = apply_filter(&rows, query);
             let frame = frame_lines(&rows, &shown, 0, query, 20, 10);
@@ -669,7 +681,7 @@ mod tests {
         let frame = frame_lines(&rows, &shown, 0, "zzz", 20, 10);
         assert_eq!(frame[0], "  Browse sessions — filter: zzz█");
         assert!(frame.contains(&NO_MATCH.to_owned()), "{frame:?}");
-        assert_eq!(*frame.last().unwrap(), "  0/0 sessions (filtered from 2)");
+        assert_eq!(*frame.last().unwrap(), "  0/2 sessions");
     }
 
     fn temp_store() -> (tempfile::TempDir, SessionStore) {
