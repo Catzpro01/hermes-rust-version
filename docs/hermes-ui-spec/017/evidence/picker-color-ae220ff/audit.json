@@ -1,0 +1,78 @@
+{
+  "status": "FOOTER_COLOR_FIXED_NOT_WHOLE_SCREEN_PARITY",
+  "source": "ae220ff1607f122103af1eb006b6fc4e326531e6",
+  "raw_cast_roundtrips": 20,
+  "png_hash_checks": 10,
+  "python_records_and_cells_unchanged": true,
+  "renderer_script_sha256": "201091eef5007e9a45889da7b4725b658ce39df1bf977a48677e435df9f9c074",
+  "renderer_settings_match_prior": true,
+  "footer_rows_same_content_attributes_and_palette_index": 6,
+  "encoding_modes": {
+    "python": "palette16",
+    "rust": "palette256"
+  },
+  "footer_lower_half_pixel_comparisons": 6,
+  "only_footer_foreground_changed": true,
+  "all_other_rows_and_delete_empty_unchanged": true,
+  "unchanged_paired_pngs": [
+    "picker-delete-100x30-bottom.png",
+    "picker-empty-100x30-bottom.png",
+    "picker-delete-80x30-bottom.png",
+    "picker-empty-80x30-bottom.png"
+  ],
+  "rust_cell_changes": {
+    "picker-normal-100x30": {
+      "baseline": "picker-position-0c0704d",
+      "rows_1_based": [
+        30
+      ]
+    },
+    "picker-filter-100x30": {
+      "baseline": "picker-position-0c0704d",
+      "rows_1_based": [
+        30
+      ]
+    },
+    "picker-no-match-100x30": {
+      "baseline": "picker-position-0c0704d",
+      "rows_1_based": [
+        30
+      ]
+    },
+    "picker-delete-100x30": {
+      "baseline": "picker-position-0c0704d",
+      "rows_1_based": []
+    },
+    "picker-empty-100x30": {
+      "baseline": "picker-position-0c0704d",
+      "rows_1_based": []
+    },
+    "picker-normal-80x30": {
+      "baseline": "picker-position-0c0704d",
+      "rows_1_based": [
+        30
+      ]
+    },
+    "picker-filter-80x30": {
+      "baseline": "picker-position-0c0704d",
+      "rows_1_based": [
+        30
+      ]
+    },
+    "picker-no-match-80x30": {
+      "baseline": "picker-position-0c0704d",
+      "rows_1_based": [
+        30
+      ]
+    },
+    "picker-delete-80x30": {
+      "baseline": "picker-position-0c0704d",
+      "rows_1_based": []
+    },
+    "picker-empty-80x30": {
+      "baseline": "picker-position-0c0704d",
+      "rows_1_based": []
+    }
+  },
+  "normalization": "none"
+}

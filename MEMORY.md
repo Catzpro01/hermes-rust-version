@@ -30,13 +30,27 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Footer-color cycle complete: runtimeae220ff; source capture34833465322 and
+  CI34833465347 SUCCESS. RED34832948842/5515789 → GREEN34833157938/f633f59 →
+  exact916-byte patch ea56c272de0cf151168aee03e85803662f9ffe12bc563de97e6e512e73b941a3.
+  `docs/hermes-ui-spec/017/evidence/picker-color-ae220ff/REPORT.md`:10 images
+  inspected; color6/geometry10/counter6/hint6 PASS. Only row30 foreground changes;
+  other rows unchanged; delete/empty4 PNGs byte-identical to0c0704d.20 raw/casts,
+  10 PNGs and29 supporting checks PASS. Live color+position regressions in CI.
+  Important: Python palette16 / Rust palette256, both index8/dim=false. Mode flags
+  differ, preserved explicitly; six unaltered footer pixel regions are identical.
+  No normalization/new Python capture. User requested visible milestones; keep
+  `docs/hermes-ui-spec/017/MILESTONES.md` current (M1–M5 color complete,4 picker
+  corrections verified, remaining styling/geometry/wizard/completion open).
+  Limited direct review, not independent/personal approval. No closure/merge.
+
 - Active `/tdd warna footer picker`; user also requests milestone visibility.
   See `docs/hermes-ui-spec/017/MILESTONES.md`: M1/M2 complete: RED34832948842/5515789 verified actual color FAIL3.
   Original trace85502 bytes SHAf14e3920154956dd0d68cf072166b8044ad621b751c0e8e4c6abb6884d977f97.
   GREEN34833157938/f633f59: exact CLI3/fmt/check/clippy/full suite PASS.
   Tested916-byte patch ea56c272de0cf151168aee03e85803662f9ffe12bc563de97e6e512e73b941a3
   applied byte-identically; only footer DarkGrey then foreground Reset.
-  M3/M4 complete; M5 fresh capture/CI next. Ordinary CI now requires both
+  M3/M4 completed there; M5 subsequently completed as recorded above. Ordinary CI now requires both
   live position and color tests;13 policy +4 color-checker tests PASS. Agreed real CLI/PTy normal100x30
   seam. pyte palette8 aliases brightblack/7f7f7f accepted by color gate; final
   xterm audit MUST prove actual palette8 mode/index and dim=false. Do not

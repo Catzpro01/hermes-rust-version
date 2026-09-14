@@ -108,3 +108,26 @@ Ask-matt is a skill router, not a personal Matt review. No new test, production
 patch, delegated review, closure, or merge is authorized/executed by this routing.
 Same repository/session can continue; no portable handoff needed. Independent
 review tools remain unavailable; do not relabel limited direct review as such.
+
+### Footer color M5 delivered atae220ff — milestones visible
+
+Source capture34833465322 and ordinary CI34833465347 SUCCESS. Color6/geometry10/
+counter6/hint6 PASS; both real CLI position and color tests required in CI.
+Ten paired PNGs directly opened/inspected. New packet
+`docs/hermes-ui-spec/017/evidence/picker-color-ae220ff/REPORT.md` retains raw/casts,
+receipts, RED trace, tested patch, audit/checksums and reproducible verifiers.
+Rust bundle99678 bytes SHAb82134515d7b59fe40346a38ef136fb6c69c63861c9fbab3aad261f999022db1.
+
+Only footer foreground on row30 changes; all other cells unchanged. Four delete/
+empty PNGs byte-identical to0c0704d. Python records reused unchanged, not a new
+capture/source audit. Initial audit mode-equality probe failed: Python palette16
+vs Rust palette256, both indexed8/dim=false. Correct semantic check retains this
+encoding distinction (no raw/color normalization), rejects truecolor, and verifies
+six original footer/lower-half regions pixel-identical with pinned browser decoder.
+20 raw/cast roundtrips,10 PNG hashes,29 supporting tests PASS. Limited direct
+Standards review:0 new hard violations,1 nonblocking duplication observation;
+Spec color slice passes, broader picker/wizard/completion gaps remain open.
+
+User-facing `docs/hermes-ui-spec/017/MILESTONES.md` now marks M1–M5 complete for
+color ONLY; four picker correction milestones verified. No invented whole-project
+percentage, final acceptance, resize/long-list/clear-filter claims, or merge.

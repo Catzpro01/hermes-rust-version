@@ -1,0 +1,8 @@
+test_footer_uses_reference_grey (__main__.PickerFooterColorTests.test_footer_uses_reference_grey) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.635s
+
+OK
+VERIFIED visual bundle 99678 b82134515d7b59fe40346a38ef136fb6c69c63861c9fbab3aad261f999022db1

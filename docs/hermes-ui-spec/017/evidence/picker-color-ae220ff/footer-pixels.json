@@ -1,0 +1,66 @@
+{
+  "normalization": "none",
+  "comparison": "unaltered lower halves of matched panes, excluding renderer gutter",
+  "cases": [
+    {
+      "id": "picker-normal-100x30",
+      "png_sha256": "fba333915884b9b0e341376f67d41ce3e3661ce7670d15eb7332e3662d44989b",
+      "image_width": 2024,
+      "image_height": 601,
+      "pane_width": 1000,
+      "comparison_y": 300,
+      "comparison_height": 301,
+      "equal": true
+    },
+    {
+      "id": "picker-normal-80x30",
+      "png_sha256": "649a25a46a825bfdd3527c7442ecee3406fe026457d5131372857851036cb3d2",
+      "image_width": 1624,
+      "image_height": 601,
+      "pane_width": 800,
+      "comparison_y": 300,
+      "comparison_height": 301,
+      "equal": true
+    },
+    {
+      "id": "picker-filter-100x30",
+      "png_sha256": "fbc88ce2283133a34ff534374d48cecbab5f9d718d88ea92d60c19849e201d11",
+      "image_width": 2024,
+      "image_height": 601,
+      "pane_width": 1000,
+      "comparison_y": 300,
+      "comparison_height": 301,
+      "equal": true
+    },
+    {
+      "id": "picker-filter-80x30",
+      "png_sha256": "5c11a0706b9f804e83c053e9cf4ed9cfbd6d286ff27bb38c46008561aef1fedb",
+      "image_width": 1624,
+      "image_height": 601,
+      "pane_width": 800,
+      "comparison_y": 300,
+      "comparison_height": 301,
+      "equal": true
+    },
+    {
+      "id": "picker-no-match-100x30",
+      "png_sha256": "939e30f0f71a05a00270ac68f6ff6b0d6b5a66da7637b78b0a9ce0900d1fb42f",
+      "image_width": 2024,
+      "image_height": 601,
+      "pane_width": 1000,
+      "comparison_y": 300,
+      "comparison_height": 301,
+      "equal": true
+    },
+    {
+      "id": "picker-no-match-80x30",
+      "png_sha256": "92aab5a71b56be8883257ec455af389589077e569c46c69b4d6c2989c9916f4f",
+      "image_width": 1624,
+      "image_height": 601,
+      "pane_width": 800,
+      "comparison_y": 300,
+      "comparison_height": 301,
+      "equal": true
+    }
+  ]
+}
