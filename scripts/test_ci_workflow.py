@@ -227,6 +227,10 @@ class CiGateTests(unittest.TestCase):
                 result = subprocess.run(["python3", "-c", script], cwd=tmp, env=env,
                                         capture_output=True, text=True)
                 self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
+                if accepted:
+                    # The step conditions key off these outputs; a reference phase that
+                    # returns before writing them selects the wrong steps (run 34876400782).
+                    self.assertEqual(output.read_text(), f"phase={phase}\ntest={test}\n")
 
     def test_picker_color_gate_rejects_setup_errors(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())

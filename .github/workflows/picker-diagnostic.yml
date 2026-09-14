@@ -48,11 +48,13 @@ jobs:
           assert test in tests, 'non-allowlisted regression'
           folder = folder/tests[test]
           assert phase in ('red', 'green', 'capture', 'reference')
-          if phase == 'reference':
-              assert test == 'picker_terminal_size', 'only the size contract has a reference phase'
-              raise SystemExit(0)  # Reference capture; no Rust patch is applied.
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write(f'phase={phase}\ntest={test}\n')
+          if phase == 'reference':
+              # The plan outputs must exist before any step is skipped, otherwise a
+              # missing `test` makes the `!=` conditions select the wrong steps.
+              assert test == 'picker_terminal_size', 'only the size contract has a reference phase'
+              raise SystemExit(0)  # Reference capture; no Rust patch is applied.
           if phase != 'capture':
               if test in live and phase == 'red':
                   source = Path('crates/hermes-cli/src/session_picker.rs')

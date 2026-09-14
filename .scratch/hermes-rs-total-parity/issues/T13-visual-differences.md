@@ -261,3 +261,12 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
   - [ ] Cycle 7 candidates: (a) resize/long-list/clear-filter behaviour;
     (b) the documented Active/ID adaptations; (c) a fixture that exercises the
     interrupted/error/empty inks in a live capture.
+  - [ ] Cycle 7 (size contract) started; the pinned reference records must be
+    captured before the Rust gate can be RED. The private-looking upstream
+    repository is public, so the runner materialises the pinned checkout from
+    codeload and records the reference side itself.
+  - [x] Reference-phase attempt 1 (run 34876400782) failed honestly: the plan step
+    short-circuited *before* writing `phase`/`test` to `GITHUB_OUTPUT`, so a
+    missing `test` made every `!=` step condition true and the generic Rust unit
+    test step ran instead. Fixed by writing the outputs first; 
+    `test_ci_workflow.py` now asserts the written outputs.
