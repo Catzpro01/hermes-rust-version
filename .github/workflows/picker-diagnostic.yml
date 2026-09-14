@@ -475,6 +475,7 @@ jobs:
         if: steps.plan.outputs.phase == 'reference'
         run: |
           set -o pipefail
+          python3 -m pip install --target /tmp/picker-qa -r scripts/visual-renderer/requirements-banner.txt pyte==0.8.2 wcwidth==0.8.3 2>&1 | tail -2
           PYTHONPATH=/tmp/picker-qa python3 scripts/capture_picker_sizes.py reference /tmp/hermes-ref evidence/picker-size-reference.json 2>&1 | tee -a reference-prepare.log
           python3 - <<'PY'
           import json
@@ -578,6 +579,9 @@ jobs:
               tail=lines[-40:]
               text='\n'.join(signals[-20:] + ['--- last 40 lines ---'] + tail)
               print('::error title=picker capture verify::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
+          p=Path('reference-child.log')
+          if p.exists() and os.environ.get('PHASE') == 'reference':
+              print('::error title=picker reference child output::' + p.read_text()[-3000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
           p=Path('reference-prepare.log')
           if p.exists() and os.environ.get('PHASE') == 'reference':
               lines=p.read_text().splitlines()
@@ -608,4 +612,5 @@ jobs:
             full-validation.log
             capture-verify.log
             reference-prepare.log
+            reference-child.log
           retention-days: 90

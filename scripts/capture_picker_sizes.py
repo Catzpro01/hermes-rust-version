@@ -10,6 +10,7 @@ Modes:
   rust <binary> <out.json>               Rust side, from the built CLI
   pair <rust.json> <python.json> <out.json>
 """
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -27,12 +28,23 @@ MAIN_PY_SHA256 = '89cde75d388ae3ff0d3512c00a0b4e77fe9f55c438874032b32967b4ab8675
 
 def summarize(cases, side):
     """Print one line per case and raise with only the failures, so a blocked
-    job log still leaves a usable annotation."""
+    job log still leaves a usable annotation. A failing child's own output is
+    written to `reference-child.log`, because the traceback lives in the PTY
+    bytes and would otherwise be trapped in the blocked artifact."""
     for case in cases:
         record = case[side]
         print(f'{side} {case["id"]} width={record["width"]} '
               f'error={record["error"]!r} bytes={len(record["raw_base64"]) // 4 * 3}', flush=True)
     failures = [(case['id'], case[side]['error']) for case in cases if case[side]['error']]
+    if failures:
+        chunks = []
+        for case in cases:
+            if not case[side]['error']:
+                continue
+            raw = base64.b64decode(case[side]['raw_base64'])
+            chunks.append(f'=== {side} {case["id"]}: {case[side]["error"]}\n'
+                          + raw.decode('utf-8', 'replace')[-1200:])
+        Path('reference-child.log').write_text('\n'.join(chunks) + '\n')
     assert not failures, failures
 
 

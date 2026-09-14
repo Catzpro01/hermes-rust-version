@@ -223,8 +223,12 @@ class CiGateTests(unittest.TestCase):
             self.assertIn("89cde75d388ae3ff0d3512c00a0b4e77fe9f55c438874032b32967b4ab867567",
                           step["run"] + prepare["run"])
         self.assertIn("reference-prepare.log", export["run"])
+        self.assertIn("reference-child.log", export["run"])
+        self.assertIn("requirements-banner.txt", record["run"],
+                      "the reference child needs the minimal upstream environment")
         upload = next(s for s in steps if s.get("uses", "").startswith("actions/upload-artifact"))
-        self.assertIn("reference-prepare.log", upload["with"]["path"])
+        for name in ("reference-prepare.log", "reference-child.log"):
+            self.assertIn(name, upload["with"]["path"])
 
     def test_reference_phase_is_limited_to_the_size_gate(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
