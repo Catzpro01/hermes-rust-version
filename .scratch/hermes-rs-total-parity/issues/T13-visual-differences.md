@@ -80,3 +80,31 @@ See `docs/hermes-ui-spec/017/evidence/picker-position-0c0704d/REPORT.md`.
 Palette/header/selection/delete styling, other body geometry and wizard/completion
 coverage differences remain open. Resize/long-list/clear-filter behavior is not
 proved by this fixed-size slice. No whole-picker PASS, final acceptance or merge.
+
+### `/ask-matt` after footer-position delivery — routing only
+
+Read installed official ask-matt skill and PHASE-BOUNDARIES, inherited memory,
+T13 and retained0c0704d evidence. Recommended next: `/tdd` for footer foreground
+color at the already used actual CLI/PTY seam, one primary normal100x30 test
+before any production proposal. This is a concrete observed behavior, so no
+new grilling/spec/triage or broad architecture work is needed.
+
+Evidence detail: all six retained normal/filter/no-match cases have Python
+footer foreground palette index8 (xterm cell fg8/fm16777216), dim=false; Rust
+uses default foreground (fg-1/fm0), dim=false. Earlier report wording "dim footer"
+is descriptive appearance, NOT an assertion of the ANSI dim attribute. Derive
+expectations from independent reference terminal cells, not an invented SGR2
+requirement or literal escape spelling. This inspection is not a fresh live RED.
+
+Proposed route: confirm primary seam/behavior → actual CLI RED → minimal color
+correction → official fmt/check/clippy/full tests before exact Rust application
+→ affected committed-source captures at100/80 → Standards/Spec review and direct
+paired-image inspection. Retain row30, counters/hints and delete/empty controls;
+ensure footer style does not leak. Header/selection/delete styles and remaining
+body geometry are separate slices; T12 wizard nested fields/full-CLI and T13
+completion gaps remain blockers. No resize/feature expansion or new adaptation.
+
+Ask-matt is a skill router, not a personal Matt review. No new test, production
+patch, delegated review, closure, or merge is authorized/executed by this routing.
+Same repository/session can continue; no portable handoff needed. Independent
+review tools remain unavailable; do not relabel limited direct review as such.

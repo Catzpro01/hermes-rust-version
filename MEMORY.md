@@ -30,6 +30,15 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- Latest `/ask-matt` routing after delivery0ed7b65: recommend `/tdd` on footer
+  foreground color, one primary actual CLI/PTy normal100x30 regression. Six
+  retained cases prove Python palette index8, dim=false vs Rust default fg,
+  dim=false. Do NOT invent an ANSI dim-attribute requirement from "dim" prose.
+  Routing only: no new live RED/test/source change. Preserve row30, counters,
+  hints and delete/empty style-isolation controls; then official validation,
+  fresh affected capture/direct Standards+Spec review. Other picker styling,
+  wizard/completion and T12 coverage remain open. Not personal Matt approval.
+
 - Active footer-position TDD: test-first eedd9a0; one real CLI/PTy normal100x30
   regression requires footer row30. Historical Python10/10 geometry PASS,
   historical Rust6 footer FAIL (rows4/5), delete/empty4 PASS. Live official
