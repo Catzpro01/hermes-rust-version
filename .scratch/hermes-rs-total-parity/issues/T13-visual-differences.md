@@ -42,3 +42,11 @@ This recommendation is not a personal review, acceptance, or a runtime change.
 Report: `docs/hermes-ui-spec/017/evidence/picker-hint-c07f0c5/REPORT.md`.
 Original proposals, failed first GREEN and old images remain. This closes only
 the hint symptom, not V2 as a whole, T13, Spec017 or user acceptance.
+
+### Next routed slice after `/diagnosing-bugs`
+
+Use `/tdd` on the remaining no-match counter: the two-session fixture should
+show Python's `0/2 sessions`, not Rust's `0/0 sessions (filtered from 2)`.
+First establish the exact RED; retain delete-hint and normal/filter controls.
+Official remote validation → exact patch application → committed-source capture
+and direct review. This routing is not a new fix or overall acceptance.

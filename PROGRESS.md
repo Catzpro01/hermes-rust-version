@@ -1148,3 +1148,24 @@ Current scope fixed ONLY the misleading hint. No-match counter, palette/footer
 placement, wizard/completion differences and T12 coverage remain open. Corrected
 prior reproduction package-name error through sibling evidence/ERRATA.md, without
 changing immutable ui-3b39bd7/REPORT.md or its checksum. No merge or closure.
+
+### `/ask-matt` — next slice after delete-hint diagnosis (2026-09-14)
+
+Read the installed ask-matt router/phase-boundary reference, memory and T13.
+Recommendation: `/tdd` for the concrete no-match counter discrepancy next.
+The existing real frame seam and PTY recorder are sufficient; another broad
+`/diagnosing-bugs` or architecture redesign is not indicated by current evidence.
+With the retained two-session fixture and filter matching nothing, Python shows
+`0/2 sessions`; Rust still shows `0/0 sessions (filtered from 2)`. Establish that
+exact RED first, preserve the fixed delete-hint behavior and normal/filtered
+controls, then validate the minimal Rust patch remotely before application.
+Recapture affected committed-source images and run Standards/Spec review.
+This is one T13 slice, not permission to waive T12 field/full-CLI coverage or
+remaining palette/geometry/wizard/completion differences. `/implement` remains
+the umbrella flow for the rest of the existing ticket. Continue in this repo;
+no new interview, triage of our own ticket, Actions provisioning or handoff.
+
+Routing only: no runtime fix, new test result, personal Matt approval, closure
+or merge claimed. Startup Git metadata again lagged the saved worktree; fetched
+only the assigned branch, verified every tracked blob matched370423e, and aligned
+HEAD/index without changing working files. No force push or lost user edits.
