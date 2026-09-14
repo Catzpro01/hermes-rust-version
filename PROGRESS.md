@@ -1358,3 +1358,15 @@ Only now proposed minimal footer DarkGrey/Print/foreground Reset branch. No
 production Rust applied before official fmt/check/clippy/full validation.
 Milestone page updated; four supporting color-checker tests pass (reference,
 historical failures, decoder aliases, missing/corrupt evidence). No merge.
+
+### Footer color M3/M4 complete → M5 capture
+
+GREEN34833157938/f633f59 SUCCESS: fmt/check, exact color test3, clippy/full
+workspace PASS. Retrieved916-byte patch SHA
+ ea56c272de0cf151168aee03e85803662f9ffe12bc563de97e6e512e73b941a3
+and applied with full Rust diff byte-identical. No local Rust toolchain used.
+Only footer foreground set/reset added; text, row30 and selection untouched.
+Ordinary CI now requires both live geometry and color tests within picker gate;
+new policy test proves failure of either survives tee/continue-on-error.13 policy
+and4 color-checker tests PASS. Milestone page updated; M5 pending committed-source
+capture, xterm mode/index8 audit, style-isolation comparison and visual review.

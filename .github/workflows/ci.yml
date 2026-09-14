@@ -30,6 +30,7 @@ jobs:
           python3 scripts/test_ci_workflow.py
           python3 scripts/test_capture_ui.py
           python3 scripts/test_picker_footer_position_checks.py
+          python3 scripts/test_picker_footer_color_checks.py
       - run: python3 scripts/test_audit_ui_evidence.py
 
   test:
@@ -76,6 +77,7 @@ jobs:
           cargo build --locked -p hermes-rs --bin hermes-rs 2>&1 | tee picker-position.log
           python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3 2>&1 | tee -a picker-position.log
           PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-position.json python3 scripts/test_picker_footer_position.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH=/tmp/picker-qa HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-color.json python3 scripts/test_picker_footer_color.py 2>&1 | tee -a picker-position.log
 
       # Diagnostics are emitted as check-run annotations (readable via the
       # REST API even where raw logs/artifacts are not reachable) and as a
@@ -181,6 +183,7 @@ jobs:
             fmt.patch
             picker-position.log
             picker-position.json
+            picker-color.json
 
       - name: Fail if any step failed
         if: always() && (steps.fmt.outcome != 'success' || steps.clippy.outcome != 'success' || steps.test.outcome != 'success' || steps.picker.outcome != 'success')

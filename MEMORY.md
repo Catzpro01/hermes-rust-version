@@ -33,8 +33,11 @@ user's private Python installation.
 - Active `/tdd warna footer picker`; user also requests milestone visibility.
   See `docs/hermes-ui-spec/017/MILESTONES.md`: M1/M2 complete: RED34832948842/5515789 verified actual color FAIL3.
   Original trace85502 bytes SHAf14e3920154956dd0d68cf072166b8044ad621b751c0e8e4c6abb6884d977f97.
-  Minimal candidate sets footer DarkGrey then resets foreground; source still
-  unchanged awaiting official GREEN. Four color-checker support tests PASS. Agreed real CLI/PTy normal100x30
+  GREEN34833157938/f633f59: exact CLI3/fmt/check/clippy/full suite PASS.
+  Tested916-byte patch ea56c272de0cf151168aee03e85803662f9ffe12bc563de97e6e512e73b941a3
+  applied byte-identically; only footer DarkGrey then foreground Reset.
+  M3/M4 complete; M5 fresh capture/CI next. Ordinary CI now requires both
+  live position and color tests;13 policy +4 color-checker tests PASS. Agreed real CLI/PTy normal100x30
   seam. pyte palette8 aliases brightblack/7f7f7f accepted by color gate; final
   xterm audit MUST prove actual palette8 mode/index and dim=false. Do not
   confuse decoder aliases with permission to normalize evidence colors.

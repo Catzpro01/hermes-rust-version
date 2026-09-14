@@ -29,9 +29,9 @@ prompt hapus. Referensi memakai **warna abu-abu, bukan atribut ANSI dim**.
 |---|---|---|
 | M1 · Kontrak dan referensi | ✅ Selesai | CLI/PTY nyata disepakati melalui permintaan TDD; enam rekaman referensi memakai palette8 |
 | M2 · RED nyata | ✅ Selesai | [34832948842 / 5515789](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34832948842): tes nyata gagal3 kali karena foreground default; build/setup PASS |
-| M3 · Perubahan minimal | 🔄 Kandidat diajukan | Warna footer saja + reset warna; belum diterapkan ke source sebelum validasi resmi |
-| M4 · GREEN resmi | 🔄 Menunggu runner | Tes primer, fmt/check/clippy dan workspace; patch yang diterapkan harus sama dengan yang diuji |
-| M5 · Capture dan review | ⏳ Menunggu M4 | Capture source committed, 10 kasus di100×30/80×30; cek warna, posisi, counter/hint, kebocoran style dan gambar pasangan |
+| M3 · Perubahan minimal | ✅ Selesai | Patch916 byte diterapkan persis setelah validasi resmi; hanya foreground footer + reset |
+| M4 · GREEN resmi | ✅ Selesai | [34833157938 / f633f59](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34833157938): tes primer3, fmt/check/clippy dan workspace PASS |
+| M5 · Capture dan review | 🔄 Sedang berjalan | Menunggu capture source committed dan CI; kemudian audit mode/index8, 10 kasus di100×30/80×30, style isolation dan gambar pasangan |
 
 Tes primer membaca state terminal, bukan ejaan escape ANSI. pyte mempunyai dua
 representasi untuk palette8 (`brightblack` / `7f7f7f`); audit xterm akhir wajib

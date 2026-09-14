@@ -437,6 +437,14 @@ pub fn browse(store: &SessionStore) -> anyhow::Result<BrowseOutcome> {
                         Print(line),
                         SetAttribute(Attribute::Reset)
                     )?;
+                } else if is_footer {
+                    use crossterm::style::{Color, Print, SetForegroundColor};
+                    execute!(
+                        out,
+                        SetForegroundColor(Color::DarkGrey),
+                        Print(line),
+                        SetForegroundColor(Color::Reset)
+                    )?;
                 } else {
                     use crossterm::style::Print;
                     execute!(out, Print(line))?;

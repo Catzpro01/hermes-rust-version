@@ -120,6 +120,26 @@ class CiGateTests(unittest.TestCase):
                                         env=env, capture_output=True, text=True)
                 self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
 
+    def test_ordinary_picker_gate_requires_both_live_tests(self):
+        step = STEPS["Picker footer terminal regression"]
+        for position, color in [(0, 0), (1, 0), (0, 1)]:
+            with self.subTest(position=position, color=color), tempfile.TemporaryDirectory() as tmp:
+                cargo = Path(tmp) / "cargo"
+                cargo.write_text("#!/bin/sh\necho build-ok\n")
+                cargo.chmod(0o700)
+                python = Path(tmp) / "python3"
+                python.write_text('#!/bin/bash\ncase "$*" in\n  *test_picker_footer_position.py*) echo position-test; exit "$POSITION";;\n  *test_picker_footer_color.py*) echo color-test; exit "$COLOR";;\n  *) exit 0;;\nesac\n')
+                python.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}",
+                           POSITION=str(position), COLOR=str(color))
+                result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True)
+                self.assertEqual(result.returncode, int(bool(position or color)), result.stdout + result.stderr)
+                log = (Path(tmp) / "picker-position.log").read_text()
+                self.assertIn("position-test", log)
+                if not position:
+                    self.assertIn("color-test", log)
+
     def test_picker_color_gate_rejects_setup_errors(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
         step = next(s for s in workflow["jobs"]["diagnose"]["steps"] if s.get("id") == "color")
