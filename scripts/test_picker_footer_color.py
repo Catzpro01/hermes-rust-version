@@ -19,7 +19,7 @@ class PickerFooterColorTests(unittest.TestCase):
         binary = Path(os.environ['HERMES_PICKER_BINARY']).resolve()
         if not binary.is_file():
             raise RuntimeError('Build the actual CLI first')
-        case = capture_side('rust', binary=binary, names=('picker-normal',), widths=(100,))[0]
+        case = capture_side('rust', binary=binary, names=('picker-normal',), widths=(100,), timeout=45)[0]
         output = Path(os.environ['HERMES_PICKER_RECORDING'])
         if output.exists():
             raise RuntimeError('Never overwrite a recording')

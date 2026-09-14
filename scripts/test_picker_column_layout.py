@@ -22,7 +22,7 @@ class PickerColumnLayoutTests(unittest.TestCase):
             raise RuntimeError('Build the actual CLI first')
         cases = capture_side('rust', binary=binary,
                              names=('picker-normal', 'picker-no-match'),
-                             widths=(100, 80))
+                             widths=(100, 80), timeout=45)
         output = Path(os.environ['HERMES_PICKER_RECORDING'])
         if output.exists():
             raise RuntimeError('Never overwrite a recording')

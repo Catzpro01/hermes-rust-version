@@ -187,7 +187,8 @@ def seed_rust(home, empty=False):
                 db.execute('INSERT INTO messages(session_id,role,content,timestamp) VALUES (?,?,?,?)',(sid,'user',text,1700000000.5+i))
 
 
-def capture_side(side, binary=None, summary=None, reference=None, names=CASES, widths=(100,80)):
+def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
+                 widths=(100,80), timeout=15):
     cases = []
     for width in widths:
         for name in names:
@@ -209,7 +210,7 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES, w
                 if name == 'wizard-docker':
                     (home/'empty-bin').mkdir()
                     extra['PATH'] = str(home/'empty-bin')
-                result = record(command,home,width,steps_for(name,side),extra)
+                result = record(command,home,width,steps_for(name,side),extra,timeout=timeout)
                 # Select a recorded instant, not normalized output. Keep later
                 # bytes/events too, including deliberately blocked service calls.
                 if side == 'python' and name in ('wizard-docker', 'wizard-gateway-empty') and not result['error']:
