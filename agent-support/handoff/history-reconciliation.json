@@ -1,0 +1,14 @@
+{
+  "source_head_before": "f3dfb916f8ef64259f53cb75ea4b6a957ef78ccd",
+  "source_tree_before": "1cc7091aac7b673d31a03f80b8a41b763c89f2c0",
+  "source_root": "6ded9dda881a35c9951f053db81617b4ee56bc08",
+  "observed_main": "8b6a67367a78536528a9337e557c967de86d24f9",
+  "root_differences": [
+    ".scratch/hermes-rs-total-parity/README.md",
+    ".scratch/hermes-rs-total-parity/issues/T10-parity-closure.md",
+    "docs/PARITY.md",
+    "docs/ROADMAP.md"
+  ],
+  "review": "Main is T09; source root carries only T10 documentation changes beyond that content. Source subsequent history preserves runtime updates, corrected WIP status, immutable evidence and handoff. No independent main runtime delta exists relative to source root.",
+  "operation": "Connect main history on assigned PR branch only; preserve complete pre-merge source tree. No update to main."
+}

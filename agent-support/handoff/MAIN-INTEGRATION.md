@@ -5,6 +5,27 @@ Pengguna meminta semua progres/ingatan/skill/konteks ditata dan disimpan ke main
 commit/push ke `arena/01a09c1e-hermes-rust-version`. Tidak ada perpindahan branch,
 force-push, merge, atau auto-merge yang dilakukan oleh paket auto-push.
 
+## Penyambungan riwayat di branch PR
+
+Pemeriksaan berikutnya menemukan penyebab konflik: main dan source merupakan
+**dua root Git terpisah**. Main8b6a673 memuat T09, sedangkan root source6ded9dd
+memuat snapshot yang sama ditambah perubahan dokumentasi T10 pada empat path.
+Diff penuh kedua root sudah diperiksa; tidak ada delta runtime, Cargo, scripts,
+atau workflow di main yang tidak terdapat pada snapshot dasar source.
+
+Karena itu riwayat main disambungkan **pada branch PR**, memakai merge berstrategi
+ours dengan unrelated histories diizinkan. Ini bukan memilih ours secara buta:
+seluruh tree hasil penyambungan diverifikasi identik dengan tree source sebelum
+operasi; dokumentasi T10 lama telah direkonsiliasi oleh progres source berikutnya.
+Tidak ada file produk, bukti, vendor atau perbaikan UI yang diganti. Hanya catatan
+rekonsiliasi ditambahkan sesudah verifikasi. [Bukti](history-reconciliation.json)
+mencatat SHA kedua root, main yang diperiksa, serta tree source sebelum operasi.
+
+**Operasi ini tidak mengubah main dan bukan merge PR #7.** Cek status live PR dan
+CI hasil checkpoint sebelum integrasi akhir. Riwayat asli sumber tetap utuh;
+verifier berbasis source-SHA tetap dapat bekerja. Jangan mengulangi strategi ini
+untuk pembaruan main lain tanpa audit baru.
+
 ## Draft PR sudah tersedia
 
 [PR #7 — Preserve Hermes progress and organized agent handoff (Spec017 WIP)](https://github.com/Catzpro01/hermes-rust-version/pull/7)
@@ -13,7 +34,7 @@ Checkpoint paket `b5facfc` sudah ter-push otomatis dan CI34843454979 SUCCESS.
 Cek ulang CI head terbaru setelah checkpoint catatan berikutnya; PR mengikuti
 push branch sumber. **Main belum diperbarui.**
 
-## Permintaan merge terbaru — belum terlaksana
+## Pemeriksaan historis pada95f9319 — merge belum terlaksana
 
 Pengguna kini **secara eksplisit meminta merge pull request**. Jadi hambatannya
 bukan kurangnya instruksi pengguna. Batas platform sesi sumber tetap berlaku:

@@ -1,6 +1,16 @@
 # Current handoff — tujuan berikutnya sudah dipilih
 
-## Pemeriksaan terakhir — handoff tersimpan, merge masih terblokir
+## Tindak lanjut — riwayat disambungkan pada branch PR
+
+Penyebab konflik PR #7 adalah unrelated histories. Main8b6a673 dan root source
+6ded9dd dibandingkan: hanya empat perubahan dokumentasi T10, tanpa delta runtime
+main yang terpisah. Riwayat disambungkan pada branch PR dengan seluruh tree source
+sebelumnya dipertahankan identik. Tidak ada produk/evidence/vendor yang ditimpa.
+Lihat [rekonsiliasi](MAIN-INTEGRATION.md); cek PR/CI hasil commit terbaru.
+**Main belum diubah; merge akhir PR tetap memerlukan konteks berwenang.**
+Tugas substantif setelah integrasi tetap Wayfinder dengan tujuan Spec017 terpilih.
+
+## Pemeriksaan historis — handoff tersimpan, merge masih terblokir
 
 Paket penataan sudah ada pada `b5facfc`, hasilnya dicatat pada `95f9319`.
 Pemeriksaan ulang: verifier7 alias/37 skill/164 file PASS dan8 tes auto-push PASS;

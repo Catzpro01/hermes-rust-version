@@ -30,6 +30,15 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- User repeats explicit PR merge request. CI34854268561/f3dfb91 GREEN. Found
+  unrelated roots: main8b6a673 vs source root6ded9dd; full diff only four T10 docs,
+  no independent main runtime/Cargo/scripts/workflow changes. Connected main as
+  a parent on assigned source branch using reviewed ours strategy; merge tree
+  exactly equals pre-operation source tree. Only continuity notes added after
+  identity check. No main push/PR merge, no code/evidence/vendor replacement.
+  See handoff/history-reconciliation.json and MAIN-INTEGRATION.md; verify new
+  source CI/PR mergeability after commit. Wayfinder scope still Spec017.
+
 - Handoff rechecked at95f9319 (organized by b5facfc): verifier7 aliases/37 skills/
   164 originals PASS,8 auto-push tests PASS, installed hook/receipt current.
   CI34843728495/95f9319 SUCCESS. User now explicitly requests PR merge; user

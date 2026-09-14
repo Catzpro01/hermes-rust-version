@@ -1575,3 +1575,20 @@ SHA reachability required by evidence verifiers. No product or vendor changes.
 Wayfinder destination remains confirmed Spec017; next substantive work is the
 breadth-first interview. This checkpoint will use the existing post-commit push;
 verify its new receipt/remote separately instead of inheriting parent success.
+
+### Prepare mergeable source history without writing main
+
+User again explicitly asks to merge PR7. Rechecked latest sourcef3dfb91:
+CI34854268561 SUCCESS, PR OPEN/DRAFT/CONFLICTING. Read-only fetch of main reveals
+root8b6a673; source root is6ded9dd, no common ancestor. `git merge-tree` refuses
+unrelated histories, explaining the blocker. Full root-content diff reviewed:
+only four T10 documentation paths; no runtime/Cargo/scripts/workflow delta on
+main relative to source's baseline. Existing main T09 runtime is already included.
+
+Connected main history on the assigned PR branch with --allow-unrelated-histories
+and reviewed ours strategy, --no-commit initially. `git write-tree` exactly equals
+pre-operation HEAD tree and unstaged diff empty: zero product/evidence/vendor
+replacement. This preserves all source work, including later corrections to old
+T10 closure claims, and both roots. Added only these handoff receipts/notes after
+the tree identity check. Not a main update or PR merge; platform source-branch
+restriction retained. Check new official CI and PR mergeability after checkpoint.
