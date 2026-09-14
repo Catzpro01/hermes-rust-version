@@ -132,9 +132,20 @@ jobs:
         run: |
           QA="${RUNNER_TEMP:-/tmp}/picker-qa"
           set -o pipefail
+          # Self-hosted quirk (run 34893179340): cargo can drop off PATH in
+          # this step even though earlier cargo steps in the same job worked.
+          # Repair PATH by re-sourcing the rustup env / prepending ~/.cargo/bin,
+          # and fail loudly with PATH diagnostics in the exported log if cargo
+          # is still missing.
+          if ! command -v cargo >/dev/null 2>&1; then
+            if [ -f "$HOME/.cargo/env" ]; then . "$HOME/.cargo/env"; fi
+            export PATH="$HOME/.cargo/bin:$PATH"
+          fi
+          command -v cargo >/dev/null 2>&1 || { echo "cargo missing in picker step; PATH=$PATH" | tee picker-position.log; exit 1; }
           cargo build --locked -p hermes-rs --bin hermes-rs 2>&1 | tee picker-position.log
           rm -rf "$QA"
-          python3 -m pip --version || { echo 'python3 -m pip is required on this runner'; exit 1; }
+          python3 -m pip --version >/dev/null 2>&1 || python3 -m ensurepip --upgrade >/dev/null 2>&1 \
+            || { echo 'python3 -m pip is required on this runner'; exit 1; }
           python3 -m pip install --target "$QA" pyte==0.8.2 wcwidth==0.8.3 2>&1 | tee -a picker-position.log \
             || python3 -m pip install --target "$QA" --break-system-packages pyte==0.8.2 wcwidth==0.8.3 2>&1 | tee -a picker-position.log
           PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-position.json python3 scripts/test_picker_footer_position.py 2>&1 | tee -a picker-position.log

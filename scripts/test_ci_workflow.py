@@ -758,6 +758,26 @@ class CiGateTests(unittest.TestCase):
         step = STEPS["Upload logs"]
         self.assertIn("memory-oom.log", step["with"]["path"])
 
+    def test_picker_step_repairs_missing_cargo_before_building(self):
+        """Self-hosted quirk (run 34893179340): cargo dropped off PATH only in
+        the picker step although earlier cargo steps in the same job worked.
+        The step must repair PATH (rustup env / ~/.cargo/bin) before invoking
+        cargo, and fail loudly with PATH diagnostics if cargo stays missing."""
+        step = STEPS["Picker terminal regressions"]
+        script = step["run"]
+        self.assertLess(script.index('command -v cargo'),
+                        script.index('cargo build --locked'))
+        self.assertIn('. "$HOME/.cargo/env"', script)
+        self.assertIn('"$HOME/.cargo/bin:$PATH"', script)
+        self.assertIn('cargo missing in picker step; PATH=$PATH', script)
+
+    def test_picker_step_falls_back_to_ensurepip_when_pip_is_missing(self):
+        """The VPS system python3 had no pip (run 34891514988); the guard must
+        try ensurepip before giving up."""
+        step = STEPS["Picker terminal regressions"]
+        self.assertIn("python3 -m pip --version >/dev/null 2>&1", step["run"])
+        self.assertIn("python3 -m ensurepip --upgrade", step["run"])
+
     def test_test_job_provisions_python_before_picker_regressions(self):
         """The self-hosted VPS system python3 has no pip (run 34891514988
         died at the picker step's pip guard), so the test job must provision
