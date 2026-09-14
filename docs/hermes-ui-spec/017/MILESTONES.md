@@ -28,9 +28,9 @@ prompt hapus. Referensi memakai **warna abu-abu, bukan atribut ANSI dim**.
 | Tahap | Status | Kriteria selesai / hasil |
 |---|---|---|
 | M1 · Kontrak dan referensi | ✅ Selesai | CLI/PTY nyata disepakati melalui permintaan TDD; enam rekaman referensi memakai palette8 |
-| M2 · RED nyata | 🔄 Disiapkan | Tes primer normal100×30 dibuat; replay Rust lama gagal6/6. Belum ada RED live baru |
-| M3 · Perubahan minimal | ⏳ Menunggu M2 | Belum ada perubahan Rust; jangan menulis solusi sebelum RED live |
-| M4 · GREEN resmi | ⏳ Menunggu M3 | Tes primer, fmt/check/clippy dan workspace; patch yang diterapkan harus sama dengan yang diuji |
+| M2 · RED nyata | ✅ Selesai | [34832948842 / 5515789](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34832948842): tes nyata gagal3 kali karena foreground default; build/setup PASS |
+| M3 · Perubahan minimal | 🔄 Kandidat diajukan | Warna footer saja + reset warna; belum diterapkan ke source sebelum validasi resmi |
+| M4 · GREEN resmi | 🔄 Menunggu runner | Tes primer, fmt/check/clippy dan workspace; patch yang diterapkan harus sama dengan yang diuji |
 | M5 · Capture dan review | ⏳ Menunggu M4 | Capture source committed, 10 kasus di100×30/80×30; cek warna, posisi, counter/hint, kebocoran style dan gambar pasangan |
 
 Tes primer membaca state terminal, bukan ejaan escape ANSI. pyte mempunyai dua

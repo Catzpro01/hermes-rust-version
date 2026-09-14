@@ -1347,3 +1347,14 @@ all other rows/attributes with0c0704d. No raw/image normalization. Runner gains
 one allowlisted color test with exact one-test execution/error rejection3 times;
 12 workflow policy tests PASS. Preserve prior footer position and counter/hints,
 then ten-case acceptance including delete/empty for style leakage. No merge.
+
+### Footer color M2 complete → M3/M4 candidate
+
+RED34832948842/5515789 SUCCESS expected-RED gate: fmt/check/build pass; primary
+actual CLI fails3 times with default foreground, not palette8. No setup errors.
+Verified raw trace85502 bytes SHA
+f14e3920154956dd0d68cf072166b8044ad621b751c0e8e4c6abb6884d977f97.
+Only now proposed minimal footer DarkGrey/Print/foreground Reset branch. No
+production Rust applied before official fmt/check/clippy/full validation.
+Milestone page updated; four supporting color-checker tests pass (reference,
+historical failures, decoder aliases, missing/corrupt evidence). No merge.

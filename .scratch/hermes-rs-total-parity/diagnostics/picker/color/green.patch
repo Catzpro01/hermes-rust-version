@@ -1,0 +1,17 @@
+--- a/crates/hermes-cli/src/session_picker.rs
++++ b/crates/hermes-cli/src/session_picker.rs
+@@ -436,6 +436,14 @@
+                         SetAttribute(Attribute::Reverse),
+                         Print(line),
+                         SetAttribute(Attribute::Reset)
++                    )?;
++                } else if is_footer {
++                    use crossterm::style::{Color, Print, SetForegroundColor};
++                    execute!(
++                        out,
++                        SetForegroundColor(Color::DarkGrey),
++                        Print(line),
++                        SetForegroundColor(Color::Reset)
+                     )?;
+                 } else {
+                     use crossterm::style::Print;
