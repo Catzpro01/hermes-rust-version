@@ -1,5 +1,6 @@
 {
-  "phase": "red",
+  "phase": "green",
   "test": "picker_normal_header",
-  "source_sha256": "e32855a1dba67b62d76dff6625a6003a660063aa13ca23ba81e3e877960e6ded"
+  "source_sha256": "e32855a1dba67b62d76dff6625a6003a660063aa13ca23ba81e3e877960e6ded",
+  "patch_sha256": "ce38d9099ec323265b6faca689fb5efa39445dd0676e5eaec82cb919b6a03ebc"
 }

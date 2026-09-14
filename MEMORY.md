@@ -32,7 +32,10 @@ user's private Python installation.
 
 - Active normal-help-header `/tdd`: agreed real CLI/PTy normal100x30 seam.
   Python target indexed3 + bold=true; pyte brown/cdcd00 aliases (NOT palette11).
-  Primary test written; no live RED/proposed Rust patch yet. Historical normal/
+  RED34836863589/4aa0858: real CLI style FAIL3, fmt/check/build PASS.
+  Trace11973 bytes SHA56ecf3af0ea8fc93b369d0f23120277926f6ae2d9b6605c957a8b0cb754d5e7e.
+  Only now proposing DarkYellow/Bold/Reset on n0 with empty filter; source
+  unchanged pending official GREEN. Four supporting checker tests PASS. Historical normal/
   delete4 header checks fail for Rust, Python4 PASS;14 policy tests PASS.
   `MILESTONES.md` H1 done/H2 test-first. Preserve other rows, filter header and
   all four completed footer fixes. Final ten-case capture/xterm audit required.

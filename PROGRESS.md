@@ -1420,3 +1420,12 @@ policy tests PASS. No Rust change/proposal yet. Allowlisted header runner reject
 zero-test/setup errors and repeats the exact primary3 times. Preserve all prior
 footer fixes, filter/column header, selection and delete prompt styles. Capture10
 cases and update the user's milestone page. No merge or closure.
+
+### Header H2 verified → H3/H4 candidate
+
+RED34836863589/4aa0858 expected-RED gate SUCCESS: fmt/check/build pass, named
+actual CLI regression fails3 at default/false vs palette3/bold. Original trace
+11973 bytes SHA56ecf3af0ea8fc93b369d0f23120277926f6ae2d9b6605c957a8b0cb754d5e7e.
+No missing-test/setup error. Only now proposed one header branch: empty filter,
+first frame line, DarkYellow + Bold + Print + Reset. No production application
+before official full GREEN. Four supporting checker tests PASS; milestone updated.
