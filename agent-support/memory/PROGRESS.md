@@ -1999,3 +1999,24 @@ Catatan penting: workflow `picker-diagnostic`/`ui-evidence` masih ter-gate ke
 branch lama `arena/01a0a052` (dari dini); adaptasinya tugas terpisah sesuai
 VERIFICATION. Bukti VPS sejauh ini: 584 tes Rust hijau di VPS, sccache aktif,
 swap bekerja; tinggal verifikasi langkah picker pasca perbaikan PATH.
+
+### Hasil akhir slice VPS — seluruh pipeline hijau di vps-fern-hermes
+
+Setelah GitHub tersambung ulang, commit catatan `9023312` ter-push (receipt
+PASS) dan push itu memicu run verifikasi
+[34896083042](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34896083042)
+pada `9023312`: **SUCCESS kedua job, keduanya dieksekusi `vps-fern-hermes`**.
+Anotasi (bukti baru, bukan historis):
+
+- Ringkasan gate: `fmt=success clippy=success test=success picker=success` —
+  termasuk kesepuluh regresi PTY picker aktual.
+- `sccache enabled` (RUSTC_WRAPPER=sccache untuk langkah cargo).
+- Memori: 967/3914 MiB terpakai; swap 153/4095 MiB terpakai — bantalan OOM
+  bekerja; tanpa anotasi error/warning apa pun.
+
+Rangkaian perbaikan yang menghasilkan keadaan ini (semua sudah ter-push):
+runs-on `[self-hosted, vps, hermes]` + tes pin (`7df86d2`), concurrency
+cancel-in-progress (commit pengguna `e7e170b`), tes sccache hermetis
+(`ffab4f1`), `rustup update stable` untuk MSRV (`0d53bd9`), setup-python job
+test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
+(`30dc775`). Tidak ada merge; tidak ada pengubahan bukti/evidence lama.
