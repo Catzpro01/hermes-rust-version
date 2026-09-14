@@ -1287,3 +1287,18 @@ outcome (all625 combinations checked), with raw trace/log retained. Four
 supporting geometry checker tests cover historical reference/failures and
 missing/corrupt/mismatched evidence. Request fresh committed-source ten-case
 capture; no visual PASS claim before replay and direct inspection.
+
+### Footer-position TDD delivered at0c0704d
+
+Actual CLI normal100x30 RED34829070839 (row5 !=30, three failures) → official
+GREEN34829279773 → exact1199-byte patch applied → committed-source capture
+34829549105 and ordinary CI34829549118 SUCCESS. Primary PTY regression is now
+required in ordinary CI. Ten paired images directly inspected: footer row30 at
+both widths, delete prompt still bottom, empty row1. Counter6/hint6 controls PASS.
+Audit validates20 raw/cast roundtrips,10 PNGs, unchanged Python records/cells and
+renderer settings. Only old/new footer rows change; delete only drops stale row5;
+both empty PNGs byte-identical to original. No normalization or new Python run.
+See `docs/hermes-ui-spec/017/evidence/picker-position-0c0704d/REPORT.md`.
+Palette/header/selection/delete styling, other body geometry and wizard/completion
+coverage differences remain open. Resize/long-list/clear-filter behavior is not
+proved by this fixed-size slice. No whole-picker PASS, final acceptance or merge.

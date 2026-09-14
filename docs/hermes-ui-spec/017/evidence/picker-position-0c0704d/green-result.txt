@@ -1,0 +1,8 @@
+test_footer_is_on_terminal_last_row (__main__.PickerFooterPositionTests.test_footer_is_on_terminal_last_row) ... rust picker-normal 100 CAPTURED_NOT_REVIEWED
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.462s
+
+OK
+VERIFIED candidate patch 1199 e7ad21d2a7baab771e3b0a5742d5d741720302c1ed082e70448911406208fede

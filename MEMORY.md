@@ -38,7 +38,16 @@ user's private Python installation.
   Minimal GREEN proposal now anchors final frame line, omits its next-line move;
   GREEN34829279773/984b92f: fmt/check/build, exact CLI3, clippy/full suite PASS.
   Tested1199-byte patch e7ad21d2a7baab771e3b0a5742d5d741720302c1ed082e70448911406208fede
-  applied byte-identically; committed-source ten-case capture is next.
+  applied byte-identically. Runtime0c0704d: source capture34829549105 and
+  CI34829549118 SUCCESS, including required actual CLI test. New packet
+  `docs/hermes-ui-spec/017/evidence/picker-position-0c0704d/REPORT.md`: ten images
+  directly inspected, geometry10/10 and counters6/hints6 PASS. Verify.py checks
+  20 raw/cast roundtrips,10 PNG hashes, unchanged Python provenance/settings,
+  moved footer cells intact; delete only removes stale row5; empty PNGs identical.
+  Rust bundle108695 bytes SHA5ab4a98ea7d1cc38b8977e76994b7a885290d04d5bf95407d0ba267fba9d900f.
+  Remaining: palette/header/selection/delete styles, body geometry, wizard/
+  completion discrepancies, T12 nested fields/full-CLI coverage. Resize/clear
+  filter/long-list behavior not proved by this fixed-size slice. No closure/merge.
   Primary real PTY regression is now required in ordinary CI too (four-outcome
   final gate,625 combinations tested). Four supplemental checker tests retain
   historical geometry plus corrupt/missing/mismatched evidence error controls.
@@ -57,13 +66,13 @@ user's private Python installation.
   GREEN. New `evidence/picker-counter-a8d5e8c/REPORT.md`: six images inspected,
   counters6/6 and hints6/6 PASS. Four normal/filter PNGs byte-identical to c07
   packet; only Rust cell row4 changes in the two no-match frames.
-- Current remaining scope: footer placement/palette, other wizard/completion
+- At counter delivery, remaining scope was footer placement/palette, wizard/completion
   discrepancies and T12 field/full-CLI coverage. Hint AND no-match counter are
   now fixed; older “counter NOT fixed” entries below describe earlier state.
 - `scripts/check_picker_counter.py` validates independent Python footer literals
-  plus prior hint checks. Existing runner accepts only two named regressions;
+  plus prior hint checks. At counter delivery, runner accepted two named regressions;
   counter proposals are isolated under diagnostics/picker/counter. Selection
-  lives in request.json test field; preserve it for counter capture. Ten workflow
+  lives in request.json test field; now use position for its capture. Then ten workflow
   policy tests. Capture metadata includes rustc/Cargo/capture-script hashes.
 
 
