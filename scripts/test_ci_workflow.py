@@ -14,6 +14,7 @@ import random
 import string
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -695,8 +696,11 @@ class CiGateTests(unittest.TestCase):
 
     def test_sccache_enabled_only_when_present(self):
         """The wrapper must be exported exactly when sccache exists on the
-        runner, so hosted runners without it keep building unchanged."""
+        runner, so hosted runners without it keep building unchanged. PATH is
+        isolated to the fixture dir: tuned self-hosted runners have a real
+        sccache on PATH, which must not leak into the 'absent' case."""
         step = STEPS["Enable sccache if available"]
+        bash = shutil.which("bash") or "/bin/bash"
         for present in (True, False):
             with self.subTest(present=present), tempfile.TemporaryDirectory() as tmp:
                 if present:
@@ -705,9 +709,9 @@ class CiGateTests(unittest.TestCase):
                     sccache.chmod(0o700)
                 env_file = Path(tmp) / "gh_env"
                 out_file = Path(tmp) / "gh_output"
-                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}",
+                env = dict(os.environ, PATH=tmp,
                            GITHUB_ENV=str(env_file), GITHUB_OUTPUT=str(out_file))
-                result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                result = subprocess.run([bash, "-e", "-c", step["run"]], cwd=tmp,
                                         env=env, capture_output=True, text=True, check=False)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 written = env_file.read_text() if env_file.exists() else ""
