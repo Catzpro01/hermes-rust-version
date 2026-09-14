@@ -351,47 +351,62 @@ jobs:
           git diff --binary -- '*.rs' > evidence/tested.patch
           python3 scripts/capture_banner.py export evidence/tested.patch --label 'candidate patch'
       - name: Capture committed picker and verify original symptom
+        id: capture
         if: steps.plan.outputs.phase == 'capture'
         run: |
-          test -z "$(git diff --name-only -- '*.rs')"
-          cargo build --locked -p hermes-rs --bin hermes-rs
-          python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
-          PYTHONPATH=/tmp/picker-qa python3 scripts/capture_picker_diagnostic.py target/debug/hermes-rs evidence/picker.json
-          PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_filter_hint.py evidence/picker.json --side rust
-          if [ "${{ steps.plan.outputs.test }}" != picker_footer_tracks_delete_availability ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_counter.py evidence/picker.json --side rust
-          fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_footer_position ] || [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_position.py evidence/picker.json --side rust
-          fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_color.py evidence/picker.json --side rust
-          fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_normal_header.py evidence/picker.json --side rust
-          fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_filter_header.py evidence/picker.json --side rust
-          fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_column_layout ] || [ "${{ steps.plan.outputs.test }}" = picker_message_style ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_column_layout.py evidence/picker.json --side rust
-          fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_message_style ] || [ "${{ steps.plan.outputs.test }}" = picker_selection ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_message_style.py evidence/picker.json --side rust
-          fi
-          if [ "${{ steps.plan.outputs.test }}" = picker_selection ]; then
-            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_selection.py evidence/picker.json --side rust
-          fi
-          python3 scripts/capture_banner.py export evidence/picker.json
+          set -o pipefail
+          {
+            test -z "$(git diff --name-only -- '*.rs')"
+            cargo build --locked -p hermes-rs --bin hermes-rs
+            python3 -m pip install --target /tmp/picker-qa pyte==0.8.2 wcwidth==0.8.3
+            PYTHONPATH=/tmp/picker-qa python3 scripts/capture_picker_diagnostic.py target/debug/hermes-rs evidence/picker.json
+            PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_filter_hint.py evidence/picker.json --side rust
+            if [ "${{ steps.plan.outputs.test }}" != picker_footer_tracks_delete_availability ]; then
+              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_counter.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_footer_position ] || [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
+              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_position.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_footer_color ] || [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
+              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_footer_color.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_normal_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
+              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_normal_header.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_filter_header ] || [ "${{ steps.plan.outputs.test }}" = picker_column_layout ]; then
+              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_filter_header.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_column_layout ] || [ "${{ steps.plan.outputs.test }}" = picker_message_style ]; then
+              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_column_layout.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_message_style ] || [ "${{ steps.plan.outputs.test }}" = picker_selection ]; then
+              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_message_style.py evidence/picker.json --side rust
+            fi
+            if [ "${{ steps.plan.outputs.test }}" = picker_selection ]; then
+              PYTHONPATH=/tmp/picker-qa python3 scripts/check_picker_selection.py evidence/picker.json --side rust
+            fi
+            python3 scripts/capture_banner.py export evidence/picker.json
+          } 2>&1 | tee capture-verify.log
       - name: Export exact regression log
         if: always()
+        env:
+          CAPTURE: ${{ steps.capture.outcome }}
         run: |
           python3 - <<'PY'
+          import os
           from pathlib import Path
           p=Path('regression-1.log')
           if p.exists():
               text='\n'.join(p.read_text().splitlines()[-30:])
               print('::notice title=picker exact result::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
+          p=Path('capture-verify.log')
+          if p.exists() and os.environ.get('CAPTURE') != 'success':
+              lines=p.read_text().splitlines()
+              signals=[line for line in lines if line.startswith('FAIL') or 'Traceback' in line
+                       or 'Error' in line or line.startswith('RuntimeError')]
+              tail=lines[-40:]
+              text='\n'.join(signals[-20:] + ['--- last 40 lines ---'] + tail)
+              print('::error title=picker capture verify::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
           p=Path('full-validation.log')
           if p.exists():
               lines=p.read_text().splitlines()
@@ -411,4 +426,5 @@ jobs:
             evidence/
             regression-*.log
             full-validation.log
+            capture-verify.log
           retention-days: 90
