@@ -1115,3 +1115,14 @@ waiver. First proposal preserved as green-first.patch. Retry complete validation
 now retaining full logs and bounded error annotations. Added exact-gate policy
 test: compile failures / zero selected tests must not count as RED/GREEN (9 pass).
 Runtime source still unchanged pending full validation.
+
+Complete GREEN34791539009/94b0db0 passed fmt/check, exact regression3 times,
+clippy and full workspace tests. Exact exported3397-byte patch
+SHAc866c9cb5f555527e151ab0e16efffde2a84cfc9af5790bff48e88493bef0e15
+verified, applied, and local Rust diff matched byte-for-byte. Confirmed cause:
+footer omitted the actual delete-eligibility predicate. New regression includes
+filter matching all rows, no matches, clearing to no filter, and empty frame.
+Only hint eligibility changed; counter/placement/palette remain open. Next run
+must capture this committed source and rerun original six-case PTY replay.
+Stored unified-diff proposals contain required space-prefixed blank context;
+source/docs whitespace checks are clean (do not strip valid patch context).

@@ -1,7 +1,5 @@
 {
-  "phase": "green",
-  "source_sha256": "eea9ce4c1d320ebe29a7c647133d7b353d422c54c5419194fa13351b0c818c86",
-  "patch_sha256": "27f1a6f901d8b44fa6ee58c8404b5b994c3ca19f0cf17cfeb88d019fd057d43f",
-  "red_run": 34791212317,
-  "retry": "update-stale-no-match-assertion"
+  "phase": "capture",
+  "green_run": 34791539009,
+  "patch_sha256": "c866c9cb5f555527e151ab0e16efffde2a84cfc9af5790bff48e88493bef0e15"
 }
