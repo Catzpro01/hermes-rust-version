@@ -72,11 +72,15 @@ This supersedes the historical pending-counter entries above.
     34861588181 / CI 34861587979). The first GREEN proposal was rejected by
     clippy (8/7 arguments) and kept as `rejected-first-attempt.patch`.
     Packet: `docs/hermes-ui-spec/017/evidence/picker-column-layout-b732d22/REPORT.md`.
-  - [ ] Cycle 3 (body styling) found by the pinned-renderer pixels: the reference
-    draws `  No sessions match the filter.` with the **dim** attribute
-    (`ESC[0;2m`); pyte 0.8.2 cannot decode dim, so the gate must assert the SGR-2
-    spelling and the packet the rendered equality. Cursor row must also become
-    ` → ` + palette2 green + bold instead of reverse video.
+  - [ ] Cycle 3 (prompt/message rows) in flight: the new live gate
+    `picker_message_style` pins the delete-confirm prompt (palette1 red + bold)
+    and the no-match message (the **dim** attribute, `ESC[0;2m`, which pyte 0.8.2
+    cannot decode, so it is read from the retained byte stream and the packet
+    compares the rendered pixels). RED requested against source `caf8336d…`;
+    fix not applied yet. The reference passes 6/6, the current Rust source fails
+    6/6 for exactly those two reasons.
+  - [ ] Cycle 4 (selection row) stays separate: ` → ` + palette2 green + bold
+    instead of reverse video, found by the pinned-renderer pixels.
 - [ ] Wizard/completion discrepancies and T12 field/full-Python-CLI evidence.
 
 Report: `docs/hermes-ui-spec/017/evidence/picker-counter-a8d5e8c/REPORT.md`.
