@@ -25,6 +25,17 @@ WIDTHS = (40, 39)
 MAIN_PY_SHA256 = '89cde75d388ae3ff0d3512c00a0b4e77fe9f55c438874032b32967b4ab867567'
 
 
+def summarize(cases, side):
+    """Print one line per case and raise with only the failures, so a blocked
+    job log still leaves a usable annotation."""
+    for case in cases:
+        record = case[side]
+        print(f'{side} {case["id"]} width={record["width"]} '
+              f'error={record["error"]!r} bytes={len(record["raw_base64"]) // 4 * 3}', flush=True)
+    failures = [(case['id'], case[side]['error']) for case in cases if case[side]['error']]
+    assert not failures, failures
+
+
 def write(path, bundle):
     if Path(path).exists():
         raise RuntimeError('Refusing to overwrite evidence')
@@ -40,7 +51,7 @@ def reference(tree, out):
     digest = hashlib.sha256(main_py.read_bytes()).hexdigest()
     assert digest == MAIN_PY_SHA256, digest
     cases = capture_side('python', reference=tree, names=PICKER_SIZE_CASES, widths=WIDTHS, timeout=45)
-    assert all(c['python']['error'] is None for c in cases), [c for c in cases if c['python']['error']]
+    summarize(cases, 'python')
     write(out, {'python_reference': UPSTREAM,
                 'python_version': sys.version,
                 'main_py_sha256': digest,
@@ -52,7 +63,7 @@ def reference(tree, out):
 def rust(binary, out):
     binary = Path(binary).resolve()
     cases = capture_side('rust', binary=binary, names=PICKER_SIZE_CASES, widths=WIDTHS, timeout=45)
-    assert all(c['rust']['error'] is None for c in cases), [c for c in cases if c['rust']['error']]
+    summarize(cases, 'rust')
     write(out, {'rust_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
                 'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
                 'capture_driver_sha256': hashlib.sha256(Path(__file__).resolve().parent.joinpath('capture_ui.py').read_bytes()).hexdigest(),

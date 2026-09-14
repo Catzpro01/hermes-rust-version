@@ -583,7 +583,9 @@ jobs:
               lines=p.read_text().splitlines()
               signals=[line for line in lines if line.startswith(('FAIL','ERROR','AssertionError','RuntimeError'))
                        or 'Traceback' in line or 'Error' in line or 'error' in line]
-              text='\n'.join((signals[-15:] + ['--- last 25 lines ---'] + lines[-25:]))
+              text='\n'.join((signals[-10:] + ['--- picker size lines ---'] +
+                               [line for line in lines if line.startswith(('python picker-', 'rust picker-'))][-6:] +
+                               ['--- last 25 lines ---'] + lines[-25:]))
               print('::error title=picker reference prepare::'+text.replace('%','%25').replace('\r','%0D').replace('\n','%0A')[:3500])
           p=Path('full-validation.log')
           if p.exists():

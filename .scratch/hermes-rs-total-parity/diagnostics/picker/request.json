@@ -1,5 +1,5 @@
 {
   "phase": "reference",
   "test": "picker_terminal_size",
-  "note": "re-request 4: the reference steps now tee reference-prepare.log and export it as an annotation"
+  "note": "re-request 5: per-case result lines are printed and exported so a blocked log is not a blind spot"
 }
