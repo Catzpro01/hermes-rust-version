@@ -30,6 +30,18 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- **W5 picker status lifecycle — harness delivered, gate deliberately RED**
+  (sesi `arena/01a0a600`, 2026-09-16): patch `01a0a493…` diterapkan bersih
+  (fixture `picker-status-tags` + checker + 10 tes). Patch dikirim rusak;
+  tiga cacat diperbaiki (`NameError: i` di `body_row()`, simulasi
+  collapse-to-`done` yang overstate 1 baris, `tag_sgr()` menebak cursor dari
+  nilai tag). 202 tes / 13 error vs baseline 192 / 13 → +10 hijau, nol
+  regresi; ke-13 error = `HERMES_PICKER_BINARY` (cargo absen di sandbox).
+  **Belum ada perubahan runtime Rust** — gate sengaja merah karena
+  `collect_rows` menurunkan status dari `turns.is_empty()`, jadi `intr`/`err`
+  tak pernah tercapai. **HITL terbuka:** opsi A/B/C di
+  `.scratch/hermes-rs-total-parity/issues/W5-picker-status-lifecycle.md`,
+  rekomendasi C. Gate belum diikat ke CI.
 - **Picker selected-row slice delivered**: fix `ee11541` (tested patch 1171 B
   `8eed758f…`: `Color::DarkGreen` + bold replaces reverse video), RED `34866264371`
   → GREEN `34866921566` → capture `34868306211` (bundle `fe8bc2c2…`, 10 cases) →

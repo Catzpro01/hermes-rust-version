@@ -2176,3 +2176,46 @@ test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
   completion 6 skenario × 2 lebar.
 - **Sisa T12**: pasangan empat area + rekaman mentah + metadata repro —
   termasuk bundle referensi Python Lane 3 (masih direkam di VPS).
+
+## 2026-09-16 — W5 picker status lifecycle: patch diterapkan, tiga cacat harness diperbaiki
+
+**Request:** lanjutkan dan push progress dari `01a0a493-1c05-7ccc-a6dc-983ef8d7b471.patch`,
+laporkan milestone; tetap dilarang merge tanpa perintah eksplisit.
+
+**Branch:** `arena/01a0a600-hermes-rust-version` (base `a008e52`).
+
+### Changes
+
+- Patch 7 berkas (~17,9 k baris) diterapkan bersih. Isinya murni harness
+  Spec017 W5 — fixture `picker-status-tags` di `capture_ui.py`, checker baru
+  `check_picker_status_tags.py`, dan `test_picker_status_tags_checks.py`.
+  Mayoritas baris adalah `hermes_state.py` referensi yang disematkan sebagai
+  bukti `docs/hermes-ui-spec/017/evidence/upstream-lifecycle-status/`.
+- **Tidak ada perubahan runtime Rust.** Gate sengaja dibiarkan RED: status
+  hari ini diturunkan dari `turns.is_empty()`, sehingga `intr`/`err` tak
+  pernah tercapai. Ini juga membuat keputusan tiket W5 tetap terbuka.
+- Patch dikirim rusak; tiga cacat diperbaiki: `NameError: name 'i' is not
+  defined` di `body_row()` (seluruh 10 tes error), simulasi collapse-to-`done`
+  yang tidak akurat (4 vs 3 pelanggaran), dan `tag_sgr()` yang menebak baris
+  cursor dari nilai tag, bukan posisi cursor.
+- Catatan verifikasi ditulis ke
+  `.scratch/hermes-rs-total-parity/issues/W5-picker-status-lifecycle.md`.
+
+### Verification actually performed
+
+- `python3 -m unittest discover` di `scripts/`: 202 tes, 13 error.
+- Baseline `a008e52` lewat `git worktree` terpisah: 192 tes, 13 error.
+  Selisihnya +10 tes baru, semuanya hijau, nol regresi. Worktree dibersihkan.
+- Ke-13 error identik sebelum dan sesudah: `KeyError: 'HERMES_PICKER_BINARY'`
+  pada tes PTY hidup. `cargo`/`rustc` tidak ada di sandbox; `pyte==0.8.2`,
+  `wcwidth==0.8.3`, `PyYAML==6.0.3` dipasang agar gate bisa dijalankan.
+- `PICKER_LIFECYCLE_CASES` opt-in — `CASES` default tidak berubah.
+
+### Blockers / next actions
+
+- **HITL terbuka:** tiket W5 menuntut pilihan A (pertahankan adaptasi T09) /
+  B (port penuh) / C (port bertahap, rekomendasi). Menunggu perintah.
+- Rust tidak bisa dikompilasi lokal; verifikasi sisi Rust hanya lewat CI.
+- Gate belum diikat ke CI — mengikatnya sekarang akan memerahkan CI sampai
+  runtime diubah, jadi menunggu keputusan opsi.
+- Tidak ada merge/auto-merge dan tidak ada PR yang dibuka.

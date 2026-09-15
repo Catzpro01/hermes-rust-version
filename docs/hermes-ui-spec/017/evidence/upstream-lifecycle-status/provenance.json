@@ -1,0 +1,35 @@
+{
+  "purpose": "Pinned upstream source evidence for the session lifecycle-status CONTENT that the picker's status column renders. The retained spec \u00a7F names the tag/colour functions only; `upstream-status-attr/` pinned how a status maps to a tag word and to ink. This packet pins the missing half: how the reference *derives* the status (`classify_session_status` + `SessionDB.session_lifecycle_statuses`) from the last message row of each session, so the claim \"Rust can only ever show `done`/`empty`\" can be judged against the pinned contract instead of prose.",
+  "repository": "https://github.com/NousResearch/hermes-agent",
+  "commit": "63279301bcbdc185c1b07b98a9312eb0c862f26d",
+  "path": "hermes_state.py",
+  "blob_sha_git": "166c39a519750cefa7116f92ecbd73c35bfd2ad9",
+  "file_sha256": "c8e0d9bbb23eacc00f7ca6459fb7995de19e18ce82a379f326da905ec14ea6e9",
+  "bytes": 793845,
+  "fetched_with": "gh api repos/NousResearch/hermes-agent/git/blobs/166c39a519750cefa7116f92ecbd73c35bfd2ad9 | base64 -d (no direct network from the sandbox). Re-verified in-repo with `git hash-object hermes_state.py` == blob_sha_git, which is the same check `reference.json` used for the tree.",
+  "relevant_lines": {
+    "lifecycle_constants": "5105-5113 (SESSION_STATUS_COMPLETE/INTERRUPTED/ERROR/EMPTY = complete/interrupted/error/empty)",
+    "error_finish_reasons": "5115-5117 (_ERROR_FINISH_REASONS = error, agent_error, content_filter)",
+    "classify_session_status": "5120-5145 (error finish_reason first, then assistant+tool_calls -> interrupted, user/tool -> interrupted, otherwise complete)",
+    "session_lifecycle_statuses": "12400-12445 (one MAX(id)-per-session join, never a transcript scan; sessions with no message row default to 'empty')"
+  },
+  "excerpt_file": "hermes_state_excerpt.py (verbatim line ranges, headers added; the full file is retained next to it and is the authoritative copy)",
+  "contract_as_read": {
+    "empty": "no messages row at all for that session id",
+    "error": "last message row's finish_reason, stripped and lowercased, is one of error/agent_error/content_filter (checked BEFORE role)",
+    "interrupted": "last row is role assistant with a non-NULL tool_calls column, or role user, or role tool",
+    "complete": "any other last row (including unrecognized roles); the reference documents this as a benign default",
+    "tag_rendering": "the tag word comes from `_session_status_tag` (complete->done, interrupted->intr, error->err, empty->empty, unknown->'-'); ink mapping and the tag column are pinned in ../upstream-status-attr/provenance.json",
+    "failure_mode": "`_annotate_session_statuses` swallows any error from the status query and leaves rows untagged, so the picker renders '-' rather than failing"
+  },
+  "corroboration": [
+    "retained capture picker-normal-100x30: the Python side draws `intr` on a non-cursor row with palette index 3, i.e. the interrupted branch of this contract is observable in the pinned reference recording",
+    "docs/hermes-ui-spec/017/evidence/upstream-status-attr/provenance.json: the tag words and ink mapping this content feeds",
+    "Rust side today: crates/hermes-cli/src/session_picker.rs collect_rows() sets status to `empty` when a session has no turns and `done` otherwise \u2014 the `intr`/`err` branches are unreachable, and docs/PARITY.md records that as the T09 adaptation"
+  ],
+  "limitations": [
+    "This is upstream source evidence at the pinned commit, not an audit of the user's historical VM installation.",
+    "The reference reads `messages.tool_calls` and `messages.finish_reason`, columns the Python schema has and the Rust-created schema (crates/hermes-core/src/session/store.rs) does not; any port decision must say explicitly how each of the two database shapes behaves.",
+    "No new pixel capture or acceptance is implied by this packet; it only pins the contract."
+  ]
+}
