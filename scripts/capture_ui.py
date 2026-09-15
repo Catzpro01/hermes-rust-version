@@ -226,13 +226,30 @@ def steps_for(name, side):
     if name == 'picker-clear-filter-backspace':
         return [('Browse sessions', 'sec'), ('filter: sec', '\x7f\x7f\x7f'),
                 ('1/2 sessions', '\x1b'), ('@exit', None)]
+    # Spec017 Lane 3 (W4): completion evidence. Tab must surface the inline
+    # dropdown / unique completion, ghost text renders without Tab, skill
+    # completion lists the seeded skill, and an accepted completion that ends
+    # a line opens the next UI (the /sessions browse picker). Rust ready
+    # marker = the REPL welcome line; the Python reference side keeps its
+    # prompt-symbol marker until the user's reference recording lands.
     if name.startswith('completion-'):
-        text = {'completion-command':'/mod', 'completion-subcommand':'/skills ', 'completion-alternatives':'/s'}[name]
-        return [('❯' if py else 'Welcome to Hermes Agent!', text+'\t\t'), (text.rstrip(), None)]
+        welcome = '\u276f ' if py else 'Welcome to Hermes Agent!'
+        if name == 'completion-command':
+            return [(welcome, '/mod\t'), ('/model', '\x15/exit\r'), ('@exit', None)]
+        if name == 'completion-alternatives':
+            return [(welcome, '/s\t'), ('/sessions', '\x15/exit\r'), ('@exit', None)]
+        if name == 'completion-subcommand':
+            return [(welcome, '/skills \t'), ('demo-skill', '\x15/exit\r'), ('@exit', None)]
+        if name == 'completion-ghost':
+            return [(welcome, '/perso'), ('nality', '\x15/exit\r'), ('@exit', None)]
+        if name == 'completion-picker-open':
+            return [(welcome, '/sessio\t'), ('/sessions', '\r'),
+                    ('Browse sessions', '\x1b'), ('@exit', None)]
     return [('@exit', None)]
 
 
 def section_for(name):
+    if name.startswith('completion'): return 'completion'
     if name.startswith('wizard-gateway'): return 'gateway'
     if name.startswith('wizard-tools'): return 'tools'
     if name.startswith('wizard-docker') or name in ('wizard-terminal', 'wizard-local', 'wizard-cancel'): return 'terminal'
@@ -277,6 +294,12 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
                               count=30 if name == 'picker-long-list' else 2)
                 if name.startswith('completion'):
                     (home/'config.yaml').write_text('model:\n  provider: auto\n  name: parity-fixture\n')
+                    if name == 'completion-subcommand':
+                        skill = home/'skills'/'demo-skill'
+                        skill.mkdir(parents=True)
+                        (skill/'SKILL.md').write_text(
+                            '---\nname: demo-skill\n'
+                            'description: Parity evidence fixture skill\n---\nbody\n')
                 if side == 'rust':
                     if name.startswith('wizard'):
                         command = [str(binary),'setup'] + ([section_for(name)] if section_for(name) else [])
@@ -311,7 +334,7 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
                                and name != 'picker-long-list'
                                else [sid for sid, _ in long_list_seed(30)] if name == 'picker-long-list'
                                else [])
-                cases.append({'id':f'{name}-{width}x30','scenario':name,'fixture':{'home':'isolated fresh temporary directory', 'credentials':'none supplied', 'docker_available':False if name=='wizard-docker' else 'not controlled', 'picker_seed':picker_seed, 'picker_seed_note':'long list uses deterministic session-00..session-29 names' if name=='picker-long-list' else None, 'picker_timestamp_base':1700000000 if name.startswith('picker') else None},side:result})
+                cases.append({'id':f'{name}-{width}x30','scenario':name,'fixture':{'home':'isolated fresh temporary directory', 'credentials':'none supplied', 'docker_available':False if name=='wizard-docker' else 'not controlled', 'picker_seed':picker_seed, 'picker_seed_note':'long list uses deterministic session-00..session-29 names' if name=='picker-long-list' else None, 'picker_timestamp_base':1700000000 if name.startswith('picker') else None, 'skill_seed':'skills/demo-skill (SKILL.md with description frontmatter)' if name=='completion-subcommand' else None, 'repl_provider':'fake (offline) via --provider fake' if name.startswith('completion') else None},side:result})
     return cases
 
 

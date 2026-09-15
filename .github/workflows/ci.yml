@@ -51,6 +51,7 @@ jobs:
           python3 scripts/test_picker_terminal_size_checks.py
           python3 scripts/test_picker_browse_control_checks.py
           python3 scripts/test_wizard_fields_checks.py
+          python3 scripts/test_completion_dropdown_checks.py
       - run: python3 scripts/test_audit_ui_evidence.py
       - name: Verify agent handoff and safe checkpoint automation
         run: |
@@ -200,6 +201,7 @@ jobs:
           PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-terminal-size.json python3 scripts/test_picker_terminal_size.py 2>&1 | tee -a picker-position.log
           PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-browse-control.json python3 scripts/test_picker_browse_control.py 2>&1 | tee -a picker-position.log
           PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=wizard-fields.json python3 scripts/test_wizard_fields.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=completion-dropdown.json python3 scripts/test_completion_dropdown.py 2>&1 | tee -a picker-position.log
 
       # Small self-hosted runners (2 core / 2 GB) need OOM visibility. Capture
       # memory and any kernel OOM kills; dmesg may be unreadable without root,
@@ -347,6 +349,7 @@ jobs:
             picker-terminal-size.json
             picker-browse-control.json
             wizard-fields.json
+            completion-dropdown.json
 
       - name: Fail if any step failed
         if: always() && (steps.fmt.outcome != 'success' || steps.clippy.outcome != 'success' || steps.test.outcome != 'success' || steps.picker.outcome != 'success')
