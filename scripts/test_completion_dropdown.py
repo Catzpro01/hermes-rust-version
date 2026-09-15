@@ -2,8 +2,9 @@
 
 Requires an already built HERMES_PICKER_BINARY. Capture/setup errors are
 errors, not assertion failures. The W4 contract (Spec 017 Lane 3): the
-Rust inline dropdown is proven by pinned PTY evidence — the REPL welcome
-frame, Tab-driven unique completion and candidate dropdown, seeded skill
+Rust inline completion surface is proven by pinned PTY evidence — the
+REPL welcome frame, Tab-driven unique completion, prefix-filtered
+candidate insertions (registry order), subcommand + seeded skill
 completion, Tab-less ghost text, and an accepted completion opening the
 browse picker. Python-side comparison awaits the user's reference
 recording (W4-Q1); this gate pins the Rust side only.
@@ -41,9 +42,10 @@ class CompletionDropdownTests(unittest.TestCase):
         self.assertEqual(
             problems, [],
             'W4 contract: the REPL welcome frame, Tab completion (unique word, '
-            'candidate dropdown, seeded skill), Tab-less ghost text, and the '
-            'accepted /sessions completion opening the browse picker must all '
-            'appear in captured evidence, in order')
+            'prefix-filtered registry-order insertions, subcommand + seeded '
+            'skill), Tab-less ghost text, and the accepted /sessions completion '
+            'opening the browse picker must all appear in captured evidence, '
+            'in order')
 
 
 if __name__ == '__main__':

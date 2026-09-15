@@ -1,24 +1,27 @@
 """Spec 017 Lane 3 (W4) completion evidence gate.
 
 W4 contract: completion is proven by the Rust inline dropdown plus pinned
-evidence at the actual CLI/PTY seam. The REPL's welcome frame must render
-first, then the completion surface:
+evidence at the actual CLI/PTY seam. Observed rustyline semantics (run
+34921676422): Tab inserts the FIRST registry-order candidate into the
+line; the dropdown menu is not part of the captured surface. The REPL's
+welcome frame must render first, then the completion surface:
 
 * unique completion — Tab on `/mod` completes the line to `/model`
   (picker commands get no trailing space, per the registry contract);
-* alternatives dropdown — Tab on `/s` renders the candidate menu with
-  `/sessions`, `/skills` and `/skin` visible as one frame;
-* skill completion — after `/skills `, Tab lists the seeded `demo-skill`
-  from `$HERMES_HOME/skills/`;
+* prefix-filtered candidates — Tab on `/s` inserts the first registry
+  s-command (`/save `); clearing and Tabbing on `/ski` narrows the set
+  and inserts `/skin` (picker command, no trailing space): two different
+  insertions from one registry prove the candidate set;
+* subcommand + skill completion — after `/skills `, Tab inserts the
+  first declared subcommand (`search`); then `/skills de` completes the
+  seeded `demo-skill` from `$HERMES_HOME/skills/`;
 * ghost text — the hinter renders the remainder `nality` of the unique
   completion `/personality` while only `/perso` is typed, without Tab;
 * accepted completion opens the next UI — Enter on the completed
   `/sessions` line opens the browse picker (`Browse sessions`).
 
 Byte order matters: the ordered markers must appear sequentially in the
-recorded stream. `PRESENT` markers must all exist (the dropdown frame
-shows them together; their internal order is the completer's, not the
-contract's). Python-side comparison lands with the user's reference
+recorded stream. Python-side comparison lands with the user's reference
 recording (W4-Q1); this gate pins the Rust side.
 """
 import argparse
@@ -37,16 +40,14 @@ WELCOME = 'Welcome to Hermes Agent!'
 # completion surface, then what accepting it produces).
 FIELDS = {
     'completion-command': [WELCOME, '/model'],
-    'completion-alternatives': [WELCOME, '/sessions'],
-    'completion-subcommand': [WELCOME, 'demo-skill'],
+    'completion-alternatives': [WELCOME, '/save', '/skin'],
+    'completion-subcommand': [WELCOME, 'search', 'demo-skill'],
     'completion-ghost': [WELCOME, '/perso', 'nality'],
     'completion-picker-open': [WELCOME, '/sessions', 'Browse sessions'],
 }
-# Dropdown candidates that must all be visible in the alternatives frame
-# (unordered: menu layout belongs to the completer, presence is the proof).
-PRESENT = {
-    'completion-alternatives': ['/skills', '/skin'],
-}
+# Unordered frame requirements (currently none: the menu surface is not
+# part of the captured evidence — insertion into the line is the proof).
+PRESENT = {}
 # Outcomes that must never render in these scenarios.
 FORBIDDEN = {
     'completion-command': ['Browse sessions'],

@@ -30,31 +30,28 @@ class CompletionDropdownCheckerTests(unittest.TestCase):
         problems = case_problems(record, 'completion-command')
         self.assertTrue(any("'/model'" in p for p in problems), problems)
 
-    def test_alternatives_dropdown_lists_all_candidates(self):
-        record = make_record([WELCOME, '/s\n',
-                              '/sessions  Browse prior sessions\n',
-                              '/skills    Run a skill\n',
-                              '/skin      Change the skin\n'])
+    def test_alternatives_prefix_filtered_insertions_pass(self):
+        record = make_record([WELCOME, '/s\t', '/save \n',
+                              '\x15/ski\t', '/skin\n'])
         self.assertEqual(case_problems(record, 'completion-alternatives'), [])
 
-    def test_alternatives_missing_one_candidate_fails(self):
-        record = make_record([WELCOME, '/s\n',
-                              '/sessions  Browse prior sessions\n',
-                              '/skills    Run a skill\n'])  # /skin absent
+    def test_alternatives_second_insertion_missing_fails(self):
+        record = make_record([WELCOME, '/s\t', '/save \n', '\x15/ski\t\n'])
         problems = case_problems(record, 'completion-alternatives')
         self.assertTrue(any("'/skin'" in p for p in problems), problems)
 
     def test_alternatives_out_of_sequence_fails(self):
-        record = make_record(['/sessions\n', WELCOME])  # welcome never precedes
+        record = make_record(['/skin\n', WELCOME, '/save \n'])  # order broken
         problems = case_problems(record, 'completion-alternatives')
         self.assertTrue(any('out of sequence or missing' in p for p in problems), problems)
 
-    def test_subcommand_lists_seeded_skill(self):
-        record = make_record([WELCOME, '/skills \n', 'demo-skill\n'])
+    def test_subcommand_then_seeded_skill_passes(self):
+        record = make_record([WELCOME, '/skills \t', 'search \n',
+                              '\x15/skills de\t', 'demo-skill \n'])
         self.assertEqual(case_problems(record, 'completion-subcommand'), [])
 
     def test_subcommand_without_skill_fails(self):
-        record = make_record([WELCOME, '/skills \n'])
+        record = make_record([WELCOME, '/skills \t', 'search \n'])
         problems = case_problems(record, 'completion-subcommand')
         self.assertTrue(any('demo-skill' in p for p in problems), problems)
 

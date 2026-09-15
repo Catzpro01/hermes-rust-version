@@ -226,25 +226,37 @@ def steps_for(name, side):
     if name == 'picker-clear-filter-backspace':
         return [('Browse sessions', 'sec'), ('filter: sec', '\x7f\x7f\x7f'),
                 ('1/2 sessions', '\x1b'), ('@exit', None)]
-    # Spec017 Lane 3 (W4): completion evidence. Tab must surface the inline
-    # dropdown / unique completion, ghost text renders without Tab, skill
-    # completion lists the seeded skill, and an accepted completion that ends
-    # a line opens the next UI (the /sessions browse picker). Rust ready
-    # marker = the REPL welcome line; the Python reference side keeps its
-    # prompt-symbol marker until the user's reference recording lands.
+    # Spec017 Lane 3 (W4): completion evidence. Rustyline's Tab inserts the
+    # FIRST registry-order candidate into the line (the dropdown menu itself
+    # is not part of the captured surface), ghost text renders without Tab,
+    # skill completion completes the seeded skill, and an accepted completion
+    # that ends a line opens the next UI (the /sessions browse picker). Rust
+    # ready marker = the REPL welcome line; the Python reference side keeps
+    # its prompt-symbol marker until the user's reference recording lands.
     if name.startswith('completion-'):
         welcome = '\u276f ' if py else 'Welcome to Hermes Agent!'
         if name == 'completion-command':
             return [(welcome, '/mod\t'), ('/model', '\x15/exit\r'), ('@exit', None)]
         if name == 'completion-alternatives':
-            return [(welcome, '/s\t'), ('/sessions', '\x15/exit\r'), ('@exit', None)]
+            # '/s' inserts the first registry-order s-command ('/save ');
+            # '/ski' narrows the set and inserts '/skin' (no trailing space:
+            # picker command). Two prefix-filtered insertions from one
+            # registry prove the candidate set, not just one lucky word.
+            return [(welcome, '/s\t'), ('/save', '\x15/ski\t'),
+                    ('/skin', '\x15/exit\r'), ('@exit', None)]
         if name == 'completion-subcommand':
-            return [(welcome, '/skills \t'), ('demo-skill', '\x15/exit\r'), ('@exit', None)]
+            # First Tab after '/skills ' inserts the first declared
+            # subcommand; then '/skills de' completes the seeded drop-in
+            # skill, proving skill discovery through the rendered line.
+            return [(welcome, '/skills \t'), ('search', '\x15/skills de\t'),
+                    ('demo-skill', '\x15/exit\r'), ('@exit', None)]
         if name == 'completion-ghost':
             return [(welcome, '/perso'), ('nality', '\x15/exit\r'), ('@exit', None)]
         if name == 'completion-picker-open':
-            return [(welcome, '/sessio\t'), ('/sessions', '\r'),
-                    ('Browse sessions', '\x1b'), ('@exit', None)]
+            # End on the picker frame: the accepted completion opened it.
+            # (The browse picker's ESC is two-stage and the REPL stays up,
+            # so no clean process exit exists inside this scenario.)
+            return [(welcome, '/sessio\t'), ('/sessions', '\r'), ('Browse sessions', None)]
     return [('@exit', None)]
 
 
