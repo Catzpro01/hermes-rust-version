@@ -2238,3 +2238,32 @@ laporkan milestone; tetap dilarang merge tanpa perintah eksplisit.
   2026-09-15T10:01:43Z; PR #10 tercatat CLOSED, bukan merged.
 - Clone sandbox ini **shallow (depth 1)**, jadi history `main` lokal terpotong
   — jangan menyimpulkan `main` di-reset hanya dari `git log` lokal.
+
+### Addendum 2026-09-16 — diagnosis webhook VPS + Makefile untuk repo ini
+
+- Endpoint webhook `http://203.145.35.218:9000/` diuji langsung dari sandbox:
+  `curl` → **`Recv failure: Connection reset by peer`** (http_code 000,
+  < 1 ms). VPS/daemon tidak menjawab; konsisten dengan tidak munculnya status
+  `vps-baremetal/fast-ci`. **Saya tidak punya akses untuk menyalakan VPS.**
+- Status commit dibaca via `gh api .../status` (bukan tebakan):
+  - `a008e52` → `vps-baremetal/fast-ci` **pending** ("VPS compiling and running
+    fast tests..."), macet tanpa hasil.
+  - `45c157a` → `vps-baremetal/ci` **pending** ("VPS compiling and running full
+    bare-metal CI..."), macet tanpa hasil.
+  - `4709543` → `vps-baremetal/ci` **failure**, "Failed: Cargo Check failed
+    (exit 101) (5s)".
+- **`4709543` hanya berisi berkas `.md`** (AGENTS.md, MEMORY.md, PROGRESS.md) —
+  nol perubahan kode Rust. `cargo check` exit 101 dalam 5 detik pada commit
+  docs-only adalah ciri kegagalan **lingkungan daemon** (cwd salah, registry
+  offline, atau checkout tidak lengkap), BUKAN regresi kode. Penyebab pastinya
+  belum dapat dipastikan tanpa log daemon.
+- Toolchain Rust tetap tidak tersedia: `sh.rustup.rs` dan `static.crates.io`
+  gagal TLS (`SSL_ERROR_SYSCALL`) dari sandbox, sedangkan `github.com` = 200.
+  Tidak ada klaim `cargo` lokal.
+- Repo ini **tidak memiliki Makefile** sebelum commit ini. Instruksi "ubah
+  tahap pertama daemon menjadi `make check`" karenanya mustahil berlaku di
+  sini — `make` akan keluar 2 ("No targets specified and no makefile found").
+  Ditambahkan `Makefile` pembungkus yang menjalankan **persis** perintah yang
+  sudah dipakai `ci.yml` (check/fmt/clippy/test/build), sehingga satu perintah
+  daemon yang seragam bisa dipakai untuk repo ini maupun repo berbasis Make.
+  Terverifikasi dengan `make -n <target>` untuk kelima target.
