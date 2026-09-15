@@ -10,8 +10,13 @@ byte level, in order:
   (`API base URL`, `Environment variable holding the API key`, `Model name`)
   through `Setup complete!`, plus a cancel at the first field;
 * terminal section — the docker-unavailable notice followed by the
-  `Docker image` field through `Setup complete!`;
-* gateway section — cancel straight from the platform multiselect.
+  `Docker image` field through `Setup complete!`; plus the NORMAL local
+  path, which must complete without any docker prompt (T12 matrix);
+* gateway section — cancel straight from the platform multiselect; plus
+  the NORMAL empty selection, which must render `No platforms selected`
+  and still complete (T12 matrix);
+* tools section — NORMAL (confirm the default toolset selection) and
+  CANCEL from the multiselect (T12 matrix closes every wizard section).
 
 Byte order matters: the markers must appear sequentially in the recorded
 stream, proving each prompt was drawn in its own frame before the next one.
@@ -24,9 +29,12 @@ from pathlib import Path
 import sys
 
 SCENARIOS = ('wizard-model-fields', 'wizard-model-cancel',
-             'wizard-docker-image', 'wizard-gateway-cancel')
+             'wizard-docker-image', 'wizard-gateway-cancel',
+             'wizard-terminal-local', 'wizard-gateway-empty',
+             'wizard-tools-accept', 'wizard-tools-cancel')
 COMPLETE = 'Setup complete!'
 CANCELLED = 'Setup cancelled.'
+PLATFORMS_NONE = 'No platforms selected'
 
 # Ordered rendered markers per scenario (W3: rendered fields must be visible).
 FIELDS = {
@@ -37,6 +45,17 @@ FIELDS = {
     'wizard-docker-image': ['Select terminal backend', 'Docker not found',
                             'Docker image', COMPLETE],
     'wizard-gateway-cancel': ['Select platforms to configure', CANCELLED],
+    # Spec017 T12 matrix completion — terminal NORMAL: choosing Local
+    # completes the section without any docker prompt.
+    'wizard-terminal-local': ['Select terminal backend', COMPLETE],
+    # Gateway NORMAL: an untoggled multiselect renders the empty-selection
+    # notice and still completes.
+    'wizard-gateway-empty': ['Select platforms to configure', PLATFORMS_NONE,
+                             COMPLETE],
+    # Tools NORMAL: confirming the default toolset selection completes the
+    # section; Tools CANCEL: ESC straight from the multiselect.
+    'wizard-tools-accept': ['Select toolsets to enable:', COMPLETE],
+    'wizard-tools-cancel': ['Select toolsets to enable:', CANCELLED],
 }
 # What must NOT appear (a cancel never completes; a full run never cancels).
 FORBIDDEN = {
@@ -44,6 +63,11 @@ FORBIDDEN = {
     'wizard-model-cancel': [COMPLETE],
     'wizard-docker-image': [CANCELLED],
     'wizard-gateway-cancel': [COMPLETE],
+    # The local path must never touch the docker branch.
+    'wizard-terminal-local': [CANCELLED, 'Docker not found', 'Docker image'],
+    'wizard-gateway-empty': [CANCELLED],
+    'wizard-tools-accept': [CANCELLED],
+    'wizard-tools-cancel': [COMPLETE],
 }
 # Value entered at a prompt must be echoed back by the rendered frame.
 TYPED_AFTER = {'wizard-model-fields': ('Model name', 'parity-fixture')}

@@ -77,6 +77,52 @@ class WizardFieldsCheckerTests(unittest.TestCase):
                               'Setup cancelled.\n'])
         self.assertEqual(case_problems(record, 'wizard-gateway-cancel'), [])
 
+    def test_terminal_local_normal_path_completes_without_docker(self):
+        record = make_record(['Select terminal backend:\n',
+                              'Setup complete! You\'re ready to go.\n'])
+        self.assertEqual(case_problems(record, 'wizard-terminal-local'), [])
+
+    def test_terminal_local_that_renders_a_docker_prompt_fails(self):
+        record = make_record(['Select terminal backend:\n',
+                              'Docker image: \n',
+                              'Setup complete! You\'re ready to go.\n'])
+        problems = case_problems(record, 'wizard-terminal-local')
+        self.assertTrue(any('Docker image' in p for p in problems), problems)
+
+    def test_gateway_empty_renders_notice_then_completes(self):
+        record = make_record(['Select platforms to configure:\n',
+                              'No platforms selected. Run \'hermes setup gateway\' later.\n',
+                              'Setup complete! You\'re ready to go.\n'])
+        self.assertEqual(case_problems(record, 'wizard-gateway-empty'), [])
+
+    def test_gateway_empty_missing_notice_fails(self):
+        record = make_record(['Select platforms to configure:\n',
+                              'Setup complete! You\'re ready to go.\n'])
+        problems = case_problems(record, 'wizard-gateway-empty')
+        self.assertTrue(any('No platforms selected' in p for p in problems), problems)
+
+    def test_tools_accept_reference_sequence_passes(self):
+        record = make_record(['Select toolsets to enable:\n',
+                              'Setup complete! You\'re ready to go.\n'])
+        self.assertEqual(case_problems(record, 'wizard-tools-accept'), [])
+
+    def test_tools_accept_that_cancels_anyway_fails(self):
+        record = make_record(['Select toolsets to enable:\n',
+                              'Setup cancelled.\n'])
+        problems = case_problems(record, 'wizard-tools-accept')
+        self.assertTrue(any('must not reach it' in p for p in problems), problems)
+
+    def test_tools_cancel_reference_sequence_passes(self):
+        record = make_record(['Select toolsets to enable:\n',
+                              'Setup cancelled.\n'])
+        self.assertEqual(case_problems(record, 'wizard-tools-cancel'), [])
+
+    def test_tools_cancel_that_completes_anyway_fails(self):
+        record = make_record(['Select toolsets to enable:\n',
+                              'Setup complete! You\'re ready to go.\n'])
+        problems = case_problems(record, 'wizard-tools-cancel')
+        self.assertTrue(any('must not reach it' in p for p in problems), problems)
+
     def test_capture_error_is_surfaced_not_masked(self):
         record = make_record(['anything'])
         record['error'] = 'missing readiness at stage 1: API base URL'

@@ -177,13 +177,25 @@ def steps_for(name, side):
     if name == 'wizard-model': return [(provider, None)]
     if name == 'wizard-terminal': return [(terminal, None)]
     if name == 'wizard-local': return [(terminal, '\r'), ('@exit', None)]
+    # Spec017 T12 wizard matrix — terminal section NORMAL path: Local is the
+    # first option on a fresh home; choosing it completes the section
+    # WITHOUT any docker prompt (the forbidden markers are in the checker).
+    if name == 'wizard-terminal-local': return [(terminal, '\r'), ('Setup complete!', None)]
     if name == 'wizard-docker': return [(terminal, down*(2 if py else 1)+'\r'), ('Docker not found', None)]
     if name == 'wizard-gateway': return [(gateway, None)]
-    if name == 'wizard-gateway-empty': return [(gateway, '\r'), ('@exit', None)]
+    # Spec017 T12 wizard matrix — gateway section NORMAL path: confirm the
+    # multiselect with nothing toggled; the wizard must render the
+    # empty-selection notice and still complete.
+    if name == 'wizard-gateway-empty': return [(gateway, '\r'), ('No platforms selected', None), ('Setup complete!', None)]
     if name == 'wizard-gateway-token': return [(gateway, ' \r'), ('Server URL', 'https://fixture.invalid\r'), ('Bot token', None)]
     if name == 'wizard-tools': return [(tools, None)]
     if name == 'wizard-tools-toggle': return ([(tools, '\r'), ('Tools for', ' '), ('Tools for', None)] if py else [(tools, ' '), (tools, None)])
     if name == 'wizard-cancel': return [(terminal, '\x1b'), ('@exit', None)]
+    # Spec017 T12 wizard matrix — tools section NORMAL (confirm the default
+    # toolset selection) and CANCEL paths, closing section x {normal,
+    # cancel} for every wizard section.
+    if name == 'wizard-tools-accept': return [(tools, '\r'), ('Setup complete!', None)]
+    if name == 'wizard-tools-cancel': return [(tools, '\x1b'), ('Setup cancelled.', None), ('@exit', None)]
     # Spec017 Lane 2 (W3): rendered-field evidence. Every prompt the wizard
     # draws must appear in the capture, in order, through completion/cancel.
     if name == 'wizard-model-fields':
@@ -268,9 +280,10 @@ def steps_for(name, side):
 
 def section_for(name):
     if name.startswith('completion'): return 'completion'
+    if name.startswith('wizard-tools-'): return 'tools'
     if name.startswith('wizard-gateway'): return 'gateway'
     if name.startswith('wizard-tools'): return 'tools'
-    if name.startswith('wizard-docker') or name in ('wizard-terminal', 'wizard-local', 'wizard-cancel'): return 'terminal'
+    if name.startswith('wizard-docker') or name in ('wizard-terminal', 'wizard-terminal-local', 'wizard-local', 'wizard-cancel'): return 'terminal'
     if name.startswith('wizard-model'): return 'model'
     return None
 
