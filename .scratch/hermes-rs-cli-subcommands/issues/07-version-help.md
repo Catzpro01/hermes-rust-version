@@ -75,3 +75,21 @@ ketiga.
   verifikasi lokal. Job GitHub `CI gate regression tests` → pass, tetapi
   job itu hanya skrip Python dan tidak menyentuh cargo; `fmt + clippy +
   test` (pemilik `cargo check --locked`) berstatus `if: false`.
+
+### Koreksi 2026-09-16 — `make check` gagal di shell ber-rustc 1.85.1
+Di shell `fern@master`, `make check` dan `make test` keduanya berhenti
+dengan `error: rustc 1.85.1 is not supported by the following packages`:
+`darling` 0.24.1, `home` 0.5.12, `icu_*` 2.3.x, `icu_provider` 2.3.1,
+`idna_adapter` 1.2.2 (≥1.86), `instability` 0.3.13, `time` 0.3.55
+(≥1.88). **Bukan akibat bump 0.1.0 → 0.21.0.** Bukti:
+- `git diff e50fdf5 HEAD -- Cargo.lock` = **dua baris saja** (field
+  `version` milik `hermes-core` dan `hermes-rs`);
+- `time` sudah di 0.3.55 pada `8ad14a7` — sebelum karya sesi ini — jadi
+  `main` akan gagal persis sama di toolchain ini;
+- workspace tidak mendeklarasikan `rust-version`, dan `ci.yml` tidak
+  memin toolchain: yang dipakai adalah apa pun yang menang di PATH shell.
+
+Karena itu hasil "2m 03s" di atas **belum teratribusi** — ia hanya sah
+sebagai bukti bila dijalankan dengan toolchain ≥1.88 (stabil 1.98.1) dan
+sudah memuat `48a12b8`. Verifikasi ulang yang menentukan:
+`rustc --version` → lalu `RUSTUP_TOOLCHAIN=stable make check && make test`.
