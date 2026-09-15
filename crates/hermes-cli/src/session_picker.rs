@@ -20,6 +20,10 @@
 //!   them (databases written by Hermes Python do, ones this crate creates do
 //!   not), so on a Rust-created database `err` cannot arise — exactly as in the
 //!   reference, which has no other source for it either.
+//! * when that status cannot be read at all — the query fails — the column
+//!   renders `-` and the picker stays up. The reference's
+//!   `_annotate_session_statuses` swallows every error from the same query
+//!   (contract 7), so an unreadable database costs one column, not the picker.
 //! * `name` is the first user message (single-lined); Hermes-RS has no
 //!   session titles yet, so there is no title half of `Title / Preview`.
 //! * The cursor row is painted with palette slot 2 + bold, and every row that
@@ -37,6 +41,7 @@
 //!   ms) to stay responsive to signals, but only repaints when a key or a resize
 //!   marked the screen dirty.
 
+use std::collections::HashMap;
 use std::io::{BufRead, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -228,6 +233,22 @@ pub struct SessionRow {
     pub sid: String,
 }
 
+/// The five-cell `Stat` tag for one session, given the result of the one
+/// grouped lifecycle query.
+///
+/// `None` means that query **failed**, which is not the same as a session
+/// missing from the map: a missing session has no message row at all and
+/// renders `empty`, while a failed query renders `-`. The distinction is the
+/// reference's contract 7 — `_annotate_session_statuses` swallows the error
+/// so the picker degrades instead of failing — and dropping it would turn an
+/// unreadable column into an unopenable picker.
+fn status_tag(statuses: Option<&HashMap<String, SessionStatus>>, id: &str) -> &'static str {
+    match statuses {
+        Some(map) => map.get(id).copied().unwrap_or(SessionStatus::Empty).tag(),
+        None => SessionStatus::Unknown.tag(),
+    }
+}
+
 /// Collect display rows from the canonical store. Names and sources pass
 /// through the render-boundary sanitizer (ANSI/C0 stripped); the canonical
 /// bytes are never touched.
@@ -239,7 +260,11 @@ pub fn collect_rows(store: &SessionStore) -> anyhow::Result<Vec<SessionRow>> {
     // derives it (the reference narrows that grouping to the ids it was asked
     // for; here every session is wanted). A session absent from the map has no
     // messages at all.
-    let statuses = store.lifecycle_statuses()?;
+    //
+    // Contract 7 of the pinned reference: `_annotate_session_statuses` swallows
+    // every error this query can raise, so a database whose lifecycle columns
+    // cannot be read costs one column (`-`) instead of the whole picker.
+    let statuses = store.lifecycle_statuses().ok();
     for id in store.list()? {
         let session = store.resume(&id)?;
         let name = session
@@ -275,11 +300,7 @@ pub fn collect_rows(store: &SessionStore) -> anyhow::Result<Vec<SessionRow>> {
         rows.push(SessionRow {
             id,
             name,
-            status: statuses
-                .get(&full)
-                .copied()
-                .unwrap_or(SessionStatus::Empty)
-                .tag(),
+            status: status_tag(statuses.as_ref(), &full),
             msgs: session.turns.len(),
             last_active: relative_active(now, last),
             source: sanitize_untrusted_output(&session.source),
@@ -1109,6 +1130,19 @@ mod tests {
         assert_eq!(rows[0].status, "intr");
         assert_eq!(rows[0].msgs, 1);
         assert_eq!(rows[0].sid.len(), 8);
+    }
+
+    #[test]
+    fn a_failed_status_query_renders_a_dash_instead_of_failing_the_picker() {
+        // Contract 7: `None` is a query that failed, which is not the same as
+        // a session missing from the map — that one has no message row at all
+        // and renders `empty`.
+        assert_eq!(status_tag(None, "any-session"), "-");
+
+        let mut map = HashMap::new();
+        assert_eq!(status_tag(Some(&map), "absent"), "empty");
+        map.insert("known".to_owned(), SessionStatus::Interrupted);
+        assert_eq!(status_tag(Some(&map), "known"), "intr");
     }
 
     #[test]

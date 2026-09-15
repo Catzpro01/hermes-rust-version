@@ -65,6 +65,11 @@ pub enum SessionStatus {
     Complete,
     /// The session has no message row at all.
     Empty,
+    /// The status could not be derived because the one grouped query failed.
+    /// The reference swallows that error (`_annotate_session_statuses`) and
+    /// `_session_status_tag` then renders `-`, so a status column that cannot
+    /// be filled never takes the picker down with it.
+    Unknown,
 }
 
 impl SessionStatus {
@@ -76,6 +81,7 @@ impl SessionStatus {
             SessionStatus::Interrupted => "intr",
             SessionStatus::Complete => "done",
             SessionStatus::Empty => "empty",
+            SessionStatus::Unknown => "-",
         }
     }
 }
@@ -528,10 +534,12 @@ mod tests {
     }
 
     #[test]
-    fn tags_are_the_four_pinned_words() {
+    fn tags_are_the_pinned_words() {
         assert_eq!(SessionStatus::Error.tag(), "err");
         assert_eq!(SessionStatus::Interrupted.tag(), "intr");
         assert_eq!(SessionStatus::Complete.tag(), "done");
         assert_eq!(SessionStatus::Empty.tag(), "empty");
+        // `_session_status_tag`'s fallback for a status it cannot name.
+        assert_eq!(SessionStatus::Unknown.tag(), "-");
     }
 }
