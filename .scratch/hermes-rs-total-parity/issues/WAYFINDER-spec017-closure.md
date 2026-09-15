@@ -55,8 +55,16 @@ Semua tiket keputusan W1–W4 CLOSED. Lane kerja berikutnya (urutan Q2):
    clear-filter reset kursor/offset (footer = cursor+1/total). Bukti lintasan:
    RED `b494990`, hardening `755368f`, GREEN `a916b73`, koreksi kontrak
    `ccf157b`, merge insiden fmt `3917834`.
-2. **Wizard V1** — kontrak W3; vendoring `setup.py` tetap tugas bukti
-   terpisah terblokir jaringan upstream.
+2. **Wizard V1** — SELESAI 2026-09-15 (run `34916506533` hijau penuh:
+   fmt=clippy=test=picker=success, 214 tes cargo, 12 gate live). Kontrak W3
+   dijaga gate live `wizard-fields` (4 skenario: urutan field model lengkap
+   provider→API base URL→env-var key→model name→selesai; cancel field
+   pertama; docker-image pasca notice "Docker not found"; cancel multiselect
+   gateway) + 10 unit test checker. Bukti lintasan: gate `6800ce7`,
+   hardening toolchain `3e8aae9` (guard MSRV ≥ 1.88 + pin `$GITHUB_PATH`),
+   4 insiden infra tercatat jujur (MSRV drift, disk penuh, cancel mid-clippy,
+   runner putus). Vendoring `setup.py` tetap tugas bukti terpisah terblokir
+   jaringan upstream.
 3. **Completion** — menunggu rekaman referensi Python dari pengguna (W4-Q1),
    lalu gate + implementasi Rust inline dropdown.
 4. **Kelengkapan T12** → **acceptance bertahap per area** (Q3).
