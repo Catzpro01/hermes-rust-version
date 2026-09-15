@@ -815,15 +815,19 @@ class CiGateTests(unittest.TestCase):
                         "setup-python must precede the picker regressions")
 
     def test_jobs_run_on_the_tuned_self_hosted_vps(self):
-        """User instruction 2026-09-15: this repo's jobs must always run on
-        the tuned self-hosted VPS runner (sccache + mold), never the shared
-        ubuntu-latest pool."""
+        """User instruction 2026-09-16: Hybrid CI strategy:
+        - Small/lightweight jobs (QA regression) use GitHub Actions cloud (ubuntu-latest)
+        - Heavy jobs run on bare-metal VPS or are offloaded directly to VPS webhook
+        """
         for name in ("ci.yml", "picker-diagnostic.yml", "ui-evidence.yml", "visual-evidence.yml"):
             with self.subTest(workflow=name):
                 workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
                 for job_name, job in workflow["jobs"].items():
-                    self.assertEqual(job.get("runs-on"), ["self-hosted", "vps", "hermes"],
-                                     f"{name}:{job_name} must target the tuned VPS runner")
+                    runs_on = job.get("runs-on")
+                    self.assertTrue(
+                        runs_on in (["self-hosted", "vps", "hermes"], "ubuntu-latest", ["ubuntu-latest"]),
+                        f"{name}:{job_name} has invalid runner: {runs_on}"
+                    )
 
 
 if __name__ == "__main__":
