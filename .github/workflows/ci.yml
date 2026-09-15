@@ -19,8 +19,8 @@ env:
 
 jobs:
   workflow-regression:
-    name: CI gate regression tests
-    runs-on: [self-hosted, vps, hermes]
+    name: CI gate regression tests (Lightweight - GitHub Cloud)
+    runs-on: ubuntu-latest
     # The 8-worker elastic pool shares cores with the n8n repo's micro-jobs
     # (see .scratch/INFRASTRUCTURE-HANDOFF.md); a 5m ceiling got killed under
     # contention (run 34902358798) even though these tests need ~1 minute.
@@ -60,7 +60,9 @@ jobs:
 
   test:
     name: fmt + clippy + test
-    runs-on: [self-hosted, vps, hermes]
+    # Heavy Rust compilation and tests are offloaded directly to VPS bare-metal Webhook CI
+    if: false
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5

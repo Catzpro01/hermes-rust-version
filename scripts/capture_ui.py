@@ -314,6 +314,12 @@ def long_list_seed(count):
 #   user-last              last row is the user turn the agent never answered
 #   pending-tool-call      last row is an assistant row whose tool_calls never
 #                          got a result row — interrupted for a second reason
+#   tool-result-last       last row is a tool result. ADR 0007: Hermes-RS
+#                          stores those under the tool's own name (`shell`),
+#                          which is the Rust spelling of the reference's `tool`
+#                          role — the reference itself reads an unknown role as
+#                          `complete`, so this row is a declared difference
+#                          rather than parity.
 #   error                  last row carries an error finish_reason (checked
 #                          before the role, exactly like the reference)
 #   no-messages            no message row at all -> empty
@@ -321,13 +327,14 @@ LIFECYCLE_SEED = (
     ('00000001-0000-4000-8000-000000000001', 'lifecycle done', 'complete'),
     ('00000002-0000-4000-8000-000000000002', 'lifecycle user last', 'user-last'),
     ('00000003-0000-4000-8000-000000000003', 'lifecycle pending tool', 'pending-tool-call'),
-    ('00000004-0000-4000-8000-000000000004', 'lifecycle error', 'error'),
-    ('00000005-0000-4000-8000-000000000005', None, 'no-messages'),
+    ('00000004-0000-4000-8000-000000000004', 'lifecycle tool result', 'tool-result-last'),
+    ('00000005-0000-4000-8000-000000000005', 'lifecycle error', 'error'),
+    ('00000006-0000-4000-8000-000000000006', None, 'no-messages'),
 )
 # The tag words `_session_status_tag` renders for those shapes, in the same
 # order, so the fixture and the expectation live next to each other: the
 # checker reads this table rather than a copy of it.
-LIFECYCLE_TAGS = ('done', 'intr', 'intr', 'err', 'empty')
+LIFECYCLE_TAGS = ('done', 'intr', 'intr', 'intr', 'err', 'empty')
 
 
 def lifecycle_rows():
@@ -345,6 +352,10 @@ def lifecycle_rows():
             messages.append(('assistant', 'reply ' + name, None, 'stop'))
         elif shape == 'pending-tool-call':
             messages.append(('assistant', 'calling a tool', '[{"id":"call-1"}]', 'tool_calls'))
+        elif shape == 'tool-result-last':
+            # ADR 0007: the tool's own name is the role, so this is the row a
+            # Rust database really writes when the agent dies after a tool ran.
+            messages.append(('shell', 'tool output', None, None))
         elif shape == 'error':
             messages.append(('assistant', 'provider exploded', None, 'error'))
         elif shape not in ('user-last', 'no-messages'):

@@ -2392,3 +2392,120 @@ reset by peer`. Itu keliru. Yang benar:
 - Capture `picker-status-tags` belum diambil; gate live belum pernah
   dijalankan terhadap binary hasil build.
 - PR #11 tetap terbuka tanpa merge sesuai instruksi.
+
+---
+
+## 2026-09-16 (waktu lokal; UTC masih 2026-09-15) — review PR #11, follow-up `eea45ee`, rute `/ask-matt`
+
+### Aturan pengguna, ditegaskan kembali
+
+"Pastikan setiap ada kemajuan progress push ke GitHub tanpa merge. Untuk merge
+harus dengan perintah saya." Sesuai `AGENTS.md`, tetapi dicatat ulang karena
+diminta eksplisit: **push setiap kemajuan, push selalu diizinkan, merge hanya
+atas perintah eksplisit pengguna.** Tidak ada PR yang dibuka atau di-merge pada
+sesi ini.
+
+### Penyesuaian clone
+
+`remote.origin.fetch` clone shallow ini awalnya hanya
+`+refs/heads/main:refs/remotes/origin/main`, sehingga cabang sesi tidak punya
+ref tracking dan `git status -sb` tidak bisa membuktikan sinkronisasi.
+Ditambah `+refs/heads/*:refs/remotes/origin/*`, lalu
+`git branch --set-upstream-to=origin/arena/01a0a65a-hermes-rust-version`.
+Kini `git rev-list --left-right --count` = `0 0` (sinkron) pada `eea45ee`.
+
+### Review dua sumbu PR #11 (`a008e52...8ad14a7`)
+
+Standards terburuk: `cargo fmt`/`clippy -D warnings` tidak pernah dijalankan
+untuk perubahan Rust yang sudah merged (aturan `RULES.md`); plus `Makefile:7`
+mengutip `ci.yml:307` padahal PR #11 sendiri menambah baris di `ci.yml:205`
+(perintah itu kini di 308) — melanggar invarian anti-drift yang dinyatakan
+`Makefile` sendiri.
+
+Spec terburuk: kontrak referensi butir 4 (`role tool -> intr`) **tidak dapat
+terjadi di DB bentukan Rust**, karena `save_turn` menulis baris hasil tool
+dengan `role` = *nama tool* (`store.rs`), bukan `tool`. Sesi yang terputus
+setelah tool berjalan tetap `done`, padahal referensi memberi `intr`.
+Dicatat di `docs/PARITY.md` sebagai keterbatasan yang dinyatakan, **bukan**
+keputusan. Temuan lain: butir 7 (error query status ditelan referensi,
+dipropagasi port) belum diport; butir 1 (grouping dibatasi `WHERE session_id
+IN (...)`) tidak ikut terport.
+
+### Diagnosis CI — koreksi terhadap tiket
+
+`eea45ee` → `vps-baremetal/fast-ci` **failure**, *"Cargo Check failed (exit
+101) **(1s)**"*. Bukti bahwa ini **lingkungan daemon, bukan regresi kode**:
+`d150470` sukses *"All fast checks passed via make check in **88s**!"* (18:17),
+lalu `285760e` (commit **docs-only**) ikut failure (6s, 18:33:24), dan
+`8ad14a7`/`eea45ee` failure 1s. Tidak ada kompilasi workspace yang selesai
+dalam 1 detik. Jadi status merah pada ujung `main` bukan regresi PR #11 —
+kesimpulan PR benar, tetapi **alasannya berbeda** dari yang tertulis di tiket:
+bukan "status basi" (posting 18:33 terjadi setelah daemon beralih ke
+`make check`), melainkan kerusakan sisi daemon setelah 18:17.
+
+Toolchain Rust **mustahil** dipasang di sandbox ini: `static.rust-lang.org`,
+`static.crates.io`, `index.crates.io`, dan `deb.debian.org` semuanya gagal
+(TLS/egress). Jangan lagi mencoba `curl` ke VPS sebagai ukuran kesehatan.
+
+### Perubahan `eea45ee` (sudah di-push, source only)
+
+- `Makefile:7`: 307 → 308.
+- `store.rs`: `messages_have_lifecycle_columns` → `lifecycle_column_expressions`
+  — memprobe `tool_calls` **dan** `finish_reason` terpisah dan menyusun satu
+  string SQL (`NULL` bila kolom absen). Skema parsial tidak lagi menggagalkan
+  `prepare` dan seluruh picker; duplikasi dua literal SQL hilang.
+- Komentar "direct port"/"O(1) per session" dikoreksi sesuai kode.
+- `docs/PARITY.md`: keterbatasan baris tool dicatat; temuan review ditambahkan
+  ke tiket W5 (Status tetap **OPEN**).
+
+Verifikasi: suite Python **203 tes / 14 error**, identik dengan sebelum
+perubahan; base `a008e52` = 192/13 (nol regresi). **Tidak ada** `cargo
+fmt`/`clippy`/`test` — toolchain tidak tersedia; perubahan Rust diperiksa
+tangan (tidak ada baris baru >100 kolom; kedua pola yang dipakai sudah ada di
+kode yang pernah dikompilasi).
+
+### Rute `/ask-matt`
+
+1. **Jawab HITL W5 (P1)** lalu **`/domain-modeling`** → ADR (mengubah arti
+   kosakata `messages.role`; sulit dibalik).
+2. **`/diagnosing-bugs`** untuk `fast-ci` merah (batas dua keadaan sudah ada:
+   `d150470` hijau 88s vs `285760e` docs-only merah 6s). Bila akar masalah di
+   sisi VPS → **`/wizard`** (restart daemon / sediakan toolchain Rust).
+3. **`/implement`** untuk P2 lalu P3 — tanpa `/to-spec` (bukan build lintas
+   sesi) dan tanpa `/to-tickets` (dua temuan, masing-masing satu fungsi).
+4. Bukan `/wayfinder`: peta Spec017 sudah ada; P1 satu keputusan konkret.
+
+### Review penutup `/code-review` atas `eea45ee...HEAD`
+
+Menutup alur `/implement` (P1 → P2 → P3 → fixture). **Keterbatasan metode:**
+skill `/code-review` menyarankan jendela konteks **baru**, bukan sesi yang
+menulis kode; di sini tidak ada jendela baru, jadi review ini dilakukan di
+sesi yang sama dan **bukan** reviewer independan. Temuan harus dibaca sebagai
+hipotesis bercitat.
+
+Sumbu Standards: tidak ada temuan kode baru. Yang ditemukan empat, semuanya
+**dokumen**, dan satu di antaranya penting:
+
+1. **ADR 0007 berisi kalimat yang menjadi salah** oleh commit berikutnya —
+   Consequences menyebut "nothing in the five-row `picker-status-tags`
+   fixture changes", padahal `cf53a13` menambah bentuk ke-6. Diperbaiki dengan
+   bagian Amendment (mengikuti konvensi ADR 0006), bukan dengan menghapus
+   kalimatnya: jejak bahwa klaim itu pernah benar ikut tercatat.
+2. `docs/PARITY.md`: "setiap baris fixture yang pesan terakhirnya user turn
+   berflips `done` → `intr`" — sekarang juga berlaku untuk baris hasil tool.
+3. `check_picker_status_tags.py`: "middle `intr` row" tidak presisi setelah
+   ada tiga `intr` → "the third"; dan "satu sesi per bentuk" diperjelas
+   (empat bentuk referensi **plus** baris hasil tool ADR 0007).
+4. `test_picker_status_tags.py`: bungkus baris docstring yang berantakan
+   setelah penyisipan.
+
+Sumbu Spec (ADR 0007 + kontrak 1–7 + tiket W5): kelima aturan keputusan
+terpenuhi dan masing-masing punya tes (urutan error sebelum role; bukan
+pembicara → `intr`; `system` → `done`; role kosong/tak dikenal → `intr`;
+tanpa perubahan skema). Kontrak 7 (P2) dan butir 1 (P3) terpenuhi. Fixture
+enam bentuk cocok dengan model classifier Rust (`done/intr/intr/intr/err/
+empty`) dan berbeda dari model referensi Python tepat di satu baris.
+
+**Tidak ada** `cargo fmt`/`clippy`/`test` dari saya — toolchain tidak bisa
+dipasang di sandbox ini. `make check` VPS hijau untuk semua commit
+(`5b138a3` 128s, `fe8ca97` 96s, `c2613f6` 106s, `cf53a13` 121s).

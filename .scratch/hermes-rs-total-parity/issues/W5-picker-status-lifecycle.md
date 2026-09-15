@@ -1,6 +1,6 @@
 # W5 — Kontrak status lifecycle kolom `Stat` picker (intr/err vs adaptasi T09)
 
-- Status: OPEN
+- Status: CLOSED (2026-09-16) — keputusan HITL dijawab pengguna, dicatat di ADR 0007
 - Type: wayfinder:grilling
 - HITL: yes
 - Owner: Arena agent (sesi arena/01a0a493)
@@ -179,3 +179,131 @@ commit lama tidak ditulis ulang. Jangan dibaca sebagai regresi kode.
   build** — capture `picker-status-tags` belum diambil.
 - Status tiket tetap **OPEN** sampai pengguna mengonfirmasi opsi C secara
   eksplisit.
+
+## Temuan review PR #11 (sesi `arena/01a0a65a`, `main` = `8ad14a7`)
+
+Review dua sumbu (Standards + Spec) terhadap diff `a008e52...8ad14a7`.
+**Status tiket tidak diubah oleh bagian ini** — tetap OPEN sampai pengguna
+mengonfirmasi opsi C.
+
+### Spesifikasi
+
+1. **Kontrak butir 4 tidak terjangkau di DB bentukan Rust.** Rust menulis baris
+   hasil tool dengan `role` = *nama tool* (`store.rs`, `save_turn`), bukan
+   `tool`; `resume` memetakan balik setiap role non-`user`/`assistant`. Jadi
+   sesi yang terputus setelah tool berjalan (sebelum jawaban asisten) tetap
+   `done`, padahal referensi memberi `intr` — padahal inilah bentuk
+   `interrupted` yang dijadikan alasan memilih opsi C. DB warisan Python tidak
+   terdampak. **SELESAI 2026-09-16** — pengguna memilih "beri classifier
+   aturan eksplisit untuk bentuk Rust": baris terakhir yang role-nya bukan
+   `user`/`assistant`/`system` diklasifikasikan `intr`. Dicatat di
+   **ADR 0007** dan diimplementasikan (`classify_session_status`); adaptasi
+   ini sekarang tercatat di `docs/PARITY.md`, bukan lagi keterbatasan.
+2. **Kontrak butir 7 tidak diport.** Referensi menelan semua error query status
+   (`_annotate_session_statuses`) lalu merender `-`; port mempropagasi
+   (`lifecycle_statuses()?` → `collect_rows` → `browse`), sehingga kegagalan
+   query menggagalkan perintah picker. Padahal `status_ink("-")` sudah ada.
+   *Belum diperbaiki* — menyentuhnya berarti mengubah semantik error, bukan
+   sekadar komentar.
+3. **Properti biaya butir 1 tidak ikut terport.** Referensi membatasi grouping
+   dengan `WHERE session_id IN (...)`; port melakukan `GROUP BY` atas seluruh
+   tabel `messages`. Hasil sama, biaya O(semua baris). **SELESAI** —
+   `lifecycle_statuses(&ids)` kini menerima daftar id, membatasi grouping
+   seperti referensi, dan men-seed `{id -> empty}` untuk sesi tanpa baris
+   pesan (persis `{sid: "empty" for sid in ids}` referensi). Perubahan API
+   publik `hermes-core` ini disengaja dalam slice tersendiri; pemanggil
+   satu-satunya adalah `collect_rows`.
+
+### Verifikasi
+
+4. `8ad14a7` (commit merge, ujung `main` saat ini): `vps-baremetal/fast-ci` =
+   **failure**, *"Cargo Check failed (exit 101) (1s)"*, diposting **18:33:27** —
+   setelah daemon beralih ke `make check` (bukti: `d150470` 18:17 sukses,
+   *"All fast checks passed via make check in 88s!"*). Penjelasan "status basi"
+   di atas **tidak berlaku** untuk posting 18:33:27; `285760e` (docs-only)
+   juga failure pada 18:33:24. Status `main` saat ini merah dan belum
+   direproduksi/diagnosis.
+5. Klaim PR "+10 tes baru": delta sesungguhnya **+11** (192→203 tes, 13→14
+   error; error ke-14 = tes PTY hidup baru yang butuh binary). Diverifikasi
+   ulang secara independen (venv `pyte`+`pyyaml`): base `a008e52` = 192/13,
+   HEAD = 203/14, **nol regresi**.
+6. Gate live `test_picker_status_tags.py` tetap belum pernah berjalan terhadap
+   binary mana pun: `make check` hanya `cargo check`, dan run Actions untuk
+   `8ad14a7` masih *queued*.
+
+### Perbaikan yang sudah dilakukan sesi ini (source only)
+
+- `Makefile:7` mengutip `ci.yml:307` untuk `cargo check`; PR #11 sendiri
+  menambah baris di `ci.yml:205`, jadi perintah itu kini di **308**. Diperbaiki
+  — pelanggaran invarian anti-drift yang dinyatakan `Makefile` sendiri.
+- Probe kolom `messages` (`lifecycle_column_expressions`, menggantikan
+  `messages_have_lifecycle_columns`) kini memeriksa `tool_calls` **dan**
+  `finish_reason` secara terpisah dan menyusun SQL dari ekspresi yang tersedia
+  (`NULL` bila kolom tidak ada). Sebelumnya hanya `tool_calls` yang diprobe
+  padahal SQL membaca dua kolom: skema parsial akan gagal di `prepare` dan
+  menggagalkan seluruh picker (lihat temuan 2). Duplikasi dua literal SQL
+  ikut hilang.
+- Komentar yang menjanjikan "direct port" / "O(1) per session" dikoreksi agar
+  sesuai kode (lihat temuan 3).
+
+**Belum ada `cargo fmt` / `clippy` / `cargo test` untuk perubahan sesi ini** —
+toolchain Rust tidak tersedia di sandbox ini. Verifikasi harus datang dari
+runner resmi; jangan dibaca sebagai PASS lokal.
+
+## Keputusan P1 (HITL) — 2026-09-16, tiket DITUTUP
+
+Pengguna menjawab pertanyaan yang menahan tiket ini:
+
+> Pilih: **Beri classifier aturan eksplisit untuk bentuk Rust**. Aturannya:
+> Jika `role` bukan `user`, `assistant`, atau `system` (misalnya baris hasil
+> tool / role `tool`), maka klasifikasikan sebagai `intr` (Interrupted).
+
+Direkam sebagai **ADR 0007 — A session's lifecycle status comes from its last
+message row, and any non-speaker role counts as interrupted**
+(`docs/adr/0007-session-lifecycle-status-classification.md`), dan
+diimplementasikan di `classify_session_status` beserta tes unitnya:
+
+- urutan referensi tetap dipatok (`finish_reason` error menang sebelum role);
+- `assistant` membawa `tool_calls` → `intr`; `assistant` tanpa `tool_calls`
+  dan `system` → `done`;
+- **selain itu → `intr`** (mencakup role `tool` pada DB Python *dan* nama tool
+  pada DB bentukan Rust);
+- role kosong/tidak dikenal ikut terbaca sebagai baris hasil tool → `intr`,
+  menyimpang dari default benign referensi (`complete`) dan **dideklarasikan**
+  sebagai adaptasi di `docs/PARITY.md`, bukan diklaim sebagai parity.
+
+Kosakata yang dipakai keputusan ini (**lifecycle status**, **tool-result row**)
+ditambahkan ke `CONTEXT.md`.
+
+Verifikasi yang sudah ada untuk pekerjaan ini (dijalankan pengguna di VPS
+bare-metal 6-core, terhadap `eea45ee`, sebelum perubahan P1):
+`make fmt` EXIT 0, `make clippy` EXIT 0, `make test` EXIT 0 (picker e2e 7/7,
+subcommands 33/33, wizard 10/10, streaming 3/3, smoke 7/7). Perubahan P1
+sendiri **belum** diverifikasi — butuh `make fmt && make clippy && make test`
+ulang setelah commit ini (daemon VPS sudah diperbaiki dengan
+`RUSTUP_TOOLCHAIN=stable`, rustc 1.98.1).
+
+### Yang terbawa ke tiket lain (bukan lagi keputusan tiket ini)
+
+- Capture `picker-status-tags` terhadap binary hasil build — gate live
+  `scripts/test_picker_status_tags.py` masih belum pernah dijalankan nyata.
+  Fixture kini **enam** bentuk: bentuk ke-6 (`tool-result-last`, baris terakhir
+  ber-role `shell`) menuntut `intr` dan menjadi satu-satunya bentuk tempat
+  Rust dan referensi Python berbeda secara terdeklarasi (Python: `done`) —
+  bedah ADR 0007 yang akhirnya punya bukti hidup. Tuntutan gate naik 3 → 4
+  pelanggaran; 10 tes decoder tetap hijau, suite Python tetap 203/14.
+- P2: error query status seharusnya ditelan dan dirender `-`, bukan
+  menggagalkan picker (kontrak butir 7) — **SELESAI** (`status_tag`,
+  `SessionStatus::Unknown` → `-`).
+- P3: `lifecycle_statuses(&ids)` agar grouping dibatasi seperti referensi
+  (`WHERE session_id IN (...)`) — **SELESAI**.
+- Status merah pada ujung `main` (`8ad14a7`) adalah kegagalan environment
+  daemon yang sudah diperbaiki di VPS, bukan regresi kode.
+
+### Review penutup (sesi `arena/01a0a65a`)
+
+`/code-review` atas `eea45ee...HEAD`: **nol temuan kode**, empat temuan
+dokumen, semuanya diperbaiki. Yang paling berarti: Consequences ADR 0007
+menjadi tidak akurat setelah fixture bertambah bentuk ke-6 — diperbaiki lewat
+bagian Amendment, bukan dengan menghapus kalimat lamanya. Detail dan
+keterbatasan metode (bukan jendela konteks baru) ada di `PROGRESS.md`.

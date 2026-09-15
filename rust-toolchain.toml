@@ -1,0 +1,16 @@
+# Pin the toolchain so a build never depends on which `rustc` happens to be
+# first in PATH. The committed `Cargo.lock` carries dependency versions that
+# need rustc >= 1.88 (`time` 0.3.55, `icu_*` 2.3.x, `darling` 0.24.1,
+# `instability` 0.3.13), while Debian's rustc is 1.85.1. With `~/.cargo/bin`
+# missing from PATH — or ranked after `/usr/bin` — that is the compiler a
+# shell silently uses, and `cargo check --workspace --locked` dies on an
+# MSRV error that reads like a dependency fault and is not one.
+#
+# Only the rustup proxies in `~/.cargo/bin` read this file: `~/.cargo/bin`
+# must precede `/usr/bin` in PATH for it to have any effect, and a shell
+# with no rustup at all still needs `source ~/.cargo/env` first.
+#
+# "stable" floats; both the VPS daemon and CI track it (rustc 1.98.1). Pin
+# `channel = "1.98.1"` instead if a reproducible build is ever needed.
+[toolchain]
+channel = "stable"
