@@ -41,7 +41,10 @@ CASES = ('wizard-mode', 'wizard-full', 'wizard-blank', 'wizard-quick',
          # 'all pairs' coverage is the same behaviour set the live gates guard.
          'picker-resize-too-small', 'picker-resize-redraw',
          'picker-clear-filter-esc', 'picker-clear-filter-backspace',
-         'wizard-gateway-cancel', 'wizard-tools-cancel')
+         'wizard-gateway-cancel', 'wizard-tools-cancel',
+         # Rescued from deferral by the per-side completion marker below: both
+         # reached their end state on the pinned reference, 100 and 80 columns.
+         'wizard-terminal-local', 'wizard-gateway-empty')
 
 # Every gate scenario that is NOT yet in the paired matrix, with the observed
 # reason. This is a visible gap list, not a waiver: `test_capture_ui.py` fails
@@ -49,17 +52,22 @@ CASES = ('wizard-mode', 'wizard-full', 'wizard-blank', 'wizard-quick',
 # fall behind the gates again. Reasons recorded while probing the pinned
 # reference (63279301) locally on 2026-09-15.
 MATRIX_DEFERRED = {
-    'wizard-terminal-local': 'pinned Python keeps prompting after Local is confirmed, so '
-                             '"Setup complete!" is not reached by the Rust-side key plan',
-    'wizard-tools-accept': 'pinned Python redraws the toolset checklist on Enter instead of '
-                           'completing the section, so the Rust-side plan has no terminal frame',
-    'wizard-model-fields': 'pinned Python does not show "API base URL" after Enter on the '
-                           'provider list; needs a Python-side navigation plan',
-    'wizard-model-cancel': 'same provider-selection step as wizard-model-fields: the pinned '
-                           'provider list needs its own navigation key before API base URL '
-                           'appears, so the cancel path cannot share the Rust plan yet',
-    'wizard-docker-image': 'pinned Python words the unavailable notice differently; needs the '
-                           'exact reference marker before it can share a plan',
+    'wizard-tools-accept': 'Enter on the pinned checklist does not finish the section: it opens a '
+                           'second radio menu whose accept row is "Done" '
+                           '("Select an option:", `hermes_cli/setup.py` setup_tools), while the '
+                           'Rust section completes on the checklist itself. Needs a Python plan '
+                           'derived from that menu, not a guessed key count',
+    'wizard-model-fields': 'the pinned model section renders per-provider key prompts '
+                           '("FIREWORKS_API_KEY (or Enter to cancel):"), never "API base URL", '
+                           'and with networking denied the Portal entry finishes straight to '
+                           '"Model & Provider configuration complete!" — different rendered '
+                           'fields, so this is a T13 flow difference rather than a marker to relax',
+    'wizard-model-cancel': 'same provider section as wizard-model-fields: the cancel path hangs on '
+                           'a provider key prompt the Rust wizard never draws, so the two sides '
+                           'would snapshot different states',
+    'wizard-docker-image': 'the pinned side prints "Docker not found in PATH!" then sets '
+                           'docker_image silently via config.setdefault (`hermes_cli/setup.py:1482`'
+                           '-1490): there is no Docker image prompt to pair against the Rust one',
     'completion-ghost': 'structural: prompt_toolkit has no ghost text, it shows a menu '
                         '(the difference W4 records, not a capture defect)',
     'completion-no-match': 'structural: no bell byte on the Python side for an empty candidate '
@@ -74,9 +82,6 @@ MATRIX_DEFERRED = {
     # state against a Rust frame of another would be a false pair, so both ride
     # here until a full-CLI Python reference exists. Verified against 63279301
     # locally on 2026-09-15 rather than discovered mid-capture on the runner.
-    'wizard-gateway-empty': 'after "No platforms selected" the pinned wizard moves to gateway '
-                            'service installation, which the isolated child forbids, so it never '
-                            'renders "Setup complete!" the way the Rust section does',
     'completion-subcommand': 'the pinned completer completes the subcommand but not the seeded '
                              'skill name ("/demo" stays uncompleted): skill completion lives '
                              'outside this prompt_toolkit component host',
@@ -228,6 +233,19 @@ def steps_for(name, side):
     gateway = 'Select platforms to configure'
     tools = 'Select an option:' if py else 'Select toolsets to enable:'
     mode = 'How would you like to set up Hermes?'
+    # Section-scoped completion is worded per side, and the wording difference is
+    # itself a finding for T13: the pinned wizard prints
+    # f"{label} configuration complete!" for the one requested section
+    # (`hermes_cli/setup.py:3210`), while the Rust section ends with the single
+    # "Setup complete!". Same end state (section saved, wizard returns), so the
+    # marker follows the side; the state stays shared and nothing is normalized.
+    section = section_for(name)
+    done = 'Setup complete!'
+    if py:
+        done = {'model': 'Model & Provider configuration complete!',
+                'terminal': 'Terminal Backend configuration complete!',
+                'gateway': 'Messaging Platforms (Gateway) configuration complete!',
+                'tools': 'Tools configuration complete!'}.get(section, done)
     if name == 'wizard-mode': return [(mode, None)]
     if name == 'wizard-full': return [(mode, down+'\r'), (provider, None)]
     if name == 'wizard-blank': return [(mode, down*2+'\r'), (provider, None)]
@@ -238,13 +256,13 @@ def steps_for(name, side):
     # Spec017 T12 wizard matrix — terminal section NORMAL path: Local is the
     # first option on a fresh home; choosing it completes the section
     # WITHOUT any docker prompt (the forbidden markers are in the checker).
-    if name == 'wizard-terminal-local': return [(terminal, '\r'), ('Setup complete!', None)]
+    if name == 'wizard-terminal-local': return [(terminal, '\r'), (done, None)]
     if name == 'wizard-docker': return [(terminal, down*(2 if py else 1)+'\r'), ('Docker not found', None)]
     if name == 'wizard-gateway': return [(gateway, None)]
     # Spec017 T12 wizard matrix — gateway section NORMAL path: confirm the
     # multiselect with nothing toggled; the wizard must render the
     # empty-selection notice and still complete.
-    if name == 'wizard-gateway-empty': return [(gateway, '\r'), ('No platforms selected', None), ('Setup complete!', None)]
+    if name == 'wizard-gateway-empty': return [(gateway, '\r'), ('No platforms selected', None), (done, None)]
     if name == 'wizard-gateway-token': return [(gateway, ' \r'), ('Server URL', 'https://fixture.invalid\r'), ('Bot token', None)]
     if name == 'wizard-tools': return [(tools, None)]
     if name == 'wizard-tools-toggle': return ([(tools, '\r'), ('Tools for', ' '), ('Tools for', None)] if py else [(tools, ' '), (tools, None)])
@@ -252,20 +270,20 @@ def steps_for(name, side):
     # Spec017 T12 wizard matrix — tools section NORMAL (confirm the default
     # toolset selection) and CANCEL paths, closing section x {normal,
     # cancel} for every wizard section.
-    if name == 'wizard-tools-accept': return [(tools, '\r'), ('Setup complete!', None)]
+    if name == 'wizard-tools-accept': return [(tools, '\r'), (done, None)]
     if name == 'wizard-tools-cancel': return [(tools, '\x1b'), ('Setup cancelled.', None), ('@exit', None)]
     # Spec017 Lane 2 (W3): rendered-field evidence. Every prompt the wizard
     # draws must appear in the capture, in order, through completion/cancel.
     if name == 'wizard-model-fields':
         return [('Select provider', '\r'), ('API base URL', '\r'),
                 ('Environment variable holding the API key', '\r'),
-                ('Model name', 'parity-fixture\r'), ('Setup complete!', None)]
+                ('Model name', 'parity-fixture\r'), (done, None)]
     if name == 'wizard-model-cancel':
         return [('Select provider', '\r'), ('API base URL', '\x1b'),
                 ('Setup cancelled.', None), ('@exit', None)]
     if name == 'wizard-docker-image':
         return [('Select terminal backend', down + '\r'), ('Docker not found', None),
-                ('Docker image', '\r'), ('Setup complete!', None)]
+                ('Docker image', '\r'), (done, None)]
     if name == 'wizard-gateway-cancel':
         return [('Select platforms to configure', '\x1b'), ('Setup cancelled.', None),
                 ('@exit', None)]

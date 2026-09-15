@@ -2220,3 +2220,23 @@ test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
 - **Berikutnya**: flip `ui-capture/request.json` ke `capture` → run Rust di runner →
   capture Python lokal → `capture_ui.py pair` → render + pemeriksaan gambar langsung
   → laporan paket → acceptance per area (Q3).
+
+## 2026-09-15 (lanjutan): per-side wizard completion marker lifts two deferrals
+
+- **Sebab ditemukan di sumber primer**: wizard Python mencetak
+  `f"{label} configuration complete!"` per section (`hermes_cli/setup.py:3210`),
+  Rust mencetak `Setup complete!`. Marker akhir kini per-sisi; keadaan akhir tetap
+  sama, jadi pasangan tetap sah.
+- **Hasil**: `wizard-terminal-local` dan `wizard-gateway-empty` kembali ke
+  matriks → 30 nama / 60 kasus, **sisi Python 60/60 hijau** terhadap `63279301`
+  di 100 dan 80 kolom. `MATRIX_DEFERRED` 11 → 9 dengan alasan beralamat sumber:
+  `wizard-model-fields`/`-cancel` (prompt kunci per-provider + jalur Portal),
+  `wizard-docker-image` (`docker_image` di-set diam-diam), `wizard-tools-accept`
+  (menu radio kedua `Done`), `picker-long-list` (`limit: int = 20`), 4 kasus
+  completion struktural.
+- **T13 bertambah kandidat**: teks baris hasil wizard berbeda (per-section vs
+  satu teks) dan alur section model Python tidak menggambar medan yang sama.
+- **Lokal**: `test_capture_ui.py` 14 PASS (termasuk test marker per-sisi),
+  `test_audit_ui_evidence.py`, `test_ci_workflow.py` PASS. CI run
+  `35002561912` untuk commit `8eec585` sedang berjalan di runner; tidak ada
+  klaim tes Rust lokal. Tidak ada acceptance visual, tidak ada merge.

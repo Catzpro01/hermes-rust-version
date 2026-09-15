@@ -421,3 +421,29 @@ tidak ada merge.
 menghasilkan setengah Rust di runner; sisi Python cukup direkap lokal (2 menit,
 sudah terbukti); gabung dengan `capture_ui.py pair`, render, periksa gambar
 langsung, lalu acceptance bertahap per area (Q3).
+
+### Lanjutan hari yang sama — marker penyelesaian per-sisi (commit berikutnya)
+
+Matriks naik ke **30 nama / 60 kasus** dan deferral turun **11 → 9**, semuanya
+dari sumber primer, bukan pelonggaran marker:
+
+- `hermes_cli/setup.py:3210` ternyata mencetak `f"{label} configuration complete!"`
+  untuk section yang diminta, sedangkan wizard Rust memakai satu teks
+  `Setup complete!`. Karena itu `wizard-terminal-local` dan `wizard-gateway-empty`
+  **kembali ke matriks** — keduanya hijau di referensi terpinn pada 100 dan 80
+  kolom. Marker akhir kini per-sisi (`done`), keadaan akhirnya tetap sama.
+- Perbedaan teks penyelesaian itu sendiri dicatat untuk T13 (satu baris hasil
+  wizard), bukan dinormalisasi.
+- `wizard-model-fields` / `wizard-model-cancel` dipastikan **bukan** masalah
+  marker: section model Python menggambar prompt kunci per-provider
+  (`FIREWORKS_API_KEY (or Enter to cancel):`) dan, dengan jaringan ditolak,
+  langsung menyelesaikan lewat entri Portal — medan terrendernya berbeda, jadi
+  ini perbedaan alur nyata untuk diputuskan, bukan marker yang dilonggarkan.
+- `wizard-docker-image`: sisi Python mencetak `Docker not found in PATH!` lalu
+  men-set `docker_image` diam-diam lewat `config.setdefault` — tidak ada prompt
+  image untuk dipasangkan.
+- `wizard-tools-accept`: Enter pada checklist toolsets Python membuka **menu
+  radio kedua** (`Select an option:`) dengan baris `Done`; Rust menyelesaikan
+  section di checklist itu sendiri. Butuh rencana sisi-Python yang diturunkan dari
+  urutan menu, bukan jumlah tombol yang ditebak — ditinggal deferral dengan alasan
+  ini agar tidak ada pasangan palsu.

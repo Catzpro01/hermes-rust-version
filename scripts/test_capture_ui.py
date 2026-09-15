@@ -91,6 +91,23 @@ class PairedMatrixTests(unittest.TestCase):
                                     or len(plan) == 1,
                                     f'{name}/{side}: nothing is ever typed')
 
+    def test_section_completion_marker_follows_the_side(self):
+        """The pinned wizard words completion per section, Rust words it once.
+
+        `hermes_cli/setup.py:3210` prints f"{label} configuration complete!" for
+        the requested section, while the Rust section ends with "Setup
+        complete!". A single shared marker would either fail the Python side or
+        be relaxed until it proves nothing, so the completion row is per-side
+        while the state it names stays the same.
+        """
+        for name, section_done in (('wizard-terminal-local', 'Terminal Backend configuration complete!'),
+                                   ('wizard-tools-accept', 'Tools configuration complete!'),
+                                   ('wizard-gateway-empty',
+                                    'Messaging Platforms (Gateway) configuration complete!')):
+            with self.subTest(scenario=name):
+                self.assertEqual(steps_for(name, 'python')[-1][0], section_done)
+                self.assertEqual(steps_for(name, 'rust')[-1][0], 'Setup complete!')
+
     def test_wizard_cases_name_a_section_the_cli_accepts(self):
         # `hermes setup <section>` rejects anything outside this set, so an
         # unmapped wizard case would capture a usage error as if it were UI.
