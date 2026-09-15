@@ -551,7 +551,12 @@ mod tests {
         let mut store = SessionStore::open(&dir.path().join("state.db")).unwrap();
         let asked = store.create_session("cli").unwrap();
         store
-            .save_turn(&asked, &Turn::User { content: "hi".into() })
+            .save_turn(
+                &asked,
+                &Turn::User {
+                    content: "hi".into(),
+                },
+            )
             .unwrap();
         let other = store.create_session("cli").unwrap();
 
