@@ -29,3 +29,34 @@ Grilling dengan pengguna (3 pertanyaan, semua memilih rekomendasi):
 3. **Moda gate**: satu live gate PTY deterministik untuk dropdown Rust +
    bukti capture terpinn berdampingan dengan referensi Python, mengikuti pola
    `picker-redraw-on-input`, sebelum implementasi masuk jalur T13.
+
+## Addendum eksekusi — 2026-09-15
+
+Geometri capture yang benar-benar dipakai (memenangkan angka tiket demi
+konsistensi harness): lebar **100 dan 80 kolom × 30 baris**,
+`TERM=xterm-256color`, HOME terisolasi tanpa kredensial — identik di sisi
+Rust maupun referensi Python.
+
+**Sisi Rust SELESAI & HIJAU** (run `34925228949` + konfirmasi `34926269312`):
+gate live `completion-dropdown` (5 skenario × 2 lebar) + 14 unit test
+checker; temuan semantik rustyline: Tab menyisipkan kandidat PERTAMA urutan
+registri (menu tidak ter-render di permukaan capture); skills diselesaikan
+di token pertama.
+
+**Kontrak perbandingan semantik** (di-pin `check_completion_reference.py`
+setelah bundle referensi mendarat; penilaian = himpunan kandidat + transisi
+UI, BUKAN byte-for-byte, karena engine render berbeda):
+
+| Skenario | Input | Kontrak kedua sisi |
+|---|---|---|
+| completion-command | `/mod` | kandidat unik `{model}`, terkomplet tanpa spasi trailing |
+| completion-alternatives | `/s` | himpunan kandidat ⊇ {save, snapshot, stop, steer, skin, skills, sessions, status, …}; urutan bebas |
+| completion-subcommand | `/skills sea` lalu `/demo` | `{search}`; `{demo-skill}` bila skill ter-seed (kontrak seed: `skills/demo-skill/SKILL.md`, description 'Parity evidence fixture skill') |
+| completion-ghost | `/perso` tanpa Tab | ghost `nality` ter-render |
+| completion-picker-open | `/sessio` + Enter | UI browse sessions terbuka (cukup frame pembuka) |
+| completion-no-match | `/zzzz` | kandidat kosong, tanpa menu |
+
+Divergensi yang DIHARAPKAN (bukan kegagalan perekaman): Python menampilkan
+menu dropdown saat mengetik (prompt_toolkit), Rust menyisipkan kandidat ke
+baris (rustyline) — bila referensi membuktikan gap, tiket implementasi menu
+Rust menyusul sebagai temuan parity.
