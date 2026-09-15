@@ -18,6 +18,36 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  # ============================================================================
+  # 0. DYNAMIC RUNNER SELECTOR (Automatic fallback if VPS is offline)
+  # ============================================================================
+  select-runner:
+    name: Detect & Select Runner
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      runner: ${{ steps.detect.outputs.runner }}
+    steps:
+      - name: Detect runner environment
+        id: detect
+        env:
+          CHECK_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
+        run: |
+          set +e
+          ONLINE_COUNT=0
+          if [ -n "$CHECK_TOKEN" ]; then
+            RESPONSE=$(curl -s --max-time 10 -H "Authorization: Bearer $CHECK_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${{ github.repository }}/actions/runners")
+            ONLINE_COUNT=$(echo "$RESPONSE" | jq '[.runners[]? | select(.status=="online")] | length' 2>/dev/null || echo 0)
+          fi
+          
+          echo "Online self-hosted runners count: $ONLINE_COUNT"
+          if [ "$ONLINE_COUNT" -gt 0 ]; then
+            echo "Self-hosted runner is ONLINE. Routing to self-hosted."
+            echo 'runner=["self-hosted", "vps", "hermes"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "Self-hosted runner is OFFLINE / VPS down. Falling back to GitHub-hosted ubuntu-latest!"
+            echo 'runner=["ubuntu-latest"]' >> "$GITHUB_OUTPUT"
+          fi
   workflow-regression:
     name: CI gate regression tests
     runs-on: [self-hosted, vps, hermes]
