@@ -2153,3 +2153,26 @@ test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
 - **Berikutnya**: kelengkapan T12 (§J.7 pasangan empat area + rekaman mentah
   + metadata repro) lalu acceptance bertahap per area; rekaman referensi
   Python dari pengguna tetap dinanti untuk sisi comparison Lane 3.
+
+### T12 Spec017 — matriks wizard section x {normal, cancel} selesai, hijau penuh
+
+- **Tiket** (/implement dari peta Wayfinder item 4): §J.7 menuntut tiap step
+  wizard punya bukti normal/cancel/unavailable. Gate W3 menutup model
+  normal+cancel, terminal unavailable, gateway cancel; empat sel matriks
+  terakhir ditambahkan (hanya scripts, tanpa perubahan Rust).
+- **Implementasi** (`1c2f3a6`): skenario `wizard-terminal-local` (Local
+  terpilih → selesai TANPA prompt docker apa pun — dijaga marker terlarang),
+  `wizard-gateway-empty` (multiselect kosong → notice 'No platforms selected'
+  → selesai), `wizard-tools-accept` (konfirmasi default toolsets → selesai),
+  `wizard-tools-cancel` (ESC dari multiselect → 'Setup cancelled.').
+  `section_for` memetakan nama baru; checker 8 skenario; 8 unit test
+  sintetis baru (18 total). Review dua-sumbu inline (standar + spec) bersih.
+- **Run `34948203974`**: 7/8 wizard + semua completion lolos; satu-satunya
+  kegagalan = `completion-alternatives-80x30` menangkap 0 byte saat spawn
+  REPL (starvation worker, kasus sama hijau di dua run sebelumnya) — flake
+  infra, bukan kode.
+- **GREEN run `34949715611`** (`53971bd`): fmt=clippy=test=picker=success,
+  214 tes cargo, seluruh gate live hijau termasuk wizard 8 skenario dan
+  completion 6 skenario × 2 lebar.
+- **Sisa T12**: pasangan empat area + rekaman mentah + metadata repro —
+  termasuk bundle referensi Python Lane 3 (masih direkam di VPS).

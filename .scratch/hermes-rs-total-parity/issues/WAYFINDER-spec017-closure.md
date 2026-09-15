@@ -77,7 +77,15 @@ Semua tiket keputusan W1–W4 CLOSED. Lane kerja berikutnya (urutan Q2):
    pertama urutan registri), RED fix token-pertama skill `953890c`.
    Sisi Python (perbandingan byte vs rekaman referensi) tetap menunggu
    rekaman pengguna per W4-Q1.
-4. **Kelengkapan T12** → **acceptance bertahap per area** (Q3).
+4. **Kelengkapan T12** — SEPARUH JALAN: matriks wizard §J.7 (tiap section ×
+   {normal, cancel} + unavailable) SELESAI 2026-09-15 (run `34949715611`
+   hijau penuh; gate `wizard-fields` kini 8 skenario: model fields/cancel,
+   docker-image unavailable, gateway cancel, terminal local, gateway empty,
+   tools accept/cancel; komit `1c2f3a6`, satu flake 0-byte
+   `completion-alternatives-80x30` di run `34948203974` hilang saat retry).
+   Sisa T12: pasangan empat area + rekaman mentah + metadata repro —
+   termasuk bundle referensi Python Lane 3 yang masih direkam di VPS.
+   Lanjut → **acceptance bertahap per area** (Q3).
 
 ## Not yet specified
 
