@@ -2474,3 +2474,38 @@ kode yang pernah dikompilasi).
 3. **`/implement`** untuk P2 lalu P3 — tanpa `/to-spec` (bukan build lintas
    sesi) dan tanpa `/to-tickets` (dua temuan, masing-masing satu fungsi).
 4. Bukan `/wayfinder`: peta Spec017 sudah ada; P1 satu keputusan konkret.
+
+### Review penutup `/code-review` atas `eea45ee...HEAD`
+
+Menutup alur `/implement` (P1 → P2 → P3 → fixture). **Keterbatasan metode:**
+skill `/code-review` menyarankan jendela konteks **baru**, bukan sesi yang
+menulis kode; di sini tidak ada jendela baru, jadi review ini dilakukan di
+sesi yang sama dan **bukan** reviewer independan. Temuan harus dibaca sebagai
+hipotesis bercitat.
+
+Sumbu Standards: tidak ada temuan kode baru. Yang ditemukan empat, semuanya
+**dokumen**, dan satu di antaranya penting:
+
+1. **ADR 0007 berisi kalimat yang menjadi salah** oleh commit berikutnya —
+   Consequences menyebut "nothing in the five-row `picker-status-tags`
+   fixture changes", padahal `cf53a13` menambah bentuk ke-6. Diperbaiki dengan
+   bagian Amendment (mengikuti konvensi ADR 0006), bukan dengan menghapus
+   kalimatnya: jejak bahwa klaim itu pernah benar ikut tercatat.
+2. `docs/PARITY.md`: "setiap baris fixture yang pesan terakhirnya user turn
+   berflips `done` → `intr`" — sekarang juga berlaku untuk baris hasil tool.
+3. `check_picker_status_tags.py`: "middle `intr` row" tidak presisi setelah
+   ada tiga `intr` → "the third"; dan "satu sesi per bentuk" diperjelas
+   (empat bentuk referensi **plus** baris hasil tool ADR 0007).
+4. `test_picker_status_tags.py`: bungkus baris docstring yang berantakan
+   setelah penyisipan.
+
+Sumbu Spec (ADR 0007 + kontrak 1–7 + tiket W5): kelima aturan keputusan
+terpenuhi dan masing-masing punya tes (urutan error sebelum role; bukan
+pembicara → `intr`; `system` → `done`; role kosong/tak dikenal → `intr`;
+tanpa perubahan skema). Kontrak 7 (P2) dan butir 1 (P3) terpenuhi. Fixture
+enam bentuk cocok dengan model classifier Rust (`done/intr/intr/intr/err/
+empty`) dan berbeda dari model referensi Python tepat di satu baris.
+
+**Tidak ada** `cargo fmt`/`clippy`/`test` dari saya — toolchain tidak bisa
+dipasang di sandbox ini. `make check` VPS hijau untuk semua commit
+(`5b138a3` 128s, `fe8ca97` 96s, `c2613f6` 106s, `cf53a13` 121s).

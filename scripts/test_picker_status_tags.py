@@ -2,10 +2,9 @@
 
 `test_picker_status_ink.py` pins the ink and the column of the status tag; this
 gate pins which lifecycle state a row may report at all. The fixture seeds one
-session per shape the pinned reference distinguishes, so a port that collapses
-every non-empty session onto `done` fails on the three `intr` rows and the
-`err`
-row.
+session per shape this gate covers — the reference's four, plus the
+tool-result row of ADR 0007 — so a port that collapses every non-empty session
+onto `done` fails on the three `intr` rows and the `err` row.
 
 Requires an already built HERMES_PICKER_BINARY. Capture/setup errors are errors,
 not style assertion failures. The retained reference pins 100 and 80 columns.

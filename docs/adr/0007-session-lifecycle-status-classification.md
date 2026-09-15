@@ -83,8 +83,9 @@ adaptation in `docs/PARITY.md`, not presented as parity.
   the Rust side. `err` remains unreachable there, as in the reference.
 - Existing evidence moves: a fixture row whose last row is a tool result flips
   `done` → `intr`, on top of the `done` → `intr` flip for user-last rows that
-  PR #11 already caused. Nothing in the five-row `picker-status-tags` fixture
-  changes, because none of its shapes ends in a tool row.
+  PR #11 already caused. The `picker-status-tags` fixture had no row ending in
+  a tool result when this was written, so it could not exercise rule 2; see
+  the amendment below.
 - The classifier is no longer byte-faithful for exotic roles. A
   Python-written database containing a role this project does not know (say
   `developer`) now renders `intr` where Python renders `done`. Accepted: the
@@ -94,3 +95,27 @@ adaptation in `docs/PARITY.md`, not presented as parity.
 - Rule 2 infers "tool-result row" from the *absence* of a known speaker. If a
   future ADR gives tool rows their own role or column, this ADR must be
   revisited: `classify_session_status` is the only place that inference lives.
+
+## Amendment 2026-09-16 — the fixture gained the shape this decision lacked
+
+Written one commit before the fixture changed, the Consequences above say the
+`picker-status-tags` fixture was unaffected because none of its five shapes
+ended in a tool row. That was true and it was also the gap: rule 2 had no live
+coverage at all, so nothing could catch a regression in the very behaviour
+this ADR introduces.
+
+The fixture is now six shapes. The added shape, `tool-result-last`, seeds a
+last row of `('shell', 'tool output')` — the role `save_turn` really writes —
+between `pending-tool-call` and `error`, and the expected sequence in
+`capture_ui.LIFECYCLE_TAGS` is `done, intr, intr, intr, err, empty`. Session
+ids were renumbered so the seeded `0000000N` prefix still matches each row's
+listing position.
+
+It is also the first shape where the two sides of a paired capture disagree
+*by decision*: the reference reads the unknown role `shell` as `complete` and
+renders `done`, Hermes-RS renders `intr`. The gate runs per side, so only the
+Rust expectation carries the adaptation; the difference is documented in
+`scripts/check_picker_status_tags.py` rather than papered over.
+
+Consequence for the gate: a port that collapses every non-empty session onto
+`done` now fails on four rows instead of three. The demand went up.

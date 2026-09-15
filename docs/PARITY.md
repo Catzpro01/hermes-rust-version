@@ -625,7 +625,8 @@ other source for it either. This is option C of
 `.scratch/hermes-rs-total-parity/issues/W5-picker-status-lifecycle.md`.
 
 Consequence for existing evidence: every seeded fixture row whose last message
-is a user turn flips from `done` to `intr`. The retained paired capture shows
+is a user turn — or, under ADR 0007, a tool result — flips from `done` to
+`intr`. The retained paired capture shows
 Python drawing `intr` in palette slot 3 on exactly those rows
 (`evidence/picker-status-ink-19bbbd5/`), so the flip moves Rust toward the
 reference and narrows the four declared tag-span differences recorded in that

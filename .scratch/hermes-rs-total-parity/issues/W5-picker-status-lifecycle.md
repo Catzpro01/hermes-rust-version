@@ -299,3 +299,11 @@ ulang setelah commit ini (daemon VPS sudah diperbaiki dengan
   (`WHERE session_id IN (...)`) — **SELESAI**.
 - Status merah pada ujung `main` (`8ad14a7`) adalah kegagalan environment
   daemon yang sudah diperbaiki di VPS, bukan regresi kode.
+
+### Review penutup (sesi `arena/01a0a65a`)
+
+`/code-review` atas `eea45ee...HEAD`: **nol temuan kode**, empat temuan
+dokumen, semuanya diperbaiki. Yang paling berarti: Consequences ADR 0007
+menjadi tidak akurat setelah fixture bertambah bentuk ke-6 — diperbaiki lewat
+bagian Amendment, bukan dengan menghapus kalimat lamanya. Detail dan
+keterbatasan metode (bukan jendela konteks baru) ada di `PROGRESS.md`.
