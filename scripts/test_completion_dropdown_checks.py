@@ -46,12 +46,12 @@ class CompletionDropdownCheckerTests(unittest.TestCase):
         self.assertTrue(any('out of sequence or missing' in p for p in problems), problems)
 
     def test_subcommand_then_seeded_skill_passes(self):
-        record = make_record([WELCOME, '/skills \t', 'search \n',
-                              '\x15/skills de\t', 'demo-skill \n'])
+        record = make_record([WELCOME, '/skills sea\t', '/skills search \n',
+                              '\x15/demo\t', '/demo-skill \n'])
         self.assertEqual(case_problems(record, 'completion-subcommand'), [])
 
     def test_subcommand_without_skill_fails(self):
-        record = make_record([WELCOME, '/skills \t', 'search \n'])
+        record = make_record([WELCOME, '/skills sea\t', '/skills search \n'])
         problems = case_problems(record, 'completion-subcommand')
         self.assertTrue(any('demo-skill' in p for p in problems), problems)
 

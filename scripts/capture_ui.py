@@ -245,10 +245,11 @@ def steps_for(name, side):
             return [(welcome, '/s\t'), ('/save', '\x15/ski\t'),
                     ('/skin', '\x15/exit\r'), ('@exit', None)]
         if name == 'completion-subcommand':
-            # First Tab after '/skills ' inserts the first declared
-            # subcommand; then '/skills de' completes the seeded drop-in
-            # skill, proving skill discovery through the rendered line.
-            return [(welcome, '/skills \t'), ('search', '\x15/skills de\t'),
+            # '/skills sea' prefix-filters the declared subcommands to the
+            # unique 'search'; skills complete at the FIRST token (run
+            # 34923837446: '/skills <x>' offers only subcommands), so the
+            # seeded skill is proven via '/demo' -> 'demo-skill'.
+            return [(welcome, '/skills sea\t'), ('/skills search', '\x15/demo\t'),
                     ('demo-skill', '\x15/exit\r'), ('@exit', None)]
         if name == 'completion-ghost':
             return [(welcome, '/perso'), ('nality', '\x15/exit\r'), ('@exit', None)]

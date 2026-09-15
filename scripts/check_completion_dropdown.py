@@ -12,9 +12,10 @@ welcome frame must render first, then the completion surface:
   s-command (`/save `); clearing and Tabbing on `/ski` narrows the set
   and inserts `/skin` (picker command, no trailing space): two different
   insertions from one registry prove the candidate set;
-* subcommand + skill completion — after `/skills `, Tab inserts the
-  first declared subcommand (`search`); then `/skills de` completes the
-  seeded `demo-skill` from `$HERMES_HOME/skills/`;
+* subcommand + skill completion — '/skills sea' prefix-filters the
+  declared subcommands and Tab inserts the unique 'search'; skills
+  complete at the first token, so '/demo' completes the seeded
+  `demo-skill` from `$HERMES_HOME/skills/`;
 * ghost text — the hinter renders the remainder `nality` of the unique
   completion `/personality` while only `/perso` is typed, without Tab;
 * accepted completion opens the next UI — Enter on the completed
@@ -41,7 +42,7 @@ WELCOME = 'Welcome to Hermes Agent!'
 FIELDS = {
     'completion-command': [WELCOME, '/model'],
     'completion-alternatives': [WELCOME, '/save', '/skin'],
-    'completion-subcommand': [WELCOME, 'search', 'demo-skill'],
+    'completion-subcommand': [WELCOME, '/skills search', 'demo-skill'],
     'completion-ghost': [WELCOME, '/perso', 'nality'],
     'completion-picker-open': [WELCOME, '/sessions', 'Browse sessions'],
 }
