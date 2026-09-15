@@ -4,11 +4,11 @@
 # is verbatim the command .github/workflows/ci.yml already runs, so `make` can
 # never drift from CI.
 #
-#   ci.yml:308  cargo check --workspace --locked
-#   ci.yml:141  cargo fmt --all -- --check
-#   ci.yml:148  cargo clippy --workspace --all-targets -- -D warnings
-#   ci.yml:155  cargo test --workspace --no-fail-fast
-#   ci.yml:186  cargo build --locked -p hermes-rs --bin hermes-rs
+#   ci.yml:310  cargo check --workspace --locked
+#   ci.yml:143  cargo fmt --all -- --check
+#   ci.yml:150  cargo clippy --workspace --all-targets -- -D warnings
+#   ci.yml:157  cargo test --workspace --no-fail-fast
+#   ci.yml:188  cargo build --locked -p hermes-rs --bin hermes-rs
 #
 # `--locked` matters on the daemon: it makes a stale or edited Cargo.lock a
 # hard failure instead of a silent rewrite of a tracked file.
