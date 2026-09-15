@@ -2509,3 +2509,34 @@ empty`) dan berbeda dari model referensi Python tepat di satu baris.
 **Tidak ada** `cargo fmt`/`clippy`/`test` dari saya — toolchain tidak bisa
 dipasang di sandbox ini. `make check` VPS hijau untuk semua commit
 (`5b138a3` 128s, `fe8ca97` 96s, `c2613f6` 106s, `cf53a13` 121s).
+
+## 2026-09-16 — Penyelarasan versi 0.21.0, pin toolchain, dan merge PR #12
+
+Atas instruksi Matt. Lima tempat disamakan ke 0.21.0: `workspace.package.
+version`, dua field `version` milik crate sendiri di `Cargo.lock` (wajib —
+`--locked` menjadikan lock yang tak cocok sebagai kegagalan keras), asersi
+di `subcommands_e2e.rs`, dan tiket `07-version-help.md` yang menspesifikasi
+keluaran. `CLIENT_VERSION` (versi `clientInfo` di handshake MCP) ikut
+dinaikkan. Dibiarkan: log bukti `Checking hermes-rs v0.1.0` di
+`docs/hermes-ui-spec/017/evidence/`, catatan parity historis, `nibble_vec`.
+
+`make check` di VPS sempat gagal `rustc 1.85.1 is not supported …`.
+Penyebab: rustc Debian menang di PATH (shell tanpa `~/.cargo/env`), bukan
+bump versi — `time` sudah 0.3.55 sejak sebelum sesi ini, dan `git diff`
+lock hanya dua baris. Ditangani dengan `rust-toolchain.toml`
+(`channel = "stable"`, keputusanMatt: opsi 1, tanpa downgrade lockfile).
+File ini hanya dibaca proxy rustup di `~/.cargo/bin`; shell yang PATH-nya
+tidak memuat direktori itu tetap butuh `source ~/.cargo/env`.
+
+Verifikasi Matt di VPS (rustc 1.98.1, `be2858c`): `make check` 0.78s
+bersih; `make test` hijau penuh — `hermes_core` 222, `hermes_cli` 247,
+`subcommands_e2e` 33 (termasuk `Crate version: 0.21.0`),
+`session_picker_e2e` 7, `wizard_e2e` 10, 0 gagal. `vps-baremetal/fast-ci`
+hijau. `a1bbeed` (pin toolchain) mendarat setelah run itu, jadi belum
+terverifikasi daemon.
+
+**PR #12 di-merge atas perintah eksplisit** → merge commit `c5985d1` di
+`main` (parent `8ad14a7` + `a1bbeed`). Cabang sesi `arena/01a0a65a-hermes-
+rust-version` tetap utuh, tidak dihapus. Catatan jujur: hasil "2m 03s"
+yang sempat saya sebut sebagai bukti `--locked` kini ditandai **belum
+teratribusi** pada tiket 07, karena toolchainnya tidak dapat dipastikan.
