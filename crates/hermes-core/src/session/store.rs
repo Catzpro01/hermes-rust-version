@@ -53,11 +53,15 @@ pub enum SessionStatus {
     /// The last row's `finish_reason` is an error. The reference checks this
     /// *before* the role, so it wins over every other branch.
     Error,
-    /// The last row is a turn that never got an answer: a user or tool row, or
-    /// an assistant row whose tool call has no result row.
+    /// The last row is a turn that never got an answer: a user row, a
+    /// tool-result row, or an assistant row whose tool call has no result row.
+    /// ADR 0007: a tool-result row is any row whose role is not `user`,
+    /// `assistant` or `system`, because this crate stores those under the
+    /// tool's own name rather than under a `tool` role.
     Interrupted,
-    /// Any other last row. The reference documents this as a benign default,
-    /// so an unrecognised shape must never make the picker panic.
+    /// The last row is a speaker that got its answer: an assistant reply with
+    /// nothing pending, or a system row. This is a narrower set than the
+    /// reference's benign default — see ADR 0007.
     Complete,
     /// The session has no message row at all.
     Empty,
@@ -88,6 +92,12 @@ const ERROR_FINISH_REASONS: [&str; 3] = ["error", "agent_error", "content_filter
 /// serves both shapes: with the columns absent only the role rules apply and
 /// `err` therefore cannot arise — which is equally true of the reference,
 /// since it has no other source for it either.
+///
+/// The order of the checks is the reference's: an error `finish_reason` wins
+/// over the role, then the role decides. The role rule itself departs from the
+/// reference on one point, recorded in ADR 0007: where the reference treats an
+/// unrecognised role as `complete`, this classifier treats it as a
+/// tool-result row and reports `intr`.
 pub fn classify_session_status(
     role: &str,
     tool_calls: Option<&str>,
@@ -100,9 +110,13 @@ pub fn classify_session_status(
         }
     }
     match role {
-        "user" | "tool" => SessionStatus::Interrupted,
+        // ADR 0007: the reference lists `user` and `tool` as the interrupted
+        // roles, but this crate stores a tool result under the tool's own name
+        // (`Turn::Tool { name, .. }` -> `role = name`), so `tool` is only one
+        // spelling of a tool-result row. Anything that is not a speaker is one.
         "assistant" if tool_calls.is_some() => SessionStatus::Interrupted,
-        _ => SessionStatus::Complete,
+        "assistant" | "system" => SessionStatus::Complete,
+        _ => SessionStatus::Interrupted,
     }
 }
 
@@ -471,10 +485,45 @@ mod tests {
     }
 
     #[test]
-    fn unknown_shapes_stay_complete_rather_than_panic() {
+    fn system_rows_stay_complete() {
+        // ADR 0007: `system` is a speaker, so it is not read as a tool row.
         assert_eq!(
             classify_session_status("system", None, Some("length")),
             SessionStatus::Complete
+        );
+    }
+
+    #[test]
+    fn a_tool_result_row_is_interrupted_under_the_tools_own_name() {
+        // ADR 0007: this crate stores a tool result under the tool's name, not
+        // under a `tool` role, so both spellings must classify the same way.
+        assert_eq!(
+            classify_session_status("shell", None, None),
+            SessionStatus::Interrupted
+        );
+        assert_eq!(
+            classify_session_status("tool", None, None),
+            SessionStatus::Interrupted
+        );
+        // The error check still outranks the role.
+        assert_eq!(
+            classify_session_status("shell", None, Some("error")),
+            SessionStatus::Error
+        );
+    }
+
+    #[test]
+    fn an_unrecognised_role_is_read_as_a_tool_result_row() {
+        // ADR 0007: the reference's benign default for an unknown shape is
+        // `complete`; this crate deliberately reads it as an unanswered turn
+        // instead, so the status column cannot hide an interruption.
+        assert_eq!(
+            classify_session_status("developer", None, None),
+            SessionStatus::Interrupted
+        );
+        assert_eq!(
+            classify_session_status("", None, None),
+            SessionStatus::Interrupted
         );
     }
 

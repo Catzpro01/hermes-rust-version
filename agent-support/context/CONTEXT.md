@@ -16,6 +16,8 @@ Hermes-RS is a Rust rewrite of Hermes Agent, developed compatibility-first again
 - **Hermes visual parity evidence**: paired images of the real Python and Rust Hermes UI, retained terminal recordings, and reproduction metadata. Automated tests support this evidence rather than replace it.
 - **Hermes comparison view**: a derived view of visual parity evidence with only explicitly recorded dynamic-value normalization. The original captures and recordings remain unchanged.
 - **Spec 017 closure**: user-accepted completion of the agreed visual evidence and verification requirements. Implementation completion alone is not closure, and closure is not permission to merge.
+- **Lifecycle status**: the state a session picker reports for a session (`done`, `intr`, `err`, `empty`), read from the session's last recorded row only — never from a transcript scan. _Avoid_: session state, completion state.
+- **Tool-result row**: the record of what a tool returned. It is stored in the transcript under the tool's own name rather than under a speaker's role, so it is recognised by what it is not (see ADR 0007). _Avoid_: tool message, tool role.
 
 ## Current boundary
 

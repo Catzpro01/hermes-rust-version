@@ -283,7 +283,9 @@ that requirement without explicit approval. See the
 | Session delete | `d` + `[y/N]` in picker | Same, default-deny, cascade delete | ✅ |
 
 Documented picker adaptations (§F): 8-char `sid` for UUIDv7
-collision headroom. The `Stat` column is **no longer** an adaptation: it now
+collision headroom; the lifecycle classifier reads a tool-result row from the
+absence of a known speaker instead of from a `tool` role (ADR 0007). The `Stat`
+column is otherwise **no longer** an adaptation: it now
 follows the reference's own lifecycle classifier over each session's last
 message row (`done`/`intr`/`err`/`empty`, pinned at
 `docs/hermes-ui-spec/017/evidence/upstream-lifecycle-status/`), reading
@@ -596,19 +598,23 @@ session's **last message row**, the way the pinned reference does
 | Last message row | Tag |
 |---|---|
 | `finish_reason` in `error`/`agent_error`/`content_filter` (checked before role) | `err` |
-| role `user` or `tool` | `intr` |
+| role `user` | `intr` |
 | role `assistant` carrying `tool_calls` | `intr` |
-| any other row | `done` |
+| a tool-result row: any role that is not `user`, `assistant` or `system` | `intr` |
+| role `assistant` with nothing pending, or role `system` | `done` |
 | no message row at all | `empty` |
 
-Declared limitation on the `role tool` row above: Hermes-RS never writes one.
-`SessionStore::save_turn` persists a tool result under the **tool's own name**
-(`crates/hermes-core/src/session/store.rs`; `resume` turns every role that is
-not `user`/`assistant` back into a tool turn), so that rule fires only for
-databases written by Hermes Python. A Rust session interrupted after a tool ran
-but before the assistant replied therefore still renders `done`, where the
-reference renders `intr`. Recorded as a limitation, **not** as a decision — the
-W5 ticket stays OPEN on how to close it.
+**Adaptation (ADR 0007).** The reference spells the third row `role tool`;
+Hermes-RS never writes that role, because `SessionStore::save_turn` persists a
+tool result under the **tool's own name** (`shell`, `read_file`, …). So the
+classifier reads any last row whose role is not `user`, `assistant` or `system`
+as a tool-result row. Two consequences differ from the reference and are
+declared, not implied: a Rust session interrupted after a tool ran now renders
+`intr` (the reference agrees on the meaning, not on the spelling), and an
+unrecognised role also renders `intr` where the reference's benign default is
+`done` — for a status column, reporting an interruption that did not happen is
+safer than hiding one that did. `err` remains unreachable on a Rust-created
+database, as it is in the reference.
 
 `finish_reason` and `tool_calls` are read only when the database carries them,
 probed once with `PRAGMA table_info(messages)`. Databases written by Hermes

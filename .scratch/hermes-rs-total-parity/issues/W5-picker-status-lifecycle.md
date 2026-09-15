@@ -1,6 +1,6 @@
 # W5 — Kontrak status lifecycle kolom `Stat` picker (intr/err vs adaptasi T09)
 
-- Status: OPEN
+- Status: CLOSED (2026-09-16) — keputusan HITL dijawab pengguna, dicatat di ADR 0007
 - Type: wayfinder:grilling
 - HITL: yes
 - Owner: Arena agent (sesi arena/01a0a493)
@@ -194,11 +194,11 @@ mengonfirmasi opsi C.
    sesi yang terputus setelah tool berjalan (sebelum jawaban asisten) tetap
    `done`, padahal referensi memberi `intr` — padahal inilah bentuk
    `interrupted` yang dijadikan alasan memilih opsi C. DB warisan Python tidak
-   terdampak. Dicatat di `docs/PARITY.md` sebagai **keterbatasan yang
-   dinyatakan, bukan keputusan**; penutupannya butuh keputusan pengguna
-   (pola opsi A: catat sebagai batas scope, atau beri classifier aturan
-   eksplisit untuk bentuk Rust — yang menyimpang dari referensi untuk role tak
-   dikenal, jadi harus dicatat sebagai adaptasi).
+   terdampak. **SELESAI 2026-09-16** — pengguna memilih "beri classifier
+   aturan eksplisit untuk bentuk Rust": baris terakhir yang role-nya bukan
+   `user`/`assistant`/`system` diklasifikasikan `intr`. Dicatat di
+   **ADR 0007** dan diimplementasikan (`classify_session_status`); adaptasi
+   ini sekarang tercatat di `docs/PARITY.md`, bukan lagi keterbatasan.
 2. **Kontrak butir 7 tidak diport.** Referensi menelan semua error query status
    (`_annotate_session_statuses`) lalu merender `-`; port mempropagasi
    (`lifecycle_statuses()?` → `collect_rows` → `browse`), sehingga kegagalan
@@ -246,3 +246,47 @@ mengonfirmasi opsi C.
 **Belum ada `cargo fmt` / `clippy` / `cargo test` untuk perubahan sesi ini** —
 toolchain Rust tidak tersedia di sandbox ini. Verifikasi harus datang dari
 runner resmi; jangan dibaca sebagai PASS lokal.
+
+## Keputusan P1 (HITL) — 2026-09-16, tiket DITUTUP
+
+Pengguna menjawab pertanyaan yang menahan tiket ini:
+
+> Pilih: **Beri classifier aturan eksplisit untuk bentuk Rust**. Aturannya:
+> Jika `role` bukan `user`, `assistant`, atau `system` (misalnya baris hasil
+> tool / role `tool`), maka klasifikasikan sebagai `intr` (Interrupted).
+
+Direkam sebagai **ADR 0007 — A session's lifecycle status comes from its last
+message row, and any non-speaker role counts as interrupted**
+(`docs/adr/0007-session-lifecycle-status-classification.md`), dan
+diimplementasikan di `classify_session_status` beserta tes unitnya:
+
+- urutan referensi tetap dipatok (`finish_reason` error menang sebelum role);
+- `assistant` membawa `tool_calls` → `intr`; `assistant` tanpa `tool_calls`
+  dan `system` → `done`;
+- **selain itu → `intr`** (mencakup role `tool` pada DB Python *dan* nama tool
+  pada DB bentukan Rust);
+- role kosong/tidak dikenal ikut terbaca sebagai baris hasil tool → `intr`,
+  menyimpang dari default benign referensi (`complete`) dan **dideklarasikan**
+  sebagai adaptasi di `docs/PARITY.md`, bukan diklaim sebagai parity.
+
+Kosakata yang dipakai keputusan ini (**lifecycle status**, **tool-result row**)
+ditambahkan ke `CONTEXT.md`.
+
+Verifikasi yang sudah ada untuk pekerjaan ini (dijalankan pengguna di VPS
+bare-metal 6-core, terhadap `eea45ee`, sebelum perubahan P1):
+`make fmt` EXIT 0, `make clippy` EXIT 0, `make test` EXIT 0 (picker e2e 7/7,
+subcommands 33/33, wizard 10/10, streaming 3/3, smoke 7/7). Perubahan P1
+sendiri **belum** diverifikasi — butuh `make fmt && make clippy && make test`
+ulang setelah commit ini (daemon VPS sudah diperbaiki dengan
+`RUSTUP_TOOLCHAIN=stable`, rustc 1.98.1).
+
+### Yang terbawa ke tiket lain (bukan lagi keputusan tiket ini)
+
+- Capture `picker-status-tags` terhadap binary hasil build — gate live
+  `scripts/test_picker_status_tags.py` masih belum pernah dijalankan nyata.
+- P2: error query status seharusnya ditelan dan dirender `-`, bukan
+  menggagalkan picker (kontrak butir 7) — pekerjaan, bukan keputusan.
+- P3: `lifecycle_statuses(&ids)` agar grouping dibatasi seperti referensi
+  (`WHERE session_id IN (...)`) — menyentuh API publik `hermes-core`.
+- Status merah pada ujung `main` (`8ad14a7`) adalah kegagalan environment
+  daemon yang sudah diperbaiki di VPS, bukan regresi kode.
