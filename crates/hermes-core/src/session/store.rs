@@ -1,7 +1,7 @@
 use super::SessionId;
 use crate::conversation::Turn;
 use crate::tools::{ToolCallRecord, ToolExecutionStatus};
-use rusqlite::{params, Connection};
+use rusqlite::{params, params_from_iter, Connection};
 use std::{
     collections::HashMap,
     path::Path,
@@ -355,35 +355,47 @@ impl SessionStore {
         Ok(ids)
     }
 
-    /// Lifecycle status of every session that has at least one message row,
-    /// keyed by session id. A session missing from the map has no messages and
-    /// is therefore [`SessionStatus::Empty`].
+    /// Lifecycle status of each listed session, keyed by session id.
     ///
-    /// One grouped query over `MAX(id)` per session, the shape the reference's
-    /// `session_lifecycle_statuses` uses so that no transcript is ever scanned
-    /// for one session's status. The reference restricts that grouping to the
-    /// ids it was asked about (`WHERE session_id IN (...)`); this port groups
-    /// over every session, because its only caller wants all of them.
-    pub fn lifecycle_statuses(&self) -> Result<HashMap<String, SessionStatus>, SessionStoreError> {
+    /// One query that resolves every listed session's newest message id with
+    /// `MAX(id)` and joins back for that single row — the reference's
+    /// `session_lifecycle_statuses`, so no transcript is ever scanned for one
+    /// session's status. Every session asked about is present in the map: the
+    /// ones with no message row are seeded with [`SessionStatus::Empty`], the
+    /// way the reference seeds `{sid: "empty" for sid in ids}`. A session
+    /// *absent* from the map is one that was not asked about.
+    pub fn lifecycle_statuses(
+        &self,
+        ids: &[SessionId],
+    ) -> Result<HashMap<String, SessionStatus>, SessionStoreError> {
+        let mut out: HashMap<String, SessionStatus> = ids
+            .iter()
+            .map(|id| (id.to_string(), SessionStatus::Empty))
+            .collect();
+        if ids.is_empty() {
+            return Ok(out);
+        }
         // A database may carry one of the two columns without the other, so
         // they are probed separately: a partially migrated schema has to stay a
         // normal case rather than become a query error.
         let (tool_calls, finish_reason) = self.lifecycle_column_expressions()?;
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
         let sql = format!(
             "SELECT m.session_id, m.role, {tool_calls}, {finish_reason} \
              FROM messages AS m \
-             JOIN (SELECT session_id, MAX(id) AS max_id FROM messages GROUP BY session_id) AS l \
+             JOIN (SELECT session_id, MAX(id) AS max_id FROM messages \
+                   WHERE session_id IN ({placeholders}) GROUP BY session_id) AS l \
              ON l.session_id = m.session_id AND l.max_id = m.id"
         );
+        let params = ids.iter().map(|id| id.to_string());
         let mut q = self.conn.prepare(&sql)?;
-        let rows = q.query_map([], |r| {
+        let rows = q.query_map(params_from_iter(params), |r| {
             let sid: String = r.get(0)?;
             let role: String = r.get(1)?;
             let calls: Option<String> = r.get(2)?;
             let reason: Option<String> = r.get(3)?;
             Ok((sid, role, calls, reason))
         })?;
-        let mut out = HashMap::new();
         for row in rows {
             let (sid, role, calls, reason) = row?;
             let status = classify_session_status(&role, calls.as_deref(), reason.as_deref());
@@ -444,7 +456,7 @@ fn now() -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_session_status, SessionStatus};
+    use super::{classify_session_status, SessionStatus, SessionStore, Turn};
 
     #[test]
     fn error_finish_reason_outranks_every_role() {
@@ -531,6 +543,32 @@ mod tests {
             classify_session_status("", None, None),
             SessionStatus::Interrupted
         );
+    }
+
+    #[test]
+    fn lifecycle_statuses_reads_only_the_sessions_it_was_asked_about() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let mut store = SessionStore::open(&dir.path().join("state.db")).unwrap();
+        let asked = store.create_session("cli").unwrap();
+        store
+            .save_turn(&asked, &Turn::User { content: "hi".into() })
+            .unwrap();
+        let other = store.create_session("cli").unwrap();
+
+        let statuses = store.lifecycle_statuses(&[asked]).unwrap();
+        assert_eq!(
+            statuses.get(&asked.to_string()),
+            Some(&SessionStatus::Interrupted),
+            "one user row and no answer -> interrupted"
+        );
+        assert!(
+            !statuses.contains_key(&other.to_string()),
+            "a session that was not asked about must not be read"
+        );
+
+        // Asked about, but no message row: seeded empty, like the reference.
+        let seeded = store.lifecycle_statuses(&[other]).unwrap();
+        assert_eq!(seeded.get(&other.to_string()), Some(&SessionStatus::Empty));
     }
 
     #[test]

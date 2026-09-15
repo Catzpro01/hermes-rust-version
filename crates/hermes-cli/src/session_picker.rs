@@ -255,17 +255,17 @@ fn status_tag(statuses: Option<&HashMap<String, SessionStatus>>, id: &str) -> &'
 pub fn collect_rows(store: &SessionStore) -> anyhow::Result<Vec<SessionRow>> {
     let now = now_secs();
     let mut rows = Vec::new();
-    // One grouped query for every session, not one per row: the status is
-    // derived from each session's last message row, the way the reference
-    // derives it (the reference narrows that grouping to the ids it was asked
-    // for; here every session is wanted). A session absent from the map has no
-    // messages at all.
+    // One grouped query for the listed sessions, not one per row: the status is
+    // derived from each session's last message row, and the grouping is
+    // narrowed to the ids listed here the way the reference narrows it. A
+    // session that ends up `empty` is one with no message row at all.
     //
     // Contract 7 of the pinned reference: `_annotate_session_statuses` swallows
     // every error this query can raise, so a database whose lifecycle columns
     // cannot be read costs one column (`-`) instead of the whole picker.
-    let statuses = store.lifecycle_statuses().ok();
-    for id in store.list()? {
+    let ids = store.list()?;
+    let statuses = store.lifecycle_statuses(&ids).ok();
+    for id in ids {
         let session = store.resume(&id)?;
         let name = session
             .turns

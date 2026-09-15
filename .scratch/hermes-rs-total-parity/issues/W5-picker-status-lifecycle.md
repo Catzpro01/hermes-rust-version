@@ -207,9 +207,12 @@ mengonfirmasi opsi C.
    sekadar komentar.
 3. **Properti biaya butir 1 tidak ikut terport.** Referensi membatasi grouping
    dengan `WHERE session_id IN (...)`; port melakukan `GROUP BY` atas seluruh
-   tabel `messages`. Hasil sama, biaya O(semua baris). Komentar kode sudah
-   dikoreksi; perbaikan query-nya mengubah API publik `hermes-core`
-   (`lifecycle_statuses(&ids)`) dan sengaja **belum** dilakukan di sesi ini.
+   tabel `messages`. Hasil sama, biaya O(semua baris). **SELESAI** —
+   `lifecycle_statuses(&ids)` kini menerima daftar id, membatasi grouping
+   seperti referensi, dan men-seed `{id -> empty}` untuk sesi tanpa baris
+   pesan (persis `{sid: "empty" for sid in ids}` referensi). Perubahan API
+   publik `hermes-core` ini disengaja dalam slice tersendiri; pemanggil
+   satu-satunya adalah `collect_rows`.
 
 ### Verifikasi
 
@@ -285,8 +288,9 @@ ulang setelah commit ini (daemon VPS sudah diperbaiki dengan
 - Capture `picker-status-tags` terhadap binary hasil build — gate live
   `scripts/test_picker_status_tags.py` masih belum pernah dijalankan nyata.
 - P2: error query status seharusnya ditelan dan dirender `-`, bukan
-  menggagalkan picker (kontrak butir 7) — pekerjaan, bukan keputusan.
+  menggagalkan picker (kontrak butir 7) — **SELESAI** (`status_tag`,
+  `SessionStatus::Unknown` → `-`).
 - P3: `lifecycle_statuses(&ids)` agar grouping dibatasi seperti referensi
-  (`WHERE session_id IN (...)`) — menyentuh API publik `hermes-core`.
+  (`WHERE session_id IN (...)`) — **SELESAI**.
 - Status merah pada ujung `main` (`8ad14a7`) adalah kegagalan environment
   daemon yang sudah diperbaiki di VPS, bukan regresi kode.
