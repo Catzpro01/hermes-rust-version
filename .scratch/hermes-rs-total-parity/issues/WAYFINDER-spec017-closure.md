@@ -48,8 +48,13 @@ Merge BUKAN bagian destinasi ini.
 ## Catatan eksekusi fase berikut
 
 Semua tiket keputusan W1–W4 CLOSED. Lane kerja berikutnya (urutan Q2):
-1. **Picker residu** — tiga live gate baru (resize-control, long-list,
-   clear-filter) RED dulu sesuai kontrak W2, lalu implementasi Rust.
+1. **Picker residu** — SELESAI 2026-09-15 (run `34910464818` hijau penuh:
+   fmt=clippy=test=picker=success). Gate live `picker-browse-control`
+   (5 skenario × 2 lebar) menjaga kontrak W2: redraw geometri baru +
+   "Terminal too small" mid-sesi, kursor modulo + jendela clamp minimal,
+   clear-filter reset kursor/offset (footer = cursor+1/total). Bukti lintasan:
+   RED `b494990`, hardening `755368f`, GREEN `a916b73`, koreksi kontrak
+   `ccf157b`, merge insiden fmt `3917834`.
 2. **Wizard V1** — kontrak W3; vendoring `setup.py` tetap tugas bukti
    terpisah terblokir jaringan upstream.
 3. **Completion** — menunggu rekaman referensi Python dari pengguna (W4-Q1),
