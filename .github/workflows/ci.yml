@@ -18,56 +18,6 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  # ============================================================================
-  # 0. DYNAMIC RUNNER SELECTOR (Automatic fallback if VPS is offline)
-  # ============================================================================
-  select-runner:
-    name: Detect & Select Runner
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
-    outputs:
-      runner: ${{ steps.detect.outputs.runner }}
-    steps:
-      - name: Detect and power on runner environment
-        id: detect
-        env:
-          CHECK_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
-          IDCLOUD_KEY: ${{ secrets.IDCLOUDHOST_API_KEY }}
-          VM_UUID: ${{ secrets.IDCLOUDHOST_VM_UUID }}
-          VM_LOC: ${{ secrets.IDCLOUDHOST_LOCATION }}
-        run: |
-          set +e
-          ONLINE_COUNT=0
-          if [ -n "$CHECK_TOKEN" ]; then
-            RESPONSE=$(curl -s --max-time 10 -H "Authorization: Bearer $CHECK_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${{ github.repository }}/actions/runners")
-            ONLINE_COUNT=$(echo "$RESPONSE" | jq '[.runners[]? | select(.status=="online")] | length' 2>/dev/null || echo 0)
-          fi
-          
-          echo "Initial online self-hosted runners count: $ONLINE_COUNT"
-          
-          if [ "$ONLINE_COUNT" -eq 0 ] && [ -n "$IDCLOUD_KEY" ] && [ -n "$VM_UUID" ]; then
-            echo "VPS is stopped. Automatically powering on via IDCloudHost API..."
-            curl -s --max-time 10 -X POST -H "apikey: $IDCLOUD_KEY" "https://api.idcloudhost.com/v1/${VM_LOC:-jkt01}/user-resource/vm/start?uuid=${VM_UUID}" || true
-            
-            echo "Waiting for VPS to boot and runners to connect..."
-            for i in $(seq 1 8); do
-              sleep 5
-              RESPONSE=$(curl -s --max-time 10 -H "Authorization: Bearer $CHECK_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${{ github.repository }}/actions/runners")
-              ONLINE_COUNT=$(echo "$RESPONSE" | jq '[.runners[]? | select(.status=="online")] | length' 2>/dev/null || echo 0)
-              if [ "$ONLINE_COUNT" -gt 0 ]; then
-                echo "VPS is online! Found $ONLINE_COUNT active runner(s)."
-                break
-              fi
-            done
-          fi
-
-          if [ "$ONLINE_COUNT" -gt 0 ]; then
-            echo "Using self-hosted VPS runner."
-            echo 'runner=["self-hosted", "vps", "hermes"]' >> "$GITHUB_OUTPUT"
-          else
-            echo "VPS unavailable. Falling back to GitHub-hosted ubuntu-latest!"
-            echo 'runner=["ubuntu-latest"]' >> "$GITHUB_OUTPUT"
-          fi
   workflow-regression:
     name: CI gate regression tests
     runs-on: [self-hosted, vps, hermes]
