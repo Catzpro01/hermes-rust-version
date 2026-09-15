@@ -184,6 +184,21 @@ def steps_for(name, side):
     if name == 'wizard-tools': return [(tools, None)]
     if name == 'wizard-tools-toggle': return ([(tools, '\r'), ('Tools for', ' '), ('Tools for', None)] if py else [(tools, ' '), (tools, None)])
     if name == 'wizard-cancel': return [(terminal, '\x1b'), ('@exit', None)]
+    # Spec017 Lane 2 (W3): rendered-field evidence. Every prompt the wizard
+    # draws must appear in the capture, in order, through completion/cancel.
+    if name == 'wizard-model-fields':
+        return [('Select provider', '\r'), ('API base URL', '\r'),
+                ('Environment variable holding the API key', '\r'),
+                ('Model name', 'parity-fixture\r'), ('Setup complete!', None)]
+    if name == 'wizard-model-cancel':
+        return [('Select provider', '\r'), ('API base URL', '\x1b'),
+                ('Setup cancelled.', None), ('@exit', None)]
+    if name == 'wizard-docker-image':
+        return [('Select terminal backend', down + '\r'), ('Docker not found', None),
+                ('Docker image', '\r'), ('Setup complete!', None)]
+    if name == 'wizard-gateway-cancel':
+        return [('Select platforms to configure', '\x1b'), ('Setup cancelled.', None),
+                ('@exit', None)]
     if name == 'picker-empty': return [('No sessions found.', None)]
     if name == 'picker-too-small': return [('Terminal too small', None)]
     if name == 'picker-narrow': return [('Browse sessions', None)]
@@ -220,8 +235,9 @@ def steps_for(name, side):
 def section_for(name):
     if name.startswith('wizard-gateway'): return 'gateway'
     if name.startswith('wizard-tools'): return 'tools'
-    if name in ('wizard-terminal','wizard-local','wizard-docker','wizard-cancel'): return 'terminal'
-    return 'model' if name == 'wizard-model' else None
+    if name.startswith('wizard-docker') or name in ('wizard-terminal', 'wizard-local', 'wizard-cancel'): return 'terminal'
+    if name.startswith('wizard-model'): return 'model'
+    return None
 
 
 DEFAULT_PICKER_SEED = ((SID_A, 'deploy the thing'), (SID_B, 'second topic'))
@@ -271,7 +287,7 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
                 else:
                     command = [sys.executable,str(Path(__file__).resolve()),'python-child',str(reference),name,str(width)]
                     extra = {'PYTHONPATH': os.environ.get('PYTHONPATH','')}
-                if name == 'wizard-docker':
+                if name in ('wizard-docker', 'wizard-docker-image'):
                     (home/'empty-bin').mkdir()
                     extra['PATH'] = str(home/'empty-bin')
                 result = record(command,home,width,steps_for(name,side),extra,timeout=timeout)
