@@ -44,11 +44,21 @@ user's private Python installation.
   collapse-to-`done` yang overstate 1 baris, `tag_sgr()` menebak cursor dari
   nilai tag). 202 tes / 13 error vs baseline 192 / 13 → +10 hijau, nol
   regresi; ke-13 error = `HERMES_PICKER_BINARY` (cargo absen di sandbox).
-  **Belum ada perubahan runtime Rust** — gate sengaja merah karena
-  `collect_rows` menurunkan status dari `turns.is_empty()`, jadi `intr`/`err`
-  tak pernah tercapai. **HITL terbuka:** opsi A/B/C di
-  `.scratch/hermes-rs-total-parity/issues/W5-picker-status-lifecycle.md`,
-  rekomendasi C. Gate belum diikat ke CI.
+- **W5 opsi C diimplementasi namun BELUM TERVERIFIKASI** (`2d36af9`): kolom
+  `Stat` kini mengikuti `classify_session_status` referensi atas baris pesan
+  terakhir. Dasarnya ukuran langsung, bukan prosa: capture berpasangan
+  `picker-status-ink-19bbbd5` menunjukkan Python menggambar `intr` (slot 3)
+  di baris yang sama tempat Rust menggambar `done` (slot 2). **Nol bukti
+  build/test/fmt** — lihat bloker infra di bawah.
+- **Bloker infra 2026-09-16: kedua jalur verifikasi mati.** (1) `ci.yml`
+  memakai `runs-on: [self-hosted, vps, hermes]`, jadi Actions tidak bisa
+  jalan saat VPS mati — semua run dibatalkan setelah 10–18 menit antre.
+  (2) Endpoint webhook `203.145.35.218:9000` menolak koneksi dari sandbox,
+  namun daemon tetap memposting status `vps-baremetal/fast-ci` = gagal
+  "Cargo Check failed (exit 101) (3s)" **bahkan untuk commit yang hanya
+  berisi .md** → kegagalan lingkungan daemon, bukan regresi kode.
+  Jangan menonaktifkan trigger Actions sampai salah satu jalur benar-benar
+  hijau: melakukannya akan menyisakan nol sinyal verifikasi.
 - **Picker selected-row slice delivered**: fix `ee11541` (tested patch 1171 B
   `8eed758f…`: `Color::DarkGreen` + bold replaces reverse video), RED `34866264371`
   → GREEN `34866921566` → capture `34868306211` (bundle `fe8bc2c2…`, 10 cases) →
