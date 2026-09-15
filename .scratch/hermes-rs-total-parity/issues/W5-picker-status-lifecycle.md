@@ -179,3 +179,70 @@ commit lama tidak ditulis ulang. Jangan dibaca sebagai regresi kode.
   build** — capture `picker-status-tags` belum diambil.
 - Status tiket tetap **OPEN** sampai pengguna mengonfirmasi opsi C secara
   eksplisit.
+
+## Temuan review PR #11 (sesi `arena/01a0a65a`, `main` = `8ad14a7`)
+
+Review dua sumbu (Standards + Spec) terhadap diff `a008e52...8ad14a7`.
+**Status tiket tidak diubah oleh bagian ini** — tetap OPEN sampai pengguna
+mengonfirmasi opsi C.
+
+### Spesifikasi
+
+1. **Kontrak butir 4 tidak terjangkau di DB bentukan Rust.** Rust menulis baris
+   hasil tool dengan `role` = *nama tool* (`store.rs`, `save_turn`), bukan
+   `tool`; `resume` memetakan balik setiap role non-`user`/`assistant`. Jadi
+   sesi yang terputus setelah tool berjalan (sebelum jawaban asisten) tetap
+   `done`, padahal referensi memberi `intr` — padahal inilah bentuk
+   `interrupted` yang dijadikan alasan memilih opsi C. DB warisan Python tidak
+   terdampak. Dicatat di `docs/PARITY.md` sebagai **keterbatasan yang
+   dinyatakan, bukan keputusan**; penutupannya butuh keputusan pengguna
+   (pola opsi A: catat sebagai batas scope, atau beri classifier aturan
+   eksplisit untuk bentuk Rust — yang menyimpang dari referensi untuk role tak
+   dikenal, jadi harus dicatat sebagai adaptasi).
+2. **Kontrak butir 7 tidak diport.** Referensi menelan semua error query status
+   (`_annotate_session_statuses`) lalu merender `-`; port mempropagasi
+   (`lifecycle_statuses()?` → `collect_rows` → `browse`), sehingga kegagalan
+   query menggagalkan perintah picker. Padahal `status_ink("-")` sudah ada.
+   *Belum diperbaiki* — menyentuhnya berarti mengubah semantik error, bukan
+   sekadar komentar.
+3. **Properti biaya butir 1 tidak ikut terport.** Referensi membatasi grouping
+   dengan `WHERE session_id IN (...)`; port melakukan `GROUP BY` atas seluruh
+   tabel `messages`. Hasil sama, biaya O(semua baris). Komentar kode sudah
+   dikoreksi; perbaikan query-nya mengubah API publik `hermes-core`
+   (`lifecycle_statuses(&ids)`) dan sengaja **belum** dilakukan di sesi ini.
+
+### Verifikasi
+
+4. `8ad14a7` (commit merge, ujung `main` saat ini): `vps-baremetal/fast-ci` =
+   **failure**, *"Cargo Check failed (exit 101) (1s)"*, diposting **18:33:27** —
+   setelah daemon beralih ke `make check` (bukti: `d150470` 18:17 sukses,
+   *"All fast checks passed via make check in 88s!"*). Penjelasan "status basi"
+   di atas **tidak berlaku** untuk posting 18:33:27; `285760e` (docs-only)
+   juga failure pada 18:33:24. Status `main` saat ini merah dan belum
+   direproduksi/diagnosis.
+5. Klaim PR "+10 tes baru": delta sesungguhnya **+11** (192→203 tes, 13→14
+   error; error ke-14 = tes PTY hidup baru yang butuh binary). Diverifikasi
+   ulang secara independen (venv `pyte`+`pyyaml`): base `a008e52` = 192/13,
+   HEAD = 203/14, **nol regresi**.
+6. Gate live `test_picker_status_tags.py` tetap belum pernah berjalan terhadap
+   binary mana pun: `make check` hanya `cargo check`, dan run Actions untuk
+   `8ad14a7` masih *queued*.
+
+### Perbaikan yang sudah dilakukan sesi ini (source only)
+
+- `Makefile:7` mengutip `ci.yml:307` untuk `cargo check`; PR #11 sendiri
+  menambah baris di `ci.yml:205`, jadi perintah itu kini di **308**. Diperbaiki
+  — pelanggaran invarian anti-drift yang dinyatakan `Makefile` sendiri.
+- Probe kolom `messages` (`lifecycle_column_expressions`, menggantikan
+  `messages_have_lifecycle_columns`) kini memeriksa `tool_calls` **dan**
+  `finish_reason` secara terpisah dan menyusun SQL dari ekspresi yang tersedia
+  (`NULL` bila kolom tidak ada). Sebelumnya hanya `tool_calls` yang diprobe
+  padahal SQL membaca dua kolom: skema parsial akan gagal di `prepare` dan
+  menggagalkan seluruh picker (lihat temuan 2). Duplikasi dua literal SQL
+  ikut hilang.
+- Komentar yang menjanjikan "direct port" / "O(1) per session" dikoreksi agar
+  sesuai kode (lihat temuan 3).
+
+**Belum ada `cargo fmt` / `clippy` / `cargo test` untuk perubahan sesi ini** —
+toolchain Rust tidak tersedia di sandbox ini. Verifikasi harus datang dari
+runner resmi; jangan dibaca sebagai PASS lokal.

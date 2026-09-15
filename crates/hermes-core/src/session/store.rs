@@ -339,25 +339,23 @@ impl SessionStore {
     /// keyed by session id. A session missing from the map has no messages and
     /// is therefore [`SessionStatus::Empty`].
     ///
-    /// One grouped query over `MAX(id)` per session — a direct port of the
-    /// reference's `session_lifecycle_statuses`, which likewise never scans a
-    /// transcript. The two optional columns are probed first because they exist
-    /// only in databases written by Hermes Python; a database this crate
-    /// created has to stay a normal case rather than become an error.
+    /// One grouped query over `MAX(id)` per session, the shape the reference's
+    /// `session_lifecycle_statuses` uses so that no transcript is ever scanned
+    /// for one session's status. The reference restricts that grouping to the
+    /// ids it was asked about (`WHERE session_id IN (...)`); this port groups
+    /// over every session, because its only caller wants all of them.
     pub fn lifecycle_statuses(&self) -> Result<HashMap<String, SessionStatus>, SessionStoreError> {
-        let legacy = self.messages_have_lifecycle_columns()?;
-        let sql = if legacy {
-            "SELECT m.session_id, m.role, m.tool_calls, m.finish_reason \
+        // A database may carry one of the two columns without the other, so
+        // they are probed separately: a partially migrated schema has to stay a
+        // normal case rather than become a query error.
+        let (tool_calls, finish_reason) = self.lifecycle_column_expressions()?;
+        let sql = format!(
+            "SELECT m.session_id, m.role, {tool_calls}, {finish_reason} \
              FROM messages AS m \
              JOIN (SELECT session_id, MAX(id) AS max_id FROM messages GROUP BY session_id) AS l \
              ON l.session_id = m.session_id AND l.max_id = m.id"
-        } else {
-            "SELECT m.session_id, m.role, NULL, NULL \
-             FROM messages AS m \
-             JOIN (SELECT session_id, MAX(id) AS max_id FROM messages GROUP BY session_id) AS l \
-             ON l.session_id = m.session_id AND l.max_id = m.id"
-        };
-        let mut q = self.conn.prepare(sql)?;
+        );
+        let mut q = self.conn.prepare(&sql)?;
         let rows = q.query_map([], |r| {
             let sid: String = r.get(0)?;
             let role: String = r.get(1)?;
@@ -374,15 +372,31 @@ impl SessionStore {
         Ok(out)
     }
 
-    /// Whether `messages` carries the two columns only Hermes Python writes.
+    /// SQL expressions reading `tool_calls` and `finish_reason`, or `NULL` for
+    /// whichever column this database does not carry. Both are written only by
+    /// Hermes Python; the schema in [`SessionStore::open`] has neither.
     /// `PRAGMA table_info` returns `cid, name, type, ...`, so the name is the
     /// second column.
-    fn messages_have_lifecycle_columns(&self) -> Result<bool, SessionStoreError> {
+    fn lifecycle_column_expressions(
+        &self,
+    ) -> Result<(&'static str, &'static str), SessionStoreError> {
         let mut q = self.conn.prepare("PRAGMA table_info(messages)")?;
         let columns = q
             .query_map([], |r| r.get::<_, String>(1))?
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(columns.iter().any(|name| name == "tool_calls"))
+        let has = |name: &str| columns.iter().any(|column| column == name);
+        Ok((
+            if has("tool_calls") {
+                "m.tool_calls"
+            } else {
+                "NULL"
+            },
+            if has("finish_reason") {
+                "m.finish_reason"
+            } else {
+                "NULL"
+            },
+        ))
     }
 
     /// Delete a session and all of its messages and tool calls (Spec 017 T09:

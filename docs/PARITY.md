@@ -601,6 +601,15 @@ session's **last message row**, the way the pinned reference does
 | any other row | `done` |
 | no message row at all | `empty` |
 
+Declared limitation on the `role tool` row above: Hermes-RS never writes one.
+`SessionStore::save_turn` persists a tool result under the **tool's own name**
+(`crates/hermes-core/src/session/store.rs`; `resume` turns every role that is
+not `user`/`assistant` back into a tool turn), so that rule fires only for
+databases written by Hermes Python. A Rust session interrupted after a tool ran
+but before the assistant replied therefore still renders `done`, where the
+reference renders `intr`. Recorded as a limitation, **not** as a decision — the
+W5 ticket stays OPEN on how to close it.
+
 `finish_reason` and `tool_calls` are read only when the database carries them,
 probed once with `PRAGMA table_info(messages)`. Databases written by Hermes
 Python have both columns; the schema Hermes-RS creates

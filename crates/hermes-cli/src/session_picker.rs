@@ -235,8 +235,10 @@ pub fn collect_rows(store: &SessionStore) -> anyhow::Result<Vec<SessionRow>> {
     let now = now_secs();
     let mut rows = Vec::new();
     // One grouped query for every session, not one per row: the status is
-    // derived from each session's last message row exactly as the reference
-    // does it. A session absent from the map has no messages at all.
+    // derived from each session's last message row, the way the reference
+    // derives it (the reference narrows that grouping to the ids it was asked
+    // for; here every session is wanted). A session absent from the map has no
+    // messages at all.
     let statuses = store.lifecycle_statuses()?;
     for id in store.list()? {
         let session = store.resume(&id)?;
