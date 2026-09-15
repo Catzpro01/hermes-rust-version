@@ -38,3 +38,40 @@
   ESC, tanpa store), `version_works_without_a_hermes_home_or_with_a_broken_config`
   (home tidak ada → exit 0; config rusak → `version` exit 0 sementara
   `info` gagal `Invalid config`), `help_lists_every_subcommand_and_global_flags`.
+
+## Penyelarasan versi 0.1.0 → 0.21.0 (2026-09-16)
+Baris 1 (`VERSION_LABEL`) sudah `Hermes-RS v0.21.0 …` sejak Ticket 07,
+tetapi `Crate version:` di bawahnya mencetak 0.1.0 — dua angka berbeda
+dalam satu layar. Disamakan ke 0.21.0 di lima tempat:
+
+- `Cargo.toml` — `workspace.package.version` (satu-satunya sumber; kedua
+  crate mewarisinya).
+- `Cargo.lock` — kedua member workspace menyimpan versinya di lock, dan
+  `cargo check --workspace --locked` gagal keras bila lock tidak cocok.
+  Hanya dua field `version` yang berubah (member path tanpa `source`/
+  `checksum`).
+- `crates/hermes-cli/tests/subcommands_e2e.rs` — asersi mematok string lama.
+- `crates/hermes-core/src/mcp/client.rs` — `CLIENT_VERSION` = versi yang
+  dikirim sebagai `clientInfo` pada handshake MCP `initialize`; ikut
+  dinaikkan atas instruksi Matt. `MCP_PROTOCOL_VERSION` tidak tersentuh;
+  satu-satunya tes handshake mengasersi `clientInfo.name`, bukan versi.
+- Tiket ini sendiri (blok spesifikasi keluaran di atas).
+
+Dibiarkan: log `Checking hermes-rs v0.1.0` di
+`docs/hermes-ui-spec/017/evidence/` = bukti yang dipertahankan; catatan
+parity `hermes-rs 0.1.0` di `.scratch/hermes-rs-ui-parity/issues/06-parity-docs-closure.md`
+= perbandingan historis; `nibble_vec` 0.1.0 di `Cargo.lock` = crate pihak
+ketiga.
+
+## Verifikasi
+- **VPS bare-metal, dijalankan Matt (bukan agen):**
+  `make check` → `Finished dev profile [unoptimized + debuginfo] target(s)
+  in 2m 03s`. Ini sekaligus membuktikan suntingan tangan `Cargo.lock`
+  tepat: dengan `--locked`, lock yang meleset menggagalkan perintahnya.
+- **Belum dijalankan:** `make test` (`cargo test --workspace --no-fail-fast`,
+  yang menjalankan asersi `Crate version: 0.21.0`) dan `make build` +
+  `./target/debug/hermes-rs version` untuk melihat keluarannya langsung.
+- **Tidak pernah diklaim:** tidak ada `cargo` di sandbox agen, jadi nol
+  verifikasi lokal. Job GitHub `CI gate regression tests` → pass, tetapi
+  job itu hanya skrip Python dan tidak menyentuh cargo; `fmt + clippy +
+  test` (pemilik `cargo check --locked`) berstatus `if: false`.
