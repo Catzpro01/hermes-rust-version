@@ -14,6 +14,7 @@ import random
 import string
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -129,35 +130,39 @@ class CiGateTests(unittest.TestCase):
 
     def test_ordinary_picker_gate_requires_all_live_tests(self):
         step = STEPS["Picker terminal regressions"]
-        cases = [(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), (1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-                 (0, 1, 0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 1, 0, 0, 0, 0, 0, 0, 0),
-                 (0, 0, 0, 1, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 1, 0, 0, 0, 0, 0),
-                 (0, 0, 0, 0, 0, 1, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 1, 0, 0, 0),
-                 (0, 0, 0, 0, 0, 0, 0, 1, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0, 1, 0),
-                 (0, 0, 0, 0, 0, 0, 0, 0, 0, 1)]
+        cases = [(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                 (0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                 (0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0),
+                 (0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0),
+                 (0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0),
+                 (0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0),
+                 (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)]
         for (position, color, header, filter_header, layout, message, selection, status,
-             redraw, size) in cases:
+             redraw, size, control, wizardf, completionf) in cases:
             with self.subTest(position=position, color=color, header=header,
                               filter_header=filter_header, layout=layout,
                               message=message, selection=selection,
                               status=status, redraw=redraw,
-                              size=size), tempfile.TemporaryDirectory() as tmp:
+                              size=size, control=control, wizardf=wizardf,
+                              completionf=completionf), tempfile.TemporaryDirectory() as tmp:
                 cargo = Path(tmp) / "cargo"
                 cargo.write_text("#!/bin/sh\necho build-ok\n")
                 cargo.chmod(0o700)
                 python = Path(tmp) / "python3"
-                python.write_text('#!/bin/bash\ncase "$*" in\n  *test_picker_footer_position.py*) echo position-test; exit "$POSITION";;\n  *test_picker_footer_color.py*) echo color-test; exit "$COLOR";;\n  *test_picker_normal_header.py*) echo header-test; exit "$HEADER";;\n  *test_picker_filter_header.py*) echo filter-header-test; exit "$FILTER_HEADER";;\n  *test_picker_column_layout.py*) echo column-layout-test; exit "$LAYOUT";;\n  *test_picker_message_style.py*) echo message-style-test; exit "$MESSAGE";;\n  *test_picker_selection.py*) echo selection-test; exit "$SELECTION";;\n  *test_picker_status_ink.py*) echo status-ink-test; exit "$STATUS";;\n  *test_picker_redraw_on_input.py*) echo redraw-test; exit "$REDRAW";;\n  *test_picker_terminal_size.py*) echo size-test; exit "$SIZE";;\n  *) exit 0;;\nesac\n')
+                python.write_text('#!/bin/bash\ncase "$*" in\n  *test_picker_footer_position.py*) echo position-test; exit "$POSITION";;\n  *test_picker_footer_color.py*) echo color-test; exit "$COLOR";;\n  *test_picker_normal_header.py*) echo header-test; exit "$HEADER";;\n  *test_picker_filter_header.py*) echo filter-header-test; exit "$FILTER_HEADER";;\n  *test_picker_column_layout.py*) echo column-layout-test; exit "$LAYOUT";;\n  *test_picker_message_style.py*) echo message-style-test; exit "$MESSAGE";;\n  *test_picker_selection.py*) echo selection-test; exit "$SELECTION";;\n  *test_picker_status_ink.py*) echo status-ink-test; exit "$STATUS";;\n  *test_picker_redraw_on_input.py*) echo redraw-test; exit "$REDRAW";;\n  *test_picker_terminal_size.py*) echo size-test; exit "$SIZE";;\n  *test_picker_browse_control.py*) echo control-test; exit "$CONTROL";;\n  *test_wizard_fields.py*) echo wizard-fields-test; exit "$WIZARD";;\n  *test_completion_dropdown.py*) echo completion-test; exit "$COMPLETION";;\n  *) exit 0;;\nesac\n')
                 python.chmod(0o700)
                 env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}",
                            POSITION=str(position), COLOR=str(color), HEADER=str(header),
                            FILTER_HEADER=str(filter_header), LAYOUT=str(layout),
                            MESSAGE=str(message), SELECTION=str(selection), STATUS=str(status),
-                           REDRAW=str(redraw), SIZE=str(size))
+                           REDRAW=str(redraw), SIZE=str(size), CONTROL=str(control),
+                           WIZARD=str(wizardf), COMPLETION=str(completionf))
                 result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
                                         env=env, capture_output=True, text=True)
                 self.assertEqual(result.returncode,
                                  int(bool(position or color or header or filter_header or layout
-                                          or message or selection or status or redraw or size)),
+                                          or message or selection or status or redraw or size
+                                          or control or wizardf or completionf)),
                                  result.stdout + result.stderr)
                 log = (Path(tmp) / "picker-position.log").read_text()
                 self.assertIn("position-test", log)
@@ -185,6 +190,15 @@ class CiGateTests(unittest.TestCase):
                                                 if not redraw:
                                                     self.assertIn("size-test", log)
                                                     self.assertIn("test_picker_terminal_size.py", step["run"])
+                                                    if not size:
+                                                        self.assertIn("control-test", log)
+                                                        self.assertIn("test_picker_browse_control.py", step["run"])
+                                                        if not control:
+                                                            self.assertIn("wizard-fields-test", log)
+                                                            self.assertIn("test_wizard_fields.py", step["run"])
+                                                            if not wizardf:
+                                                                self.assertIn("completion-test", log)
+                                                                self.assertIn("test_completion_dropdown.py", step["run"])
 
     def test_picker_size_gate_rejects_setup_errors(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/picker-diagnostic.yml").read_text())
@@ -692,6 +706,119 @@ class CiGateTests(unittest.TestCase):
             self.assertNotIn(b"config.yaml", patch)
             self.assertNotIn(b"do-not-export", patch)
             subprocess.run(["git", "apply", "--check", "--reverse", "fmt.patch"], cwd=tmp, check=True)
+
+    def test_sccache_enabled_only_when_present(self):
+        """The wrapper must be exported exactly when sccache exists on the
+        runner, so hosted runners without it keep building unchanged. PATH is
+        isolated to the fixture dir: tuned self-hosted runners have a real
+        sccache on PATH, which must not leak into the 'absent' case."""
+        step = STEPS["Enable sccache if available"]
+        bash = shutil.which("bash") or "/bin/bash"
+        for present in (True, False):
+            with self.subTest(present=present), tempfile.TemporaryDirectory() as tmp:
+                if present:
+                    sccache = Path(tmp) / "sccache"
+                    sccache.write_text("#!/bin/sh\nexit 0\n")
+                    sccache.chmod(0o700)
+                env_file = Path(tmp) / "gh_env"
+                out_file = Path(tmp) / "gh_output"
+                env = dict(os.environ, PATH=tmp,
+                           GITHUB_ENV=str(env_file), GITHUB_OUTPUT=str(out_file))
+                result = subprocess.run([bash, "-e", "-c", step["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True, check=False)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                written = env_file.read_text() if env_file.exists() else ""
+                self.assertEqual("RUSTC_WRAPPER=sccache" in written, present, written)
+                if present:
+                    self.assertIn("SCCACHE_IDLE_TIMEOUT=0", written)
+                    self.assertIn("::notice title=sccache enabled::", result.stdout)
+                else:
+                    self.assertIn("::notice title=sccache::", result.stdout)
+                output = out_file.read_text() if out_file.exists() else ""
+                self.assertIn(f"sccache={'present' if present else 'absent'}", output)
+
+    def test_memory_diagnostics_report_oom_only_when_present(self):
+        """The small self-hosted VPS needs OOM visibility, but unreadable
+        dmesg or missing tools must never fail the job."""
+        step = STEPS["Record memory and OOM diagnostics"]
+        self.assertEqual(step["if"], "always()")
+        for oom in (True, False):
+            with self.subTest(oom=oom), tempfile.TemporaryDirectory() as tmp:
+                dmesg_line = ("echo '[91234.5] Out of memory: Killed process 4242 (hermes-rs)'"
+                              if oom else "echo '[1.0] normal boot message'")
+                for name, body in (
+                        ("dmesg", f"#!/bin/sh\n{dmesg_line}\n"),
+                        ("free", "#!/bin/sh\necho '              total        used        free'\necho 'Mem:           1977        1400         200'\n"),
+                        ("swapon", "#!/bin/sh\necho 'NAME      TYPE SIZE USED PRIO'\necho '/swapfile file   4G   0B  -2'\n"),
+                        ("sccache", "#!/bin/sh\necho 'Cache hits: 12'\n")):
+                    tool = Path(tmp) / name
+                    tool.write_text(body)
+                    tool.chmod(0o700)
+                env = dict(os.environ, PATH=f"{tmp}:{os.environ['PATH']}")
+                result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp,
+                                        env=env, capture_output=True, text=True, check=False)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                log = (Path(tmp) / "memory-oom.log").read_text()
+                self.assertIn("== free -m ==", log)
+                self.assertIn("== dmesg OOM kills ==", log)
+                self.assertIn("== linker ==", log)
+                self.assertEqual("::error title=OOM kill detected::" in result.stdout, oom,
+                                 result.stdout)
+                self.assertIn("::notice title=memory::mem 1400MiB used of 1977MiB",
+                              result.stdout)
+
+    def test_memory_log_is_included_in_the_uploaded_logs(self):
+        step = STEPS["Upload logs"]
+        self.assertIn("memory-oom.log", step["with"]["path"])
+
+    def test_picker_step_repairs_missing_cargo_before_building(self):
+        """Self-hosted quirk (run 34893179340): cargo dropped off PATH only in
+        the picker step although earlier cargo steps in the same job worked.
+        The step must repair PATH (rustup env / ~/.cargo/bin) before invoking
+        cargo, and fail loudly with PATH diagnostics if cargo stays missing."""
+        step = STEPS["Picker terminal regressions"]
+        script = step["run"]
+        self.assertLess(script.index('command -v cargo'),
+                        script.index('cargo build --locked'))
+        self.assertIn('. "$HOME/.cargo/env"', script)
+        self.assertIn('"$HOME/.cargo/bin:$PATH"', script)
+        self.assertIn('cargo missing in picker step; PATH=$PATH', script)
+
+    def test_picker_step_falls_back_to_ensurepip_when_pip_is_missing(self):
+        """The VPS system python3 had no pip (run 34891514988); the guard must
+        try ensurepip before giving up."""
+        step = STEPS["Picker terminal regressions"]
+        self.assertIn("python3 -m pip --version >/dev/null 2>&1", step["run"])
+        self.assertIn("python3 -m ensurepip --upgrade", step["run"])
+
+    def test_test_job_provisions_python_before_picker_regressions(self):
+        """The self-hosted VPS system python3 has no pip (run 34891514988
+        died at the picker step's pip guard), so the test job must provision
+        Python via setup-python before the picker regressions install their
+        pinned QA dependencies."""
+        workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+        steps = workflow["jobs"]["test"]["steps"]
+        setup_idx = picker_idx = None
+        for i, step in enumerate(steps):
+            if str(step.get("uses", "")).startswith("actions/setup-python"):
+                setup_idx = i
+            if step.get("name") == "Picker terminal regressions":
+                picker_idx = i
+        self.assertIsNotNone(setup_idx, "test job lost its actions/setup-python step")
+        self.assertIsNotNone(picker_idx, "picker regressions step disappeared")
+        self.assertLess(setup_idx, picker_idx,
+                        "setup-python must precede the picker regressions")
+
+    def test_jobs_run_on_the_tuned_self_hosted_vps(self):
+        """User instruction 2026-09-15: this repo's jobs must always run on
+        the tuned self-hosted VPS runner (sccache + mold), never the shared
+        ubuntu-latest pool."""
+        for name in ("ci.yml", "picker-diagnostic.yml", "ui-evidence.yml", "visual-evidence.yml"):
+            with self.subTest(workflow=name):
+                workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+                for job_name, job in workflow["jobs"].items():
+                    self.assertEqual(job.get("runs-on"), ["self-hosted", "vps", "hermes"],
+                                     f"{name}:{job_name} must target the tuned VPS runner")
 
 
 if __name__ == "__main__":

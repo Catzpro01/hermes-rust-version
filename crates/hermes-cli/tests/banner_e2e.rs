@@ -133,9 +133,15 @@ impl PtyRepl {
 fn banner_wide_tty_shows_logo_gold_title_bronze_border() {
     let mut r = PtyRepl::spawn(100);
 
+    // Wait for the LAST banner element (the info grid completes after the
+    // title), then judge the whole banner from that snapshot. Waiting on
+    // the title alone races the reader thread under CPU contention (run
+    // 34930735094): the grid bytes may not be buffered yet, making the
+    // "Available Skills" assertion flaky without any behavior change.
     let out = r
-        .wait_for(TITLE)
-        .expect("title must render on a 100-col TTY");
+        .wait_for("No skills installed")
+        .expect("banner info grid must complete on a 100-col TTY");
+    assert!(out.contains(TITLE), "title must render on a 100-col TTY");
     assert!(
         out.contains(LOGO_MARKER),
         "6-line logo must appear at width 100 (>= 95)"

@@ -39,6 +39,10 @@ CASES = ('wizard-mode', 'wizard-full', 'wizard-blank', 'wizard-quick',
 
 
 def record(command, home, width, steps, extra_env=None, timeout=15):
+    """`steps` are (marker, key) pairs. A key of the form `@resize WxH` does
+    not type anything: it re-sets the PTY winsize mid-session (the kernel then
+    delivers SIGWINCH to the child), exercising live terminal resizes. Every
+    other key is written to the PTY verbatim."""
     env = {'PATH': os.defpath, 'HOME': str(home), 'HERMES_HOME': str(home),
            'TERM': 'xterm-256color', 'COLORTERM': 'truecolor', 'LANG': 'C.UTF-8',
            'LC_ALL': 'C.UTF-8', 'PYTHONDONTWRITEBYTECODE': '1'}
@@ -69,6 +73,7 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
     screen.write_process_input = terminal_reply
     terminal = pyte.ByteStream(screen)
     eof = False
+    cols_now, rows_now = width, 30
     try:
         while index < len(steps):
             now = time.monotonic()
@@ -100,7 +105,7 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
                     # Respond using terminal state, never hard-code cursor 1,1.
                     terminal.feed(data)
                     state = (screen.cursor.x, screen.cursor.y,
-                             tuple(tuple(screen.buffer[y][x] for x in range(width)) for y in range(30)))
+                             tuple(tuple(screen.buffer[y][x] for x in range(cols_now)) for y in range(rows_now)))
                     if state != previous_screen:
                         previous_screen = state
                         stable_since = time.monotonic()
@@ -121,9 +126,19 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
                 completed.append({'marker': marker, 'end_byte': len(output)})
                 index += 1
                 if key is not None:
-                    data = key.encode()
-                    os.write(master, data)
-                    inputs.append([round(time.monotonic()-begin, 6), base64.b64encode(data).decode(), 'scenario key'])
+                    if key.startswith('@resize '):
+                        new_cols, new_rows = (int(part) for part in key[len('@resize '):].split('x'))
+                        cols_now, rows_now = new_cols, new_rows
+                        fcntl.ioctl(master, termios.TIOCSWINSZ,
+                                    struct.pack('HHHH', new_rows, new_cols, 0, 0))
+                        screen.resize(new_rows, new_cols)
+                        inputs.append([round(time.monotonic()-begin, 6),
+                                       base64.b64encode(key.encode()).decode(),
+                                       f'scenario resize {new_cols}x{new_rows}'])
+                    else:
+                        data = key.encode()
+                        os.write(master, data)
+                        inputs.append([round(time.monotonic()-begin, 6), base64.b64encode(data).decode(), 'scenario key'])
                     cursor = len(output)
                     stage_begin = last = stable_since = time.monotonic()
             elif code is not None:
@@ -162,13 +177,40 @@ def steps_for(name, side):
     if name == 'wizard-model': return [(provider, None)]
     if name == 'wizard-terminal': return [(terminal, None)]
     if name == 'wizard-local': return [(terminal, '\r'), ('@exit', None)]
+    # Spec017 T12 wizard matrix — terminal section NORMAL path: Local is the
+    # first option on a fresh home; choosing it completes the section
+    # WITHOUT any docker prompt (the forbidden markers are in the checker).
+    if name == 'wizard-terminal-local': return [(terminal, '\r'), ('Setup complete!', None)]
     if name == 'wizard-docker': return [(terminal, down*(2 if py else 1)+'\r'), ('Docker not found', None)]
     if name == 'wizard-gateway': return [(gateway, None)]
-    if name == 'wizard-gateway-empty': return [(gateway, '\r'), ('@exit', None)]
+    # Spec017 T12 wizard matrix — gateway section NORMAL path: confirm the
+    # multiselect with nothing toggled; the wizard must render the
+    # empty-selection notice and still complete.
+    if name == 'wizard-gateway-empty': return [(gateway, '\r'), ('No platforms selected', None), ('Setup complete!', None)]
     if name == 'wizard-gateway-token': return [(gateway, ' \r'), ('Server URL', 'https://fixture.invalid\r'), ('Bot token', None)]
     if name == 'wizard-tools': return [(tools, None)]
     if name == 'wizard-tools-toggle': return ([(tools, '\r'), ('Tools for', ' '), ('Tools for', None)] if py else [(tools, ' '), (tools, None)])
     if name == 'wizard-cancel': return [(terminal, '\x1b'), ('@exit', None)]
+    # Spec017 T12 wizard matrix — tools section NORMAL (confirm the default
+    # toolset selection) and CANCEL paths, closing section x {normal,
+    # cancel} for every wizard section.
+    if name == 'wizard-tools-accept': return [(tools, '\r'), ('Setup complete!', None)]
+    if name == 'wizard-tools-cancel': return [(tools, '\x1b'), ('Setup cancelled.', None), ('@exit', None)]
+    # Spec017 Lane 2 (W3): rendered-field evidence. Every prompt the wizard
+    # draws must appear in the capture, in order, through completion/cancel.
+    if name == 'wizard-model-fields':
+        return [('Select provider', '\r'), ('API base URL', '\r'),
+                ('Environment variable holding the API key', '\r'),
+                ('Model name', 'parity-fixture\r'), ('Setup complete!', None)]
+    if name == 'wizard-model-cancel':
+        return [('Select provider', '\r'), ('API base URL', '\x1b'),
+                ('Setup cancelled.', None), ('@exit', None)]
+    if name == 'wizard-docker-image':
+        return [('Select terminal backend', down + '\r'), ('Docker not found', None),
+                ('Docker image', '\r'), ('Setup complete!', None)]
+    if name == 'wizard-gateway-cancel':
+        return [('Select platforms to configure', '\x1b'), ('Setup cancelled.', None),
+                ('@exit', None)]
     if name == 'picker-empty': return [('No sessions found.', None)]
     if name == 'picker-too-small': return [('Terminal too small', None)]
     if name == 'picker-narrow': return [('Browse sessions', None)]
@@ -176,26 +218,94 @@ def steps_for(name, side):
     if name == 'picker-filter': return [('Browse sessions', 'topic'), ('filter: topic', None)]
     if name == 'picker-no-match': return [('Browse sessions', 'zzzz'), ('No sessions match', None)]
     if name == 'picker-delete': return [('Browse sessions', 'd'), ('Delete', None)]
+    # Spec017 W2 browse-control contracts (resize / long list / clear filter).
+    # Every step's key is the action that produces the NEXT step's marker — the
+    # harness only sends a key once its own marker is ready.
+    if name == 'picker-resize-too-small':
+        return [('Browse sessions', '@resize 60x4'),
+                ('Terminal too small', '\r'), ('@exit', None)]
+    if name == 'picker-resize-redraw':
+        return [('Browse sessions', '@resize 80x20'),
+                ('\x1b[2J', '\x1b'), ('@exit', None)]
+    if name == 'picker-long-list':
+        return [('Browse sessions', '\x1b[B' * 26),
+                ('27/30 sessions', '\x1b[B' * 3), ('30/30 sessions', '\x1b[B'),
+                ('1/30 sessions', '\x1b[A'), ('30/30 sessions', '\x1b'),
+                ('@exit', None)]
+    if name == 'picker-clear-filter-esc':
+        return [('Browse sessions', 'sec'), ('filter: sec', '\x1b'),
+                ('1/2 sessions', '\x1b'), ('@exit', None)]
+    if name == 'picker-clear-filter-backspace':
+        return [('Browse sessions', 'sec'), ('filter: sec', '\x7f\x7f\x7f'),
+                ('1/2 sessions', '\x1b'), ('@exit', None)]
+    # Spec017 Lane 3 (W4): completion evidence. Rustyline's Tab inserts the
+    # FIRST registry-order candidate into the line (the dropdown menu itself
+    # is not part of the captured surface), ghost text renders without Tab,
+    # skill completion completes the seeded skill, and an accepted completion
+    # that ends a line opens the next UI (the /sessions browse picker). Rust
+    # ready marker = the REPL welcome line; the Python reference side keeps
+    # its prompt-symbol marker until the user's reference recording lands.
     if name.startswith('completion-'):
-        text = {'completion-command':'/mod', 'completion-subcommand':'/skills ', 'completion-alternatives':'/s'}[name]
-        return [('❯' if py else 'Welcome to Hermes Agent!', text+'\t\t'), (text.rstrip(), None)]
+        welcome = '\u276f ' if py else 'Welcome to Hermes Agent!'
+        if name == 'completion-command':
+            return [(welcome, '/mod\t'), ('/model', '\x15/exit\r'), ('@exit', None)]
+        if name == 'completion-alternatives':
+            # '/s' inserts the first registry-order s-command ('/save ');
+            # '/ski' narrows the set and inserts '/skin' (no trailing space:
+            # picker command). Two prefix-filtered insertions from one
+            # registry prove the candidate set, not just one lucky word.
+            return [(welcome, '/s\t'), ('/save', '\x15/ski\t'),
+                    ('/skin', '\x15/exit\r'), ('@exit', None)]
+        if name == 'completion-subcommand':
+            # '/skills sea' prefix-filters the declared subcommands to the
+            # unique 'search'; skills complete at the FIRST token (run
+            # 34923837446: '/skills <x>' offers only subcommands), so the
+            # seeded skill is proven via '/demo' -> 'demo-skill'.
+            return [(welcome, '/skills sea\t'), ('/skills search', '\x15/demo\t'),
+                    ('demo-skill', '\x15/exit\r'), ('@exit', None)]
+        if name == 'completion-ghost':
+            return [(welcome, '/perso'), ('nality', '\x15/exit\r'), ('@exit', None)]
+        if name == 'completion-picker-open':
+            # End on the picker frame: the accepted completion opened it.
+            # (The browse picker's ESC is two-stage and the REPL stays up,
+            # so no clean process exit exists inside this scenario.)
+            return [(welcome, '/sessio\t'), ('/sessions', '\r'), ('Browse sessions', None)]
+        if name == 'completion-no-match':
+            # '/zzzz' matches no command/skill/path: Tab rings the bell and
+            # inserts nothing — the positive byte evidence of an empty
+            # candidate set (observed in run 34923837446).
+            return [(welcome, '/zzzz\t'), ('\x07', '\x15/exit\r'), ('@exit', None)]
     return [('@exit', None)]
 
 
 def section_for(name):
+    if name.startswith('completion'): return 'completion'
+    if name.startswith('wizard-tools-'): return 'tools'
     if name.startswith('wizard-gateway'): return 'gateway'
     if name.startswith('wizard-tools'): return 'tools'
-    if name in ('wizard-terminal','wizard-local','wizard-docker','wizard-cancel'): return 'terminal'
-    return 'model' if name == 'wizard-model' else None
+    if name.startswith('wizard-docker') or name in ('wizard-terminal', 'wizard-terminal-local', 'wizard-local', 'wizard-cancel'): return 'terminal'
+    if name.startswith('wizard-model'): return 'model'
+    return None
 
 
-def seed_rust(home, empty=False):
+DEFAULT_PICKER_SEED = ((SID_A, 'deploy the thing'), (SID_B, 'second topic'))
+
+
+def long_list_seed(count):
+    """Deterministic multi-window fixture: names sort in index order and each
+    session carries one user message, so every row renders with a preview."""
+    return ((f'{i:08x}-0000-4000-8000-{i:012x}', f'session-{i:02d}')
+            for i in range(count))
+
+
+def seed_rust(home, empty=False, count=2):
     with sqlite3.connect(home/'state.db') as db:
         db.executescript('''CREATE TABLE sessions(id TEXT PRIMARY KEY,source TEXT NOT NULL,started_at REAL NOT NULL);
         CREATE TABLE messages(id INTEGER PRIMARY KEY AUTOINCREMENT,session_id TEXT NOT NULL,role TEXT NOT NULL,content TEXT,timestamp REAL NOT NULL);
         CREATE TABLE tool_calls(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,turn_index INTEGER NOT NULL,tool_name TEXT NOT NULL,arguments TEXT NOT NULL,result TEXT,status TEXT NOT NULL,created_at REAL NOT NULL);''')
         if not empty:
-            for i,(sid,text) in enumerate(((SID_A,'deploy the thing'),(SID_B,'second topic'))):
+            seed = DEFAULT_PICKER_SEED if count == 2 else tuple(long_list_seed(count))
+            for i,(sid,text) in enumerate(seed):
                 db.execute('INSERT INTO sessions VALUES (?,?,?)',(sid,'cli',1700000000+i))
                 db.execute('INSERT INTO messages(session_id,role,content,timestamp) VALUES (?,?,?,?)',(sid,'user',text,1700000000.5+i))
 
@@ -210,9 +320,17 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
     for name, width in plan:
             with tempfile.TemporaryDirectory(prefix='hermes-ui-'+side+'-') as tmp:
                 home = Path(tmp)
-                if name.startswith('picker') and side == 'rust': seed_rust(home, name=='picker-empty')
+                if name.startswith('picker') and side == 'rust':
+                    seed_rust(home, name=='picker-empty',
+                              count=30 if name == 'picker-long-list' else 2)
                 if name.startswith('completion'):
                     (home/'config.yaml').write_text('model:\n  provider: auto\n  name: parity-fixture\n')
+                    if name == 'completion-subcommand':
+                        skill = home/'skills'/'demo-skill'
+                        skill.mkdir(parents=True)
+                        (skill/'SKILL.md').write_text(
+                            '---\nname: demo-skill\n'
+                            'description: Parity evidence fixture skill\n---\nbody\n')
                 if side == 'rust':
                     if name.startswith('wizard'):
                         command = [str(binary),'setup'] + ([section_for(name)] if section_for(name) else [])
@@ -223,7 +341,7 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
                 else:
                     command = [sys.executable,str(Path(__file__).resolve()),'python-child',str(reference),name,str(width)]
                     extra = {'PYTHONPATH': os.environ.get('PYTHONPATH','')}
-                if name == 'wizard-docker':
+                if name in ('wizard-docker', 'wizard-docker-image'):
                     (home/'empty-bin').mkdir()
                     extra['PATH'] = str(home/'empty-bin')
                 result = record(command,home,width,steps_for(name,side),extra,timeout=timeout)
@@ -243,7 +361,11 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
                         result['snapshot_end_byte'] = end
                         result['snapshot_rule'] = boundary + '; full later output retained unchanged'
                 print(side,name,width,result['error'] or 'CAPTURED_NOT_REVIEWED',file=sys.stderr)
-                cases.append({'id':f'{name}-{width}x30','scenario':name,'fixture':{'home':'isolated fresh temporary directory', 'credentials':'none supplied', 'docker_available':False if name=='wizard-docker' else 'not controlled', 'picker_seed':[SID_A,SID_B] if name.startswith('picker') and name!='picker-empty' else [], 'picker_timestamp_base':1700000000 if name.startswith('picker') else None},side:result})
+                picker_seed = ([SID_A, SID_B] if name.startswith('picker') and name != 'picker-empty'
+                               and name != 'picker-long-list'
+                               else [sid for sid, _ in long_list_seed(30)] if name == 'picker-long-list'
+                               else [])
+                cases.append({'id':f'{name}-{width}x30','scenario':name,'fixture':{'home':'isolated fresh temporary directory', 'credentials':'none supplied', 'docker_available':False if name=='wizard-docker' else 'not controlled', 'picker_seed':picker_seed, 'picker_seed_note':'long list uses deterministic session-00..session-29 names' if name=='picker-long-list' else None, 'picker_timestamp_base':1700000000 if name.startswith('picker') else None, 'skill_seed':'skills/demo-skill (SKILL.md with description frontmatter)' if name=='completion-subcommand' else None, 'repl_provider':'fake (offline) via --provider fake' if name.startswith('completion') else None},side:result})
     return cases
 
 

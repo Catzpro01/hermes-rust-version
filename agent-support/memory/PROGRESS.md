@@ -1856,3 +1856,323 @@ Berikutnya: resize/daftar panjang/clear-filter, adaptasi `Active`/`ID`, fixture 
 menjalankan tinta `interrupted`/`error`/`empty` secara live, lalu wizard V1 dan
 keputusan produk dropdown completion. Tidak ada adaptasi baru, PASS seluruh picker,
 acceptance, atau merge.
+
+### Sesi baru arena/01a0a14a — baca panduan, analisis error, betulkan (bootstrap)
+
+**Request:** baca panduan, analisis error, betulkan.
+**Branch:** `arena/01a0a14a-hermes-rust-version` (basis `5617ab8` = merge PR #8 =
+head `main`; working tree bersih saat mulai).
+
+- Dibaca: AGENTS.md, RULES, CURRENT, START-NEXT-SESSION, VERIFICATION,
+  MEMORY/PROGRESS, PROGRESS-ANALYSIS. Bootstrap panduan dijalankan.
+- Check paket: `verify.py` PASS (7 alias, 37 skill links, 164 file vendor,
+  10 guide) dan `test_checkpoint.py` 8/8 PASS — tanpa perubahan.
+- **Error ditemukan (baru, sesi ini):** `python3 -m unittest discover -s scripts`
+  gagal dengan 25 collection error `ModuleNotFoundError: pyte` + 1 import error
+  `yaml`. Ini kehilangan dependency QA pihak ketiga di lingkungan lokal, bukan
+  regresi kode.
+- **Perbaikan:** PyPI terjangkau di sesi ini; pip sistem Debian menolak karena
+  PEP 668, jadi dibuat venv `/tmp/hermes-venv` berisi versi pin yang sama dengan
+  `ci.yml`: `pyte==0.8.2`, `wcwidth==0.8.3`, `PyYAML==6.0.3`.
+- **Hasil run baru (bukan klaim historis):** 134 tes terkoleksi, **124 PASS**;
+  10 error tersisa semuanya `KeyError: HERMES_PICKER_BINARY` — kesepuluh regresi
+  PTY nyata yang memang menuntut binary hasil `cargo build` sesuai desain tes dan
+  `ci.yml`. `test_ci_workflow` kini PASS setelah PyYAML terpasang.
+- **Toolchain Rust tetap tidak tersedia:** unduhan sh.rustup.rs,
+  static.rust-lang.org, index.crates.io gagal TLS dan mirror apt Debian gagal —
+  diverifikasi ulang sesi ini, konsisten dengan blocker lama. Tidak ada klaim
+  fmt/check/test Rust lokal.
+- Gate Rust diverifikasi pada runner resmi untuk commit basis branch ini:
+  CI run [34883722539](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34883722539)
+  pada `main`/`5617ab8` SUCCESS (dua job). Ini hasil untuk basis sesi ini, bukan
+  ekstrapolasi dari commit lama.
+- VERIFICATION §Regresi proyek pendukung dilengkapi fallback
+  `--break-system-packages` (sama dengan `ci.yml`) dan catatan alternatif venv.
+- Auto-push checkpoint diinstal untuk branch sesi ini; hook commit-msg Arena yang
+  sudah ada dipertahankan.
+- Catatan lingkungan: `/tmp` tidak persist; sesi berikutnya membuat ulang venv
+  sesuai VERIFICATION bila ingin menjalankan tes `scripts/` di luar CI.
+- Tugas substantif berikutnya tetap sesuai handoff: wawancara Wayfinder rute
+  penuntasan Spec017 (bukan coding baru); tidak ada merge/acceptance di sesi ini.
+- **Hasil push aktual:** checkpoint `c731a144444aed37d6516fad93ac4dd6a21763ce`
+  ter-push otomatis; receipt `--require-pushed` PASS dan `git ls-remote` cocok.
+  CI run [34884794870](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34884794870)
+  pada `c731a14` **SUCCESS** (kedua job: fmt+clippy+test dan gate regression).
+  Ini run verifikasi baru untuk commit sesi ini, bukan hasil historis.
+  Warning nonblocking tetap sama: pin actions Node20 dipaksa Node24 oleh runner.
+
+### Slice lingkungan CI: hilangkan warning Node.js 20 di runner self-hosted (selesai)
+
+**Request:** selesaikan semua error; pengguna menjalankan GitHub Actions pada
+runner self-hosted VPS (2 core, 2 GB RAM, 38 GB disk).
+
+- Analisis menyeluruh: tidak ada kegagalan terbuka pada keempat workflow
+  (ci, picker-diagnostic, ui-evidence, visual-evidence) — semua failure historis
+  pada 100 run terakhir sudah disusul commit perbaikan di branch yang sama dan
+  ikut ter-merge lewat PR #7/#8; check-runs head hijau.
+- Satu-satunya anotasi berulang di setiap run: `Node.js 20 is deprecated` dari
+  pin actions major lama. Ini yang dibetulkan.
+- Perubahan (SHA commit diverifikasi via GitHub API; `action.yml` menyatakan
+  `using: node24`): checkout v4→v5.1.0 `fbc6f399…`, setup-python v5→v6.3.0
+  `ece7cb06…`, upload-artifact v4→v6.0.0 `b7c566a7…` pada keempat workflow.
+  Syarat runner ≥ v2.327.1 terpenuhi (runner sudah memaksa Node24).
+- Validasi lokal sebelum push: suite scripts 134 tes → 124 PASS dengan 10 error
+  `HERMES_PICKER_BINARY` yang sama seperti baseline (tes PTY binary CI-only,
+  bukan regresi dari perubahan ini); `verify.py` PASS; 8 tes checkpoint PASS.
+- Commit `9bf9b8c6fa27` ter-push otomatis; receipt PASS. CI run
+  [34886701339](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34886701339)
+  **SUCCESS** kedua job pada runner self-hosted; anotasi check-run kini hanya
+  notice ringkasan `fmt=success clippy=success test=success picker=success` —
+  warning Node20 hilang. Ini run verifikasi baru, bukan historis.
+- Sisa yang dinyatakan apa adanya: 10 tes PTY lokal tetap membutuhkan binary
+  hasil `cargo build`; tidak ada toolchain Rust di sandbox (unduhan TLS-blocked,
+  diverifikasi ulang 2026-09-14) dan ingress artifact juga blocked, jadi tes itu
+  tercakup oleh CI yang hijau pada setiap commit — termasuk `9bf9b8c`.
+
+### Slice CI runner: sccache guard + diagnostik memori/OOM untuk VPS self-hosted (selesai)
+
+**Request:** lanjutkan pembaruan sisi repositori setelah pengguna menata VPS
+self-hosted (hapus `CARGO_INCREMENTAL` dari .env runner agar tidak meniadakan
+sccache, swap 4 GB aktif, kedua runner direstart).
+
+- `ci.yml` job `test` mendapat dua step baru (terjaga, tak mengubah step
+  ter-pin yang diuji): `Enable sccache if available` (ekspor
+  `RUSTC_WRAPPER=sccache` hanya bila biner ada; `SCCACHE_IDLE_TIMEOUT=0`;
+  zero-stats; no-op di runner tanpa sccache) dan `Record memory and OOM
+  diagnostics` (always(): uname/free/swapon/dmesg-OOM/sccache-stats ke
+  `memory-oom.log`; tidak pernah menggagalkan job bila dmesg tak terbaca;
+  anotasi `::error title=OOM kill detected::` bila ada event kernel OOM).
+  `memory-oom.log` ikut artefak ci-logs (retensi 90 hari).
+- Anotasi notice ditambahkan agar status terlihat lewat API (log/artefak tak
+  terjangkau dari sandbox review): `sccache enabled`/absen + ringkasan
+  memori/swap per run.
+- 3 tes regresi workflow baru mem-pin perilaku tersebut; suite regresi
+  workflow 32/32 PASS; suite scripts total 137 tes → 127 PASS dengan 10 error
+  `HERMES_PICKER_BINARY` baseline (CI-only); verifier paket dan 8 tes
+  checkpoint PASS.
+- Commit `d3ae7b0` dan `6616b52` ter-push (receipt PASS). CI pada keduanya
+  SUCCESS di VPS: run [34888051806](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34888051806)
+  dan [34888457106](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34888457106);
+  anotasi hanya notice ringkasan + diagnostik baru, tanpa warning/error.
+- **Temuan penting dari diagnostik baru:** run 34888457106 ternyata dieksekusi
+  runner dengan **RAM ±16 GB dan swap ±3 GB, tanpa sccache di PATH** — bukan
+  VPS 2 GB/4 GB-swap/bersccache yang baru ditata pengguna, dan nama runner
+  berbeda antar run (pool `ubuntu-latest` berisi lebih dari satu runner).
+  Step baru sudah aman untuk kedua kondisi, tetapi bila job harus selalu mendarat
+  di VPS tertata, label runner perlu dikonfirmasi pengguna (API daftar runner
+  403 untuk token sesi ini).
+
+### Slice VPS self-hosted: pin runs-on, toolchain, pip, PATH cargo (dalam verifikasi)
+
+**Request:** job repo harus selalu dieksekusi di VPS tertata (label
+`self-hosted, vps, hermes`; runner `vps-fern-hermes`; sccache 10 GiB + mold);
+pengguna menghapus CARGO_INCREMENTAL dari .env runner, swap 4 GB aktif, runner
+direstart.
+
+Urutan kejadian aktual (semua run pada runner `vps-fern-hermes`):
+
+1. `runs-on: [self-hosted, vps, hermes]` diterapkan pada keempat workflow
+   (`7df86d2`) + tes yang mem-pin pilihan itu. Commit pengguna `e7e170b`
+   menambah concurrency cancel-in-progress.
+2. Run 34889606785: tes `test_sccache_enabled_only_when_present` bocor — VPS
+   punya sccache asli di PATH sehingga kasus "absent" gagal. Dibetulkan
+   hermetis dengan PATH fixture terisolasi + bash absolut (`ffab4f1`),
+   diverifikasi dengan simulasi sccache-di-PATH.
+3. Run 34891514988: toolchain fix `rustup update stable` bekerja — build
+   `--locked` selesai 46,8 dtk, fmt/clippy/584 tes PASS, sccache aktif, swap
+   terpakai (mem 464/1967 MiB; swap 200/4095 MiB). Gagal di guard pip picker
+   (exit 1): python3 sistem VPS tanpa pip, sedangkan job workflow-regression
+   yang memakai setup-python lolos. Fix: setup-python pada job test (`22621d1`).
+4. Run 34893179340: pip teratasi, tetapi picker mati `cargo: command not
+   found` (exit 127) padahal fmt/clippy/test se-job memakai cargo baik-baik.
+   Fix defensif (`30dc775`): re-source `~/.cargo/env` + prepend
+   `~/.cargo/bin` hanya saat cargo hilang, diagnostik PATH ke log/anotasi bila
+   tetap hilang, fallback `ensurepip` pada guard pip; 4 tes baru mem-pin.
+5. Run 34894773118 (commit `30dc775`) **dibatalkan** di tengah job ("The
+   operation was canceled") tanpa commit baru — penyebab belum diketahui
+   (runner terputus atau pembatalan manual). Percobaan re-run gagal karena
+   **token GitHub menjadi 401** di tengah sesi; pengguna perlu menyambungkan
+   ulang GitHub di Arena. Semua commit s/d `30dc775` sudah ter-push dan
+   terverifikasi sebelumnya.
+
+Catatan penting: workflow `picker-diagnostic`/`ui-evidence` masih ter-gate ke
+branch lama `arena/01a0a052` (dari dini); adaptasinya tugas terpisah sesuai
+VERIFICATION. Bukti VPS sejauh ini: 584 tes Rust hijau di VPS, sccache aktif,
+swap bekerja; tinggal verifikasi langkah picker pasca perbaikan PATH.
+
+### Hasil akhir slice VPS — seluruh pipeline hijau di vps-fern-hermes
+
+Setelah GitHub tersambung ulang, commit catatan `9023312` ter-push (receipt
+PASS) dan push itu memicu run verifikasi
+[34896083042](https://github.com/Catzpro01/hermes-rust-version/actions/runs/34896083042)
+pada `9023312`: **SUCCESS kedua job, keduanya dieksekusi `vps-fern-hermes`**.
+Anotasi (bukti baru, bukan historis):
+
+- Ringkasan gate: `fmt=success clippy=success test=success picker=success` —
+  termasuk kesepuluh regresi PTY picker aktual.
+- `sccache enabled` (RUSTC_WRAPPER=sccache untuk langkah cargo).
+- Memori: 967/3914 MiB terpakai; swap 153/4095 MiB terpakai — bantalan OOM
+  bekerja; tanpa anotasi error/warning apa pun.
+
+Rangkaian perbaikan yang menghasilkan keadaan ini (semua sudah ter-push):
+runs-on `[self-hosted, vps, hermes]` + tes pin (`7df86d2`), concurrency
+cancel-in-progress (commit pengguna `e7e170b`), tes sccache hermetis
+(`ffab4f1`), `rustup update stable` untuk MSRV (`0d53bd9`), setup-python job
+test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
+(`30dc775`). Tidak ada merge; tidak ada pengubahan bukti/evidence lama.
+
+### Wayfinder Spec017 — wawancara ronde 1 + charting peta keputusan (selesai)
+
+- Wawancara breadth-first (grilling) ronde 1 via UI; pengguna memilih semua
+  rekomendasi: (Q1) destinasi = penutupan T12/T13 lengkap + acceptance
+  eksplisit, merge terpisah; (Q2) urutan picker residu → wizard → completion
+  → kelengkapan T12 → acceptance; (Q3) acceptance bertahap per area;
+  (Q4) completion = Rust inline dropdown + bukti terpinn.
+- Prasyarat charting dikerjakan: bagian **Wayfinding operations** ditambahkan
+  ke `agent-support/guidance/issue-tracker.md` (identitas file, parent map,
+  label `wayfinder:*`, Owner-as-claim, Blocked-by, frontier, resolusi
+  bertanggal) — commit `c2b3ade` ter-push.
+- Insiden metadata Git di awal sesi: branch ref lokal sempat mundur ke basis
+  `5617ab8` sementara file kerja utuh; diverifikasi `git diff` worktree vs
+  remote hanya beda dokumen baru, lalu metadata diselaraskan soft (tanpa
+  menyentuh file), commit `00e0151` yang divergen digantikan `c2b3ade` di atas
+  `7639e90`; hook auto-push sempat hilang dan diinstal ulang. Tidak ada
+  force-push; bukti diverifikasi sebelum penyelarasan, sesuai panduan handoff.
+- Peta dibuat: `.scratch/hermes-rs-total-parity/issues/WAYFINDER-spec017-closure.md`
+  (Destination/Notes terisi dari Q1–Q4; Decisions-so-far kosong; fog: detail
+  dropdown, fixture resize/long-list, batas bukti full-CLI; out of scope:
+  OAuth/backend/registry dan merge).
+- Tiket keputusan dibuat dan di-wire: **W1** research referensi resize/
+  long-list/clear-filter (AFK, inline), **W2** kontrak parity resize (grilling,
+  diblok W1), **W3** batas medan nested wizard (grilling), **W4** kontrak
+  referensi completion (grilling). Frontier: W1, W3, W4 (terbuka, tak
+  terblokir, belum di-claim). Sesuai skill: charting tidak meresolusi tiket;
+  maksimal satu tiket non-research per sesi berikutnya.
+
+### Wayfinder Spec017 — semua tiket keputusan W1–W4 CLOSED
+
+- **W1** (research inline, AFK): perilaku referensi `_curses_browse` terpinn —
+  resize satu frame redraw + clamp minimal + "Terminal too small" keluar saat
+  <5×40; daftar panjang kursor modulo + scroll minimal; clear-filter reset
+  cursor/offset ke 0. Bukti: `docs/hermes-ui-spec/017/evidence/upstream-browse-control/`.
+- **W2** (grilling): parity PENUH ketiga perilaku + tiga live gate baru pola
+  RED→GREEN; fallback resize capture-only wajib beralasan tercatat.
+- **W3** (grilling): batas frame-vs-model medan wizard (nested model-only via
+  tes unit/registry, secret tak pernah dicapture); matriks T12 per section ×
+  {normal, cancel} + unavailable-feature; vendoring setup.py = tugas bukti
+  terpisah terblokir jaringan.
+- **W4** (grilling): referensi completion = rekaman PTY Python v0.21.0 dari
+  mesin pengguna (tugas pengguna); matriks 4 kasus × 2 lebar; satu live gate
+  deterministik + capture berdampingan.
+- Peta final memuat lane eksekusi: picker residu → wizard V1 → completion →
+  kelengkapan T12 → acceptance bertahap (Q3). Semua ter-push.
+
+### Lane 1 Spec017 (picker residu W2) — implementasi selesai, menunggu run hijau
+
+- **RED** `b494990`: gate live browse-control (5 skenario × 2 lebar) + ekstensi
+  harness (`@resize WxH` mengirim SIGWINCH tengah-capture; seed 30 sesi
+  deterministik) + wiring CI (11 gate; matriks regresi workflow diperluas).
+  Observasi RED utuh terhalang infrastruktur: run `34902358798` kena bug
+  toolchain usang di worker baru (1.85.1 < MSRV 1.88, diperbaiki `755368f`
+  lewat `rustup which cargo`) lalu dibatalkan konkurensi; run `34903500251`
+  langkah pickernya dibatalkan pada 10m32s; rerun ditolak GitHub.
+- **GREEN** `a916b73` + `ccf157b`: implementasi parity `_curses_browse` —
+  geometri resize diperbarui (+ fallback polling `terminal::size()` per tick),
+  "Terminal too small" mid-sesi, kursor modulo, `scroll_offset` stateful
+  clamp minimal, Esc dua tahap, reset kursor/offset pada mutasi filter.
+  Tes unit Rust baru: wrap modulo, clamp minimal, jendela stateful.
+- **Diagnosis run `34904643455`** (fmt=failure picker=failure; log/artifact
+  tak terunduh): direproduksi lokal lewat biner mock yang meniru perilaku
+  port Rust melewati harness+checker asli — 10/10 kasus PASS setelah tiga
+  koreksi: (1) kontrak footer = cursor+1/total, jadi pasca-clear-filter
+  '1/2 sessions' bukan '2/2' (marker mustahil → timeout); (2) dua assert
+  panjang + panggilan frame_lines dilipat persis keluaran cargo fmt
+  (diverifikasi dari diff konten commit `0b91118`); (3) fallback ukuran.
+- **Insiden `0b91118`**: commit pihak lain "format via cargo fmt" menghapus
+  semua newline session_picker.rs (file jadi satu baris raksasa, modul tak
+  berkompilasi). Digabung di `3917834` dengan resolusi mengambil modul utuh
+  + perbaikan fmt yang benar; tidak ada force-push.
+- Run `34909647469`: fmt=success clippy=success, test gagal karena korupsi
+  cache sccache di worker hermes-8 ("extern location for futures does not
+  exist") — kerusakan lingkungan sisa run terbatalkan, bukan kode. Commit ini
+  memicu run baru; pool 8 worker + timeout job-1 10 menit aktif.
+
+### Lane 2 Spec017 (wizard V1, W3) — gate bukti field terrender, hijau penuh
+
+- **Kontrak W3**: setiap prompt/label/value yang dirender wizard per section
+  frame harus muncul berurutan (byte order) dalam capture PTY; data nested
+  model-only dibuktikan tes unit; secret tidak pernah masuk capture.
+- **Implementasi** (`6800ce7`): 4 skenario baru `capture_ui.py` (`wizard-model-fields`,
+  `wizard-model-cancel`, `wizard-docker-image`, `wizard-gateway-cancel`);
+  checker `check_wizard_fields.py` (marker berurutan + hasil terlarang +
+  nilai ketikan `parity-fixture` tergema) dengan 10 unit test sintetis;
+  gate live `test_wizard_fields.py`; wiring ci.yml (checks di job regresi,
+  live di rantai step picker, artifact `wizard-fields.json` +
+  `picker-browse-control.json`); matriks regresi workflow diperluas ke
+  12 dimensi (36 tes). Suite lokal: 167 tes, hanya 12 error baseline
+  `HERMES_PICKER_BINARY` (pola lolos di CI).
+- **Insiden infra beruntun sebelum hijau**: run `34912294831` picker dapat
+  rustc 1.85.1 usang (MSRV < 1.88) → perbaikan akar `3e8aae9`: step install
+  kini memverifikasi MSRV ≥ 1.88 dengan fallback toolchain terpasang terbaru
+  + pin bin toolchain aktif ke `$GITHUB_PATH` untuk semua step berikutnya;
+  run `34913693773` "No space left on device" (disk worker); run
+  `34914080868` worker hilang mid-clippy; run `34914484351` runner putus
+  komunikasi mid cargo-test. Semua insiden lingkungan, bukan kode.
+- **GREEN run `34916506533`** (`2caf87f`): fmt=clippy=test=picker=success,
+  214 tes cargo, 12 gate live termasuk 4 wizard; job regresi 36 tes hijau.
+  Bukti lintasan: Lane 2 commit → hardening `3e8aae9` → retry `a09ac9c`,
+  `bcd68a5`, `2caf87f`.
+- **Berikutnya**: Lane 3 completion (menunggu rekaman referensi Python dari
+  pengguna per W4-Q1), lalu kelengkapan T12 dan acceptance bertahap.
+
+### Lane 3 Spec017 (completion, W4 sisi Rust) — gate evidence inserksi, hijau penuh
+
+- **Kontrak W4 (sisi Rust)**: completion dibuktikan lewat permukaan PTY yang
+  terrender — welcome REPL, Tab menyisipkan kandidat unik/pertama (urutan
+  registri), ghost text tanpa Tab, skill terseeded, dan completion yang
+  diterima membuka UI berikutnya. Perbandingan byte dengan rekaman Python
+  menunggu rekaman referensi pengguna (W4-Q1).
+- **Implementasi** (`6c2239e`): 5 skenario REPL di `capture_ui.py`
+  (`completion-command`, `-alternatives`, `-subcommand`, `-ghost`,
+  `-picker-open`), seeding `$HERMES_HOME/skills/demo-skill`, section bukti
+  'completion'; checker `check_completion_dropdown.py` (marker berurutan +
+  hasil terlarang) dengan 14 unit test sintetis; gate live
+  `test_completion_dropdown.py`; wiring ci.yml (checks, live, artifact
+  `completion-dropdown.json`); matriks regresi workflow 13 dimensi.
+- **RED run `34921676422`** (informatif): semantik nyata rustyline — Tab
+  menyisipkan kandidat PERTAMA urutan registri (menu tidak terrender di
+  permukaan capture); ESC browse picker dua-tahap. Perbaikan `818ebe6`.
+- **RED run `34923837446`** (tinggal 1 skenario × 2 lebar): skills
+  diselesaikan di TOKEN PERTAMA (`/skills <x>` hanya menawarkan subcommand;
+  marker 'search' palsu kena teks bantuan; prefix '/de' terbayangi
+  deny/debug). Perbaikan `953890c`: `/skills sea`→'search', `/demo`→
+  'demo-skill'.
+- **GREEN run `34925228949`** (`953890c`): fmt=clippy=test=picker=success,
+  214 tes cargo, 13 gate live termasuk 5 completion × 2 lebar; job regresi
+  36 tes hijau.
+- **Berikutnya**: kelengkapan T12 (§J.7 pasangan empat area + rekaman mentah
+  + metadata repro) lalu acceptance bertahap per area; rekaman referensi
+  Python dari pengguna tetap dinanti untuk sisi comparison Lane 3.
+
+### T12 Spec017 — matriks wizard section x {normal, cancel} selesai, hijau penuh
+
+- **Tiket** (/implement dari peta Wayfinder item 4): §J.7 menuntut tiap step
+  wizard punya bukti normal/cancel/unavailable. Gate W3 menutup model
+  normal+cancel, terminal unavailable, gateway cancel; empat sel matriks
+  terakhir ditambahkan (hanya scripts, tanpa perubahan Rust).
+- **Implementasi** (`1c2f3a6`): skenario `wizard-terminal-local` (Local
+  terpilih → selesai TANPA prompt docker apa pun — dijaga marker terlarang),
+  `wizard-gateway-empty` (multiselect kosong → notice 'No platforms selected'
+  → selesai), `wizard-tools-accept` (konfirmasi default toolsets → selesai),
+  `wizard-tools-cancel` (ESC dari multiselect → 'Setup cancelled.').
+  `section_for` memetakan nama baru; checker 8 skenario; 8 unit test
+  sintetis baru (18 total). Review dua-sumbu inline (standar + spec) bersih.
+- **Run `34948203974`**: 7/8 wizard + semua completion lolos; satu-satunya
+  kegagalan = `completion-alternatives-80x30` menangkap 0 byte saat spawn
+  REPL (starvation worker, kasus sama hijau di dua run sebelumnya) — flake
+  infra, bukan kode.
+- **GREEN run `34949715611`** (`53971bd`): fmt=clippy=test=picker=success,
+  214 tes cargo, seluruh gate live hijau termasuk wizard 8 skenario dan
+  completion 6 skenario × 2 lebar.
+- **Sisa T12**: pasangan empat area + rekaman mentah + metadata repro —
+  termasuk bundle referensi Python Lane 3 (masih direkam di VPS).
