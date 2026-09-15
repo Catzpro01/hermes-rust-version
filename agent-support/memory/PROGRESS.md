@@ -2124,3 +2124,32 @@ test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
   `bcd68a5`, `2caf87f`.
 - **Berikutnya**: Lane 3 completion (menunggu rekaman referensi Python dari
   pengguna per W4-Q1), lalu kelengkapan T12 dan acceptance bertahap.
+
+### Lane 3 Spec017 (completion, W4 sisi Rust) — gate evidence inserksi, hijau penuh
+
+- **Kontrak W4 (sisi Rust)**: completion dibuktikan lewat permukaan PTY yang
+  terrender — welcome REPL, Tab menyisipkan kandidat unik/pertama (urutan
+  registri), ghost text tanpa Tab, skill terseeded, dan completion yang
+  diterima membuka UI berikutnya. Perbandingan byte dengan rekaman Python
+  menunggu rekaman referensi pengguna (W4-Q1).
+- **Implementasi** (`6c2239e`): 5 skenario REPL di `capture_ui.py`
+  (`completion-command`, `-alternatives`, `-subcommand`, `-ghost`,
+  `-picker-open`), seeding `$HERMES_HOME/skills/demo-skill`, section bukti
+  'completion'; checker `check_completion_dropdown.py` (marker berurutan +
+  hasil terlarang) dengan 14 unit test sintetis; gate live
+  `test_completion_dropdown.py`; wiring ci.yml (checks, live, artifact
+  `completion-dropdown.json`); matriks regresi workflow 13 dimensi.
+- **RED run `34921676422`** (informatif): semantik nyata rustyline — Tab
+  menyisipkan kandidat PERTAMA urutan registri (menu tidak terrender di
+  permukaan capture); ESC browse picker dua-tahap. Perbaikan `818ebe6`.
+- **RED run `34923837446`** (tinggal 1 skenario × 2 lebar): skills
+  diselesaikan di TOKEN PERTAMA (`/skills <x>` hanya menawarkan subcommand;
+  marker 'search' palsu kena teks bantuan; prefix '/de' terbayangi
+  deny/debug). Perbaikan `953890c`: `/skills sea`→'search', `/demo`→
+  'demo-skill'.
+- **GREEN run `34925228949`** (`953890c`): fmt=clippy=test=picker=success,
+  214 tes cargo, 13 gate live termasuk 5 completion × 2 lebar; job regresi
+  36 tes hijau.
+- **Berikutnya**: kelengkapan T12 (§J.7 pasangan empat area + rekaman mentah
+  + metadata repro) lalu acceptance bertahap per area; rekaman referensi
+  Python dari pengguna tetap dinanti untuk sisi comparison Lane 3.
