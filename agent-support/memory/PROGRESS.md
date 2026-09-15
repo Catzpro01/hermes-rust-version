@@ -2392,3 +2392,31 @@ reset by peer`. Itu keliru. Yang benar:
 - Capture `picker-status-tags` belum diambil; gate live belum pernah
   dijalankan terhadap binary hasil build.
 - PR #11 tetap terbuka tanpa merge sesuai instruksi.
+  **DIBATALKAN kemudian** — lihat entri "PR #11 DI-MERGE" di bawah.
+
+
+## 2026-09-16 — PR #11 DI-MERGE atas perintah eksplisit
+
+Pengguna membatalkan keputusan "tidak jadi merge" dan meminta merge.
+Instruksinya eksplisit, jadi aturan "jangan merge tanpa izin" terpenuhi.
+
+- **Merge commit `8ad14a7`** (`8ad14a74c9e5aa9020933993c1b0bdac0d36e579`),
+  `mergedAt 2026-09-15T18:33:14Z`. Metode **merge commit** (bukan squash)
+  dipilih agar 6 commit bercatatan bukti tetap utuh di history `main`.
+- `main` HEAD sebelum merge `a008e52` → sesudah `8ad14a7`.
+  Terverifikasi: `git merge-base --is-ancestor 285760e origin/main` → ya.
+- `main` **tidak diproteksi** (tidak ada required status check), dan ketiga
+  metode merge diizinkan repo. Tidak ada yang perlu di-bypass.
+- Check pada HEAD saat merge **hijau**: `vps-baremetal/fast-ci` = success,
+  "All fast checks passed via make check in 106s!". `mergeStateStatus`
+  `UNSTABLE` berasal dari run Actions yang antre/dibatalkan, bukan kegagalan.
+
+### Risiko yang ikut masuk ke main — harus ditindaklanjuti
+
+- **`make fmt` dan `make clippy` tetap belum pernah dijalankan** terhadap
+  perubahan opsi C. Ini risiko yang sudah saya nyatakan sebelum merge dan
+  sekarang sudah berada di `main`. `make check` hanya `cargo check`.
+- Capture `picker-status-tags` belum diambil, jadi gate live ke-14 belum
+  pernah dijalankan terhadap binary hasil build.
+- Tiket W5 **masih OPEN**: kontraknya menyatakan status hanya boleh CLOSED
+  lewat pertukaran langsung dengan pengguna. Merge bukan konfirmasi opsi C.

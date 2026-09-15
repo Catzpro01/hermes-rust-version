@@ -527,3 +527,10 @@ Next: resize/long-list/clear-filter, the documented `Active`/`ID` adaptations, a
 fixture that exercises the interrupted/error/empty inks live, then wizard V1 and
 the completion-dropdown product decision. No whole-picker PASS, new adaptation,
 acceptance, or merge.
+- **PR #11 SUDAH DI-MERGE** (2026-09-16, atas perintah eksplisit pengguna,
+  membatalkan keputasan "tidak jadi merge" sebelumnya). Merge commit
+  `8ad14a7`; `main` HEAD = `8ad14a7`; metode merge commit sehingga 6 commit
+  bercatatan bukti tetap utuh. **Risiko yang ikut masuk `main`:** `make fmt`
+  dan `make clippy` tetap belum pernah dijalankan terhadap opsi C, dan
+  capture `picker-status-tags` belum diambil. Tiket W5 masih OPEN — merge
+  bukan konfirmasi opsi C.
