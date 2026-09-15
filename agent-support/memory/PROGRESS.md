@@ -2096,3 +2096,31 @@ test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
   cache sccache di worker hermes-8 ("extern location for futures does not
   exist") — kerusakan lingkungan sisa run terbatalkan, bukan kode. Commit ini
   memicu run baru; pool 8 worker + timeout job-1 10 menit aktif.
+
+### Lane 2 Spec017 (wizard V1, W3) — gate bukti field terrender, hijau penuh
+
+- **Kontrak W3**: setiap prompt/label/value yang dirender wizard per section
+  frame harus muncul berurutan (byte order) dalam capture PTY; data nested
+  model-only dibuktikan tes unit; secret tidak pernah masuk capture.
+- **Implementasi** (`6800ce7`): 4 skenario baru `capture_ui.py` (`wizard-model-fields`,
+  `wizard-model-cancel`, `wizard-docker-image`, `wizard-gateway-cancel`);
+  checker `check_wizard_fields.py` (marker berurutan + hasil terlarang +
+  nilai ketikan `parity-fixture` tergema) dengan 10 unit test sintetis;
+  gate live `test_wizard_fields.py`; wiring ci.yml (checks di job regresi,
+  live di rantai step picker, artifact `wizard-fields.json` +
+  `picker-browse-control.json`); matriks regresi workflow diperluas ke
+  12 dimensi (36 tes). Suite lokal: 167 tes, hanya 12 error baseline
+  `HERMES_PICKER_BINARY` (pola lolos di CI).
+- **Insiden infra beruntun sebelum hijau**: run `34912294831` picker dapat
+  rustc 1.85.1 usang (MSRV < 1.88) → perbaikan akar `3e8aae9`: step install
+  kini memverifikasi MSRV ≥ 1.88 dengan fallback toolchain terpasang terbaru
+  + pin bin toolchain aktif ke `$GITHUB_PATH` untuk semua step berikutnya;
+  run `34913693773` "No space left on device" (disk worker); run
+  `34914080868` worker hilang mid-clippy; run `34914484351` runner putus
+  komunikasi mid cargo-test. Semua insiden lingkungan, bukan kode.
+- **GREEN run `34916506533`** (`2caf87f`): fmt=clippy=test=picker=success,
+  214 tes cargo, 12 gate live termasuk 4 wizard; job regresi 36 tes hijau.
+  Bukti lintasan: Lane 2 commit → hardening `3e8aae9` → retry `a09ac9c`,
+  `bcd68a5`, `2caf87f`.
+- **Berikutnya**: Lane 3 completion (menunggu rekaman referensi Python dari
+  pengguna per W4-Q1), lalu kelengkapan T12 dan acceptance bertahap.
