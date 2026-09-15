@@ -18,6 +18,8 @@ welcome frame must render first, then the completion surface:
   `demo-skill` from `$HERMES_HOME/skills/`;
 * ghost text — the hinter renders the remainder `nality` of the unique
   completion `/personality` while only `/perso` is typed, without Tab;
+* no match — '/zzzz' matches nothing: Tab rings the terminal bell and
+  inserts no candidate (the positive byte evidence of an empty set);
 * accepted completion opens the next UI — Enter on the completed
   `/sessions` line opens the browse picker (`Browse sessions`).
 
@@ -34,7 +36,7 @@ import sys
 
 SCENARIOS = ('completion-command', 'completion-alternatives',
              'completion-subcommand', 'completion-ghost',
-             'completion-picker-open')
+             'completion-picker-open', 'completion-no-match')
 WELCOME = 'Welcome to Hermes Agent!'
 
 # Ordered rendered markers per scenario (welcome frame first, then the
@@ -44,6 +46,7 @@ FIELDS = {
     'completion-alternatives': [WELCOME, '/save', '/skin'],
     'completion-subcommand': [WELCOME, '/skills search', 'demo-skill'],
     'completion-ghost': [WELCOME, '/perso', 'nality'],
+    'completion-no-match': [WELCOME, '/zzzz', '\x07'],
     'completion-picker-open': [WELCOME, '/sessions', 'Browse sessions'],
 }
 # Unordered frame requirements (currently none: the menu surface is not
@@ -55,6 +58,7 @@ FORBIDDEN = {
     'completion-alternatives': ['Browse sessions'],
     'completion-subcommand': ['Browse sessions'],
     'completion-ghost': ['Browse sessions'],
+    'completion-no-match': ['Browse sessions'],
     'completion-picker-open': [],
 }
 

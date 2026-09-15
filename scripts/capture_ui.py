@@ -258,6 +258,11 @@ def steps_for(name, side):
             # (The browse picker's ESC is two-stage and the REPL stays up,
             # so no clean process exit exists inside this scenario.)
             return [(welcome, '/sessio\t'), ('/sessions', '\r'), ('Browse sessions', None)]
+        if name == 'completion-no-match':
+            # '/zzzz' matches no command/skill/path: Tab rings the bell and
+            # inserts nothing — the positive byte evidence of an empty
+            # candidate set (observed in run 34923837446).
+            return [(welcome, '/zzzz\t'), ('\x07', '\x15/exit\r'), ('@exit', None)]
     return [('@exit', None)]
 
 

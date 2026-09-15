@@ -80,6 +80,15 @@ class CompletionDropdownCheckerTests(unittest.TestCase):
         problems = case_problems(record, 'completion-command')
         self.assertTrue(any('must not reach it' in p for p in problems), problems)
 
+    def test_no_match_rings_the_bell_and_inserts_nothing(self):
+        record = make_record([WELCOME, '/zzzz\t', '\x07\n'])
+        self.assertEqual(case_problems(record, 'completion-no-match'), [])
+
+    def test_no_match_without_bell_fails(self):
+        record = make_record([WELCOME, '/zzzz\t\n'])
+        problems = case_problems(record, 'completion-no-match')
+        self.assertTrue(any("'\\x07'" in p for p in problems), problems)
+
     def test_capture_error_is_reported_not_judged(self):
         problems = case_problems({'error': 'timeout waiting for marker'},
                                  'completion-ghost')
