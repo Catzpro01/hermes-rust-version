@@ -29,6 +29,10 @@ SID_B = '660f8400-e29b-41d4-a716-446655440001'
 # Requested explicitly by the size-contract capture; never part of the default
 # matrix, so the existing bundles keep their exact case list.
 PICKER_SIZE_CASES = ('picker-narrow', 'picker-too-small')
+# Spec017 W5: the lifecycle-status fixture (the four tags the pinned reference
+# can render, two of them `interrupted` for two different reasons). Same rule
+# as the size cases: opt-in per capture, never the default matrix.
+PICKER_LIFECYCLE_CASES = ('picker-status-tags',)
 CASES = ('wizard-mode', 'wizard-full', 'wizard-blank', 'wizard-quick',
          'wizard-model', 'wizard-terminal', 'wizard-local', 'wizard-docker',
          'wizard-gateway', 'wizard-gateway-empty', 'wizard-gateway-token',
@@ -215,6 +219,9 @@ def steps_for(name, side):
     if name == 'picker-too-small': return [('Terminal too small', None)]
     if name == 'picker-narrow': return [('Browse sessions', None)]
     if name == 'picker-normal': return [('Browse sessions', None)]
+    # W5: the frame alone is the evidence — every lifecycle tag must be
+    # readable in the first paint, before any keystroke.
+    if name == 'picker-status-tags': return [('Browse sessions', None)]
     if name == 'picker-filter': return [('Browse sessions', 'topic'), ('filter: topic', None)]
     if name == 'picker-no-match': return [('Browse sessions', 'zzzz'), ('No sessions match', None)]
     if name == 'picker-delete': return [('Browse sessions', 'd'), ('Delete', None)]
@@ -298,8 +305,74 @@ def long_list_seed(count):
             for i in range(count))
 
 
-def seed_rust(home, empty=False, count=2):
+# Spec017 W5 — one session per lifecycle shape the pinned reference
+# distinguishes, listed in the order the picker shows them (started_at DESC).
+# The shape names are the reference's own branches
+# (`hermes_state.classify_session_status`, see
+# docs/hermes-ui-spec/017/evidence/upstream-lifecycle-status/):
+#   complete               assistant reply with a normal finish_reason last
+#   user-last              last row is the user turn the agent never answered
+#   pending-tool-call      last row is an assistant row whose tool_calls never
+#                          got a result row — interrupted for a second reason
+#   error                  last row carries an error finish_reason (checked
+#                          before the role, exactly like the reference)
+#   no-messages            no message row at all -> empty
+LIFECYCLE_SEED = (
+    ('00000001-0000-4000-8000-000000000001', 'lifecycle done', 'complete'),
+    ('00000002-0000-4000-8000-000000000002', 'lifecycle user last', 'user-last'),
+    ('00000003-0000-4000-8000-000000000003', 'lifecycle pending tool', 'pending-tool-call'),
+    ('00000004-0000-4000-8000-000000000004', 'lifecycle error', 'error'),
+    ('00000005-0000-4000-8000-000000000005', None, 'no-messages'),
+)
+# The tag words `_session_status_tag` renders for those shapes, in the same
+# order, so the fixture and the expectation live next to each other: the
+# checker reads this table rather than a copy of it.
+LIFECYCLE_TAGS = ('done', 'intr', 'intr', 'err', 'empty')
+
+
+def lifecycle_rows():
+    """(session id, message rows) per lifecycle shape, as raw SQL inputs.
+
+    `messages.tool_calls` / `messages.finish_reason` are exactly the columns
+    the pinned reference reads (`m.tool_calls IS NOT NULL`, `m.finish_reason`);
+    a Rust-written database has neither, which is why the shapes are described
+    by name here instead of by SQL clauses.
+    """
+    rows = []
+    for sid, name, shape in LIFECYCLE_SEED:
+        messages = [] if name is None else [('user', name, None, None)]
+        if shape == 'complete':
+            messages.append(('assistant', 'reply ' + name, None, 'stop'))
+        elif shape == 'pending-tool-call':
+            messages.append(('assistant', 'calling a tool', '[{"id":"call-1"}]', 'tool_calls'))
+        elif shape == 'error':
+            messages.append(('assistant', 'provider exploded', None, 'error'))
+        elif shape not in ('user-last', 'no-messages'):
+            raise RuntimeError(f'unknown lifecycle shape {shape!r}')
+        rows.append((sid, messages))
+    return rows
+
+
+def seed_rust(home, empty=False, count=2, lifecycle=False):
     with sqlite3.connect(home/'state.db') as db:
+        if lifecycle:
+            # The Python-shaped `messages` row the reference reads its status
+            # from: `tool_calls` and `finish_reason` exist in `~/.hermes`
+            # databases written by Hermes Python, and the port must classify
+            # from them instead of ignoring them.
+            db.executescript('''CREATE TABLE sessions(id TEXT PRIMARY KEY,source TEXT NOT NULL,started_at REAL NOT NULL);
+            CREATE TABLE messages(id INTEGER PRIMARY KEY AUTOINCREMENT,session_id TEXT NOT NULL,role TEXT NOT NULL,content TEXT,tool_calls TEXT,finish_reason TEXT,timestamp REAL NOT NULL);
+            CREATE TABLE tool_calls(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,turn_index INTEGER NOT NULL,tool_name TEXT NOT NULL,arguments TEXT NOT NULL,result TEXT,status TEXT NOT NULL,created_at REAL NOT NULL);''')
+            for i, (sid, messages) in enumerate(lifecycle_rows()):
+                # Newest first in the listing, so row order is the seed order.
+                db.execute('INSERT INTO sessions VALUES (?,?,?)',
+                           (sid, 'cli', 1700000000 + (len(LIFECYCLE_SEED) - 1 - i)))
+                for offset, (role, content, tool_calls, finish_reason) in enumerate(messages):
+                    db.execute('INSERT INTO messages(session_id,role,content,tool_calls,finish_reason,timestamp)'
+                               ' VALUES (?,?,?,?,?,?)',
+                               (sid, role, content, tool_calls, finish_reason,
+                                1700000000.5 + i + offset / 100))
+            return
         db.executescript('''CREATE TABLE sessions(id TEXT PRIMARY KEY,source TEXT NOT NULL,started_at REAL NOT NULL);
         CREATE TABLE messages(id INTEGER PRIMARY KEY AUTOINCREMENT,session_id TEXT NOT NULL,role TEXT NOT NULL,content TEXT,timestamp REAL NOT NULL);
         CREATE TABLE tool_calls(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,turn_index INTEGER NOT NULL,tool_name TEXT NOT NULL,arguments TEXT NOT NULL,result TEXT,status TEXT NOT NULL,created_at REAL NOT NULL);''')
@@ -322,7 +395,8 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
                 home = Path(tmp)
                 if name.startswith('picker') and side == 'rust':
                     seed_rust(home, name=='picker-empty',
-                              count=30 if name == 'picker-long-list' else 2)
+                              count=30 if name == 'picker-long-list' else 2,
+                              lifecycle=name=='picker-status-tags')
                 if name.startswith('completion'):
                     (home/'config.yaml').write_text('model:\n  provider: auto\n  name: parity-fixture\n')
                     if name == 'completion-subcommand':
@@ -361,11 +435,12 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
                         result['snapshot_end_byte'] = end
                         result['snapshot_rule'] = boundary + '; full later output retained unchanged'
                 print(side,name,width,result['error'] or 'CAPTURED_NOT_REVIEWED',file=sys.stderr)
-                picker_seed = ([SID_A, SID_B] if name.startswith('picker') and name != 'picker-empty'
+                picker_seed = ([sid for sid, _, _ in LIFECYCLE_SEED] if name == 'picker-status-tags'
+                               else [SID_A, SID_B] if name.startswith('picker') and name != 'picker-empty'
                                and name != 'picker-long-list'
                                else [sid for sid, _ in long_list_seed(30)] if name == 'picker-long-list'
                                else [])
-                cases.append({'id':f'{name}-{width}x30','scenario':name,'fixture':{'home':'isolated fresh temporary directory', 'credentials':'none supplied', 'docker_available':False if name=='wizard-docker' else 'not controlled', 'picker_seed':picker_seed, 'picker_seed_note':'long list uses deterministic session-00..session-29 names' if name=='picker-long-list' else None, 'picker_timestamp_base':1700000000 if name.startswith('picker') else None, 'skill_seed':'skills/demo-skill (SKILL.md with description frontmatter)' if name=='completion-subcommand' else None, 'repl_provider':'fake (offline) via --provider fake' if name.startswith('completion') else None},side:result})
+                cases.append({'id':f'{name}-{width}x30','scenario':name,'fixture':{'home':'isolated fresh temporary directory', 'credentials':'none supplied', 'docker_available':False if name=='wizard-docker' else 'not controlled', 'picker_seed':picker_seed, 'picker_seed_note':'long list uses deterministic session-00..session-29 names' if name=='picker-long-list' else 'one session per pinned lifecycle shape, listed newest first: ' + ', '.join(f'{shape}->{tag}' for (_,_,shape),tag in zip(LIFECYCLE_SEED, LIFECYCLE_TAGS)) + '; messages carry the Python-shaped tool_calls/finish_reason columns' if name=='picker-status-tags' else None, 'picker_timestamp_base':1700000000 if name.startswith('picker') else None, 'skill_seed':'skills/demo-skill (SKILL.md with description frontmatter)' if name=='completion-subcommand' else None, 'repl_provider':'fake (offline) via --provider fake' if name.startswith('completion') else None},side:result})
     return cases
 
 

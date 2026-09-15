@@ -2176,3 +2176,219 @@ test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
   completion 6 skenario × 2 lebar.
 - **Sisa T12**: pasangan empat area + rekaman mentah + metadata repro —
   termasuk bundle referensi Python Lane 3 (masih direkam di VPS).
+
+## 2026-09-16 — W5 picker status lifecycle: patch diterapkan, tiga cacat harness diperbaiki
+
+**Request:** lanjutkan dan push progress dari `01a0a493-1c05-7ccc-a6dc-983ef8d7b471.patch`,
+laporkan milestone; tetap dilarang merge tanpa perintah eksplisit.
+
+**Branch:** `arena/01a0a600-hermes-rust-version` (base `a008e52`).
+
+### Changes
+
+- Patch 7 berkas (~17,9 k baris) diterapkan bersih. Isinya murni harness
+  Spec017 W5 — fixture `picker-status-tags` di `capture_ui.py`, checker baru
+  `check_picker_status_tags.py`, dan `test_picker_status_tags_checks.py`.
+  Mayoritas baris adalah `hermes_state.py` referensi yang disematkan sebagai
+  bukti `docs/hermes-ui-spec/017/evidence/upstream-lifecycle-status/`.
+- **Tidak ada perubahan runtime Rust.** Gate sengaja dibiarkan RED: status
+  hari ini diturunkan dari `turns.is_empty()`, sehingga `intr`/`err` tak
+  pernah tercapai. Ini juga membuat keputusan tiket W5 tetap terbuka.
+- Patch dikirim rusak; tiga cacat diperbaiki: `NameError: name 'i' is not
+  defined` di `body_row()` (seluruh 10 tes error), simulasi collapse-to-`done`
+  yang tidak akurat (4 vs 3 pelanggaran), dan `tag_sgr()` yang menebak baris
+  cursor dari nilai tag, bukan posisi cursor.
+- Catatan verifikasi ditulis ke
+  `.scratch/hermes-rs-total-parity/issues/W5-picker-status-lifecycle.md`.
+
+### Verification actually performed
+
+- `python3 -m unittest discover` di `scripts/`: 202 tes, 13 error.
+- Baseline `a008e52` lewat `git worktree` terpisah: 192 tes, 13 error.
+  Selisihnya +10 tes baru, semuanya hijau, nol regresi. Worktree dibersihkan.
+- Ke-13 error identik sebelum dan sesudah: `KeyError: 'HERMES_PICKER_BINARY'`
+  pada tes PTY hidup. `cargo`/`rustc` tidak ada di sandbox; `pyte==0.8.2`,
+  `wcwidth==0.8.3`, `PyYAML==6.0.3` dipasang agar gate bisa dijalankan.
+- `PICKER_LIFECYCLE_CASES` opt-in — `CASES` default tidak berubah.
+
+### Blockers / next actions
+
+- **HITL terbuka:** tiket W5 menuntut pilihan A (pertahankan adaptasi T09) /
+  B (port penuh) / C (port bertahap, rekomendasi). Menunggu perintah.
+- Rust tidak bisa dikompilasi lokal; verifikasi sisi Rust hanya lewat CI.
+- Gate belum diikat ke CI — mengikatnya sekarang akan memerahkan CI sampai
+  runtime diubah, jadi menunggu keputusan opsi.
+- Tidak ada merge/auto-merge dan tidak ada PR yang dibuka.
+
+### Addendum 2026-09-16 — aturan push + status CI
+
+- Pengguna menegaskan ulang: **setiap pembaruan/progress langsung di-push ke
+  GitHub**. Dicatat permanen di `AGENTS.md` dan `MEMORY.md`. Konsekuensi
+  cara kerja: jangan pernah memblokir satu giliran kerja hanya untuk
+  menunggu CI selesai — push dulu, laporkan id run + statusnya apa adanya,
+  lalu periksa pada giliran berikutnya.
+- Commit `45c157a` ter-push ke `arena/01a0a600-hermes-rust-version`
+  (remote HEAD terverifikasi `45c157a49d9321c733c2c42efaa59111e11237f7`).
+  CI run `34999643594` masih **queued** pada saat entri ini ditulis; hasilnya
+  belum diklaim dan harus dibaca ulang di giliran berikutnya.
+- Fakta repo yang perlu dikoreksi dari brief: `main` tidak lagi di `07ee479`
+  melainkan di `a008e52` ("Add files via upload", 2026-09-15T16:01:35Z,
+  1 berkas = patch 847 KB), yaitu satu commit *setelah* `07ee479`
+  (`compare 07ee479...a008e52` → ahead_by 1, behind_by 0). PR #9 MERGED
+  2026-09-15T10:01:43Z; PR #10 tercatat CLOSED, bukan merged.
+- Clone sandbox ini **shallow (depth 1)**, jadi history `main` lokal terpotong
+  — jangan menyimpulkan `main` di-reset hanya dari `git log` lokal.
+
+### Addendum 2026-09-16 — diagnosis webhook VPS + Makefile untuk repo ini
+
+- Endpoint webhook `http://203.145.35.218:9000/` diuji langsung dari sandbox:
+  `curl` → **`Recv failure: Connection reset by peer`** (http_code 000,
+  < 1 ms). VPS/daemon tidak menjawab; konsisten dengan tidak munculnya status
+  `vps-baremetal/fast-ci`. **Saya tidak punya akses untuk menyalakan VPS.**
+- Status commit dibaca via `gh api .../status` (bukan tebakan):
+  - `a008e52` → `vps-baremetal/fast-ci` **pending** ("VPS compiling and running
+    fast tests..."), macet tanpa hasil.
+  - `45c157a` → `vps-baremetal/ci` **pending** ("VPS compiling and running full
+    bare-metal CI..."), macet tanpa hasil.
+  - `4709543` → `vps-baremetal/ci` **failure**, "Failed: Cargo Check failed
+    (exit 101) (5s)".
+- **`4709543` hanya berisi berkas `.md`** (AGENTS.md, MEMORY.md, PROGRESS.md) —
+  nol perubahan kode Rust. `cargo check` exit 101 dalam 5 detik pada commit
+  docs-only adalah ciri kegagalan **lingkungan daemon** (cwd salah, registry
+  offline, atau checkout tidak lengkap), BUKAN regresi kode. Penyebab pastinya
+  belum dapat dipastikan tanpa log daemon.
+- Toolchain Rust tetap tidak tersedia: `sh.rustup.rs` dan `static.crates.io`
+  gagal TLS (`SSL_ERROR_SYSCALL`) dari sandbox, sedangkan `github.com` = 200.
+  Tidak ada klaim `cargo` lokal.
+- Repo ini **tidak memiliki Makefile** sebelum commit ini. Instruksi "ubah
+  tahap pertama daemon menjadi `make check`" karenanya mustahil berlaku di
+  sini — `make` akan keluar 2 ("No targets specified and no makefile found").
+  Ditambahkan `Makefile` pembungkus yang menjalankan **persis** perintah yang
+  sudah dipakai `ci.yml` (check/fmt/clippy/test/build), sehingga satu perintah
+  daemon yang seragam bisa dipakai untuk repo ini maupun repo berbasis Make.
+  Terverifikasi dengan `make -n <target>` untuk kelima target.
+
+## 2026-09-16 — W5 opsi C: kolom status picker mengikuti classifier referensi
+
+**Keputusan:** tiket W5 HITL dijawab dengan **opsi C** (port bertahap sesuai
+bentuk data) — rekomendasi yang tertulis di tiket. Pengguna melewati
+pertanyaan konfirmasi dan meminta pekerjaan dilanjutkan, sehingga opsi
+rekomendasi dipakai; keputusan ini harus dikonfirmasi pada giliran berikutnya.
+
+### Mengapa opsi C benar — bukti, bukan asumsi
+
+Status kolom `Stat` diukur langsung dari capture berpasangan yang tersimpan
+(`evidence/picker-status-ink-19bbbd5/`), bukan dibaca dari prosa:
+
+- `picker-normal-100x30-python.ansi` baris 5 → tag **`intr`**, fg `brown`
+  (slot 3).
+- `picker-normal-100x30-rust.ansi` baris 5 → tag **`done`**, fg `00cd00`
+  (slot 2).
+
+Jadi referensi memang menggambar `intr` untuk baris yang sama; `done` adalah
+penyimpangan Rust. Ini persis "4 region span tag = perbedaan yang dinyatakan"
+dari paket itu, dan opsi C menutupnya.
+
+### Changes
+
+- `hermes-core`: `SessionStatus` (`Error`/`Interrupted`/`Complete`/`Empty`) +
+  `tag()`, `classify_session_status(role, tool_calls, finish_reason)`, dan
+  `SessionStore::lifecycle_statuses()` — satu query terkelompok atas `MAX(id)`
+  per sesi, port langsung dari `session_lifecycle_statuses` referensi.
+  Kolom `tool_calls`/`finish_reason` diprobe sekali lewat
+  `PRAGMA table_info(messages)`: ada di DB bentukan Python, tidak ada di
+  bentukan Rust, sehingga `err` memang tidak dapat muncul di DB Rust.
+- `hermes-cli`: `collect_rows` memakai peta itu; tanpa pesan → `empty`.
+- Dua asersi yang mengode kata lama diperbarui ke `intr`:
+  `collect_rows_sanitizes_and_single_lines_names` dan
+  `session_picker_e2e::browse_renders_verbatim_frame...`. Keduanya men-seed
+  satu pesan `user`, yang menurut referensi = `interrupted`.
+- `docs/PARITY.md`: adaptasi T09 diganti deskripsi kontrak baru + entri baru
+  yang menyatakan statusnya masih "source only".
+
+### Verification actually performed
+
+- **Tidak ada `cargo` run yang diklaim.** Toolchain tidak tersedia
+  (`sh.rustup.rs`/`static.crates.io` gagal TLS) dan daemon webhook VPS
+  menolak koneksi, jadi bukti build/test/fmt pertama harus datang dari CI.
+- Pemeriksaan statis: keseimbangan kurung pada `store.rs` bersih sebelum
+  maupun sesudah; `session_picker_e2e.rs` identik dengan HEAD; keempat baris
+  >100 karakter di `store.rs` terbukti bawaan (string literal, L82/L134/L144/
+  L201 di HEAD). `session_picker.rs` sudah tidak seimbang menurut parser naive
+  sejak HEAD, jadi diff-nya ditinjau manual dan seimbang.
+- Python: 202 tes / 13 error, sama seperti baseline (nol regresi).
+
+### Risiko yang belum tertutup
+
+- Baris `pub use` di `session/mod.rs` dihitung 98 karakter → harus satu baris
+  untuk `cargo fmt --check`.
+- Format akhir belum terverifikasi; bila CI melaporkan drift fmt, pakai patch
+  format-recovery yang diekspor run.
+- Gate `check_picker_status_tags.py` belum pernah dijalankan terhadap binary
+  hasil build — fixture `picker-status-tags` belum di-capture.
+
+### Keputusan 2026-09-16 — PR #11 sengaja TIDAK di-merge
+
+- PR [#11](https://github.com/Catzpro01/hermes-rust-version/pull/11)
+  (`arena/01a0a600-hermes-rust-version` → `main`) dibuka atas permintaan
+  pengguna, lalu pengguna memutuskan **tidak jadi merge**.
+- Tindakan yang diambil: **tidak merge, tidak mengaktifkan auto-merge, tidak
+  menutup PR.** Terverifikasi: `state=OPEN`, `mergedAt=null`, `merged=false`,
+  `autoMergeRequest=null`, dan `refs/heads/main` tetap di `a008e52`.
+- PR dibiarkan terbuka sebagai tempat review; head-nya `f3894b64`.
+- Status `UNSTABLE` pada PR **bukan** karena kode branch ini: berasal dari
+  check `vps-baremetal/fast-ci` yang gagal "Cargo Check failed (exit 101)
+  (3s)" — dan check yang sama sudah gagal pada commit yang tidak menyentuh
+  Rust sama sekali. Jangan dibaca sebagai regresi.
+- Sebelum PR ini layak di-merge, masih harus ada: runner yang hidup →
+  `cargo fmt` + `clippy -D warnings` + `cargo test` hijau → capture nyata
+  `picker-status-tags`. Sampai kini nol bukti build untuk perubahan Rust.
+
+## 2026-09-16 — opsi C TERVERIFIKASI di VPS; koreksi kesimpulan "VPS mati"
+
+### Hasil verifikasi nyata (bukan prediksi)
+
+- **`make check` = exit 0.** Status commit `a4d96bb`:
+  `vps-baremetal/fast-ci` = **success**, *"All fast checks passed via make
+  check in 65s!"* (dibaca via `gh api .../status`). Membuktikan tiga hal:
+  daemon VPS sudah memakai `make check`, `Makefile` yang ditambahkan bekerja,
+  dan workspace terkompilasi bersih.
+- **`tests/session_picker_e2e.rs`: 7 passed, 0 failed** — dilaporkan pengguna
+  dari VPS, belum direproduksi mandiri (sandbox tanpa toolchain Rust).
+- Tes lokal: seluruh suite Python **203 tes / 14 error**, semuanya
+  `KeyError: 'HERMES_PICKER_BINARY'` pada tes live PTY (termasuk
+  `test_picker_status_tags.py` yang baru). `test_ci_workflow` **36/36 lolos**
+  setelah didaftarkan gate ke-14.
+
+### Koreksi — kesimpulan saya sebelumnya salah
+
+Saya mencatat "VPS/daemon tidak menjawab" berdasarkan `curl` → `connection
+reset by peer`. Itu keliru. Yang benar:
+
+- Sandbox ini **tidak bisa membuka koneksi TCP** ke `203.145.35.218:9000`
+  (reset seketika = pembatasan egress), sedangkan daemon **berjalan**.
+- `curl` dari sandbox **bukan** alat ukur yang sah untuk kesehatan VPS.
+  Pakai `gh api repos/.../commits/<sha>/status`.
+- Kegagalan lama "Cargo Check failed (exit 101) (3s)" pada
+  `4709543`/`5800741`/`2d36af9` adalah status **basi** yang diposting sebelum
+  daemon dialihkan ke `make check`; status lama tidak ditulis ulang. Bukan
+  regresi kode.
+- **Actions (self-hosted, `runs-on: [self-hosted, vps, hermes]`) memang masih
+  antre lalu dibatalkan** — itu terpisah dari kesehatan daemon webhook.
+
+### Perubahan dalam checkpoint ini
+
+- `scripts/test_picker_status_tags.py`: tes live baru (pola sama dengan
+  `test_picker_status_ink.py`), diikat di `ci.yml` **di akhir** urutan gate
+  sengaja agar tes regresi tidak perlu re-indentasi besar.
+- `scripts/test_ci_workflow.py`: gate ke-14 didaftarkan — 15 tuple × 14
+  elemen, skrip python palsu, env `TAGS`, ekspektasi returncode, dan asersi
+  terdalam. Diverifikasi lokal: 36/36 lolos.
+
+### Belum tertutup
+
+- `make fmt` (`cargo fmt --all -- --check`) dan `make clippy`
+  (`-D warnings`) belum pernah dijalankan terhadap perubahan opsi C.
+- Capture `picker-status-tags` belum diambil; gate live belum pernah
+  dijalankan terhadap binary hasil build.
+- PR #11 tetap terbuka tanpa merge sesuai instruksi.

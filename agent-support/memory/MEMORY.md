@@ -8,6 +8,13 @@ user's private Python installation.
 
 - Always commit progress notes with meaningful work and push to GitHub on
   the branch assigned to the active session.
+- **Confirmed again 2026-09-16 — push on every update.** Setiap pembaruan
+  atau progress, sekecil apa pun, langsung di-commit dan di-push ke branch
+  sesi. Jangan menahan tree yang belum ter-push, dan jangan menggabung
+  beberapa progress jadi satu push besar. Push selalu diizinkan; merge tetap
+  butuh perintah eksplisit. Jangan blokir giliran kerja hanya untuk menunggu
+  CI selesai — push, laporkan id run beserta statusnya saat itu, dan periksa
+  CI pada giliran berikutnya.
 - Inherit skills and memory: read the tracked context and previous progress
   before continuing, and leave a usable handoff for the next agent.
 - Fix errors found in scope and verify the fixes. Report environmental
@@ -30,6 +37,38 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- **W5 picker status lifecycle — harness delivered, gate deliberately RED**
+  (sesi `arena/01a0a600`, 2026-09-16): patch `01a0a493…` diterapkan bersih
+  (fixture `picker-status-tags` + checker + 10 tes). Patch dikirim rusak;
+  tiga cacat diperbaiki (`NameError: i` di `body_row()`, simulasi
+  collapse-to-`done` yang overstate 1 baris, `tag_sgr()` menebak cursor dari
+  nilai tag). 202 tes / 13 error vs baseline 192 / 13 → +10 hijau, nol
+  regresi; ke-13 error = `HERMES_PICKER_BINARY` (cargo absen di sandbox).
+- **W5 opsi C diimplementasi namun BELUM TERVERIFIKASI** (`2d36af9`): kolom
+  `Stat` kini mengikuti `classify_session_status` referensi atas baris pesan
+  terakhir. Dasarnya ukuran langsung, bukan prosa: capture berpasangan
+  `picker-status-ink-19bbbd5` menunjukkan Python menggambar `intr` (slot 3)
+  di baris yang sama tempat Rust menggambar `done` (slot 2). **Nol bukti
+  build/test/fmt** — lihat bloker infra di bawah.
+- **Jalur verifikasi yang SAH (dikoreksi 2026-09-16).** Daemon webhook VPS
+  **berjalan** dan sudah memakai `make check`: status `a4d96bb` =
+  `vps-baremetal/fast-ci` **success** "All fast checks passed via make check
+  in 65s!". Cara bacanya: `gh api repos/Catzpro01/hermes-rust-version/
+  commits/<sha>/status`.
+  **Jangan** menyimpulkan kesehatan VPS dari `curl` ke `203.145.35.218:9000`:
+  sandbox ini tidak bisa membuka koneksi TCP ke sana (reset seketika =
+  pembatasan egress), jadi `curl` selalu gagal meski daemon sehat. Saya
+  pernah salah menyimpulkan "VPS mati" dari itu.
+- Status lama "Cargo Check failed (exit 101) (3s)" pada `4709543`/`5800741`/
+  `2d36af9` adalah status **basi** dari sebelum daemon dialihkan ke
+  `make check`; status commit lama tidak ditulis ulang. Bukan regresi kode.
+- **Actions terpisah dari daemon webhook:** `ci.yml` memakai
+  `runs-on: [self-hosted, vps, hermes]` dan run-run-nya masih antre lalu
+  dibatalkan. Jangan menonaktifkan trigger Actions sebelum jalur ini atau
+  daemon benar-benar hijau.
+- Target `make` yang tersedia: `check` (terverifikasi hijau), `fmt`,
+  `clippy`, `test`, `build`. `fmt` dan `clippy` **belum** pernah dijalankan
+  terhadap perubahan opsi C.
 - **Picker selected-row slice delivered**: fix `ee11541` (tested patch 1171 B
   `8eed758f…`: `Color::DarkGreen` + bold replaces reverse video), RED `34866264371`
   → GREEN `34866921566` → capture `34868306211` (bundle `fe8bc2c2…`, 10 cases) →

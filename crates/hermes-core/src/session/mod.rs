@@ -3,4 +3,4 @@
 mod id;
 mod store;
 pub use id::SessionId;
-pub use store::{Session, SessionStore, SessionStoreError};
+pub use store::{classify_session_status, Session, SessionStatus, SessionStore, SessionStoreError};

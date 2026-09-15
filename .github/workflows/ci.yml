@@ -202,6 +202,7 @@ jobs:
           PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-browse-control.json python3 scripts/test_picker_browse_control.py 2>&1 | tee -a picker-position.log
           PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=wizard-fields.json python3 scripts/test_wizard_fields.py 2>&1 | tee -a picker-position.log
           PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=completion-dropdown.json python3 scripts/test_completion_dropdown.py 2>&1 | tee -a picker-position.log
+          PYTHONPATH="$QA" HERMES_PICKER_BINARY=target/debug/hermes-rs HERMES_PICKER_RECORDING=picker-status-tags.json python3 scripts/test_picker_status_tags.py 2>&1 | tee -a picker-position.log
 
       # Small self-hosted runners (2 core / 2 GB) need OOM visibility. Capture
       # memory and any kernel OOM kills; dmesg may be unreadable without root,

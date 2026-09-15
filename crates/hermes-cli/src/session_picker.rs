@@ -10,9 +10,16 @@
 //! Deliberate adaptations (no Python source for these details in §F):
 //! * `sid` shows the first 8 hex chars of the UUID (Python session ids are
 //!   short; a full 36-char UUID would not fit an 80-column picker).
-//! * `status` is `done` for any session with messages and `empty` otherwise —
-//!   Hermes-RS never recorded `interrupted`/`error` lifecycle states, so
-//!   `intr`/`err` cannot be distinguished (column kept for parity).
+//! * `status` follows the reference's own lifecycle classifier over a
+//!   session's **last message row** (`hermes_state.classify_session_status`,
+//!   pinned at `docs/hermes-ui-spec/017/evidence/upstream-lifecycle-status/`):
+//!   an error `finish_reason` gives `err`, an unanswered turn — a user/tool row
+//!   or an assistant row whose tool call has no result — gives `intr`, any other
+//!   last row gives `done`, and a session with no message row gives `empty`.
+//!   `finish_reason` and `tool_calls` are read only when the database carries
+//!   them (databases written by Hermes Python do, ones this crate creates do
+//!   not), so on a Rust-created database `err` cannot arise — exactly as in the
+//!   reference, which has no other source for it either.
 //! * `name` is the first user message (single-lined); Hermes-RS has no
 //!   session titles yet, so there is no title half of `Title / Preview`.
 //! * The cursor row is painted with palette slot 2 + bold, and every row that
@@ -35,7 +42,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::Context;
 use crossterm::style::Color;
-use hermes_core::session::{SessionId, SessionStore};
+use hermes_core::session::{SessionId, SessionStatus, SessionStore};
 
 use crate::output::sanitize_untrusted_output;
 
@@ -227,6 +234,10 @@ pub struct SessionRow {
 pub fn collect_rows(store: &SessionStore) -> anyhow::Result<Vec<SessionRow>> {
     let now = now_secs();
     let mut rows = Vec::new();
+    // One grouped query for every session, not one per row: the status is
+    // derived from each session's last message row exactly as the reference
+    // does it. A session absent from the map has no messages at all.
+    let statuses = store.lifecycle_statuses()?;
     for id in store.list()? {
         let session = store.resume(&id)?;
         let name = session
@@ -262,11 +273,11 @@ pub fn collect_rows(store: &SessionStore) -> anyhow::Result<Vec<SessionRow>> {
         rows.push(SessionRow {
             id,
             name,
-            status: if session.turns.is_empty() {
-                "empty"
-            } else {
-                "done"
-            },
+            status: statuses
+                .get(&full)
+                .copied()
+                .unwrap_or(SessionStatus::Empty)
+                .tag(),
             msgs: session.turns.len(),
             last_active: relative_active(now, last),
             source: sanitize_untrusted_output(&session.source),
@@ -1091,7 +1102,9 @@ mod tests {
             rows[0].name, "line one line two red",
             "newlines folded, ANSI stripped"
         );
-        assert_eq!(rows[0].status, "done");
+        // The session's last (and only) row is the user turn the agent never
+        // answered, which the reference classifies as `interrupted`.
+        assert_eq!(rows[0].status, "intr");
         assert_eq!(rows[0].msgs, 1);
         assert_eq!(rows[0].sid.len(), 8);
     }

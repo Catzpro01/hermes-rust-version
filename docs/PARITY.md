@@ -283,7 +283,15 @@ that requirement without explicit approval. See the
 | Session delete | `d` + `[y/N]` in picker | Same, default-deny, cascade delete | ✅ |
 
 Documented picker adaptations (§F): 8-char `sid` for UUIDv7
-collision headroom; `done`/`empty` status words (T09 decision). The historical
+collision headroom. The `Stat` column is **no longer** an adaptation: it now
+follows the reference's own lifecycle classifier over each session's last
+message row (`done`/`intr`/`err`/`empty`, pinned at
+`docs/hermes-ui-spec/017/evidence/upstream-lifecycle-status/`), reading
+`finish_reason`/`tool_calls` when the database carries them — databases written
+by Hermes Python do, ones Hermes-RS creates do not, so `err` cannot arise on a
+Rust-created database, exactly as in the reference. The T09 decision this
+replaces recorded the opposite: `done` for any session with messages and `empty`
+otherwise, with `intr`/`err` unreachable. The historical
 comparison said Python used 6 chars and no status; the pinned UI capture actually
 shows 18 chars and `intr`. This corrects that description, not the adaptation
 allowlist. Other existing adaptations: preview shows source/row names;
@@ -576,3 +584,43 @@ Standards/Spec review:0 new hard violations,1 nonblocking duplicated-runner/setu
 observation; filter/column headers, selection/delete/no-match styles, other layout,
 wizard/completion and T12 coverage remain open. No resize/clear-filter/long-list
 claims, new adaptation, whole-picker acceptance, closure or merge.
+
+### Lifecycle status column (W5) — source change, capture still owed
+
+The picker's `Stat` column stopped being the T09 adaptation (`done` for any
+session with messages, `empty` otherwise) and now derives its value from each
+session's **last message row**, the way the pinned reference does
+(`hermes_state.classify_session_status`, retained at
+`docs/hermes-ui-spec/017/evidence/upstream-lifecycle-status/`):
+
+| Last message row | Tag |
+|---|---|
+| `finish_reason` in `error`/`agent_error`/`content_filter` (checked before role) | `err` |
+| role `user` or `tool` | `intr` |
+| role `assistant` carrying `tool_calls` | `intr` |
+| any other row | `done` |
+| no message row at all | `empty` |
+
+`finish_reason` and `tool_calls` are read only when the database carries them,
+probed once with `PRAGMA table_info(messages)`. Databases written by Hermes
+Python have both columns; the schema Hermes-RS creates
+(`crates/hermes-core/src/session/store.rs`) has neither, so on a Rust-created
+database only the role rules apply and `err` cannot arise — the reference has no
+other source for it either. This is option C of
+`.scratch/hermes-rs-total-parity/issues/W5-picker-status-lifecycle.md`.
+
+Consequence for existing evidence: every seeded fixture row whose last message
+is a user turn flips from `done` to `intr`. The retained paired capture shows
+Python drawing `intr` in palette slot 3 on exactly those rows
+(`evidence/picker-status-ink-19bbbd5/`), so the flip moves Rust toward the
+reference and narrows the four declared tag-span differences recorded in that
+packet.
+
+Status of this change: **source only.** `classify_session_status` gained unit
+tests and the two assertions that encoded the old words were updated, but no
+`cargo` run is claimed — the toolchain is unavailable in this sandbox and the
+VPS webhook daemon is failing, so the first build/test/fmt evidence will come
+from CI. The live gate `scripts/check_picker_status_tags.py` (fixture
+`picker-status-tags`, one session per lifecycle shape) is committed and its
+10 decoder tests pass locally, but it has **not** yet run against a built
+binary.

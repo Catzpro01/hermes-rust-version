@@ -3,6 +3,7 @@ use crate::conversation::Turn;
 use crate::tools::{ToolCallRecord, ToolExecutionStatus};
 use rusqlite::{params, Connection};
 use std::{
+    collections::HashMap,
     path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -38,6 +39,71 @@ pub struct MessageDetails {
     pub role: String,
     pub content: String,
     pub timestamp: f64,
+}
+
+/// Lifecycle status of a session, as the pinned reference derives it
+/// (`hermes_state.classify_session_status`, retained verbatim at
+/// `docs/hermes-ui-spec/017/evidence/upstream-lifecycle-status/`).
+///
+/// It is derived from a session's **last message row only** — never from a
+/// transcript scan — which is the same O(1)-per-session property the reference
+/// buys with its `MAX(id)` join.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SessionStatus {
+    /// The last row's `finish_reason` is an error. The reference checks this
+    /// *before* the role, so it wins over every other branch.
+    Error,
+    /// The last row is a turn that never got an answer: a user or tool row, or
+    /// an assistant row whose tool call has no result row.
+    Interrupted,
+    /// Any other last row. The reference documents this as a benign default,
+    /// so an unrecognised shape must never make the picker panic.
+    Complete,
+    /// The session has no message row at all.
+    Empty,
+}
+
+impl SessionStatus {
+    /// The word the picker's five-cell `Stat` column renders, i.e.
+    /// `_session_status_tag` in the pinned upstream source.
+    pub fn tag(self) -> &'static str {
+        match self {
+            SessionStatus::Error => "err",
+            SessionStatus::Interrupted => "intr",
+            SessionStatus::Complete => "done",
+            SessionStatus::Empty => "empty",
+        }
+    }
+}
+
+/// `finish_reason` values the reference treats as an error
+/// (`_ERROR_FINISH_REASONS` in the pinned source).
+const ERROR_FINISH_REASONS: [&str; 3] = ["error", "agent_error", "content_filter"];
+
+/// Classify one session from its last message row.
+///
+/// `tool_calls` and `finish_reason` exist only in databases written by Hermes
+/// Python; a database this crate creates has neither column (see the schema in
+/// [`SessionStore::open`]). Both are optional here so that one classifier
+/// serves both shapes: with the columns absent only the role rules apply and
+/// `err` therefore cannot arise — which is equally true of the reference,
+/// since it has no other source for it either.
+pub fn classify_session_status(
+    role: &str,
+    tool_calls: Option<&str>,
+    finish_reason: Option<&str>,
+) -> SessionStatus {
+    if let Some(reason) = finish_reason {
+        let reason = reason.trim().to_ascii_lowercase();
+        if ERROR_FINISH_REASONS.iter().any(|r| *r == reason) {
+            return SessionStatus::Error;
+        }
+    }
+    match role {
+        "user" | "tool" => SessionStatus::Interrupted,
+        "assistant" if tool_calls.is_some() => SessionStatus::Interrupted,
+        _ => SessionStatus::Complete,
+    }
 }
 
 pub struct Session {
@@ -269,6 +335,56 @@ impl SessionStore {
         Ok(ids)
     }
 
+    /// Lifecycle status of every session that has at least one message row,
+    /// keyed by session id. A session missing from the map has no messages and
+    /// is therefore [`SessionStatus::Empty`].
+    ///
+    /// One grouped query over `MAX(id)` per session — a direct port of the
+    /// reference's `session_lifecycle_statuses`, which likewise never scans a
+    /// transcript. The two optional columns are probed first because they exist
+    /// only in databases written by Hermes Python; a database this crate
+    /// created has to stay a normal case rather than become an error.
+    pub fn lifecycle_statuses(&self) -> Result<HashMap<String, SessionStatus>, SessionStoreError> {
+        let legacy = self.messages_have_lifecycle_columns()?;
+        let sql = if legacy {
+            "SELECT m.session_id, m.role, m.tool_calls, m.finish_reason \
+             FROM messages AS m \
+             JOIN (SELECT session_id, MAX(id) AS max_id FROM messages GROUP BY session_id) AS l \
+             ON l.session_id = m.session_id AND l.max_id = m.id"
+        } else {
+            "SELECT m.session_id, m.role, NULL, NULL \
+             FROM messages AS m \
+             JOIN (SELECT session_id, MAX(id) AS max_id FROM messages GROUP BY session_id) AS l \
+             ON l.session_id = m.session_id AND l.max_id = m.id"
+        };
+        let mut q = self.conn.prepare(sql)?;
+        let rows = q.query_map([], |r| {
+            let sid: String = r.get(0)?;
+            let role: String = r.get(1)?;
+            let calls: Option<String> = r.get(2)?;
+            let reason: Option<String> = r.get(3)?;
+            Ok((sid, role, calls, reason))
+        })?;
+        let mut out = HashMap::new();
+        for row in rows {
+            let (sid, role, calls, reason) = row?;
+            let status = classify_session_status(&role, calls.as_deref(), reason.as_deref());
+            out.insert(sid, status);
+        }
+        Ok(out)
+    }
+
+    /// Whether `messages` carries the two columns only Hermes Python writes.
+    /// `PRAGMA table_info` returns `cid, name, type, ...`, so the name is the
+    /// second column.
+    fn messages_have_lifecycle_columns(&self) -> Result<bool, SessionStoreError> {
+        let mut q = self.conn.prepare("PRAGMA table_info(messages)")?;
+        let columns = q
+            .query_map([], |r| r.get::<_, String>(1))?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(columns.iter().any(|name| name == "tool_calls"))
+    }
+
     /// Delete a session and all of its messages and tool calls (Spec 017 T09:
     /// the browse picker's `d` key). Children are deleted before the parent
     /// row because `PRAGMA foreign_keys=ON` has no cascading delete.
@@ -290,4 +406,69 @@ fn now() -> f64 {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs_f64()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{classify_session_status, SessionStatus};
+
+    #[test]
+    fn error_finish_reason_outranks_every_role() {
+        assert_eq!(
+            classify_session_status("user", None, Some("error")),
+            SessionStatus::Error
+        );
+        assert_eq!(
+            classify_session_status("assistant", None, Some("agent_error")),
+            SessionStatus::Error
+        );
+        assert_eq!(
+            classify_session_status("tool", None, Some(" Content_Filter ")),
+            SessionStatus::Error
+        );
+    }
+
+    #[test]
+    fn unanswered_turns_are_interrupted() {
+        assert_eq!(
+            classify_session_status("user", None, None),
+            SessionStatus::Interrupted
+        );
+        assert_eq!(
+            classify_session_status("tool", None, None),
+            SessionStatus::Interrupted
+        );
+        assert_eq!(
+            classify_session_status("assistant", Some("[{\"id\":\"call-1\"}]"), None),
+            SessionStatus::Interrupted
+        );
+    }
+
+    #[test]
+    fn answered_turns_are_complete() {
+        assert_eq!(
+            classify_session_status("assistant", None, Some("stop")),
+            SessionStatus::Complete
+        );
+        assert_eq!(
+            classify_session_status("assistant", None, None),
+            SessionStatus::Complete
+        );
+    }
+
+    #[test]
+    fn unknown_shapes_stay_complete_rather_than_panic() {
+        assert_eq!(
+            classify_session_status("system", None, Some("length")),
+            SessionStatus::Complete
+        );
+    }
+
+    #[test]
+    fn tags_are_the_four_pinned_words() {
+        assert_eq!(SessionStatus::Error.tag(), "err");
+        assert_eq!(SessionStatus::Interrupted.tag(), "intr");
+        assert_eq!(SessionStatus::Complete.tag(), "done");
+        assert_eq!(SessionStatus::Empty.tag(), "empty");
+    }
 }
