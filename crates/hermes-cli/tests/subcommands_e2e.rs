@@ -481,7 +481,7 @@ fn version_flag_and_subcommand_render_the_banner_label() {
             .stdout(predicate::str::starts_with(format!("{VERSION_LABEL}\n")))
             .stdout(predicate::str::contains("Install directory: "))
             .stdout(predicate::str::contains("Install method: cargo\n"))
-            .stdout(predicate::str::contains("Crate version: 0.1.0\n"))
+            .stdout(predicate::str::contains("Crate version: 0.21.0\n"))
             .stdout(predicate::str::contains("❯ ").not())
             .stdout(predicate::str::contains("\u{1b}").not());
         outputs.push(String::from_utf8_lossy(&out.get_output().stdout).into_owned());

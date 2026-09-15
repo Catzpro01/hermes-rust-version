@@ -12,7 +12,7 @@
   Hermes-RS v0.21.0 (2026.8.31) · upstream 63279301
   Install directory: <dir binary>
   Install method: cargo
-  Crate version: 0.1.0
+  Crate version: 0.21.0
   Hermes home: <home>            (hanya bila home resolve)
   ```
   Baris 1 = `VERSION_LABEL` yang sama dengan judul panel banner (satu
