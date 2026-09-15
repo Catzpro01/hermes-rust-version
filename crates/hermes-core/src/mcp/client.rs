@@ -14,7 +14,7 @@ use serde_json::{json, Value};
 
 /// Client identifier reported to the server during `initialize`.
 pub const CLIENT_NAME: &str = "hermes-rs";
-pub const CLIENT_VERSION: &str = "0.1.0";
+pub const CLIENT_VERSION: &str = "0.21.0";
 
 /// JSON-RPC 2.0 client over an [`McpTransport`]. Not `Clone`; one client owns
 /// one transport/process.
