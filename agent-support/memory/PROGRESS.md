@@ -2219,3 +2219,22 @@ laporkan milestone; tetap dilarang merge tanpa perintah eksplisit.
 - Gate belum diikat ke CI — mengikatnya sekarang akan memerahkan CI sampai
   runtime diubah, jadi menunggu keputusan opsi.
 - Tidak ada merge/auto-merge dan tidak ada PR yang dibuka.
+
+### Addendum 2026-09-16 — aturan push + status CI
+
+- Pengguna menegaskan ulang: **setiap pembaruan/progress langsung di-push ke
+  GitHub**. Dicatat permanen di `AGENTS.md` dan `MEMORY.md`. Konsekuensi
+  cara kerja: jangan pernah memblokir satu giliran kerja hanya untuk
+  menunggu CI selesai — push dulu, laporkan id run + statusnya apa adanya,
+  lalu periksa pada giliran berikutnya.
+- Commit `45c157a` ter-push ke `arena/01a0a600-hermes-rust-version`
+  (remote HEAD terverifikasi `45c157a49d9321c733c2c42efaa59111e11237f7`).
+  CI run `34999643594` masih **queued** pada saat entri ini ditulis; hasilnya
+  belum diklaim dan harus dibaca ulang di giliran berikutnya.
+- Fakta repo yang perlu dikoreksi dari brief: `main` tidak lagi di `07ee479`
+  melainkan di `a008e52` ("Add files via upload", 2026-09-15T16:01:35Z,
+  1 berkas = patch 847 KB), yaitu satu commit *setelah* `07ee479`
+  (`compare 07ee479...a008e52` → ahead_by 1, behind_by 0). PR #9 MERGED
+  2026-09-15T10:01:43Z; PR #10 tercatat CLOSED, bukan merged.
+- Clone sandbox ini **shallow (depth 1)**, jadi history `main` lokal terpotong
+  — jangan menyimpulkan `main` di-reset hanya dari `git log` lokal.

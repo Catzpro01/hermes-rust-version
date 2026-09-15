@@ -8,6 +8,13 @@ user's private Python installation.
 
 - Always commit progress notes with meaningful work and push to GitHub on
   the branch assigned to the active session.
+- **Confirmed again 2026-09-16 — push on every update.** Setiap pembaruan
+  atau progress, sekecil apa pun, langsung di-commit dan di-push ke branch
+  sesi. Jangan menahan tree yang belum ter-push, dan jangan menggabung
+  beberapa progress jadi satu push besar. Push selalu diizinkan; merge tetap
+  butuh perintah eksplisit. Jangan blokir giliran kerja hanya untuk menunggu
+  CI selesai — push, laporkan id run beserta statusnya saat itu, dan periksa
+  CI pada giliran berikutnya.
 - Inherit skills and memory: read the tracked context and previous progress
   before continuing, and leave a usable handoff for the next agent.
 - Fix errors found in scope and verify the fixes. Report environmental

@@ -16,6 +16,11 @@ Read these files before editing:
 - No branch/PR merge or auto-merge without explicit user instruction AND platform permission.
 - Preserve Python Hermes and its data; never commit secrets or real credentials.
 - Work in small verified slices; commit and push meaningful progress with notes.
+- **Push on every update.** Any meaningful progress, fix, or decision record is
+  committed and pushed to the session branch immediately — do not batch it up
+  and do not sit on an unpushed tree. Pushing is always authorized; merging is
+  not (see above). Never block a turn on waiting for a CI run to finish: push,
+  report the run id and its current state, and let CI be checked on the next turn.
 - Rust changes require fmt/check; if unavailable locally, use verified official
   runner results and the exact tested patch, never invent a local PASS.
 - Read requested skill originals in `.agents/skills/<name>/SKILL.md`. Preserve
