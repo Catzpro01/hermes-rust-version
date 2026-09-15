@@ -72,6 +72,7 @@ jobs:
 
       - name: Install official Rust toolchain
         run: |
+          msrv_ok() { rustc --version 2>/dev/null | awk '{ split($2, v, "."); exit !(v[1] > 1 || (v[1] == 1 && v[2] >= 88)) }'; }
           if command -v rustup >/dev/null 2>&1; then
             # `rustup update` installs stable when missing AND upgrades a stale
             # one: self-hosted runners can lag behind the locked Cargo.lock's
@@ -80,6 +81,24 @@ jobs:
               || rustup toolchain install stable --profile minimal --component rustfmt --component clippy \
               || echo "::warning::rustup could not update the stable toolchain; continuing with whatever is installed"
             rustup default stable
+            # Pool variance guard (run 34912294831): some elastic workers keep
+            # a stale rustup default (rustc 1.85.1) while newer toolchains are
+            # installed alongside. Cargo.lock needs >= 1.88 — when the default
+            # cannot satisfy that, activate the newest installed toolchain that
+            # can; fail loudly if none exists instead of letting the picker
+            # step die mysteriously later.
+            if ! msrv_ok; then
+              NEWEST="$(rustup toolchain list 2>/dev/null | sed 's/ (default)$//' | grep -E '^[0-9]+\.[0-9]+' | sort -V | tail -1 || true)"
+              if [ -n "$NEWEST" ] && rustup run "$NEWEST" rustc --version 2>/dev/null \
+                   | awk '{ split($2, v, "."); exit !(v[1] > 1 || (v[1] == 1 && v[2] >= 88)) }'; then
+                rustup default "$NEWEST"
+              else
+                rustc --version || true
+                rustup toolchain list || true
+                echo "this runner has no rustc >= 1.88 (Cargo.lock MSRV); install a newer stable toolchain"
+                exit 1
+              fi
+            fi
           fi
           for tool in rustc cargo rustfmt cargo-clippy; do
             command -v "$tool" >/dev/null 2>&1 || {
@@ -89,6 +108,11 @@ jobs:
           done
           rustc --version
           cargo --version
+          # Pin the ACTIVE toolchain's bin dir to the front of PATH for every
+          # later step (run 34912294831: the picker step resolved a stale
+          # rustc 1.85.1 while fmt/clippy/test used a newer one).
+          TOOLCHAIN_BIN="$(dirname "$(rustup which cargo 2>/dev/null || command -v cargo)")"
+          echo "$TOOLCHAIN_BIN" >> "$GITHUB_PATH"
 
       # Self-hosted runners may provide sccache (e.g. via the runner .env).
       # Enable it only when present so hosted runners keep working unchanged.
