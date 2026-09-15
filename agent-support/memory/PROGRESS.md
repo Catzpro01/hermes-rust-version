@@ -2267,3 +2267,62 @@ laporkan milestone; tetap dilarang merge tanpa perintah eksplisit.
   sudah dipakai `ci.yml` (check/fmt/clippy/test/build), sehingga satu perintah
   daemon yang seragam bisa dipakai untuk repo ini maupun repo berbasis Make.
   Terverifikasi dengan `make -n <target>` untuk kelima target.
+
+## 2026-09-16 — W5 opsi C: kolom status picker mengikuti classifier referensi
+
+**Keputusan:** tiket W5 HITL dijawab dengan **opsi C** (port bertahap sesuai
+bentuk data) — rekomendasi yang tertulis di tiket. Pengguna melewati
+pertanyaan konfirmasi dan meminta pekerjaan dilanjutkan, sehingga opsi
+rekomendasi dipakai; keputusan ini harus dikonfirmasi pada giliran berikutnya.
+
+### Mengapa opsi C benar — bukti, bukan asumsi
+
+Status kolom `Stat` diukur langsung dari capture berpasangan yang tersimpan
+(`evidence/picker-status-ink-19bbbd5/`), bukan dibaca dari prosa:
+
+- `picker-normal-100x30-python.ansi` baris 5 → tag **`intr`**, fg `brown`
+  (slot 3).
+- `picker-normal-100x30-rust.ansi` baris 5 → tag **`done`**, fg `00cd00`
+  (slot 2).
+
+Jadi referensi memang menggambar `intr` untuk baris yang sama; `done` adalah
+penyimpangan Rust. Ini persis "4 region span tag = perbedaan yang dinyatakan"
+dari paket itu, dan opsi C menutupnya.
+
+### Changes
+
+- `hermes-core`: `SessionStatus` (`Error`/`Interrupted`/`Complete`/`Empty`) +
+  `tag()`, `classify_session_status(role, tool_calls, finish_reason)`, dan
+  `SessionStore::lifecycle_statuses()` — satu query terkelompok atas `MAX(id)`
+  per sesi, port langsung dari `session_lifecycle_statuses` referensi.
+  Kolom `tool_calls`/`finish_reason` diprobe sekali lewat
+  `PRAGMA table_info(messages)`: ada di DB bentukan Python, tidak ada di
+  bentukan Rust, sehingga `err` memang tidak dapat muncul di DB Rust.
+- `hermes-cli`: `collect_rows` memakai peta itu; tanpa pesan → `empty`.
+- Dua asersi yang mengode kata lama diperbarui ke `intr`:
+  `collect_rows_sanitizes_and_single_lines_names` dan
+  `session_picker_e2e::browse_renders_verbatim_frame...`. Keduanya men-seed
+  satu pesan `user`, yang menurut referensi = `interrupted`.
+- `docs/PARITY.md`: adaptasi T09 diganti deskripsi kontrak baru + entri baru
+  yang menyatakan statusnya masih "source only".
+
+### Verification actually performed
+
+- **Tidak ada `cargo` run yang diklaim.** Toolchain tidak tersedia
+  (`sh.rustup.rs`/`static.crates.io` gagal TLS) dan daemon webhook VPS
+  menolak koneksi, jadi bukti build/test/fmt pertama harus datang dari CI.
+- Pemeriksaan statis: keseimbangan kurung pada `store.rs` bersih sebelum
+  maupun sesudah; `session_picker_e2e.rs` identik dengan HEAD; keempat baris
+  >100 karakter di `store.rs` terbukti bawaan (string literal, L82/L134/L144/
+  L201 di HEAD). `session_picker.rs` sudah tidak seimbang menurut parser naive
+  sejak HEAD, jadi diff-nya ditinjau manual dan seimbang.
+- Python: 202 tes / 13 error, sama seperti baseline (nol regresi).
+
+### Risiko yang belum tertutup
+
+- Baris `pub use` di `session/mod.rs` dihitung 98 karakter → harus satu baris
+  untuk `cargo fmt --check`.
+- Format akhir belum terverifikasi; bila CI melaporkan drift fmt, pakai patch
+  format-recovery yang diekspor run.
+- Gate `check_picker_status_tags.py` belum pernah dijalankan terhadap binary
+  hasil build — fixture `picker-status-tags` belum di-capture.

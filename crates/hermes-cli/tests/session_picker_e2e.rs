@@ -163,8 +163,10 @@ fn browse_renders_verbatim_frame_and_selects_first_row_with_enter() {
         "older session listed: {out}"
     );
     assert!(out.contains("1/2 sessions   d delete"), "footer: {out}");
-    // Stat/Msgs columns: one done session with one message each row.
-    assert!(out.contains("done"), "status column: {out}");
+    // Stat/Msgs columns: each seeded session holds one user turn the agent
+    // never answered, which the reference classifies as `interrupted` -> `intr`
+    // (the retained paired capture shows Python drawing `intr` here too).
+    assert!(out.contains("intr"), "status column: {out}");
 
     p.send(b"\r");
     let out = p
