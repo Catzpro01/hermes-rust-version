@@ -50,15 +50,25 @@ user's private Python installation.
   `picker-status-ink-19bbbd5` menunjukkan Python menggambar `intr` (slot 3)
   di baris yang sama tempat Rust menggambar `done` (slot 2). **Nol bukti
   build/test/fmt** — lihat bloker infra di bawah.
-- **Bloker infra 2026-09-16: kedua jalur verifikasi mati.** (1) `ci.yml`
-  memakai `runs-on: [self-hosted, vps, hermes]`, jadi Actions tidak bisa
-  jalan saat VPS mati — semua run dibatalkan setelah 10–18 menit antre.
-  (2) Endpoint webhook `203.145.35.218:9000` menolak koneksi dari sandbox,
-  namun daemon tetap memposting status `vps-baremetal/fast-ci` = gagal
-  "Cargo Check failed (exit 101) (3s)" **bahkan untuk commit yang hanya
-  berisi .md** → kegagalan lingkungan daemon, bukan regresi kode.
-  Jangan menonaktifkan trigger Actions sampai salah satu jalur benar-benar
-  hijau: melakukannya akan menyisakan nol sinyal verifikasi.
+- **Jalur verifikasi yang SAH (dikoreksi 2026-09-16).** Daemon webhook VPS
+  **berjalan** dan sudah memakai `make check`: status `a4d96bb` =
+  `vps-baremetal/fast-ci` **success** "All fast checks passed via make check
+  in 65s!". Cara bacanya: `gh api repos/Catzpro01/hermes-rust-version/
+  commits/<sha>/status`.
+  **Jangan** menyimpulkan kesehatan VPS dari `curl` ke `203.145.35.218:9000`:
+  sandbox ini tidak bisa membuka koneksi TCP ke sana (reset seketika =
+  pembatasan egress), jadi `curl` selalu gagal meski daemon sehat. Saya
+  pernah salah menyimpulkan "VPS mati" dari itu.
+- Status lama "Cargo Check failed (exit 101) (3s)" pada `4709543`/`5800741`/
+  `2d36af9` adalah status **basi** dari sebelum daemon dialihkan ke
+  `make check`; status commit lama tidak ditulis ulang. Bukan regresi kode.
+- **Actions terpisah dari daemon webhook:** `ci.yml` memakai
+  `runs-on: [self-hosted, vps, hermes]` dan run-run-nya masih antre lalu
+  dibatalkan. Jangan menonaktifkan trigger Actions sebelum jalur ini atau
+  daemon benar-benar hijau.
+- Target `make` yang tersedia: `check` (terverifikasi hijau), `fmt`,
+  `clippy`, `test`, `build`. `fmt` dan `clippy` **belum** pernah dijalankan
+  terhadap perubahan opsi C.
 - **Picker selected-row slice delivered**: fix `ee11541` (tested patch 1171 B
   `8eed758f…`: `Color::DarkGreen` + bold replaces reverse video), RED `34866264371`
   → GREEN `34866921566` → capture `34868306211` (bundle `fe8bc2c2…`, 10 cases) →

@@ -125,7 +125,57 @@ dulu): `collect_rows` menurunkan status dari `session.turns.is_empty()`, jadi
 `intr`/`err` tidak pernah bisa muncul. Jangan "dihijaukan" dengan menurunkan
 tuntutan gate.
 
-## Resolution — belum terisi (HITL)
+## Resolution — opsi C diimplementasi dan terverifikasi
 
-Status tiket hanya boleh berubah menjadi CLOSED lewat pertukaran langsung
-dengan pengguna; jawaban akan dicatat di bawah beserta konsekuensi CI-nya.
+Dipilih: **opsi C** (port bertahap sesuai bentuk data), sesuai rekomendasi
+tiket. Catatan kejujuran: keputusan ini diambil karena pengguna melewati
+pertanyaan konfirmasi dan meminta pekerjaan dilanjutkan, bukan karena jawaban
+eksplisit atas pertanyaan HITL di atas. **Konfirmasi pengguna masih
+diperlukan untuk menutup tiket ini menjadi CLOSED.**
+
+Implementasi: `2d36af9` (`hermes-core`: `SessionStatus` +
+`classify_session_status` + `SessionStore::lifecycle_statuses`;
+`hermes-cli`: `collect_rows` memakainya).
+
+### Hasil verifikasi nyata
+
+- **`make check` = exit 0.** Status commit `a4d96bb`:
+  `vps-baremetal/fast-ci` = **success**, *"All fast checks passed via make
+  check in 65s!"*. Ini sekaligus membuktikan daemon VPS sudah memakai
+  `make check`, `Makefile` yang ditambahkan bekerja, dan workspace
+  (`hermes-core` + `hermes-cli` + dependensi) terkompilasi bersih.
+- **`tests/session_picker_e2e.rs`: 7 passed, 0 failed** (dilaporkan pengguna
+  dari VPS; belum direproduksi mandiri karena sandbox tidak punya toolchain
+  Rust). Tujuh skenario: frame verbatim + Enter, filter langsung + counter
+  footer, panah bawah, Esc batal, hapus sesi, store kosong, dan buka picker
+  dari REPL lalu resume.
+- Dua asersi yang mengode kata lama bergeser `done` → `intr`
+  (`collect_rows_sanitizes_and_single_lines_names` dan
+  `session_picker_e2e::browse_renders_verbatim_frame...`). Keduanya men-seed
+  satu pesan `user`, yang menurut kontrak referensi = `interrupted`. Lolos.
+
+### Koreksi terhadap catatan sebelumnya
+
+Bagian "Penerapan patch" di atas dan entri PROGRESS tertanggal sama dulu
+menyimpulkan *"VPS/daemon tidak menjawab"* dari `curl` yang `connection reset
+by peer`. Kesimpulan itu **salah**. Yang benar: sandbox ini tidak bisa
+membuka koneksi TCP ke `203.145.35.218:9000` (reset seketika = pembatasan
+egress), sedangkan daemon **berjalan** — dibuktikan oleh status
+`vps-baremetal/fast-ci` = success pada `a4d96bb`. `curl` dari sandbox bukan
+alat ukur yang sah untuk kesehatan VPS.
+
+Demikian pula kegagalan lama *"Cargo Check failed (exit 101) (3s)"* pada
+`4709543`/`5800741`/`2d36af9` kini terbaca sebagai status **basi** yang
+diposting daemon sebelum dialihkan ke `make check`; status pada
+commit lama tidak ditulis ulang. Jangan dibaca sebagai regresi kode.
+
+### Yang belum tertutup
+
+- `cargo fmt --all -- --check` dan `clippy --workspace --all-targets -- -D
+  warnings` **belum** pernah dijalankan terhadap perubahan ini (`make check`
+  hanya `cargo check`). Keduanya ada sebagai target `make fmt` / `make clippy`.
+- Gate live `test_picker_status_tags.py` sudah terikat di CI dan tes
+  decoder-nya lolos, tetapi **belum pernah dijalankan terhadap binary hasil
+  build** — capture `picker-status-tags` belum diambil.
+- Status tiket tetap **OPEN** sampai pengguna mengonfirmasi opsi C secara
+  eksplisit.

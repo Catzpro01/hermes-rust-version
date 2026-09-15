@@ -2343,3 +2343,52 @@ dari paket itu, dan opsi C menutupnya.
 - Sebelum PR ini layak di-merge, masih harus ada: runner yang hidup →
   `cargo fmt` + `clippy -D warnings` + `cargo test` hijau → capture nyata
   `picker-status-tags`. Sampai kini nol bukti build untuk perubahan Rust.
+
+## 2026-09-16 — opsi C TERVERIFIKASI di VPS; koreksi kesimpulan "VPS mati"
+
+### Hasil verifikasi nyata (bukan prediksi)
+
+- **`make check` = exit 0.** Status commit `a4d96bb`:
+  `vps-baremetal/fast-ci` = **success**, *"All fast checks passed via make
+  check in 65s!"* (dibaca via `gh api .../status`). Membuktikan tiga hal:
+  daemon VPS sudah memakai `make check`, `Makefile` yang ditambahkan bekerja,
+  dan workspace terkompilasi bersih.
+- **`tests/session_picker_e2e.rs`: 7 passed, 0 failed** — dilaporkan pengguna
+  dari VPS, belum direproduksi mandiri (sandbox tanpa toolchain Rust).
+- Tes lokal: seluruh suite Python **203 tes / 14 error**, semuanya
+  `KeyError: 'HERMES_PICKER_BINARY'` pada tes live PTY (termasuk
+  `test_picker_status_tags.py` yang baru). `test_ci_workflow` **36/36 lolos**
+  setelah didaftarkan gate ke-14.
+
+### Koreksi — kesimpulan saya sebelumnya salah
+
+Saya mencatat "VPS/daemon tidak menjawab" berdasarkan `curl` → `connection
+reset by peer`. Itu keliru. Yang benar:
+
+- Sandbox ini **tidak bisa membuka koneksi TCP** ke `203.145.35.218:9000`
+  (reset seketika = pembatasan egress), sedangkan daemon **berjalan**.
+- `curl` dari sandbox **bukan** alat ukur yang sah untuk kesehatan VPS.
+  Pakai `gh api repos/.../commits/<sha>/status`.
+- Kegagalan lama "Cargo Check failed (exit 101) (3s)" pada
+  `4709543`/`5800741`/`2d36af9` adalah status **basi** yang diposting sebelum
+  daemon dialihkan ke `make check`; status lama tidak ditulis ulang. Bukan
+  regresi kode.
+- **Actions (self-hosted, `runs-on: [self-hosted, vps, hermes]`) memang masih
+  antre lalu dibatalkan** — itu terpisah dari kesehatan daemon webhook.
+
+### Perubahan dalam checkpoint ini
+
+- `scripts/test_picker_status_tags.py`: tes live baru (pola sama dengan
+  `test_picker_status_ink.py`), diikat di `ci.yml` **di akhir** urutan gate
+  sengaja agar tes regresi tidak perlu re-indentasi besar.
+- `scripts/test_ci_workflow.py`: gate ke-14 didaftarkan — 15 tuple × 14
+  elemen, skrip python palsu, env `TAGS`, ekspektasi returncode, dan asersi
+  terdalam. Diverifikasi lokal: 36/36 lolos.
+
+### Belum tertutup
+
+- `make fmt` (`cargo fmt --all -- --check`) dan `make clippy`
+  (`-D warnings`) belum pernah dijalankan terhadap perubahan opsi C.
+- Capture `picker-status-tags` belum diambil; gate live belum pernah
+  dijalankan terhadap binary hasil build.
+- PR #11 tetap terbuka tanpa merge sesuai instruksi.
