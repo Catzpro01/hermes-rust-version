@@ -352,3 +352,21 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     `cargo fmt --all` re-wrapped one `assert_eq!`, which is exactly why the export
     now covers live gates: committing the bound patch would have failed the CI fmt
     gate on that line.
+
+## Temuan baru dari penyelarasan matriks (2026-09-15) — kandidat V2, belum dikerjakan
+
+Perbedaan nyata, terbukti dari sumber primer, bukan akibat capture: daftar sesi
+Python dibentuk oleh `hermes_state.SessionDB.list_sessions_rich(..., limit: int = 20)`.
+Dengan fixture 30 sesi, picker Python menampilkan `…/20 sessions` dan tidak pernah
+`27/30 sessions`, sedangkan `hermes-rs sessions browse` menampilkan seluruh 30 baris.
+Ini perbedaan **jumlah baris yang dilihat pengguna**, mirip kelasnya dengan adaptasi
+`Active`/`ID` yang sudah terdokumentasi, tapi belum diputuskan: parity (angkat limit
+ke CLI Rust? tidak — Rust sudah tanpa batas) atau adaptasi terdokumentasi
+(picker Python memang memotong 20). Keputusan diambil lewat tiket Wayfinder, bukan
+dengan mengecilkan fixture capture. `picker-long-list` karenanya masuk
+`MATRIX_DEFERRED` di `scripts/capture_ui.py` dengan alasan ini.
+
+Perlu dicatat juga untuk reviewer: `steps_for` yang dikeraskan lane 1–4 membuat
+`wizard-gateway-empty` dan `completion-subcommand` tidak lagi terpasangkan di sisi
+pinned Python (lihat T12). Bila seseorang ingin memulihkannya ke paket, yang harus
+dibangun adalah referensi CLI penuh, bukan pelonggaran marker.

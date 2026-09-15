@@ -30,6 +30,15 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
+- **Four-area capture matrix is current, nothing visual claimed yet**: `CASES`
+  24→28 names (56 cases), Python side verified locally green 56/56 against the
+  pinned `63279301` reference; 11 deferrals carry recorded reasons in
+  `MATRIX_DEFERRED`. Two legacy cases (`wizard-gateway-empty`,
+  `completion-subcommand`) turned out unpairable once the lanes hardened
+  `steps_for`, and `picker-long-list` exposed a real product difference
+  (Python caps the list at `list_sessions_rich(limit=20)`, Rust shows 30) —
+  a T13 decision, not a fixture to shrink. No new packet, no acceptance.
+
 - **Picker selected-row slice delivered**: fix `ee11541` (tested patch 1171 B
   `8eed758f…`: `Color::DarkGreen` + bold replaces reverse video), RED `34866264371`
   → GREEN `34866921566` → capture `34868306211` (bundle `fe8bc2c2…`, 10 cases) →

@@ -2176,3 +2176,47 @@ test (`22621d1`), perbaikan PATH cargo + fallback ensurepip + diagnostik
   completion 6 skenario × 2 lebar.
 - **Sisa T12**: pasangan empat area + rekaman mentah + metadata repro —
   termasuk bundle referensi Python Lane 3 (masih direkam di VPS).
+
+## 2026-09-15: Four-area matrix aligned with the settled gates (no Rust change)
+
+- **Kenapa siklus ini**: satu-satunya sisa T12 adalah "semua pasangan + rekaman
+  mentah + metadata repro", tetapi paket `ui-3b39bd7` membekukan 24 nama sementara
+  lane 1–4 sudah mengeraskan gate sesudahnya. Mengulang daftar lama hanya akan
+  mengulang catatan "resize/long-list/clear-filter tidak dibuktikan di sini".
+- **Matriks**: `scripts/capture_ui.py` `CASES` 24 → 28 nama (56 kasus): resize
+  (too-small, redraw), clear-filter (esc, backspace), `wizard-gateway-cancel`,
+  `wizard-tools-cancel`. Sisi Python diverifikasi **lokal** terhadap referensi
+  terpinn `63279301` (unduhan Codeload + marker `.visual-evidence-reference`,
+  digest `hermes_cli/main.py` cocok `89cde75d…`): **56/56 kasus hijau, 0 error**,
+  kedua lebar 100/80.
+- **Deferral yang terlihat**: `MATRIX_DEFERRED` (11 nama) menyimpan alasan tiap
+  skenario yang belum bisa dipasangkan; `test_capture_ui.py` menuntut setiap
+  skenario gate ada di `CASES` ∪ `MATRIX_DEFERRED`, jadi paket tidak bisa kembali
+  tertinggal diam-diam.
+- **Dua temuan penting.** (1) `wizard-gateway-empty` dan `completion-subcommand`
+  direkam di paket lama dengan rencana 2 langkah yang lebih lemah; setelah
+  `steps_for` dikeraskan, pinned Python tidak mencapai keadaan akhirnya —
+  dipasangkan akan menjadi pasangan palsu, jadi masuk deferred dengan bukti.
+  (2) `picker-long-list` tidak bisa pair karena Python memotong daftar pada
+  `SessionDB.list_sessions_rich(limit: int = 20)` (Rust menampilkan 30) — perbedaan
+  produk nyata untuk T13, bukan sesuatu yang boleh dihilangkan dengan mengecilkan
+  fixture.
+- **Bug pengemudi capture yang ditutup**: sisi Python men-seed 2 sesi untuk semua
+  kasus picker (kini satu sumber `picker_rows(name)`); dan panah dikirim CSI ke dua
+  sisi padahal `_curses_browse` Python butuh SS3 di bawah `smkx` (kini per-sisi).
+- **Audit**: `validate_bundle(bundle, matrix=None)` untuk paket beku — audit
+  `ui-3b39bd7` sebelumnya gagal 'missing or duplicate cases' hanya karena matriks
+  hari ini sudah tumbuh; cakupan kini dilaporkan sebagai temuan (`coverage`).
+- **Workflow**: `ui-evidence.yml` diikat ke branch sesi ini + `workflow_dispatch`
+  (filter push ke branch sesi lama tidak memicu apa pun lagi); komentar menjelaskan
+  bahwa hanya setengah Rust yang berjalan di runner dan pairing memakai capture
+  Python lokal.
+- **Verifikasi lokal**: `test_capture_ui.py` (13), `test_audit_ui_evidence.py` (5),
+  `test_ci_workflow.py`, `agent-support/automation/verify.py` + `test_checkpoint.py`,
+  dan `*_checks.py` wizard/browse/completion = PASS. Gate live `test_picker_*`/
+  `test_wizard_fields`/`test_completion_dropdown` tidak berjalan di sini: butuh
+  `HERMES_PICKER_BINARY` (tidak ada toolchain Rust di sandbox). Tidak ada klaim
+  cargo lokal, tidak ada acceptance visual, tidak ada merge.
+- **Berikutnya**: flip `ui-capture/request.json` ke `capture` → run Rust di runner →
+  capture Python lokal → `capture_ui.py pair` → render + pemeriksaan gambar langsung
+  → laporan paket → acceptance per area (Q3).

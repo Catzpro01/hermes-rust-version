@@ -85,6 +85,12 @@ Semua tiket keputusan W1–W4 CLOSED. Lane kerja berikutnya (urutan Q2):
    `completion-alternatives-80x30` di run `34948203974` hilang saat retry).
    Sisa T12: pasangan empat area + rekaman mentah + metadata repro —
    termasuk bundle referensi Python Lane 3 yang masih direkam di VPS.
+   2026-09-15 (sesi ini): matriks empat area diselaraskan dengan gate (28 nama,
+   56 kasus; sisi Python hijau penuh direkam lokal terhadap `63279301`), 11
+   deferral tercatat dengan alasan, dan satu temuan produk lahir dari probe itu
+   (daftar sesi Python dipotong `list_sessions_rich(limit=20)` vs Rust 30 baris)
+   → tiket keputusan sendiri bila pengguna ingin parity, bukan adaptasi diam-diam.
+   Belum ada paket baru: setengah Rust masih butuh run capture di runner.
    Lanjut → **acceptance bertahap per area** (Q3).
 
 ## Not yet specified

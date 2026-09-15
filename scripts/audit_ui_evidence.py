@@ -11,12 +11,14 @@ import json
 from pathlib import Path
 import sys
 
-from capture_ui import validate_bundle
+from capture_ui import CASES, MATRIX_DEFERRED, validate_bundle
 
 
 def audit(root):
     bundle = json.loads((root / 'paired-bundle.json').read_text())
-    validate_bundle(bundle)
+    # The packet is frozen; audit it against itself, not against a matrix that
+    # has grown since. Live coverage is reported below as a finding instead.
+    validate_bundle(bundle, matrix=None)
     assert bundle['rust_worktree_diff_sha256'] == hashlib.sha256(b'').hexdigest()
     renderer = json.loads((root / 'renderer.json').read_text())
     assert renderer['input_sha256'] == hashlib.sha256((root / 'paired-bundle.json').read_bytes()).hexdigest()
@@ -63,8 +65,12 @@ def audit(root):
                                for s in cells}
             assert all(len(v) == 1 for v in info['summary'].values()), 'summary not rendered exactly once'
         results.append(info)
+    packet = {c['scenario'] for c in bundle['cases']}
+    coverage = {'packet_scenarios': len(packet), 'current_matrix_scenarios': len(CASES),
+                'in_matrix_but_not_in_packet': sorted(set(CASES) - packet),
+                'recorded_deferred': sorted(MATRIX_DEFERRED)}
     return {'status': 'AUDITED_NOT_ACCEPTED', 'normalization': 'none',
-            'raw_cast_roundtrips': 2*len(results), 'cases': results,
+            'raw_cast_roundtrips': 2*len(results), 'coverage': coverage, 'cases': results,
             'boundary': 'Glyph comparison excludes space/empty cells and explicit title branding only. Metrics do not decide adaptation acceptance or whole-screen parity.'}
 
 

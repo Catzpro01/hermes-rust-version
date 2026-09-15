@@ -1,14 +1,20 @@
 name: Visual evidence (remaining UI)
 on:
   push:
-    branches: ["arena/01a0a052-hermes-rust-version"]
+    branches: ["arena/01a0a488-hermes-rust-version"]
     paths:
       - '.scratch/hermes-rs-total-parity/ui-capture/request.json'
+  # Rebound 2026-09-15 to the session branch that owns the four-area recapture,
+  # and made manually dispatchable: a capture must not depend on a stale
+  # branch filter (the push filter silently no-oped once the old session ended).
+  # The phase still comes from request.json, so a dispatch cannot start a
+  # capture nobody asked for.
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   capture:
-    if: github.ref == 'refs/heads/arena/01a0a052-hermes-rust-version'
+    if: github.ref == 'refs/heads/arena/01a0a488-hermes-rust-version'
     runs-on: [self-hosted, vps, hermes]
     timeout-minutes: 30
     steps:
@@ -51,6 +57,11 @@ jobs:
           cargo fmt --all -- --check
           cargo check --workspace --all-targets --locked
           cargo build --locked -p hermes-rs --bin hermes-rs --example visual_summary
+      # Only the Rust half runs here: this runner is the one place the pinned
+      # Rust toolchain exists. The paired Python half is captured against the
+      # isolated `63279301` reference (see scripts/visual-renderer/README.md)
+      # and joined with `capture_ui.py pair`; `pair_picker_bundle.py` is for
+      # reusing retained records only, which the extended matrix cannot do.
       - name: Capture actual UI cases
         if: steps.plan.outputs.phase == 'capture'
         run: |

@@ -31,11 +31,62 @@ SID_B = '660f8400-e29b-41d4-a716-446655440001'
 PICKER_SIZE_CASES = ('picker-narrow', 'picker-too-small')
 CASES = ('wizard-mode', 'wizard-full', 'wizard-blank', 'wizard-quick',
          'wizard-model', 'wizard-terminal', 'wizard-local', 'wizard-docker',
-         'wizard-gateway', 'wizard-gateway-empty', 'wizard-gateway-token',
+         'wizard-gateway', 'wizard-gateway-token',
          'wizard-tools', 'wizard-tools-toggle', 'wizard-cancel',
          'picker-normal', 'picker-empty', 'picker-filter', 'picker-no-match',
-         'picker-delete', 'completion-command', 'completion-subcommand',
-         'completion-alternatives', 'summary-zero', 'summary-nonzero')
+         'picker-delete', 'completion-command', 'completion-alternatives',
+         'summary-zero', 'summary-nonzero',
+         # Spec017 Lanes 1-4 (settled by W1-W4 gates) added behaviours that the
+         # four-area packet predates. They join the paired matrix so T12's
+         # 'all pairs' coverage is the same behaviour set the live gates guard.
+         'picker-resize-too-small', 'picker-resize-redraw',
+         'picker-clear-filter-esc', 'picker-clear-filter-backspace',
+         'wizard-gateway-cancel', 'wizard-tools-cancel')
+
+# Every gate scenario that is NOT yet in the paired matrix, with the observed
+# reason. This is a visible gap list, not a waiver: `test_capture_ui.py` fails
+# if a scenario is dropped from both sets, so the packet can never silently
+# fall behind the gates again. Reasons recorded while probing the pinned
+# reference (63279301) locally on 2026-09-15.
+MATRIX_DEFERRED = {
+    'wizard-terminal-local': 'pinned Python keeps prompting after Local is confirmed, so '
+                             '"Setup complete!" is not reached by the Rust-side key plan',
+    'wizard-tools-accept': 'pinned Python redraws the toolset checklist on Enter instead of '
+                           'completing the section, so the Rust-side plan has no terminal frame',
+    'wizard-model-fields': 'pinned Python does not show "API base URL" after Enter on the '
+                           'provider list; needs a Python-side navigation plan',
+    'wizard-model-cancel': 'same provider-selection step as wizard-model-fields: the pinned '
+                           'provider list needs its own navigation key before API base URL '
+                           'appears, so the cancel path cannot share the Rust plan yet',
+    'wizard-docker-image': 'pinned Python words the unavailable notice differently; needs the '
+                           'exact reference marker before it can share a plan',
+    'completion-ghost': 'structural: prompt_toolkit has no ghost text, it shows a menu '
+                        '(the difference W4 records, not a capture defect)',
+    'completion-no-match': 'structural: no bell byte on the Python side for an empty candidate '
+                           'set',
+    'completion-picker-open': 'the completion host is the native completer only; opening the '
+                              'browse picker requires the full Python CLI run, still a user-side '
+                              'reference recording',
+    # Two matrix cases the lanes outgrew. Both were retained in `ui-3b39bd7`
+    # under a weaker two-step Python plan ('Select platforms to configure'→exit,
+    # '❯'→'/skills'); the lanes then hardened `steps_for` to the real end state,
+    # which the pinned Python side cannot reach. Pairing a Python frame of one
+    # state against a Rust frame of another would be a false pair, so both ride
+    # here until a full-CLI Python reference exists. Verified against 63279301
+    # locally on 2026-09-15 rather than discovered mid-capture on the runner.
+    'wizard-gateway-empty': 'after "No platforms selected" the pinned wizard moves to gateway '
+                            'service installation, which the isolated child forbids, so it never '
+                            'renders "Setup complete!" the way the Rust section does',
+    'completion-subcommand': 'the pinned completer completes the subcommand but not the seeded '
+                             'skill name ("/demo" stays uncompleted): skill completion lives '
+                             'outside this prompt_toolkit component host',
+    # Found while probing, with the cause in the pinned source itself: this is a
+    # real Rust/Python difference for T13, not a capture gap that a fixture may
+    # be tuned away (shrinking the seed to 20 would hide it).
+    'picker-long-list': 'the pinned list is capped by SessionDB.list_sessions_rich '
+                        '(limit: int = 20), so 30 seeded rows can never render the 27/30 '
+                        'counter Python-side; Rust lists all 30',
+}
 
 
 def record(command, home, width, steps, extra_env=None, timeout=15):
@@ -164,7 +215,14 @@ def record(command, home, width, steps, extra_env=None, timeout=15):
 
 def steps_for(name, side):
     py = side == 'python'
+    # Arrow keys are encoded per side, and the reason is primary-source: the
+    # pinned Python picker reads curses.KEY_UP/KEY_DOWN (`hermes_cli/main.py`,
+    # `_curses_browse`) after curses enabled application-cursor mode (smkx,
+    # `ESC [ ? 1 h`), which emits the SS3 form; the Rust picker reads raw-mode
+    # CSI. A shared byte plan therefore cannot be assumed for both sides:
+    # `\x1b[B` is ignored by the Python picker (verified against 63279301).
     down = '\x1bOB' if py else '\x1b[B'
+    up = '\x1bOA' if py else '\x1b[A'
     provider = 'Select provider'
     terminal = 'Select terminal backend'
     gateway = 'Select platforms to configure'
@@ -228,9 +286,9 @@ def steps_for(name, side):
         return [('Browse sessions', '@resize 80x20'),
                 ('\x1b[2J', '\x1b'), ('@exit', None)]
     if name == 'picker-long-list':
-        return [('Browse sessions', '\x1b[B' * 26),
-                ('27/30 sessions', '\x1b[B' * 3), ('30/30 sessions', '\x1b[B'),
-                ('1/30 sessions', '\x1b[A'), ('30/30 sessions', '\x1b'),
+        return [('Browse sessions', down * 26),
+                ('27/30 sessions', down * 3), ('30/30 sessions', down),
+                ('1/30 sessions', up), ('30/30 sessions', '\x1b'),
                 ('@exit', None)]
     if name == 'picker-clear-filter-esc':
         return [('Browse sessions', 'sec'), ('filter: sec', '\x1b'),
@@ -291,6 +349,22 @@ def section_for(name):
 DEFAULT_PICKER_SEED = ((SID_A, 'deploy the thing'), (SID_B, 'second topic'))
 
 
+def picker_rows(name):
+    """The one picker fixture both capture sides must seed from.
+
+    The Python child used to seed the two default sessions for every picker
+    case, so the long-list contract (30 deterministic rows on the Rust side)
+    was recorded against two rows on the Python side. A shared function is the
+    only way that mismatch cannot come back.
+    """
+    if name == 'picker-empty':
+        return ()
+    if name == 'picker-long-list':
+        return tuple(long_list_seed(30))
+    return DEFAULT_PICKER_SEED
+
+
+
 def long_list_seed(count):
     """Deterministic multi-window fixture: names sort in index order and each
     session carries one user message, so every row renders with a preview."""
@@ -298,16 +372,14 @@ def long_list_seed(count):
             for i in range(count))
 
 
-def seed_rust(home, empty=False, count=2):
+def seed_rust(home, rows):
     with sqlite3.connect(home/'state.db') as db:
         db.executescript('''CREATE TABLE sessions(id TEXT PRIMARY KEY,source TEXT NOT NULL,started_at REAL NOT NULL);
         CREATE TABLE messages(id INTEGER PRIMARY KEY AUTOINCREMENT,session_id TEXT NOT NULL,role TEXT NOT NULL,content TEXT,timestamp REAL NOT NULL);
         CREATE TABLE tool_calls(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,turn_index INTEGER NOT NULL,tool_name TEXT NOT NULL,arguments TEXT NOT NULL,result TEXT,status TEXT NOT NULL,created_at REAL NOT NULL);''')
-        if not empty:
-            seed = DEFAULT_PICKER_SEED if count == 2 else tuple(long_list_seed(count))
-            for i,(sid,text) in enumerate(seed):
-                db.execute('INSERT INTO sessions VALUES (?,?,?)',(sid,'cli',1700000000+i))
-                db.execute('INSERT INTO messages(session_id,role,content,timestamp) VALUES (?,?,?,?)',(sid,'user',text,1700000000.5+i))
+        for i,(sid,text) in enumerate(rows):
+            db.execute('INSERT INTO sessions VALUES (?,?,?)',(sid,'cli',1700000000+i))
+            db.execute('INSERT INTO messages(session_id,role,content,timestamp) VALUES (?,?,?,?)',(sid,'user',text,1700000000.5+i))
 
 
 def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
@@ -321,8 +393,7 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
             with tempfile.TemporaryDirectory(prefix='hermes-ui-'+side+'-') as tmp:
                 home = Path(tmp)
                 if name.startswith('picker') and side == 'rust':
-                    seed_rust(home, name=='picker-empty',
-                              count=30 if name == 'picker-long-list' else 2)
+                    seed_rust(home, picker_rows(name))
                 if name.startswith('completion'):
                     (home/'config.yaml').write_text('model:\n  provider: auto\n  name: parity-fixture\n')
                     if name == 'completion-subcommand':
@@ -361,10 +432,7 @@ def capture_side(side, binary=None, summary=None, reference=None, names=CASES,
                         result['snapshot_end_byte'] = end
                         result['snapshot_rule'] = boundary + '; full later output retained unchanged'
                 print(side,name,width,result['error'] or 'CAPTURED_NOT_REVIEWED',file=sys.stderr)
-                picker_seed = ([SID_A, SID_B] if name.startswith('picker') and name != 'picker-empty'
-                               and name != 'picker-long-list'
-                               else [sid for sid, _ in long_list_seed(30)] if name == 'picker-long-list'
-                               else [])
+                picker_seed = [sid for sid, _ in picker_rows(name)] if name.startswith('picker') else []
                 cases.append({'id':f'{name}-{width}x30','scenario':name,'fixture':{'home':'isolated fresh temporary directory', 'credentials':'none supplied', 'docker_available':False if name=='wizard-docker' else 'not controlled', 'picker_seed':picker_seed, 'picker_seed_note':'long list uses deterministic session-00..session-29 names' if name=='picker-long-list' else None, 'picker_timestamp_base':1700000000 if name.startswith('picker') else None, 'skill_seed':'skills/demo-skill (SKILL.md with description frontmatter)' if name=='completion-subcommand' else None, 'repl_provider':'fake (offline) via --provider fake' if name.startswith('completion') else None},side:result})
     return cases
 
@@ -389,12 +457,13 @@ def python_child(reference, name, width):
         from hermes_state import SessionDB
         from hermes_cli.main import _session_browse_picker
         db = SessionDB(Path(os.environ['HERMES_HOME'])/'state.db')
-        if name != 'picker-empty':
-            for i,(sid,text) in enumerate(((SID_A,'deploy the thing'),(SID_B,'second topic'))):
-                db.create_session(sid,source='cli')
-                db.append_message(sid,'user',text,timestamp=1700000000.5+i)
-                with sqlite3.connect(Path(os.environ['HERMES_HOME'])/'state.db') as seed:
-                    seed.execute('UPDATE sessions SET started_at=?, last_activity_at=? WHERE id=?',(1700000000+i,1700000000.5+i,sid))
+        # Same fixture as the Rust side: one shared row list, never a
+        # hard-coded pair that silently diverges from a 30-row case.
+        for i,(sid,text) in enumerate(picker_rows(name)):
+            db.create_session(sid,source='cli')
+            db.append_message(sid,'user',text,timestamp=1700000000.5+i)
+            with sqlite3.connect(Path(os.environ['HERMES_HOME'])/'state.db') as seed:
+                seed.execute('UPDATE sessions SET started_at=?, last_activity_at=? WHERE id=?',(1700000000+i,1700000000.5+i,sid))
         _session_browse_picker(db.list_sessions_rich(),session_db=db)
     elif name.startswith('completion'):
         from prompt_toolkit import PromptSession
@@ -421,10 +490,29 @@ def export(path, group):
         print(f'::notice title=visual bundle {i+1}/{len(chunks)}::{chunks[i]}')
 
 
-def validate_bundle(bundle):
-    expected = {f'{name}-{width}x30' for name in CASES for width in (100, 80)}
-    assert len(bundle['cases']) == len(expected), 'missing or duplicate cases'
-    assert {c['id'] for c in bundle['cases']} == expected, 'case matrix mismatch'
+def validate_bundle(bundle, matrix=CASES):
+    """Check a bundle realises `matrix`, or, with matrix=None, check only that
+    the bundle is internally complete.
+
+    A retained packet is a frozen capture: today's matrix is not a property of
+    it. Requiring that equality made `audit_ui_evidence` fail whenever the
+    matrix grew (a 48-case packet against a 56-case matrix), reporting a capture
+    defect where there was none. Self-consistency is the honest check there:
+    unique ids, and every scenario present at exactly both widths.
+    """
+    ids = [c['id'] for c in bundle['cases']]
+    if matrix is None:
+        assert ids, 'empty bundle'
+        assert len(ids) == len(set(ids)), 'duplicate case ids'
+        by_scenario = {}
+        for case_id in ids:
+            by_scenario.setdefault(case_id.rsplit('-', 1)[0], set()).add(case_id.rsplit('-', 1)[1])
+        assert all(widths == {'100x30', '80x30'} for widths in by_scenario.values()), \
+            'packet is missing a width for some scenario'
+    else:
+        expected = {f'{name}-{width}x30' for name in matrix for width in (100, 80)}
+        assert len(bundle['cases']) == len(expected), 'missing or duplicate cases'
+        assert set(ids) == expected, 'case matrix mismatch'
     assert not bundle['errors'], 'unreached UI cases'
     sides = {s for s in ('python', 'rust') if s in bundle['cases'][0]}
     assert sides, 'no captured sides'

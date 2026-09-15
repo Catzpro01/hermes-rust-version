@@ -35,7 +35,7 @@ A successful capture job does not assert visual equality or close §J.7.
 - [x] Picker captures: normal/empty/filter/delete-confirmation states; differences remain.
 - [ ] Completion dropdown: normal and representative alternatives.
 - [x] Summary captures: 0/3 tools at 100/80 columns, matched fixture plus documented branding; skills/MCP zero only.
-- [ ] Complete all pairs + raw recordings + reproduction metadata.
+- [ ] Complete all pairs + raw recordings + reproduction metadata. Matrix side ready 2026-09-15: 28 names x 2 widths, Python side 56/56 green locally against the pinned reference; the Rust half still needs the runner capture.
 - [ ] Fix in-scope unapproved differences, rerun checks and affected captures.
 - [x] Relevant CI passes on actual capture checkpoint 3b39bd7 (34788156828); not visual acceptance.
 - [ ] User explicitly accepts final evidence report; only then close T11/T10.
@@ -374,3 +374,50 @@ Standards/Spec review:0 new hard violations,1 nonblocking duplicated-runner/setu
 observation; filter/column headers, selection/delete/no-match styles, other layout,
 wizard/completion and T12 coverage remain open. No resize/clear-filter/long-list
 claims, new adaptation, whole-picker acceptance, closure or merge.
+
+### Matriks empat area diselaraskan dengan gate (2026-09-15, sesi ini)
+
+Item terakhir T12 ("Complete all pairs + raw recordings + reproduction metadata")
+tidak bisa dijalankan apa adanya: paket `ui-3b39bd7` membekukan 24 nama, sedangkan
+lane 1–4 sesudah itu menambahkan perilaku yang hanya dijaga gate live. Rekaman
+pasangan pada source terkini akan mengulang cakupan lama dan tetap menyisakan
+catatan "resize/long-list/clear-filter tidak dibuktikan". Siklus ini menyiapkan
+rekaman itu, tanpa mengubah Rust.
+
+- Matriks `CASES` naik ke 28 nama (56 kasus × 2 sisi): `picker-resize-too-small`,
+  `picker-resize-redraw`, `picker-clear-filter-esc`, `picker-clear-filter-backspace`,
+  `wizard-gateway-cancel`, `wizard-tools-cancel`. Sisi Python **semua 56 kasus
+  hijau** direkam lokal terhadap referensi terpinn `63279301` (bukan runner).
+- `MATRIX_DEFERRED` (11 nama) kini tercatat di pengemudi capture beserta
+  alasannya, dan `test_capture_ui.py` gagal bila sebuah skenario gate hilang dari
+  keduanya — paket tidak bisa lagi diam-diam tertinggal dari gate.
+- **Dua kasus lama ternyata tidak bisa dipasangkan lagi.** `wizard-gateway-empty`
+  dan `completion-subcommand` di `ui-3b39bd7` direkam dengan rencana 2 langkah
+  yang lebih lemah; setelah lane mengeras `steps_for` ke keadaan akhir nyata,
+  sisi Python tidak pernah mencapainya. Memasangkan frame Python satu keadaan
+  dengan frame Rust keadaan lain akan menjadi pasangan palsu, jadi keduanya
+  masuk deferred dengan alasan sumber-primer, bukan diam-diam dilonggarkan.
+- **Temuan produk untuk T13:** daftar sesi Python dipotong default
+  `SessionDB.list_sessions_rich(limit: int = 20)`, jadi fixture 30 baris tidak
+  akan pernah menampilkan `27/30 sessions` di sisi Python, sementara Rust
+  menampilkan ketiganya. Ini perbedaan perilaku nyata; tidak "diperbaiki"
+  dengan mengecilkan fixture (itu normalisasi).
+- **Dua cacat pengemudi capture ditutup:** (1) sisi Python men-seed 2 sesi untuk
+  *setiap* kasus picker — kini satu sumber `picker_rows(name)` dipakai kedua sisi;
+  (2) panah dikirim sebagai CSI ke kedua sisi, padahal `_curses_browse` Python
+  membaca `KEY_DOWN` di bawah `smkx` (SS3) — byte kini per-sisi, teruji.
+- Audit paket beku tidak lagi dihakimi dengan matriks hari ini
+  (`validate_bundle(bundle, matrix=None)`); cakupan dilaporkan sebagai temuan.
+- `ui-evidence.yml` diikat ke branch sesi ini dan bisa di-dispatch manual; filter
+  push lama senyap tidak menghasilkan apa pun begitu sesi sebelumnya selesai.
+
+Verifikasi lokal: `test_capture_ui.py` 13 tes, `test_audit_ui_evidence.py`,
+`test_ci_workflow.py`, `*_checks.py` gate = PASS. Gate live `test_*.py` yang lain
+membutuhkan biner Rust (`HERMES_PICKER_BINARY`) dan tidak ada di sandbox ini —
+dijalankan CI di runner. Tidak ada klaim cargo lokal, tidak ada acceptance,
+tidak ada merge.
+
+**Langkah berikutnya:** balik `ui-capture/request.json` ke fase `capture` untuk
+menghasilkan setengah Rust di runner; sisi Python cukup direkap lokal (2 menit,
+sudah terbukti); gabung dengan `capture_ui.py pair`, render, periksa gambar
+langsung, lalu acceptance bertahap per area (Q3).
