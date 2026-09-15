@@ -287,6 +287,11 @@ ulang setelah commit ini (daemon VPS sudah diperbaiki dengan
 
 - Capture `picker-status-tags` terhadap binary hasil build — gate live
   `scripts/test_picker_status_tags.py` masih belum pernah dijalankan nyata.
+  Fixture kini **enam** bentuk: bentuk ke-6 (`tool-result-last`, baris terakhir
+  ber-role `shell`) menuntut `intr` dan menjadi satu-satunya bentuk tempat
+  Rust dan referensi Python berbeda secara terdeklarasi (Python: `done`) —
+  bedah ADR 0007 yang akhirnya punya bukti hidup. Tuntutan gate naik 3 → 4
+  pelanggaran; 10 tes decoder tetap hijau, suite Python tetap 203/14.
 - P2: error query status seharusnya ditelan dan dirender `-`, bukan
   menggagalkan picker (kontrak butir 7) — **SELESAI** (`status_tag`,
   `SessionStatus::Unknown` → `-`).

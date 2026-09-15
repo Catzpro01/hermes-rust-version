@@ -88,13 +88,16 @@ class StatusTagContentChecks(unittest.TestCase):
         collapsed = ['done' if tag != 'empty' else tag for tag in LIFECYCLE_TAGS]
         record = frame(collapsed)
         problems = case_problems(record)
-        self.assertEqual(len(problems), 3)
-        for problem, expected in zip(problems, ('intr', 'intr', 'err')):
+        # One problem per interrupted shape plus the error shape: the demand
+        # grew from 3 to 4 when the tool-result row (ADR 0007) joined the
+        # fixture, because a collapsing port gets that row wrong too.
+        self.assertEqual(len(problems), 4)
+        for problem, expected in zip(problems, ('intr', 'intr', 'intr', 'err')):
             self.assertIn(f"status tag 'done', expected '{expected}'", problem)
 
     def test_rows_are_read_from_the_pinned_tag_column(self):
         # A decoy word inside the name field must not be taken for the tag.
-        shifted = frame(['done', 'intr', 'intr', 'err', 'empty'])
+        shifted = frame(list(LIFECYCLE_TAGS))
         rows = row_tags(shifted)
         self.assertEqual([tag for _, tag, _ in rows], list(LIFECYCLE_TAGS))
         self.assertTrue(all(row >= 3 for row, _, _ in rows))
@@ -102,11 +105,13 @@ class StatusTagContentChecks(unittest.TestCase):
     def test_missing_shape_is_reported_as_a_count(self):
         problems = case_problems(frame(LIFECYCLE_TAGS[:4]))
         self.assertEqual(len(problems), 1)
-        self.assertIn('expected 5 lifecycle rows, found 4', problems[0])
+        self.assertIn(f'expected {len(LIFECYCLE_TAGS)} lifecycle rows, found 4',
+                      problems[0])
 
     def test_ink_follows_the_tag_on_body_rows(self):
         # `err` painted green is a different bug than a wrong word: name it.
-        problems = case_problems(frame(LIFECYCLE_TAGS, inks={3: TAG_SGR['done']}))
+        # Index 4 is the `err` row: two interrupted rows now precede it.
+        problems = case_problems(frame(LIFECYCLE_TAGS, inks={4: TAG_SGR['done']}))
         self.assertEqual(len(problems), 1)
         self.assertIn("'err' ink", problems[0])
 

@@ -14,8 +14,12 @@ four shapes (see `docs/hermes-ui-spec/017/evidence/upstream-lifecycle-status/`):
 
 The fixture seeds exactly one session per shape, in that listing order, so the
 expected sequence is the table in `capture_ui.LIFECYCLE_TAGS`. A port that
-collapses every non-empty session onto `done` therefore fails on the two
+collapses every non-empty session onto `done` therefore fails on the three
 `intr` rows and the `err` row, and each message names the row it is judging.
+The middle `intr` row is the tool-result row of ADR 0007: the reference reads
+its role (`shell`, the tool's own name) as `complete` and renders `done`, while
+Hermes-RS renders `intr`. The gate is run per side, so the Rust expectation is
+the one that carries the adaptation.
 
 Like the ink checker, nothing is normalized: the tag is read off the rendered
 screen at the pinned column, and the cursor row's ink is deliberately not
