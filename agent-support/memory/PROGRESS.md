@@ -2326,3 +2326,20 @@ dari paket itu, dan opsi C menutupnya.
   format-recovery yang diekspor run.
 - Gate `check_picker_status_tags.py` belum pernah dijalankan terhadap binary
   hasil build — fixture `picker-status-tags` belum di-capture.
+
+### Keputusan 2026-09-16 — PR #11 sengaja TIDAK di-merge
+
+- PR [#11](https://github.com/Catzpro01/hermes-rust-version/pull/11)
+  (`arena/01a0a600-hermes-rust-version` → `main`) dibuka atas permintaan
+  pengguna, lalu pengguna memutuskan **tidak jadi merge**.
+- Tindakan yang diambil: **tidak merge, tidak mengaktifkan auto-merge, tidak
+  menutup PR.** Terverifikasi: `state=OPEN`, `mergedAt=null`, `merged=false`,
+  `autoMergeRequest=null`, dan `refs/heads/main` tetap di `a008e52`.
+- PR dibiarkan terbuka sebagai tempat review; head-nya `f3894b64`.
+- Status `UNSTABLE` pada PR **bukan** karena kode branch ini: berasal dari
+  check `vps-baremetal/fast-ci` yang gagal "Cargo Check failed (exit 101)
+  (3s)" — dan check yang sama sudah gagal pada commit yang tidak menyentuh
+  Rust sama sekali. Jangan dibaca sebagai regresi.
+- Sebelum PR ini layak di-merge, masih harus ada: runner yang hidup →
+  `cargo fmt` + `clippy -D warnings` + `cargo test` hijau → capture nyata
+  `picker-status-tags`. Sampai kini nol bukti build untuk perubahan Rust.
