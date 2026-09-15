@@ -65,8 +65,18 @@ Semua tiket keputusan W1–W4 CLOSED. Lane kerja berikutnya (urutan Q2):
    4 insiden infra tercatat jujur (MSRV drift, disk penuh, cancel mid-clippy,
    runner putus). Vendoring `setup.py` tetap tugas bukti terpisah terblokir
    jaringan upstream.
-3. **Completion** — menunggu rekaman referensi Python dari pengguna (W4-Q1),
-   lalu gate + implementasi Rust inline dropdown.
+3. **Completion (sisi Rust)** — SELESAI 2026-09-15 (run `34925228949` hijau
+   penuh: fmt=clippy=test=picker=success, 214 tes cargo, 13 gate live).
+   Kontrak W4 dijaga gate live `completion-dropdown` (5 skenario REPL ×
+   2 lebar: unique completion `/mod`→`/model`, inserksi terfilter-prefix
+   `/s`→`/save ` lalu `/ski`→`/skin` tanpa spasi, subcommand
+   `/skills sea`→`search`, skill seeded `/demo`→`demo-skill`, ghost text
+   `nality` tanpa Tab, `/sessions` diterima membuka browse picker) +
+   14 unit test checker. Bukti lintasan: gate `6c2239e`, RED fix semantik
+   rustyline `818ebe6` (menu tak terrender; Tab menyisipkan kandidat
+   pertama urutan registri), RED fix token-pertama skill `953890c`.
+   Sisi Python (perbandingan byte vs rekaman referensi) tetap menunggu
+   rekaman pengguna per W4-Q1.
 4. **Kelengkapan T12** → **acceptance bertahap per area** (Q3).
 
 ## Not yet specified
