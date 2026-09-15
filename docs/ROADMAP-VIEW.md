@@ -35,19 +35,31 @@ implementasi fitur baru.
 
 ## 2. Verifikasi terkini
 
-- `main` HEAD `baa7158` (PR #7 **MERGED** oleh `Catzpro01`, 2026-09-14T14:28:06Z):
-  kedua job CI SUCCESS; anotasi ringkasan `fmt=success clippy=success
-  test=success picker=success`, **584 tes Rust lulus / 0 gagal** (28 binary tes).
-- Branch kerja sesi: `arena/01a0a052-hermes-rust-version` (berbasis `baa7158`).
-  Commit paket terakhir `8b89b12` → CI `34862320398` **SUCCESS**.
-- CI biasa menjalankan 9 gate live PTY picker (posisi footer, warna footer,
+- `main` HEAD `a008e52` (2026-09-15T16:01:35Z), satu commit setelah `07ee479`.
+  PR #9 **MERGED** 2026-09-15T10:01:43Z; PR #10 tercatat CLOSED, bukan merged.
+  **Clone sandbox ini shallow (depth 1)**, jadi `git log` lokal hanya
+  memperlihatkan satu commit pada `main` — itu pemotongan, bukan reset; jangan
+  disimpulkan `main` di-reset hanya dari situ.
+- Branch kerja sesi: `arena/01a0a600-hermes-rust-version` (berbasis `a008e52`).
+  PR **#11 terbuka dan sengaja tidak di-merge** menunggu instruksi eksplisit.
+- CI biasa menjalankan **14** gate live PTY picker (posisi footer, warna footer,
   header normal, header filter, tata letak kolom, prompt hapus + pesan no-match,
-  baris terpilih, tinta kolom status, cadence redraw); setiap perilaku baru
-  menambah satu gate sebelum siklusnya ditutup. Sejak siklus cadence redraw,
-  picker tidak lagi menggambar ulang saat menunggu input, jadi flake start-up
-  PTY tidak lagi muncul.
-- **Tidak ada toolchain Rust di sandbox** — setiap perubahan Rust diverifikasi di
-  GitHub Actions (RED → GREEN → capture), lalu diangkut sebagai patch ber-checksum
+  baris terpilih, tinta kolom status, cadence redraw, ukuran terminal, kontrol
+  browse, field wizard, dropdown completion, konten status lifecycle); setiap
+  perilaku baru menambah satu gate sebelum siklusnya ditutup. Sejak siklus
+  cadence redraw, picker tidak lagi menggambar ulang saat menunggu input, jadi
+  flake start-up PTY tidak lagi muncul.
+- **Verifikasi Rust hari ini berjalan lewat daemon webhook VPS, bukan Actions.**
+  `make check` pada `a4d96bb` dan `d150470` → `vps-baremetal/fast-ci`
+  **success**, "All fast checks passed via make check in 88s!". `ci.yml`
+  sendiri memakai `runs-on: [self-hosted, vps, hermes]` dan run-run-nya masih
+  antre lalu dibatalkan, jadi Actions bukan fallback yang independen.
+  Cara baca status yang sah: `gh api repos/Catzpro01/hermes-rust-version/
+  commits/<sha>/status`. **Bukan** `curl` ke `203.145.35.218:9000` — sandbox
+  tidak bisa membuka koneksi TCP ke sana (reset seketika) dan selalu gagal
+  meski daemon sehat; pernah disalahartikan sebagai "VPS mati".
+- **Tidak ada toolchain Rust di sandbox** — setiap perubahan Rust diverifikasi
+  di VPS (RED → GREEN → capture), lalu diangkut sebagai patch ber-checksum
   lewat anotasi run. Tidak ada klaim `cargo` lokal.
 
 ## 3. Spec 017 — lima area §J.7
@@ -75,8 +87,9 @@ implementasi fitur baru.
 | 9 | Baris terpilih ` → ` hijau + bold (mengganti reverse video) | ✅ | `ee11541` + paket `picker-selection-b4cb408` (34/34 region piksel identik) |
 | 10 | Warna kolom status | ✅ | `1781404` + paket `picker-status-ink-19bbbd5` (34/34 region kontrol identik, 4 region span tag = perbedaan yang dinyatakan); pemetaan dibaca dari sumber upstream terpinned dan disimpan di `evidence/upstream-status-attr/` |
 | 11 | Konten kolom `Active` / `ID` | 🅿️ adaptasi | `8`-karakter sid dan format `Active` adalah adaptasi terdokumentasi di `docs/PARITY.md` |
-| 12 | Resize, daftar panjang, clear-filter | ⏳ berikutnya | belum dibuktikan oleh fixture ukuran tetap ini (resize baru tercakup sebatas penandaan dirty) |
+| 12 | Resize, daftar panjang, clear-filter | ✅ | RED `b494990` → GREEN `a916b73` + `ccf157b`. Gate live `check_picker_browse_control`, 5 skenario × 2 lebar (resize-redraw, resize-too-small, long-list, clear-filter Esc, clear-filter backspace), terikat di CI. Kontrak W2 = parity penuh ketiganya. **Catatan kekuatan bukti:** tidak punya paket `evidence/picker-*` seperti siklus 1–11; verifikasinya lewat reproduksi biner mock 10/10 (lihat PROGRESS.md), jadi satu tingkat lebih lemah |
 | 13 | Cadence redraw: gambar hanya saat layar berubah | ✅ | `bbd943c` + paket `picker-redraw-on-input-b2db435` (gate menolak 8/10 kasus paket lama, menerima 10/10 referensi; konten identik byte; flake start-up hilang) |
+| 14 | Konten kolom status (lifecycle) | 🔄 source hijau, capture tertunda | `2d36af9`: status diturunkan dari baris pesan terakhir mengikuti `classify_session_status` referensi (`done`/`intr`/`err`/`empty`), bukan lagi `turns.is_empty()`. Dasar ukuran: capture berpasangan menunjukkan Python menggambar `intr` (slot 3) pada baris yang sama tempat Rust menggambar `done` (slot 2). `make check` hijau 88s + 7/7 e2e picker. **Tertunda:** `fmt`/`clippy` belum dijalankan, capture `picker-status-tags` belum diambil, tiket W5 masih OPEN menunggu konfirmasi opsi C |
 
 Setiap siklus punya rantai bukti yang sama: **RED nyata** (gagal karena alasan
 benar, bukan error setup) → **patch minimal** → **GREEN resmi** (gate live 3×,
@@ -98,7 +111,7 @@ SHA-256** → **capture dari sumber ter-commit** → **audit + laporan + CI hija
 
 | Prioritas | Isi | Status sekarang |
 |---|---|---|
-| **P1** | Siklus TDD picker V2 satu per satu (temuan harness H1–H5 sudah menjadi gate CI) | 🔄 siklus 11 dari 12 (perilaku) |
+| **P1** | Siklus TDD picker V2 satu per satu (temuan harness H1–H5 sudah menjadi gate CI) | 🔄 12 ✅ + 13 ✅ selesai; 14 (konten status) source hijau, menunggu `fmt`/`clippy` + capture |
 | **P1** | Habiskan daftar V2, lalu masuk **V1 wizard** memakai 14 skenario baseline | ⏳ |
 | **P2** | **Keputusan produk completion dropdown** (implementasi vs amandemen §J.7) | ⏳ butuh jawaban pengguna |
 | **P2** | Bukti **summary non-nol** (skills/MCP) untuk melengkapi area kelima | ⏳ |
