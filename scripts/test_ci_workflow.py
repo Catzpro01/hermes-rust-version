@@ -814,6 +814,38 @@ class CiGateTests(unittest.TestCase):
         self.assertLess(setup_idx, picker_idx,
                         "setup-python must precede the picker regressions")
 
+    def test_heavy_rust_job_is_not_disabled(self):
+        """User instruction 2026-09-16: a green `main` must again mean
+        fmt + clippy + the full cargo suite + the live PTY gates.
+
+        The job carried `if: false` while Rust verification was offloaded to the
+        VPS bare-metal webhook daemon. That daemon only runs `make check`, so the
+        14 pixel-level regressions in the picker step never executed against a
+        built binary and the Spec 017 W5 status gates stayed unverified. The
+        condition must stay absent (or at least truthy) and every gate step must
+        survive, otherwise the workflow can be silently downgraded again."""
+        job = WORKFLOW["jobs"]["test"]
+        condition = job.get("if")
+        self.assertTrue(
+            condition is None
+            or str(condition).strip().lower() not in ("false", "false()", "0", "no"),
+            f"the heavy Rust job is switched off again via `if: {condition!r}`; "
+            "a green run would no longer prove fmt/clippy/test/picker",
+        )
+        for step in (
+            "cargo fmt --check",
+            "cargo clippy",
+            "cargo test",
+            "Picker terminal regressions",
+            "Fail if any step failed",
+        ):
+            with self.subTest(step=step):
+                self.assertIn(step, STEPS, f"the heavy job lost its '{step}' step")
+        # The picker step is conditional on the cargo suite succeeding, so a
+        # build failure can never masquerade as "gates skipped, job green".
+        self.assertEqual(STEPS["Picker terminal regressions"]["if"],
+                         "steps.test.outcome == 'success'")
+
     def test_jobs_run_on_the_tuned_self_hosted_vps(self):
         """User instruction 2026-09-16: Hybrid CI strategy:
         - Small/lightweight jobs (QA regression) use GitHub Actions cloud (ubuntu-latest)
