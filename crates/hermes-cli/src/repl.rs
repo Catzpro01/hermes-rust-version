@@ -477,7 +477,7 @@ pub async fn run_repl(
                 );
                 continue;
             }
-            "/exit" => break,
+            "/exit" | "/quit" => break,
             "/sessions" => {
                 // Spec 017 T09: on an interactive terminal `/sessions` opens
                 // the §F browse picker and resumes the selection in place
@@ -512,6 +512,14 @@ pub async fn run_repl(
                 show_tool_calls(&store, parse_resume(command)?)?;
                 continue;
             }
+            // `/history` was advertised by `/help` from the start but had no
+            // arm, so it fell through to the model. It is the active session's
+            // messages, rendered by the same function `/messages <id>` and the
+            // shell subcommand use, so all three agree byte for byte.
+            "/history" => {
+                show_messages(&store, session_id)?;
+                continue;
+            }
             command if command.starts_with("/search ") => {
                 let query = command
                     .split_once(' ')
@@ -521,7 +529,7 @@ pub async fn run_repl(
                 search_sessions(&store, query)?;
                 continue;
             }
-            "/new" => {
+            "/new" | "/reset" => {
                 let id = store.create_session("cli")?;
                 session_id = id;
                 runner.replace_turns(Vec::new());
@@ -813,6 +821,20 @@ pub async fn run_repl(
                     }
                 }
             }
+            // `/help unported`: the honest list of catalogued Python commands
+            // this build has no handler for (see `completion::unported_lines`).
+            "/help unported" => {
+                let lines = crate::completion::unported_lines();
+                println!(
+                    "Catalogued Python commands this build does not implement ({}):",
+                    lines.len()
+                );
+                for line in &lines {
+                    println!("  {line}");
+                }
+                println!("Completion still offers them; typing one prints this notice.");
+                continue;
+            }
             // Full categorized help matching Hermes reference
             "/help" => {
                 use crate::tui::welcome::{HELP_HEADER, SEPARATOR};
@@ -838,7 +860,6 @@ pub async fn run_repl(
                 println!("--- Model & Intelligence ---");
                 for (cmd, desc) in [
                     ("/provider [name]", "show / switch provider"),
-                    ("/model [name]", "switch model"),
                     ("/info", "provider + context window stats"),
                     ("/fast", "toggle fast inference mode"),
                     ("/pin <n>", "pin turn (never windowed)"),
@@ -871,9 +892,26 @@ pub async fn run_repl(
                 ] {
                     println!("  {cmd:<24} {desc}");
                 }
+                println!("--- Catalog ---");
+                for (cmd, desc) in [
+                    ("/help", "this help"),
+                    ("/help unported", "catalogued commands not implemented here"),
+                ] {
+                    println!("  {cmd:<24} {desc}");
+                }
                 continue;
             }
             _ => {
+                // A catalogued command this build does not implement must say
+                // so instead of being forwarded to the model as prose: the
+                // completion registry offers all 101 verbatim Python entries,
+                // and only `HANDLED_COMMANDS` has an arm above. Anything that
+                // is not a catalog token (a pasted path, prose, an unknown
+                // word) still reaches the model exactly as before.
+                if let Some(notice) = crate::completion::not_ported_notice(input) {
+                    eprintln!("{notice}");
+                    continue;
+                }
                 let before = runner.turns().len();
                 let turn_cancel = CancellationToken::new();
                 // Spec 013 Ticket 04 — live streaming display. ONE task owns

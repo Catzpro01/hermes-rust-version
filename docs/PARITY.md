@@ -277,6 +277,7 @@ that requirement without explicit approval. See the
 | Provider catalog | 39 providers (§G) | Verbatim static catalog; `hermes model` picker; unit cross-check vs verbatim file | ✅ (live per-provider model list = manual entry; follow-up) |
 | Toolset catalog | 26 toolsets + 8 default-off (§G.5) | Verbatim static catalog; `hermes tools`; `tools.enabled_toolsets` stored | ✅ (registry wiring = follow-up) |
 | Autocomplete | prompt_toolkit completer + AutoSuggest ghost | rustyline completer + hinter, 101 verbatim registry entries + 14 separately marked RS extensions (gateway-only entries filtered in CLI) | ✅ (behavior parity; RS extensions labeled) |
+| Catalog vs dispatch | every registry entry is a real command | completion still offers the whole catalog, but only 36 names have a REPL handler (`completion::HANDLED_COMMANDS`, pinned to the dispatch arms in both directions). A catalogued command with no handler now prints `/<name> is not implemented in Hermes-RS yet (Python: <description>)` instead of being forwarded to the model as prose; `/help unported` lists the gap, and an unwired alias (`/learning`) points at the command that does work (`/journey`) | ⚠️ honest subset |
 | Tips | 380 startup strings (dead code) + 11 composer placeholders | Ported verbatim as data + selectors; startup shows nothing (parity-faithful); placeholder shown TUI-only | ✅ |
 | Session picker | curses browser (§F) | crossterm browser, §F frame verbatim (`session_picker_e2e` PTY: 7 tests) | ✅ (documented adaptations below) |
 | Startup/resume | bare = new, `-c` = resume | Same + `--resume-id`; resume-latest (oldest-resume bugfix T09); piped bare resumes latest for scripted stability | ✅ |
@@ -318,6 +319,15 @@ implementation not found), TUI picker.
 
 - Dynamic plugin/provider loading
 - Conversation branching and edit
+- Catalogued `/commands` with no handler: 81 of the 101 verbatim Python
+  entries are offered by completion but not implemented here (`/help unported`
+  prints all 81 with their Python descriptions). They report themselves instead
+  of reaching the model; implementing them is future-spec work, not a display
+  gap. The 36 dispatched names and the 14 RS extensions are pinned to the
+  `repl.rs` dispatch arms in both directions.
+- `/model` (mid-session model switch) is advertised by Python and catalogued
+  here, but this build has no model-switch API: it is no longer listed in
+  `/help` and reports itself as unported.
 
 ## Testing
 
