@@ -408,6 +408,26 @@ locally with byte-for-byte/checksum verification. No local Rust execution
 is claimed (toolchain downloads are blocked). Spec 017 visual §J.7 and
 human closure sign-off remain open; see T11 and `PROGRESS.md`.
 
+Latest verification (2026-09-16, branch `arena/01a0a7d4-hermes-rust-version`):
+the heavy `fmt + clippy + test` job in `.github/workflows/ci.yml` is **enabled
+again** (`0286bff`); `if: false` had reduced a green run to the lightweight
+workflow check, so fmt, clippy, the workspace suite and the live PTY gates were
+not running at all. Run
+[35046192977](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35046192977)
+reports `fmt=success clippy=success test=success picker=success` — the workspace
+suite plus **14** live PTY/pixel gates, including `picker-status-tags` (Spec 017
+W5 lifecycle status column) and `picker-browse-control` (resize repaint,
+`Terminal too small` below 5×40, modulo cursor wrap with a minimally clamped
+window on long lists, and filter clearing via Esc/Backspace). Run
+[35047313528](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35047313528)
+(`749d6d6`, first-run onboarding) repeats the same four gate results, so the W5
+deferral recorded earlier in this file is closed by measurement rather than by
+argument. `scripts/test_ci_workflow.py::test_heavy_rust_job_is_not_disabled`
+keeps the job from being switched off silently again. No local `cargo` run is
+claimed — the toolchain cannot be installed in the working sandbox — and when
+`cargo fmt --check` fails the job exports the rustfmt patch as a check-run
+annotation, which is how the formatting fix `d41be4a` was produced byte-for-byte.
+
 ## Invariants
 
 - `state.db` is the only canonical storage.

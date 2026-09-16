@@ -37,19 +37,26 @@ user's private Python installation.
 
 ### Latest checkpoint (supersedes older chronological state below)
 
-- **W5 picker status lifecycle — harness delivered, gate deliberately RED**
-  (sesi `arena/01a0a600`, 2026-09-16): patch `01a0a493…` diterapkan bersih
-  (fixture `picker-status-tags` + checker + 10 tes). Patch dikirim rusak;
-  tiga cacat diperbaiki (`NameError: i` di `body_row()`, simulasi
-  collapse-to-`done` yang overstate 1 baris, `tag_sgr()` menebak cursor dari
-  nilai tag). 202 tes / 13 error vs baseline 192 / 13 → +10 hijau, nol
-  regresi; ke-13 error = `HERMES_PICKER_BINARY` (cargo absen di sandbox).
-- **W5 opsi C diimplementasi namun BELUM TERVERIFIKASI** (`2d36af9`): kolom
-  `Stat` kini mengikuti `classify_session_status` referensi atas baris pesan
-  terakhir. Dasarnya ukuran langsung, bukan prosa: capture berpasangan
-  `picker-status-ink-19bbbd5` menunjukkan Python menggambar `intr` (slot 3)
-  di baris yang sama tempat Rust menggambar `done` (slot 2). **Nol bukti
-  build/test/fmt** — lihat bloker infra di bawah.
+- **W5 picker status lifecycle — TERVERIFIKASI GREEN (koreksi 2026-09-16, sesi
+  `arena/01a0a7d4`).** Dua catatan lama di bawah ini ("harness delivered, gate
+  deliberately RED" dan "opsi C diimplementasi namun BELUM TERVERIFIKASI")
+  **sudah tidak berlaku**. Penyebab gate tidak pernah jalan bukan kode picker:
+  `.github/workflows/ci.yml` mematikan job Rust berat dengan `if: false`, jadi
+  "hijau" hanya berarti job workflow ringan lolos. Commit `0286bff`
+  mengaktifkannya kembali — dijaga
+  `scripts/test_ci_workflow.py::test_heavy_rust_job_is_not_disabled` — dan run
+  [35046192977](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35046192977)
+  melaporkan `fmt=success clippy=success test=success picker=success`: seluruh
+  suite workspace + **14** gate PTY/piksel live, termasuk `picker-status-tags`
+  (bentuk lifecycle W5) dan `picker-browse-control` (resize-too-small,
+  resize-redraw, long-list, clear-filter-esc, clear-filter-backspace).
+  Jadi opsi C (`Stat` mengikuti `classify_session_status` atas baris pesan
+  terakhir) terverifikasi **tanpa satu baris pun perubahan classifier**; bukti
+  ukurannya tetap capture berpasangan `picker-status-ink-19bbbd5` (Python `intr`
+  slot 3 di baris tempat Rust dulu menggambar `done` slot 2). Harness-nya seperti
+  catatan lama: fixture `picker-status-tags` + checker + 10 tes, tiga cacat patch
+  terkirim sudah diperbaiki; decoder suite kedua checker (24 tes) jalan lokal
+  dengan `pyte==0.8.2`/`wcwidth==0.8.3`.
 - **Jalur verifikasi yang SAH (dikoreksi 2026-09-16).** Daemon webhook VPS
   **berjalan** dan sudah memakai `make check`: status `a4d96bb` =
   `vps-baremetal/fast-ci` **success** "All fast checks passed via make check
@@ -63,12 +70,24 @@ user's private Python installation.
   `2d36af9` adalah status **basi** dari sebelum daemon dialihkan ke
   `make check`; status commit lama tidak ditulis ulang. Bukan regresi kode.
 - **Actions terpisah dari daemon webhook:** `ci.yml` memakai
-  `runs-on: [self-hosted, vps, hermes]` dan run-run-nya masih antre lalu
-  dibatalkan. Jangan menonaktifkan trigger Actions sebelum jalur ini atau
-  daemon benar-benar hijau.
+  `runs-on: [self-hosted, vps, hermes]`. Era "antre lalu dibatalkan" sudah
+  lewat: run 35046192977 (2m51s), 35047313528 (3m47s) dan 35048530295 (3m8s)
+  semuanya **selesai** di runner itu. `concurrency.cancel-in-progress` tetap
+  aktif, jadi push beruntun → hanya run terakhir yang berarti.
+- **Status commit VPS bisa `pending` walau Actions hijau.** Untuk `0286bff` dan
+  `749d6d6` API commit-status tidak punya context sama sekali padahal run
+  Actions-nya `success`. Yang otoritatif untuk kode Rust = **hasil run Actions**
+  (`gh run list` / anotasi `summary` job), bukan `commits/<sha>/status`.
+- **`gh run view --log` dan unduhan artefak TIDAK bisa dipakai di sandbox ini**
+  (blob `productionresultssa19.blob.core.windows.net` → EOF). Jalan keluarnya:
+  anotasi check-run. `gh api repos/<owner>/<repo>/check-runs/<job_id>/annotations`
+  memuat ringkasan `fmt=… clippy=… test=… picker=…`, jumlah tes, **dan** patch
+  rustfmt yang diekspor job (base64+gzip di anotasi berjudul
+  `rustfmt patch 1/1`) — itulah cara perbaikan fmt `d41be4a` dibuat tanpa
+  toolchain lokal.
 - Target `make` yang tersedia: `check` (terverifikasi hijau), `fmt`,
-  `clippy`, `test`, `build`. `fmt` dan `clippy` **belum** pernah dijalankan
-  terhadap perubahan opsi C.
+  `clippy`, `test`, `build`. `fmt` dan `clippy` **sudah** dijalankan terhadap
+  perubahan opsi C oleh job CI berat (run 35046192977, keduanya `success`).
 - **Picker selected-row slice delivered**: fix `ee11541` (tested patch 1171 B
   `8eed758f…`: `Color::DarkGreen` + bold replaces reverse video), RED `34866264371`
   → GREEN `34866921566` → capture `34868306211` (bundle `fe8bc2c2…`, 10 cases) →

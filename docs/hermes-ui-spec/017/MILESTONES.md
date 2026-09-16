@@ -1,6 +1,6 @@
 # Milestone Hermes — visual parity Spec017
 
-**Pembaruan: 14 September 2026 · Tata letak kolom, prompt/no-match dan baris terpilih picker selesai diverifikasi; 34 region piksel yang dipatok identik.**
+**Pembaruan: 16 September 2026 · Tinta kolom status, lifecycle W5 dan kontrol browse (resize/daftar panjang/clear-filter) kini terverifikasi oleh gate live di CI resmi; job Rust berat (`fmt + clippy + test`) sudah diaktifkan kembali.**
 
 Halaman ini melacak pekerjaan visual parity yang sedang aktif, **bukan persentase
 seluruh proyek Hermes**. “Terverifikasi” berlaku untuk scope yang disebutkan;
@@ -20,7 +20,10 @@ bukan berarti seluruh layar identik atau Spec017 sudah diterima pengguna.
 | Tata letak kolom picker (kolom kursor, baris pemisah, medan nama, tinta header) | ✅ Terverifikasi | [b732d22: 14 region piksel identik, 2 PNG byte-identik](evidence/picker-column-layout-b732d22/REPORT.md) |
 | Prompt konfirmasi hapus (palette1 + bold) dan pesan no-match (atribut dim) | ✅ Terverifikasi | [fd674dc: 28 dari 28 region piksel identik](evidence/picker-message-style-fd674dc/REPORT.md) |
 | Baris terpilih picker (palette2 + bold, tanpa reverse video) | ✅ Terverifikasi | [b4cb408: 34 dari 34 region piksel identik](evidence/picker-selection-b4cb408/REPORT.md) |
-| Warna kolom status, konten `Active`/`ID`, resize/daftar panjang/clear-filter | ⏳ Belum selesai | Warna status belum ada bukti terpinn untuk nilai Rust `done`; `Active`/`ID` adaptasi terdokumentasi |
+| Warna kolom status picker | ✅ Terverifikasi | [19bbbd5: 34/34 region kontrol identik](evidence/picker-status-ink-19bbbd5/REPORT.md); gate `picker-status-ink` wajib di CI |
+| Lifecycle status W5 (opsi C: `done`/`intr`/`err`/`empty`) | ✅ Terverifikasi | Gate `scripts/test_picker_status_tags.py` GREEN pada run [35046192977](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35046192977) (`fmt=clippy=test=picker=success`) bersama 13 gate PTY lain; adaptasi role tool dicatat di ADR 0007 |
+| Resize / daftar panjang / clear-filter | ✅ Terverifikasi | Gate `scripts/test_picker_browse_control.py`, lima skenario (`resize-too-small`, `resize-redraw`, `long-list`, `clear-filter-esc`, `clear-filter-backspace`) dipatok ke [upstream-browse-control](evidence/upstream-browse-control/); GREEN pada run yang sama, ditambah `picker-terminal-size` (40 kolom menggambar picker, 39 kolom hanya `Terminal too small`) |
+| Konten kolom `Active`/`ID` | ⚠️ Adaptasi terdokumentasi | `sid` 8 karakter untuk UUIDv7; `Active` waktu relatif ≤10 sel. Dinyatakan sebagai adaptasi, bukan diklaim identik |
 | Sisa perbedaan wizard/completion dan kelengkapan bukti | ⏳ Belum selesai | T12/T13 tetap terbuka |
 | Penerimaan akhir Spec017 | 🔒 Belum siap | Memerlukan bukti lengkap, CI relevan GREEN, dan persetujuan eksplisit pengguna |
 
@@ -199,11 +202,41 @@ dibandingkan dan pixel-identik. Tidak ada normalisasi warna/geometry.
 
 Belum ada implementasi untuk sisa milestone tersebut dalam slice warna footer.
 
+## Verifikasi resmi W5 + kontrol browse (16 September 2026)
+
+Sebelum tanggal ini, baris ringkasan di atas menyebut warna kolom status dan
+resize/daftar panjang/clear-filter "belum selesai", dan catatan sesi W5 menyebut
+gate-nya "sengaja dibiarkan RED". Keduanya sudah tidak berlaku, dan alasannya
+bukan perubahan kode picker:
+
+- **Penyebabnya gerbang CI, bukan picker.** `.github/workflows/ci.yml`
+  mematikan job Rust berat dengan `if: false`, sehingga "hijau" hanya berarti
+  job workflow ringan lolos. Commit `0286bff` mengaktifkannya kembali
+  (`scripts/test_ci_workflow.py::test_heavy_rust_job_is_not_disabled` menjaga
+  agar tidak mati lagi).
+- **Run [35046192977](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35046192977)**
+  (`0286bff`) melaporkan anotasi `fmt=success clippy=success test=success
+  picker=success`: seluruh suite workspace **dan** 14 gate PTY/piksel live,
+  termasuk `picker-status-tags` (bentuk lifecycle W5) dan
+  `picker-browse-control` (lima skenario resize/daftar panjang/clear-filter).
+  Jadi opsi C W5 terverifikasi tanpa satu baris pun perubahan classifier.
+- **Run [35047313528](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35047313528)**
+  (`749d6d6`, onboarding first-run) mengulang hasil yang sama: keempat gate
+  `success`, tidak ada regresi picker.
+- Decoder suite kedua checker (24 tes) juga dijalankan lokal dengan
+  `pyte==0.8.2` + `wcwidth==0.8.3`; hanya capture PTY yang membutuhkan biner.
+
+Yang **tidak** diklaim slice ini: tidak ada bukti piksel baru, tidak ada
+perubahan tinta/geometri, konten `Active`/`ID` tetap adaptasi terdokumentasi,
+T12/T13 (wizard/completion) tetap terbuka, dan Spec017 belum diterima pengguna.
+
 ## Aturan penutupan
 
 - Tes otomatis mendukung bukti visual, tidak menggantikannya.
 - Rekaman Python yang dipakai ulang harus disebutkan; bukan capture Python baru.
-- Perubahan resize, daftar panjang dan clear-filter belum dibuktikan oleh slice ini.
+- Perubahan resize, daftar panjang dan clear-filter belum dibuktikan oleh slice
+  redraw-cadence ini; ketiganya kemudian dipatok gate `picker-browse-control`
+  (lihat bagian verifikasi 16 September 2026).
 - Tidak ada estimasi persen keseluruhan atau tanggal selesai yang belum berdasar.
 - **Tidak melakukan merge tanpa instruksi pengguna.** Selesai satu slice tidak
   menutup Spec017 dan tidak berarti pengguna telah memberikan acceptance.

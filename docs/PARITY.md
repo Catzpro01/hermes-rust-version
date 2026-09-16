@@ -337,6 +337,17 @@ cargo test --test smoke
 ./scripts/smoke-test.sh
 ```
 
+CI (`.github/workflows/ci.yml`, heavy `fmt + clippy + test` job — re-enabled
+2026-09-16 after `if: false` had reduced a green run to the lightweight
+workflow check) runs `cargo fmt --check`, `clippy --workspace --all-targets
+-D warnings`, `cargo test --workspace --no-fail-fast` and then **14** live
+PTY/pixel gates against a freshly built `hermes-rs`: footer position, footer
+colour, normal header, filter header, column layout, message style, selection,
+status ink, redraw-on-input, terminal size, browse control, wizard fields,
+completion dropdown, status tags. When `cargo fmt --check` fails the job
+exports the exact rustfmt patch as a check annotation, so a formatting failure
+is repairable byte-for-byte without a local toolchain.
+
 ## Verification notes
 
 The checked-in Hermes-compatible fixture reports `sessions.id` as `TEXT`, with UUID values stored as 36-character strings. The live Python Hermes home on the validation VM did not contain `state.db`, so no claim is made about an existing live Python session database.
@@ -651,3 +662,34 @@ from CI. The live gate `scripts/check_picker_status_tags.py` (fixture
 `picker-status-tags`, one session per lifecycle shape) is committed and its
 10 decoder tests pass locally, but it has **not** yet run against a built
 binary.
+
+### Closure 2026-09-16 — the W5 lifecycle gate ran, and resize/long-list/clear-filter are pinned
+
+The section above ended "source only … has **not** yet run against a built
+binary". It has now run, on the official runner, without the classifier
+changing:
+
+- CI's heavy Rust job was re-enabled (`0286bff`): `ci.yml` carried `if: false`
+  on the `test:` job, so "green" had meant only the lightweight workflow check.
+  Run [35046192977](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35046192977)
+  reports `fmt=success clippy=success test=success picker=success` — the full
+  workspace suite plus all 14 live PTY/pixel gates, `scripts/test_picker_status_tags.py`
+  among them. The W5 status-lifecycle ticket is verified, not pending.
+- Resize, long lists and filter clearing were already pinned to the retained
+  reference (`docs/hermes-ui-spec/017/evidence/upstream-browse-control/`) and
+  run in that same step as `scripts/test_picker_browse_control.py`, five
+  scenarios: `picker-resize-too-small`, `picker-resize-redraw`,
+  `picker-long-list`, `picker-clear-filter-esc`,
+  `picker-clear-filter-backspace`. With `scripts/test_picker_terminal_size.py`
+  (40 columns draw the picker; 39 draw only `Terminal too small` and wait for
+  one key) this closes the resize/long-list/clear-filter item that earlier
+  sections of this file listed as unproved. Those statements were accurate for
+  their own slice and are superseded here rather than edited away.
+- The two checkers' decoder suites (24 tests) pass locally with `pyte==0.8.2`
+  and `wcwidth==0.8.3`, so the gate logic is exercisable without a Rust
+  toolchain; only the PTY captures need the built binary.
+
+Unchanged and still open: the documented `Active`/`ID` adaptations (8-char
+`sid` for UUIDv7 collision headroom, relative `Active` within ten cells),
+ADR 0007's tool-role spelling, the wizard/completion evidence gaps (T12/T13),
+and Spec 017 acceptance — which requires the user, not a green run.
