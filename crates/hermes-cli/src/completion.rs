@@ -1248,10 +1248,42 @@ pub const RS_EXTENSIONS: &[CommandDef] = &[
 /// in a different costume. `handled_names_have_a_dispatch_site` re-reads
 /// `repl.rs` and fails when a name here has no arm, so this list cannot drift.
 pub const HANDLED_COMMANDS: &[&str] = &[
-    "battery", "btw", "clear", "exit", "fast", "goal", "help", "history", "info", "inspect",
-    "journey", "mascot", "mcp", "messages", "new", "petdex", "pin", "pinned", "plan", "provider",
-    "quit", "redraw", "reflect", "reset", "resume", "sandbox", "search", "sessions", "skin",
-    "status", "title", "tool-calls", "tools", "toolsets", "unpin", "yolo",
+    "battery",
+    "btw",
+    "clear",
+    "exit",
+    "fast",
+    "goal",
+    "help",
+    "history",
+    "info",
+    "inspect",
+    "journey",
+    "mascot",
+    "mcp",
+    "messages",
+    "new",
+    "petdex",
+    "pin",
+    "pinned",
+    "plan",
+    "provider",
+    "quit",
+    "redraw",
+    "reflect",
+    "reset",
+    "resume",
+    "sandbox",
+    "search",
+    "sessions",
+    "skin",
+    "status",
+    "title",
+    "tool-calls",
+    "tools",
+    "toolsets",
+    "unpin",
+    "yolo",
 ];
 
 /// A catalogued command this build has no handler for.
@@ -1319,7 +1351,7 @@ fn catalog_entry(token: &str) -> Option<&'static CommandDef> {
     COMMAND_REGISTRY
         .iter()
         .chain(RS_EXTENSIONS.iter())
-        .find(|d| d.name == token || d.aliases.iter().any(|a| *a == token))
+        .find(|d| d.name == token || d.aliases.contains(&token))
 }
 
 /// Classifies one input line. Non-slash lines and slash-prefixed text that is
@@ -1374,7 +1406,11 @@ pub fn unported_lines() -> Vec<String> {
                 && !d.aliases.iter().any(|a| HANDLED_COMMANDS.contains(a))
         })
         .map(|d| {
-            let suffix = if d.gateway_only { "  [gateway-only]" } else { "" };
+            let suffix = if d.gateway_only {
+                "  [gateway-only]"
+            } else {
+                ""
+            };
             format!("/{:<20} {}{}", d.name, d.description, suffix)
         })
         .collect()
@@ -2599,7 +2635,9 @@ mod tests {
         assert!(lines.iter().any(|l| l.contains("[gateway-only]")));
         for line in &lines {
             let name = line.trim_start_matches('/').split_whitespace().next();
-            let Some(name) = name else { panic!("bad line {line:?}") };
+            let Some(name) = name else {
+                panic!("bad line {line:?}")
+            };
             assert!(!HANDLED_COMMANDS.contains(&name), "{name} is handled");
             assert!(catalog_entry(name).is_some(), "{name} is not catalogued");
         }
