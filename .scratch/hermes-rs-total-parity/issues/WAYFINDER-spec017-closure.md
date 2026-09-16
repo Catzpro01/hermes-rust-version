@@ -139,4 +139,23 @@ Semua tiket keputusan W1–W4 CLOSED. Lane kerja berikutnya (urutan Q2):
   browser. Yang bisa dikerjakan di sesi: bundle + pairing
   (`pair_picker_bundle.py`, sisi Python dipakai ulang apa adanya dari paket
   yang dipertahankan, case set 48 = 48 cocok).
+- **Diagnosis 2026-09-16 04:02Z — runner hidup, tetapi hanya mengambil job CI.**
+  Job capture `35052151094` (workflow `Visual evidence (remaining UI)`) antre
+  >30 menit. Dalam jendela yang sama job CI dari push yang sama
+  (`35052151108`, commit `4f44d2f`) selesai `success` dalam ~3 menit, dan job CI
+  untuk push berikutnya (`efe9ef6`) mulai 03:55 dan selesai `success` 03:58 —
+  semuanya di `runs-on: [self-hosted, vps, hermes]` yang identik dengan job
+  capture. Tidak ada run lain di repo ini. Kesimpulan yang didukung bukti:
+  **bukan** runner offline dan **bukan** label salah; mekanisme yang menyediakan
+  runner (kemungkinan runner ephemeral yang diluncurkan per event, atau layanan
+  runner dengan filter) hanya melayani workflow `CI`. API runner dan
+  `actions/permissions` = HTTP 403 untuk token agent, dan sandbox tidak punya
+  egress TCP ke VPS, jadi penyebab sisi-server tidak bisa dipastikan dari sini.
+  Gejala kedua yang sejalan: daemon webhook VPS tidak memposting commit status
+  sama sekali untuk `0286bff`, `749d6d6`, `cbce6f7`, `4f44d2f`
+  (`state=pending`, nol context) padahal CI Actions hijau — jadi ada layanan
+  sisi-VPS yang tidak berjalan sebagaimana dicatat di `MEMORY.md`.
+  Ini dinding yang hanya bisa dilewati pengguna (periksa/restart layanan runner
+  di VPS, atau pulihkan izin dispatch); dua opsi jalannya dicatat di
+  `MEMORY.md` dan ditawarkan ke pengguna, tidak diputuskan sepihak.
 

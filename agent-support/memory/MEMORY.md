@@ -74,6 +74,18 @@ user's private Python installation.
   lewat: run 35046192977 (2m51s), 35047313528 (3m47s) dan 35048530295 (3m8s)
   semuanya **selesai** di runner itu. `concurrency.cancel-in-progress` tetap
   aktif, jadi push beruntun → hanya run terakhir yang berarti.
+- **Runner self-hosted hanya mengambil job workflow `CI` (bukti 2026-09-16).**
+  Job capture `ui-evidence.yml` (run `35052151094`) antre >30 menit sementara dua
+  job CI di `runs-on: [self-hosted, vps, hermes]` yang **identik** selesai hijau
+  dalam jendela itu (`35052151108` untuk `4f44d2f`; run `efe9ef6` 03:55→03:58).
+  Jadi bukan runner offline, bukan label salah, dan bukan `if:` job (job yang
+  `if`-nya false berstatus skipped, bukan queued). Kemungkinan: runner ephemeral
+  diluncurkan hanya untuk event workflow CI, atau layanan runner punya filter.
+  Tidak bisa dipastikan dari sandbox (API runner & `actions/permissions` = 403,
+  tanpa egress TCP ke VPS). Akibat praktis: **capture empat area T12 tidak bisa
+  dijalankan lewat workflow capture-nya sendiri** sampai sisi VPS diperbaiki, atau
+  sampai langkah capture dipindahkan ke workflow `CI` sebagai step yang digate
+  `request.json`. Jangan menyimpulkan "VPS mati" dari antrean ini.
 - **Status commit VPS bisa `pending` walau Actions hijau.** Untuk `0286bff` dan
   `749d6d6` API commit-status tidak punya context sama sekali padahal run
   Actions-nya `success`. Yang otoritatif untuk kode Rust = **hasil run Actions**
