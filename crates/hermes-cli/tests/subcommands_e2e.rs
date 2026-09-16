@@ -1179,3 +1179,29 @@ fn resume_id_opens_the_named_session() {
         .failure()
         .stderr(predicate::str::contains("invalid session id"));
 }
+
+/// First-run onboarding (Python parity) belongs to the interactive entry point
+/// only. An inspection subcommand must never create a home and never prompt:
+/// it reports the two escapes - `hermes-rs setup` and `HERMES_HOME` - and
+/// leaves the filesystem untouched.
+#[test]
+fn subcommand_with_a_missing_home_names_setup_and_creates_nothing() {
+    let parent = TempDir::new().unwrap();
+    let missing = parent.path().join("never-created");
+    for args in [["info"], ["sessions"], ["model"], ["tools"], ["mcp"]] {
+        hermes_cmd()
+            .env("HERMES_HOME", &missing)
+            .args(args)
+            .write_stdin("")
+            .assert()
+            .failure()
+            .code(1)
+            .stderr(predicate::str::contains("not found"))
+            .stderr(predicate::str::contains("hermes-rs setup"))
+            .stderr(predicate::str::contains("HERMES_HOME"));
+    }
+    assert!(
+        !missing.exists(),
+        "an inspection subcommand must never create the home"
+    );
+}

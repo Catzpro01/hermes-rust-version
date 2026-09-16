@@ -91,6 +91,7 @@ mod pty {
     use super::consts;
     use std::fs::File;
     use std::io::{Read, Write as _};
+    use std::path::PathBuf;
     use std::process::{Child, Command as StdCommand, Stdio};
     use std::sync::{Arc, Mutex};
     use std::time::{Duration, Instant};
@@ -105,6 +106,10 @@ mod pty {
         master: Arc<Mutex<File>>,
         output: Arc<Mutex<Vec<u8>>>,
         home: TempDir,
+        /// The path exported as `HERMES_HOME`. Equal to `home.path()` except in
+        /// the first-run case, which points at a path inside the temp dir that
+        /// deliberately does not exist yet.
+        run_home: PathBuf,
     }
 
     fn spawn_reader(mut src: impl Read + Send + 'static, sink: Arc<Mutex<Vec<u8>>>) {
@@ -121,6 +126,48 @@ mod pty {
 
     impl PtyWizard {
         fn spawn(args: &[&str], existing_config: Option<&str>) -> Self {
+            let home = TempDir::new().unwrap();
+            if let Some(cfg) = existing_config {
+                std::fs::write(home.path().join("config.yaml"), cfg).unwrap();
+            }
+            let run_home = home.path().to_path_buf();
+            Self::spawn_at(args, home, run_home, &[])
+        }
+
+        /// First-run harness: `HERMES_HOME` points at a path that does **not**
+        /// exist yet (Python parity: a bare `hermes` onboards instead of
+        /// erroring). The temp dir only owns the parent, so cleanup still works.
+        fn spawn_missing_home(args: &[&str]) -> Self {
+            let home = TempDir::new().unwrap();
+            let run_home = home.path().join("not-created-yet");
+            assert!(!run_home.exists());
+            Self::spawn_at(args, home, run_home, &[])
+        }
+
+        /// First run that is meant to *complete* the wizard. The Model section's
+        /// default `key_env` for the first catalog entry is `NOUS_API_KEY`, and
+        /// a pinned-but-empty `key_env` is a hard error (Spec 005: never borrow
+        /// another provider's key), so the environment has to hold a value for
+        /// it or the REPL following the wizard would correctly refuse to start.
+        /// The dummy value is never transmitted: this test sends no prompt.
+        fn spawn_missing_home_with_key(args: &[&str]) -> Self {
+            let home = TempDir::new().unwrap();
+            let run_home = home.path().join("not-created-yet");
+            assert!(!run_home.exists());
+            Self::spawn_at(
+                args,
+                home,
+                run_home,
+                &[("NOUS_API_KEY", "first-run-dummy-not-a-real-key")],
+            )
+        }
+
+        fn spawn_at(
+            args: &[&str],
+            home: TempDir,
+            run_home: PathBuf,
+            extra_env: &[(&str, &str)],
+        ) -> Self {
             let ws = Winsize {
                 ws_row: 40,
                 ws_col: 120,
@@ -128,15 +175,12 @@ mod pty {
                 ws_ypixel: 0,
             };
             let OpenptyResult { master, slave } = openpty(&ws, None).expect("openpty");
-            let home = TempDir::new().unwrap();
-            if let Some(cfg) = existing_config {
-                std::fs::write(home.path().join("config.yaml"), cfg).unwrap();
-            }
             let slave_file = File::from(slave);
             let stdout_file = slave_file.try_clone().expect("dup slave for stdout");
             let mut child = StdCommand::new(env!("CARGO_BIN_EXE_hermes-rs"))
                 .env("TERM", "xterm-256color")
-                .env("HERMES_HOME", home.path())
+                .env("HERMES_HOME", &run_home)
+                .envs(extra_env.iter().copied())
                 .args(args)
                 .stdin(slave_file)
                 .stdout(stdout_file)
@@ -156,6 +200,7 @@ mod pty {
                 master: write_master,
                 output,
                 home,
+                run_home,
             }
         }
 
@@ -369,5 +414,92 @@ mod pty {
         let status = w.child.wait().expect("child exits");
         assert!(status.success(), "exit: {status}");
         assert!(!w.home.path().join("config.yaml").exists());
+    }
+
+    /// First run on a machine with no Hermes home at all: the bare entry point
+    /// onboards instead of erroring (Python parity — the port used to die with
+    /// `Hermes home not found`). ESC at the mode question cancels the wizard
+    /// without writing a config, and the REPL still comes up on the offline
+    /// `fake` provider because the home is created for `state.db`.
+    ///
+    /// The banner title is the wait target, not `❯`: inquire draws the same
+    /// arrow as its selection cursor, so the prompt symbol is already in the
+    /// buffer before the REPL exists.
+    #[test]
+    fn bare_first_run_onboards_then_starts_the_repl_after_esc() {
+        let mut w = PtyWizard::spawn_missing_home(&[]);
+        w.wait_for(consts::FIRST_TIME).unwrap();
+        w.wait_for(consts::MODE_QUESTION).unwrap();
+        w.send(b"\x1b");
+        w.wait_for(consts::CANCELED_MESSAGE).unwrap();
+        let out = w.wait_for("Hermes-RS v").unwrap();
+        assert!(
+            !out.contains("Goodbye!"),
+            "the REPL must start, not exit: {out}"
+        );
+        assert!(w.run_home.is_dir(), "first run must create the home");
+        assert!(
+            !w.run_home.join("config.yaml").exists(),
+            "ESC must not write a config"
+        );
+        w.send(b"/exit\n");
+        let out = w.wait_for("Goodbye!").unwrap();
+        assert!(out.contains('⚕'), "{out}");
+        let status = w.child.wait().expect("child exits");
+        assert!(status.success(), "exit: {status}");
+        assert!(
+            w.run_home.join("state.db").exists(),
+            "the REPL must open its store in the new home"
+        );
+    }
+
+    /// Same first run, but the operator completes Quick Setup: the wizard
+    /// creates the home, writes `config.yaml` there (no backup — nothing
+    /// existed), and control passes straight into the REPL, so a fresh install
+    /// never needs a separate `hermes-rs setup` invocation.
+    #[test]
+    fn bare_first_run_quick_setup_creates_home_and_writes_config() {
+        let mut w = PtyWizard::spawn_missing_home_with_key(&[]);
+        w.wait_for(consts::FIRST_TIME).unwrap();
+        w.wait_for(consts::MODE_QUESTION).unwrap();
+        w.send(b"\r"); // Quick Setup (first option)
+        w.wait_for(consts::PROVIDER_QUESTION).unwrap();
+        w.send(b"\r"); // provider: first catalog entry (nous)
+        w.wait_for("API base URL").unwrap();
+        // A provider with no `api` URL or no declared model cannot be built
+        // (`registry::build_configured`), so both are typed rather than left
+        // empty: this is what makes the config usable on the next start.
+        w.send(b"https://example.invalid/v1\r");
+        w.wait_for("Environment variable holding the API key")
+            .unwrap();
+        w.send(b"\r"); // keep the catalog default: NOUS_API_KEY
+        w.wait_for("Model name").unwrap();
+        w.send(b"first-run-model\r");
+        w.wait_for("Select toolsets to enable:").unwrap();
+        w.send(b"\r"); // keep the default toolsets
+        w.wait_for("Connect a messaging platform?").unwrap();
+        w.send(b"\r"); // set up now
+        w.wait_for("Select platforms to configure:").unwrap();
+        w.send(b"\r"); // none selected
+        w.wait_for(consts::SETUP_COMPLETE).unwrap();
+        // The REPL takes over without a second invocation.
+        w.wait_for("Hermes-RS v").unwrap();
+        w.send(b"/exit\n");
+        w.wait_for("Goodbye!").unwrap();
+        let status = w.child.wait().expect("child exits");
+        assert!(status.success(), "exit: {status}");
+
+        assert!(w.run_home.is_dir(), "wizard created the home");
+        let cfg = std::fs::read_to_string(w.run_home.join("config.yaml")).unwrap();
+        assert!(cfg.contains("provider: nous"), "{cfg}");
+        assert!(cfg.contains("api: https://example.invalid/v1"), "{cfg}");
+        assert!(cfg.contains("name: first-run-model"), "{cfg}");
+        assert!(cfg.contains("key_env: NOUS_API_KEY"), "{cfg}");
+        let backups: Vec<String> = std::fs::read_dir(&w.run_home)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .filter(|n| n.starts_with("config.yaml.bak."))
+            .collect();
+        assert!(backups.is_empty(), "nothing to back up: {backups:?}");
     }
 }

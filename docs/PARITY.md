@@ -280,6 +280,7 @@ that requirement without explicit approval. See the
 | Tips | 380 startup strings (dead code) + 11 composer placeholders | Ported verbatim as data + selectors; startup shows nothing (parity-faithful); placeholder shown TUI-only | ✅ |
 | Session picker | curses browser (§F) | crossterm browser, §F frame verbatim (`session_picker_e2e` PTY: 7 tests) | ✅ (documented adaptations below) |
 | Startup/resume | bare = new, `-c` = resume | Same + `--resume-id`; resume-latest (oldest-resume bugfix T09); piped bare resumes latest for scripted stability | ✅ |
+| First run (no `~/.hermes`) | bare `hermes` creates the home and runs first-time setup | Same on a terminal: the verbatim first-time notice, then the setup wizard, then the REPL (ESC still starts the REPL on the offline `fake` provider). Piped/scripted: no prompt and no writes, just an error naming `hermes-rs setup` and `HERMES_HOME`. Inspection subcommands never create a home | ✅ |
 | Session delete | `d` + `[y/N]` in picker | Same, default-deny, cascade delete | ✅ |
 
 Documented picker adaptations (§F): 8-char `sid` for UUIDv7
