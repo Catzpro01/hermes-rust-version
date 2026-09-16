@@ -277,9 +277,11 @@ that requirement without explicit approval. See the
 | Provider catalog | 39 providers (§G) | Verbatim static catalog; `hermes model` picker; unit cross-check vs verbatim file | ✅ (live per-provider model list = manual entry; follow-up) |
 | Toolset catalog | 26 toolsets + 8 default-off (§G.5) | Verbatim static catalog; `hermes tools`; `tools.enabled_toolsets` stored | ✅ (registry wiring = follow-up) |
 | Autocomplete | prompt_toolkit completer + AutoSuggest ghost | rustyline completer + hinter, 101 verbatim registry entries + 14 separately marked RS extensions (gateway-only entries filtered in CLI) | ✅ (behavior parity; RS extensions labeled) |
+| Catalog vs dispatch | every registry entry is a real command | completion still offers the whole catalog, but only 36 names have a REPL handler (`completion::HANDLED_COMMANDS`, pinned to the dispatch arms in both directions). A catalogued command with no handler now prints `/<name> is not implemented in Hermes-RS yet (Python: <description>)` instead of being forwarded to the model as prose; `/help unported` lists the gap, and an unwired alias (`/learning`) points at the command that does work (`/journey`) | ⚠️ honest subset |
 | Tips | 380 startup strings (dead code) + 11 composer placeholders | Ported verbatim as data + selectors; startup shows nothing (parity-faithful); placeholder shown TUI-only | ✅ |
 | Session picker | curses browser (§F) | crossterm browser, §F frame verbatim (`session_picker_e2e` PTY: 7 tests) | ✅ (documented adaptations below) |
 | Startup/resume | bare = new, `-c` = resume | Same + `--resume-id`; resume-latest (oldest-resume bugfix T09); piped bare resumes latest for scripted stability | ✅ |
+| First run (no `~/.hermes`) | bare `hermes` creates the home and runs first-time setup | Same on a terminal: the verbatim first-time notice, then the setup wizard, then the REPL (ESC still starts the REPL on the offline `fake` provider). Piped/scripted: no prompt and no writes, just an error naming `hermes-rs setup` and `HERMES_HOME`. Inspection subcommands never create a home | ✅ |
 | Session delete | `d` + `[y/N]` in picker | Same, default-deny, cascade delete | ✅ |
 
 Documented picker adaptations (§F): 8-char `sid` for UUIDv7
@@ -317,6 +319,15 @@ implementation not found), TUI picker.
 
 - Dynamic plugin/provider loading
 - Conversation branching and edit
+- Catalogued `/commands` with no handler: 81 of the 101 verbatim Python
+  entries are offered by completion but not implemented here (`/help unported`
+  prints all 81 with their Python descriptions). They report themselves instead
+  of reaching the model; implementing them is future-spec work, not a display
+  gap. The 36 dispatched names and the 14 RS extensions are pinned to the
+  `repl.rs` dispatch arms in both directions.
+- `/model` (mid-session model switch) is advertised by Python and catalogued
+  here, but this build has no model-switch API: it is no longer listed in
+  `/help` and reports itself as unported.
 
 ## Testing
 
@@ -325,6 +336,17 @@ cargo test --test cli_e2e
 cargo test --test smoke
 ./scripts/smoke-test.sh
 ```
+
+CI (`.github/workflows/ci.yml`, heavy `fmt + clippy + test` job — re-enabled
+2026-09-16 after `if: false` had reduced a green run to the lightweight
+workflow check) runs `cargo fmt --check`, `clippy --workspace --all-targets
+-D warnings`, `cargo test --workspace --no-fail-fast` and then **14** live
+PTY/pixel gates against a freshly built `hermes-rs`: footer position, footer
+colour, normal header, filter header, column layout, message style, selection,
+status ink, redraw-on-input, terminal size, browse control, wizard fields,
+completion dropdown, status tags. When `cargo fmt --check` fails the job
+exports the exact rustfmt patch as a check annotation, so a formatting failure
+is repairable byte-for-byte without a local toolchain.
 
 ## Verification notes
 
@@ -640,3 +662,34 @@ from CI. The live gate `scripts/check_picker_status_tags.py` (fixture
 `picker-status-tags`, one session per lifecycle shape) is committed and its
 10 decoder tests pass locally, but it has **not** yet run against a built
 binary.
+
+### Closure 2026-09-16 — the W5 lifecycle gate ran, and resize/long-list/clear-filter are pinned
+
+The section above ended "source only … has **not** yet run against a built
+binary". It has now run, on the official runner, without the classifier
+changing:
+
+- CI's heavy Rust job was re-enabled (`0286bff`): `ci.yml` carried `if: false`
+  on the `test:` job, so "green" had meant only the lightweight workflow check.
+  Run [35046192977](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35046192977)
+  reports `fmt=success clippy=success test=success picker=success` — the full
+  workspace suite plus all 14 live PTY/pixel gates, `scripts/test_picker_status_tags.py`
+  among them. The W5 status-lifecycle ticket is verified, not pending.
+- Resize, long lists and filter clearing were already pinned to the retained
+  reference (`docs/hermes-ui-spec/017/evidence/upstream-browse-control/`) and
+  run in that same step as `scripts/test_picker_browse_control.py`, five
+  scenarios: `picker-resize-too-small`, `picker-resize-redraw`,
+  `picker-long-list`, `picker-clear-filter-esc`,
+  `picker-clear-filter-backspace`. With `scripts/test_picker_terminal_size.py`
+  (40 columns draw the picker; 39 draw only `Terminal too small` and wait for
+  one key) this closes the resize/long-list/clear-filter item that earlier
+  sections of this file listed as unproved. Those statements were accurate for
+  their own slice and are superseded here rather than edited away.
+- The two checkers' decoder suites (24 tests) pass locally with `pyte==0.8.2`
+  and `wcwidth==0.8.3`, so the gate logic is exercisable without a Rust
+  toolchain; only the PTY captures need the built binary.
+
+Unchanged and still open: the documented `Active`/`ID` adaptations (8-char
+`sid` for UUIDv7 collision headroom, relative `Active` within ten cells),
+ADR 0007's tool-role spelling, the wizard/completion evidence gaps (T12/T13),
+and Spec 017 acceptance — which requires the user, not a green run.

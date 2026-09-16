@@ -1230,6 +1230,192 @@ pub const RS_EXTENSIONS: &[CommandDef] = &[
     },
 ];
 
+// ---------------------------------------------------------------------------
+// Ported-vs-catalogued: what this build actually dispatches
+// ---------------------------------------------------------------------------
+
+/// The `/commands` `repl.rs` really dispatches in this build.
+///
+/// Autocomplete offers the whole ported catalog (101 verbatim Python entries
+/// minus the gateway-only ones, plus [`RS_EXTENSIONS`]), but only this subset
+/// has a handler. Before this list existed, a catalogued command with no
+/// handler - `/compress`, `/agents`, `/palette`, ... - fell through the REPL's
+/// `match` and was forwarded to the model as ordinary prose, so the CLI offered
+/// a command and then silently did something else with it.
+///
+/// Names are canonical and case-sensitive, exactly like the dispatch arms:
+/// claiming `/New` is handled while the REPL forwards it would be the same lie
+/// in a different costume. `handled_names_have_a_dispatch_site` re-reads
+/// `repl.rs` and fails when a name here has no arm, so this list cannot drift.
+pub const HANDLED_COMMANDS: &[&str] = &[
+    "battery",
+    "btw",
+    "clear",
+    "exit",
+    "fast",
+    "goal",
+    "help",
+    "history",
+    "info",
+    "inspect",
+    "journey",
+    "mascot",
+    "mcp",
+    "messages",
+    "new",
+    "petdex",
+    "pin",
+    "pinned",
+    "plan",
+    "provider",
+    "quit",
+    "redraw",
+    "reflect",
+    "reset",
+    "resume",
+    "sandbox",
+    "search",
+    "sessions",
+    "skin",
+    "status",
+    "title",
+    "tool-calls",
+    "tools",
+    "toolsets",
+    "unpin",
+    "yolo",
+];
+
+/// A catalogued command this build has no handler for.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NotPorted {
+    /// The token as typed, with its slash (`/compress`).
+    pub token: String,
+    /// The verbatim Python description, so the notice says what is missing.
+    pub description: &'static str,
+    /// Gateway-only entries are not even offered by CLI completion.
+    pub gateway_only: bool,
+    /// Set when the typed token matched an alias rather than the entry name.
+    pub alias_of: Option<&'static str>,
+    /// True when that canonical name *is* dispatched here, so the gap is the
+    /// alias wiring, not the feature (`/learning` vs `/journey`).
+    pub canonical_handled: bool,
+}
+
+impl NotPorted {
+    /// One-line notice. States what is missing and what Python does with it;
+    /// never claims the command ran.
+    pub fn notice(&self) -> String {
+        if self.gateway_only {
+            format!(
+                "{} is gateway-only in Hermes Python and is not available in the Hermes-RS CLI (Python: {})",
+                self.token, self.description
+            )
+        } else if let Some(canonical) = self.alias_of.filter(|_| self.canonical_handled) {
+            // The feature exists here, only the alias is not wired: saying
+            // "not implemented" would send the operator looking for a command
+            // that this build does have.
+            format!(
+                "{} is an alias for /{canonical} in Hermes Python; this build dispatches /{canonical} only",
+                self.token
+            )
+        } else if let Some(canonical) = self.alias_of {
+            format!(
+                "{} (alias for /{canonical}) is not implemented in Hermes-RS yet (Python: {})",
+                self.token, self.description
+            )
+        } else {
+            format!(
+                "{} is not implemented in Hermes-RS yet (Python: {})",
+                self.token, self.description
+            )
+        }
+    }
+}
+
+/// What the REPL should do with a line that starts with `/`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SlashStatus {
+    /// Dispatched here, or not a catalogued command at all - ordinary prompt
+    /// text (a pasted absolute path such as `/home/user/x`, prose that happens
+    /// to start with a slash, an unknown token) must still reach the model.
+    Prompt,
+    /// Offered by autocomplete from the ported catalog, but unimplemented here.
+    NotPorted(NotPorted),
+}
+
+/// Exact, case-sensitive catalog lookup by name or alias (the completer's own
+/// [`HermesCompleter::command_by_token`] is deliberately lenient; a dispatch
+/// decision may not be).
+fn catalog_entry(token: &str) -> Option<&'static CommandDef> {
+    COMMAND_REGISTRY
+        .iter()
+        .chain(RS_EXTENSIONS.iter())
+        .find(|d| d.name == token || d.aliases.contains(&token))
+}
+
+/// Classifies one input line. Non-slash lines and slash-prefixed text that is
+/// not a command token are [`SlashStatus::Prompt`].
+pub fn slash_status(input: &str) -> SlashStatus {
+    let Some(rest) = input.strip_prefix('/') else {
+        return SlashStatus::Prompt;
+    };
+    let token = rest.split_whitespace().next().unwrap_or_default();
+    // A command token is a bare word: this is what keeps `/home/user/x`,
+    // `/usr/bin/env` and `/etc/hosts` as ordinary prompt text.
+    if token.is_empty()
+        || !token
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        return SlashStatus::Prompt;
+    }
+    if HANDLED_COMMANDS.contains(&token) {
+        return SlashStatus::Prompt;
+    }
+    match catalog_entry(token) {
+        Some(def) => SlashStatus::NotPorted(NotPorted {
+            token: format!("/{token}"),
+            description: def.description,
+            gateway_only: def.gateway_only,
+            alias_of: (def.name != token).then_some(def.name),
+            canonical_handled: HANDLED_COMMANDS.contains(&def.name),
+        }),
+        None => SlashStatus::Prompt,
+    }
+}
+
+/// The REPL's one-call helper: the notice to print, or `None` when the line
+/// should be sent to the model unchanged.
+pub fn not_ported_notice(input: &str) -> Option<String> {
+    match slash_status(input) {
+        SlashStatus::NotPorted(missing) => Some(missing.notice()),
+        SlashStatus::Prompt => None,
+    }
+}
+
+/// Every catalogued command this build does not implement, in catalog order
+/// (`/help unported`). An entry whose name or any alias is dispatched counts as
+/// implemented, so `/exit` is not listed just because its alias is unhandled.
+pub fn unported_lines() -> Vec<String> {
+    COMMAND_REGISTRY
+        .iter()
+        .chain(RS_EXTENSIONS.iter())
+        .filter(|d| {
+            !HANDLED_COMMANDS.contains(&d.name)
+                && !d.aliases.iter().any(|a| HANDLED_COMMANDS.contains(a))
+        })
+        .map(|d| {
+            let suffix = if d.gateway_only {
+                "  [gateway-only]"
+            } else {
+                ""
+            };
+            format!("/{:<20} {}{}", d.name, d.description, suffix)
+        })
+        .collect()
+}
+
 /// A drop-in skill discovered under `<hermes-home>/skills/`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Skill {
@@ -2304,5 +2490,156 @@ mod tests {
         let disp = &cands[0].display;
         assert!(disp.starts_with("⚡ "));
         assert!(disp.chars().count() <= 60 + 2 + 1, "{disp:?}");
+    }
+
+    // --- Ported vs catalogued dispatch ------------------------------------
+
+    /// Anti-drift, forward direction: every name this build claims to handle
+    /// must have a dispatch arm in `repl.rs`. Without this, `HANDLED_COMMANDS`
+    /// could keep a name the REPL forwards to the model, which is exactly the
+    /// lie the not-ported notice exists to remove.
+    #[test]
+    fn handled_names_have_a_dispatch_site() {
+        let source = include_str!("repl.rs");
+        for name in HANDLED_COMMANDS {
+            let forms = [
+                format!("\"/{name}\" =>"),
+                format!("\"/{name}\" |"),
+                format!("starts_with(\"/{name} \")"),
+                format!("starts_with(\"/{name}\")"),
+            ];
+            assert!(
+                forms.iter().any(|f| source.contains(f)),
+                "`/{name}` is listed as handled but repl.rs dispatches none of {forms:?}"
+            );
+        }
+    }
+
+    /// Anti-drift, reverse direction: an arm added to `repl.rs` without being
+    /// listed here would make the REPL print "not implemented" for a command it
+    /// actually runs. The arms are parsed out of the same source the compiler
+    /// sees, so this cannot be satisfied by restating the list.
+    #[test]
+    fn every_dispatch_arm_is_listed_as_handled() {
+        let mut arms = std::collections::BTreeSet::new();
+        for line in include_str!("repl.rs").lines() {
+            let line = line.trim();
+            let is_arm = line.ends_with("=> {")
+                || line.ends_with("=> break,")
+                || line.contains("command.starts_with(\"/");
+            if !is_arm {
+                continue;
+            }
+            let mut rest = line;
+            while let Some(start) = rest.find("\"/") {
+                rest = &rest[start + 1..];
+                let Some(end) = rest.find('"') else { break };
+                let literal = &rest[..end];
+                rest = &rest[end..];
+                let literal = literal.strip_prefix('/').unwrap_or_default();
+                if let Some(name) = literal.split_whitespace().next() {
+                    arms.insert(name.to_owned());
+                }
+            }
+        }
+        assert!(arms.len() > 30, "the arm parser drifted: {arms:?}");
+        for arm in &arms {
+            assert!(
+                HANDLED_COMMANDS.contains(&arm.as_str()),
+                "`/{arm}` is dispatched by repl.rs but missing from HANDLED_COMMANDS"
+            );
+        }
+    }
+
+    #[test]
+    fn slash_status_keeps_handled_and_ordinary_text_on_the_model_path() {
+        for input in [
+            "/info",
+            "/info extra",
+            "/mcp restart alpha",
+            "/pin 3",
+            "/skin gold",
+            "/help unported",
+            "hello",
+            "",
+            "/",
+            // Slash-prefixed text that is not a command token stays prose.
+            "/home/user/x",
+            "/usr/bin/env python3",
+            "/definitely-not-a-command",
+            // Case-sensitive on purpose: the dispatch arms are, so treating
+            // `/New` as handled would repeat the original lie.
+            "/New",
+        ] {
+            assert_eq!(slash_status(input), SlashStatus::Prompt, "{input}");
+        }
+    }
+
+    #[test]
+    fn catalogued_but_unported_command_is_reported_not_forwarded() {
+        let SlashStatus::NotPorted(missing) = slash_status("/compress session") else {
+            panic!("/compress must not reach the model");
+        };
+        assert_eq!(missing.token, "/compress");
+        assert_eq!(missing.alias_of, None);
+        assert!(!missing.gateway_only);
+        let notice = missing.notice();
+        let prefix = "/compress is not implemented in Hermes-RS yet";
+        assert!(notice.starts_with(prefix), "{notice}");
+        assert!(notice.contains("Python:"), "{notice}");
+        assert_eq!(Some(notice), not_ported_notice("/compress session"));
+    }
+
+    #[test]
+    fn gateway_only_command_says_it_is_gateway_only() {
+        let SlashStatus::NotPorted(missing) = slash_status("/start") else {
+            panic!("/start is catalogued");
+        };
+        assert!(missing.gateway_only);
+        let notice = missing.notice();
+        assert!(notice.contains("gateway-only"), "{notice}");
+        assert!(!notice.contains("not implemented"), "{notice}");
+    }
+
+    #[test]
+    fn alias_notice_distinguishes_unwired_alias_from_missing_feature() {
+        // `/learning` is Python's alias for `/journey`, which this build does
+        // dispatch: the gap is the alias, not the feature.
+        let SlashStatus::NotPorted(journey) = slash_status("/learning") else {
+            panic!("/learning is catalogued");
+        };
+        assert_eq!(journey.alias_of, Some("journey"));
+        assert!(journey.canonical_handled);
+        let notice = journey.notice();
+        assert!(notice.contains("alias for /journey"), "{notice}");
+        assert!(!notice.contains("not implemented"), "{notice}");
+
+        // `/q` is Python's alias for `queue`, which is not implemented at all.
+        let SlashStatus::NotPorted(queue) = slash_status("/q") else {
+            panic!("/q is catalogued");
+        };
+        assert_eq!(queue.alias_of, Some("queue"));
+        assert!(!queue.canonical_handled);
+        let notice = queue.notice();
+        assert!(notice.contains("not implemented"), "{notice}");
+        assert!(notice.contains("alias for /queue"), "{notice}");
+    }
+
+    #[test]
+    fn unported_listing_is_the_catalog_gap_and_nothing_else() {
+        let lines = unported_lines();
+        assert!(lines.len() > 50, "only {} lines", lines.len());
+        assert!(lines.iter().any(|l| l.contains("/compress")));
+        assert!(!lines.iter().any(|l| l.contains("/info ")));
+        assert!(!lines.iter().any(|l| l.contains("/exit ")));
+        assert!(lines.iter().any(|l| l.contains("[gateway-only]")));
+        for line in &lines {
+            let name = line.trim_start_matches('/').split_whitespace().next();
+            let Some(name) = name else {
+                panic!("bad line {line:?}")
+            };
+            assert!(!HANDLED_COMMANDS.contains(&name), "{name} is handled");
+            assert!(catalog_entry(name).is_some(), "{name} is not catalogued");
+        }
     }
 }

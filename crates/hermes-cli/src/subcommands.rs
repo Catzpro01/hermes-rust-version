@@ -15,7 +15,9 @@ use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
-use hermes_core::config::{load_config, resolve_hermes_home, HermesConfig, ProviderConfig};
+use hermes_core::config::{
+    load_config, resolve_hermes_home, ConfigError, HermesConfig, ProviderConfig,
+};
 use hermes_core::provider::FAKE_PROVIDER;
 use hermes_core::session::{SessionId, SessionStore};
 
@@ -26,12 +28,29 @@ use crate::tui::welcome::{
 };
 use crate::{Args, Commands};
 
+/// The actionable "there is no Hermes home yet" error, shared by the REPL entry
+/// point (`main::resolve_home_or_onboard`, which onboards on a terminal) and by
+/// every inspection subcommand (which must never write during a read). Both
+/// name the two escapes instead of leaving the operator to guess.
+pub(crate) fn missing_home_error(path: &Path) -> anyhow::Error {
+    anyhow::anyhow!(
+        "Hermes home not found: {}. Run 'hermes-rs setup' in a terminal to create it, or set HERMES_HOME.",
+        path.display()
+    )
+}
+
 /// Resolve the Hermes home and load `config.yaml` (missing = `None`, same
 /// semantics as the REPL path so the offline `fake` slice stays usable).
 pub(crate) fn load_home_config(
     home: Option<&Path>,
 ) -> anyhow::Result<(PathBuf, Option<HermesConfig>)> {
-    let home = resolve_hermes_home(home).context("resolve Hermes home")?;
+    let home = match resolve_hermes_home(home) {
+        Ok(home) => home,
+        // A subcommand is an inspection: it reports the fix rather than
+        // creating a home (or prompting) behind the caller's back.
+        Err(ConfigError::HomeNotFound { path }) => return Err(missing_home_error(&path)),
+        Err(e) => return Err(anyhow::Error::new(e).context("resolve Hermes home")),
+    };
     let config = if home.join("config.yaml").exists() {
         Some(load_config(&home).map_err(|e| anyhow::anyhow!("Invalid config: {e}"))?)
     } else {

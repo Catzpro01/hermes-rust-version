@@ -814,6 +814,38 @@ class CiGateTests(unittest.TestCase):
         self.assertLess(setup_idx, picker_idx,
                         "setup-python must precede the picker regressions")
 
+    def test_heavy_rust_job_is_not_disabled(self):
+        """User instruction 2026-09-16: a green `main` must again mean
+        fmt + clippy + the full cargo suite + the live PTY gates.
+
+        The job carried `if: false` while Rust verification was offloaded to the
+        VPS bare-metal webhook daemon. That daemon only runs `make check`, so the
+        14 pixel-level regressions in the picker step never executed against a
+        built binary and the Spec 017 W5 status gates stayed unverified. The
+        condition must stay absent (or at least truthy) and every gate step must
+        survive, otherwise the workflow can be silently downgraded again."""
+        job = WORKFLOW["jobs"]["test"]
+        condition = job.get("if")
+        self.assertTrue(
+            condition is None
+            or str(condition).strip().lower() not in ("false", "false()", "0", "no"),
+            f"the heavy Rust job is switched off again via `if: {condition!r}`; "
+            "a green run would no longer prove fmt/clippy/test/picker",
+        )
+        for step in (
+            "cargo fmt --check",
+            "cargo clippy",
+            "cargo test",
+            "Picker terminal regressions",
+            "Fail if any step failed",
+        ):
+            with self.subTest(step=step):
+                self.assertIn(step, STEPS, f"the heavy job lost its '{step}' step")
+        # The picker step is conditional on the cargo suite succeeding, so a
+        # build failure can never masquerade as "gates skipped, job green".
+        self.assertEqual(STEPS["Picker terminal regressions"]["if"],
+                         "steps.test.outcome == 'success'")
+
     def test_jobs_run_on_the_tuned_self_hosted_vps(self):
         """User instruction 2026-09-16: Hybrid CI strategy:
         - Small/lightweight jobs (QA regression) use GitHub Actions cloud (ubuntu-latest)
@@ -828,6 +860,49 @@ class CiGateTests(unittest.TestCase):
                         runs_on in (["self-hosted", "vps", "hermes"], "ubuntu-latest", ["ubuntu-latest"]),
                         f"{name}:{job_name} has invalid runner: {runs_on}"
                     )
+
+    def test_capture_workflows_are_not_pinned_to_a_dead_session_branch(self):
+        """T12's remaining evidence is unreachable while the capture workflows
+        name one literal session branch.
+
+        `ui-evidence.yml`, `visual-evidence.yml` and `picker-diagnostic.yml`
+        were pinned to `arena/01a0a052-hermes-rust-version` in BOTH
+        `on.push.branches` and the job-level `if`. Arena session branches
+        rotate per session, and `workflow_dispatch` returns HTTP 403 for the
+        agent token (`agent-support/guidance/github-actions-access.md`), so a
+        workflow pinned to a finished session can never run again: the T12
+        capture packets still owed (wizard and completion four-area pairs, raw
+        recordings, reproduction metadata) could not be produced from any later
+        session. They must accept the same branch pattern `ci.yml` uses, and
+        keep the `paths` filter that restricts them to a request.json change so
+        an ordinary push never starts a capture run."""
+        ci_branches = WORKFLOW[True]["push"]["branches"]
+        self.assertIn("arena/**", ci_branches,
+                      "ci.yml no longer runs on arena/**; this test's premise changed")
+        for name in ("ui-evidence.yml", "visual-evidence.yml", "picker-diagnostic.yml"):
+            with self.subTest(workflow=name):
+                workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+                trigger = workflow[True]["push"]
+                self.assertEqual(
+                    trigger["branches"], ["arena/**"],
+                    f"{name} must accept every session branch, not one literal branch",
+                )
+                self.assertTrue(trigger.get("paths"),
+                                f"{name} lost the path filter that keeps it off ordinary pushes")
+                for job_name, job in workflow["jobs"].items():
+                    condition = str(job.get("if", ""))
+                    label = f"{name}:{job_name}"
+                    self.assertNotRegex(
+                        condition, r"arena/[0-9a-f]{8}-",
+                        f"{label} is pinned to a single (finished) session branch again",
+                    )
+                    if condition:
+                        # A guard is still wanted: visual-evidence.yml can be
+                        # dispatched against any ref, and a capture run belongs
+                        # to session work, not to main.
+                        self.assertIn("startsWith(github.ref, 'refs/heads/arena/')", condition,
+                                      f"{label} job guard no longer matches the arena/** pattern")
+
 
 
 if __name__ == "__main__":

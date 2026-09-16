@@ -77,8 +77,9 @@ Semua tiket keputusan W1–W4 CLOSED. Lane kerja berikutnya (urutan Q2):
    pertama urutan registri), RED fix token-pertama skill `953890c`.
    Sisi Python (perbandingan byte vs rekaman referensi) tetap menunggu
    rekaman pengguna per W4-Q1.
-4. **Kelengkapan T12** — SEPARUH JALAN: matriks wizard §J.7 (tiap section ×
-   {normal, cancel} + unavailable) SELESAI 2026-09-15 (run `34949715611`
+4. **Kelengkapan T12** — SEPARUH JALAN (pembaruan 2026-09-16: trigger capture
+   diperbaiki, capture segar diminta, runner belum mengambil job). matriks wizard
+   §J.7 (tiap section × {normal, cancel} + unavailable) SELESAI 2026-09-15 (run `34916506533`/`34949715611`
    hijau penuh; gate `wizard-fields` kini 8 skenario: model fields/cancel,
    docker-image unavailable, gateway cancel, terminal local, gateway empty,
    tools accept/cancel; komit `1c2f3a6`, satu flake 0-byte
@@ -101,3 +102,60 @@ Semua tiket keputusan W1–W4 CLOSED. Lane kerja berikutnya (urutan Q2):
 
 - OAuth/backend/registry wizard — deferral eksplisit T13 V1, bukan rute ini.
 - Merge ke `main` — keputusan terpisah di luar destinasi.
+
+### Pembaruan lane 4 — 2026-09-16 (sesi `arena/01a0a7d4`)
+
+- **Penyebab tidak ada capture baru sejak `3b39bd7` ditemukan dan diperbaiki.**
+  `ui-evidence.yml`, `visual-evidence.yml` dan `picker-diagnostic.yml` mematok
+  satu branch sesi literal (`arena/01a0a052-hermes-rust-version`) di
+  `on.push.branches` **dan** di `if:` job; `workflow_dispatch` = HTTP 403 untuk
+  token agent. Commit `cbce6f7` mengubah ketiganya ke `arena/**` +
+  `startsWith(github.ref, 'refs/heads/arena/')`, dijaga tes baru
+  `test_capture_workflows_are_not_pinned_to_a_dead_session_branch`
+  (RED 3/3 subtest → GREEN; `test_ci_workflow` 37→38, suite `scripts/` 205/14
+  error = baseline). Filter `paths` tidak disentuh, jadi push biasa tetap tidak
+  memulai capture.
+- **Capture sisi Rust diminta** (`4f44d2f`, `request.json`
+  `phase=capture`): run
+  [35052151094](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35052151094)
+  **terbuat** — bukti trigger-nya hidup lagi. Job masih `queued` >20 menit
+  walaupun tidak ada run lain dan job CI dari push yang sama selesai
+  (`35052151108` success). API runner = 403, jadi penyebabnya tidak bisa
+  dipastikan dari sandbox; kandidat: runner service tidak mengambil job kedua
+  dari satu push, atau runner offline sesudah job CI. Ini **infrastruktur VPS**,
+  bukan kode workflow, dan hanya bisa diperiksa/diperbaiki dari sisi pengguna.
+- **Paket lama tidak bisa dipakai sebagai bukti acceptance:** `ui-1e3abe7`
+  melabeli dirinya "Diagnostic packet — NOT acceptance evidence" (cacat drain
+  output summary), `ui-1c3c9dd` "intermediate" (cacat newline adapter), dan
+  `ui-3b39bd7` berasal dari sumber yang bukan ancestor HEAD. Rekonsiliasi
+  butir-per-butir temuan `ui-3b39bd7` terhadap slice yang sudah terverifikasi
+  ada di [T13](T13-visual-differences.md) bagian "Rekonsiliasi 2026-09-16".
+- **Renderer PNG tidak tersedia di sandbox:** `renderer.json` mematok
+  xterm 5.5.0 + Chromium 138 + Playwright 1.55.0. Bundle JSON bisa
+  direkonstruksi dari anotasi (`capture_ui.py export` menulis chunk gzip/base64
+  sebagai `::notice`, budget 32 chunk; bundle 48 kasus sebelumnya 439 kB =
+  16 chunk), tetapi `audit_ui_evidence.py` menuntut `renderer.json` + PNG per
+  kasus, jadi paket lengkap tetap butuh renderer terpinn di mesin yang punya
+  browser. Yang bisa dikerjakan di sesi: bundle + pairing
+  (`pair_picker_bundle.py`, sisi Python dipakai ulang apa adanya dari paket
+  yang dipertahankan, case set 48 = 48 cocok).
+- **Diagnosis 2026-09-16 04:02Z — runner hidup, tetapi hanya mengambil job CI.**
+  Job capture `35052151094` (workflow `Visual evidence (remaining UI)`) antre
+  >30 menit. Dalam jendela yang sama job CI dari push yang sama
+  (`35052151108`, commit `4f44d2f`) selesai `success` dalam ~3 menit, dan job CI
+  untuk push berikutnya (`efe9ef6`) mulai 03:55 dan selesai `success` 03:58 —
+  semuanya di `runs-on: [self-hosted, vps, hermes]` yang identik dengan job
+  capture. Tidak ada run lain di repo ini. Kesimpulan yang didukung bukti:
+  **bukan** runner offline dan **bukan** label salah; mekanisme yang menyediakan
+  runner (kemungkinan runner ephemeral yang diluncurkan per event, atau layanan
+  runner dengan filter) hanya melayani workflow `CI`. API runner dan
+  `actions/permissions` = HTTP 403 untuk token agent, dan sandbox tidak punya
+  egress TCP ke VPS, jadi penyebab sisi-server tidak bisa dipastikan dari sini.
+  Gejala kedua yang sejalan: daemon webhook VPS tidak memposting commit status
+  sama sekali untuk `0286bff`, `749d6d6`, `cbce6f7`, `4f44d2f`
+  (`state=pending`, nol context) padahal CI Actions hijau — jadi ada layanan
+  sisi-VPS yang tidak berjalan sebagaimana dicatat di `MEMORY.md`.
+  Ini dinding yang hanya bisa dilewati pengguna (periksa/restart layanan runner
+  di VPS, atau pulihkan izin dispatch); dua opsi jalannya dicatat di
+  `MEMORY.md` dan ditawarkan ke pengguna, tidak diputuskan sepihak.
+

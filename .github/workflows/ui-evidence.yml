@@ -1,14 +1,18 @@
 name: Visual evidence (remaining UI)
 on:
   push:
-    branches: ["arena/01a0a052-hermes-rust-version"]
+    branches: ["arena/**"]
     paths:
       - '.scratch/hermes-rs-total-parity/ui-capture/request.json'
 permissions:
   contents: read
 jobs:
   capture:
-    if: github.ref == 'refs/heads/arena/01a0a052-hermes-rust-version'
+    # Any session branch, not one finished session: a literal branch name
+    # makes this workflow unreachable forever once that session ends, and
+    # `workflow_dispatch` is 403 for the agent token. The `paths` filter above
+    # is what keeps an ordinary push from starting a capture run.
+    if: startsWith(github.ref, 'refs/heads/arena/')
     runs-on: [self-hosted, vps, hermes]
     timeout-minutes: 30
     steps:

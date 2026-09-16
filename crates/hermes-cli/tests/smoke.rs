@@ -76,6 +76,27 @@ fn smoke_missing_home_error() {
         .stderr(predicate::str::contains("not found"));
 }
 
+/// First-run onboarding (Python parity) is interactive-only. A piped caller
+/// gets an actionable error naming both escapes - `hermes-rs setup` and
+/// `HERMES_HOME` - and, above all, finds no directory created behind its back:
+/// a scripted run must never block on a wizard prompt, and never leave a home
+/// it did not ask for.
+#[test]
+fn smoke_missing_home_piped_names_setup_and_creates_nothing() {
+    let parent = TempDir::new().unwrap();
+    let missing = parent.path().join("never-created");
+    hermes_cmd()
+        .env("HERMES_HOME", &missing)
+        .write_stdin("")
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains("not found"))
+        .stderr(predicate::str::contains("hermes-rs setup"))
+        .stderr(predicate::str::contains("HERMES_HOME"));
+    assert!(!missing.exists(), "a piped run must never create the home");
+}
+
 #[test]
 fn smoke_python_hermes_untouched() {
     let python_home = std::env::var_os("HOME")

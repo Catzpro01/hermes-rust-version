@@ -1,4 +1,6 @@
 use assert_cmd::Command;
+use predicates::prelude::*;
+use predicates::str::contains;
 use tempfile::tempdir;
 
 #[test]
@@ -137,4 +139,82 @@ fn tui_flag_rejects_piped_non_interactive_stdin() {
         .stderr(predicates::str::contains(
             "--tui requires an interactive terminal",
         ));
+}
+
+/// The REPL driven piped with the offline `fake` provider, which echoes back
+/// every prompt it receives. That echo is what makes "the model never saw this"
+/// assertable: a command handled by the REPL produces no echo.
+fn fake_repl(home: &std::path::Path) -> Command {
+    let mut command = Command::cargo_bin("hermes-rs").unwrap();
+    command.args([
+        "--provider",
+        "fake",
+        "--hermes-home",
+        home.to_str().unwrap(),
+    ]);
+    command
+}
+
+/// A catalogued command this build has no handler for must say so instead of
+/// being forwarded to the model (`/compress` is Python's, autocomplete offers
+/// it, and before this it silently became prose).
+#[test]
+fn unported_slash_command_is_reported_and_never_reaches_the_model() {
+    let home = tempdir().unwrap();
+    let notice = contains("/compress is not implemented");
+    fake_repl(home.path())
+        .write_stdin("/compress\n/exit\n")
+        .assert()
+        .success()
+        .stdout(contains("echo: /compress").not())
+        .stderr(notice)
+        .stderr(contains("Python:"));
+}
+
+/// Slash-prefixed prose and paths are not commands: they must still reach the
+/// model exactly as before, or the notice would eat ordinary input.
+#[test]
+fn slash_prefixed_prose_and_paths_still_reach_the_model() {
+    let home = tempdir().unwrap();
+    let script = "/definitely-not-a-command\n/home/user/x is where I live\n/exit\n";
+    fake_repl(home.path())
+        .write_stdin(script)
+        .assert()
+        .success()
+        .stdout(contains("echo: /definitely-not-a-command"))
+        .stdout(contains("echo: /home/user/x is where I live"));
+}
+
+/// `/help` used to advertise four commands the REPL never dispatched
+/// (`/history`, `/model`, `/reset`, `/quit`), so they became prose. Three are
+/// real now; `/model` is no longer advertised and reports itself as unported.
+#[test]
+fn advertised_aliases_dispatch_and_model_does_not() {
+    let home = tempdir().unwrap();
+    let script = "hello\n/history\n/reset\n/model gpt-x\n/quit\n";
+    fake_repl(home.path())
+        .write_stdin(script)
+        .assert()
+        .success()
+        .stdout(contains("[1] user: hello"))
+        .stdout(contains("New session"))
+        .stdout(contains("echo: /history").not())
+        .stdout(contains("echo: /reset").not())
+        .stderr(contains("/model is not implemented"));
+}
+
+/// `/help unported` is the honest inventory of the catalog gap: what Python
+/// has, what completion offers, and what this build cannot run yet.
+#[test]
+fn help_unported_lists_the_catalog_gap() {
+    let home = tempdir().unwrap();
+    let heading = contains("commands this build does not implement");
+    fake_repl(home.path())
+        .write_stdin("/help unported\n/exit\n")
+        .assert()
+        .success()
+        .stdout(heading)
+        .stdout(contains("/compress"))
+        .stdout(contains("[gateway-only]"))
+        .stdout(contains("echo: /help unported").not());
 }

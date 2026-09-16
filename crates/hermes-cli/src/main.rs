@@ -1,6 +1,9 @@
+use std::path::{Path, PathBuf};
+
 use clap::{Parser, Subcommand};
 use hermes_core::config::load_config;
 use hermes_core::config::resolve_hermes_home;
+use hermes_core::config::ConfigError;
 use hermes_core::provider::{Provider, ProviderRegistry, FAKE_PROVIDER};
 
 pub(crate) mod approval;
@@ -161,6 +164,76 @@ enum McpAction {
     Restart { name: String },
 }
 
+/// What a bare `hermes-rs` run does when the resolved Hermes home is missing.
+///
+/// Python Hermes onboards on first run instead of failing; the Rust port used
+/// to hard-error with `HomeNotFound`, so a fresh machine had to know about
+/// `hermes-rs setup` before the binary would start at all.
+#[derive(Debug, PartialEq, Eq)]
+enum FirstRun {
+    /// The home exists: nothing to do.
+    Ready,
+    /// Interactive terminal: create the home and run the first-time wizard.
+    Onboard,
+    /// Piped/scripted: actionable error, and never write anything.
+    Reject,
+}
+
+/// Pure first-run decision (unit-tested below). Onboarding needs a terminal
+/// because the wizard prompts, and a piped caller must neither block forever on
+/// a prompt nor discover a directory it never asked for.
+fn first_run_action(home_exists: bool, interactive: bool) -> FirstRun {
+    if home_exists {
+        FirstRun::Ready
+    } else if interactive {
+        FirstRun::Onboard
+    } else {
+        FirstRun::Reject
+    }
+}
+
+/// Resolves the Hermes home, running the first-time setup wizard when the home
+/// does not exist yet and this is an interactive session.
+///
+/// `resolve_hermes_home` in `hermes-core` deliberately stays strict (its
+/// `HomeNotFound` contract is pinned by core tests and every read-only
+/// inspection subcommand relies on it), so the onboarding decision lives here
+/// at the CLI boundary and only on the REPL/TUI path: subcommands keep their
+/// actionable error rather than writing during an inspection.
+fn resolve_home_or_onboard(explicit: Option<&Path>) -> anyhow::Result<PathBuf> {
+    let path = match resolve_hermes_home(explicit) {
+        Ok(home) => return Ok(home),
+        Err(ConfigError::HomeNotFound { path }) => path,
+        Err(e) => anyhow::bail!("{e}"),
+    };
+    use std::io::IsTerminal;
+    let interactive = std::io::stdin().is_terminal() && std::io::stdout().is_terminal();
+    match first_run_action(path.is_dir(), interactive) {
+        FirstRun::Ready => Ok(path),
+        FirstRun::Reject => Err(subcommands::missing_home_error(&path)),
+        FirstRun::Onboard => {
+            // `run_setup` prints the verbatim Python first-time notice
+            // (`FIRST_TIME`), asks the mode question and creates the home when
+            // it applies. ESC -> `Setup cancelled.` with nothing written
+            // (invariant 3); Ctrl+C surfaces "interrupted" so `main()` maps it
+            // to exit 130 (invariant 2).
+            if let Err(e) = wizard::setup::run_setup(&path, None) {
+                anyhow::bail!("{e}");
+            }
+            // A cancelled run (or a mode that answers nothing) writes no
+            // config, so the directory can still be missing; the REPL needs it
+            // for `state.db`. Creating it here is the only write this path
+            // makes on its own.
+            if !path.is_dir() {
+                std::fs::create_dir_all(&path).map_err(|e| {
+                    anyhow::anyhow!("failed to create Hermes home {}: {e}", path.display())
+                })?;
+            }
+            Ok(path)
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
     std::process::exit(match run().await {
@@ -206,7 +279,7 @@ async fn run() -> anyhow::Result<()> {
             anyhow::bail!("--tui requires an interactive terminal");
         }
     }
-    let home = resolve_hermes_home(args.hermes_home.as_deref())?;
+    let home = resolve_home_or_onboard(args.hermes_home.as_deref())?;
     // Load once. A missing config.yaml is allowed so the offline `fake` slice
     // stays usable with a disposable home containing only state.db.
     let config = if home.join("config.yaml").exists() {
@@ -279,6 +352,17 @@ mod tests {
             .command
             .is_none());
         assert!(parse(&["hermes-rs", "--tui"]).command.is_none());
+    }
+
+    /// First-run onboarding is interactive-only and only for a missing home:
+    /// an existing home never re-prompts, and a piped caller never blocks on a
+    /// prompt nor gets a directory created behind its back.
+    #[test]
+    fn first_run_action_matrix() {
+        assert_eq!(first_run_action(true, true), FirstRun::Ready);
+        assert_eq!(first_run_action(true, false), FirstRun::Ready);
+        assert_eq!(first_run_action(false, true), FirstRun::Onboard);
+        assert_eq!(first_run_action(false, false), FirstRun::Reject);
     }
 
     #[test]

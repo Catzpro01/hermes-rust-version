@@ -2509,3 +2509,127 @@ empty`) dan berbeda dari model referensi Python tepat di satu baris.
 **Tidak ada** `cargo fmt`/`clippy`/`test` dari saya — toolchain tidak bisa
 dipasang di sandbox ini. `make check` VPS hijau untuk semua commit
 (`5b138a3` 128s, `fe8ca97` 96s, `c2613f6` 106s, `cf53a13` 121s).
+
+---
+
+## 2026-09-16 — empat slice ditutup: CI berat hidup lagi, onboarding first-run, slash-command jujur, W5 terverifikasi
+
+**Request:** "kerjakan semuanya 1-4" — (1) onboarding first-run supaya `hermes-rs`
+tanpa `~/.hermes` tidak mati dengan `HomeNotFound`, (2) ~60 slash command yang
+muncul di autocomplete tapi tidak punya handler, (3) sisa visual picker
+(tinta kolom status + resize/clear-filter), (4) mengaktifkan lagi job Rust CI
+yang dimatikan dan menjalankan verifikasi W5 yang tertunda. Aturan proses tetap:
+slice kecil, commit+push tiap slice, verifikasi lewat hasil run resmi; dilarang
+merge tanpa perintah.
+
+**Branch:** `arena/01a0a7d4-hermes-rust-version` (base `c5985d1`).
+
+### Slice A — job Rust berat diaktifkan kembali (`0286bff`)
+
+`ci.yml` membawa `if: false` pada job `test:`, jadi "CI hijau" hanya berarti job
+workflow ringan lolos: fmt, clippy, `cargo test --workspace` dan 14 gate PTY/piksel
+tidak pernah jalan. Job diaktifkan kembali dan dijaga tes baru
+`scripts/test_ci_workflow.py::test_heavy_rust_job_is_not_disabled` supaya tidak
+bisa dimatikan diam-diam lagi. Run
+[35046192977](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35046192977):
+`fmt=success clippy=success test=success picker=success` (2m51s).
+
+### Slice B — onboarding first-run (`749d6d6`)
+
+`resolve_home_or_onboarding()` di `main.rs`: `HomeNotFound` + TTY → jalankan
+setup wizard, buat home bila perlu, lalu masuk REPL (ESC tetap memulai REPL);
+`HomeNotFound` + stdin bukan TTY → error yang menyebut `hermes-rs setup` dan
+`HERMES_HOME`, **tanpa** menulis apa pun; subcommand inspeksi memakai
+`missing_home_error` yang sama dan tidak pernah membuat home. Ctrl+C → 130.
+Run
+[35047313528](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35047313528):
+keempat gate `success` (3m47s), suite `wizard_e2e` naik 8 → 10 tes PTY.
+
+### Slice C — perintah katalog yang tidak punya handler mengaku (`cf6afbf` + `d41be4a`)
+
+Completion menawarkan seluruh katalog (101 entri Python verbatim dikurangi yang
+gateway-only, plus 14 ekstensi RS), tetapi hanya 36 nama punya arm dispatch;
+sisanya jatuh ke `_ =>` dan **dikirim ke model sebagai prosa** — `/compress`
+terlihat seperti perintah lalu diam-diam jadi prompt. `/help` juga mengiklankan
+empat nama yang tak pernah di-dispatch.
+
+- `completion::HANDLED_COMMANDS` (36 nama) dipatok ke `repl.rs` **dua arah**:
+  tiap nama harus punya arm, dan tiap arm yang diparse dari sumber
+  (`include_str!("repl.rs")`) harus terdaftar. Arah reverse membaca arm, bukan
+  menyalin daftar, jadi keduanya tidak bisa bergeser jadi kebohongan baru.
+- `slash_status` mengklasifikasi satu baris: handled / katalog-tanpa-handler
+  (dengan deskripsi Python verbatim) / teks biasa. Sengaja case-sensitive dan
+  hanya untuk token berbentuk perintah, jadi `/home/user/x`, `/usr/bin/env
+  python3` dan kata tak dikenal tetap sampai ke model seperti sebelumnya.
+- Tiga bentuk notice berbeda: unported (`/compress`), gateway-only (`/start`),
+  dan alias yang kanonis-nya **jalan** (`/learning` → menunjuk `/journey`, bukan
+  mengklaim fiturnya tidak ada).
+- `/help unported` mendaftar 81 perintah katalog yang tidak bisa dijalankan
+  build ini, dengan deskripsi Python dan penanda `[gateway-only]`.
+- Tiga perintah yang diiklankan tapi sepele-nyata kini nyata: `/quit`=`/exit`,
+  `/reset`=`/new`, `/history`= sesi aktif lewat `show_messages` yang sama dengan
+  subcommand shell. `/model` tidak punya API ganti model di build ini, jadi
+  tidak lagi diiklankan dan mengaku unported.
+- Bukti E2E memakai echo provider `fake`: tidak ada `echo: <teks>` berarti input
+  tidak pernah sampai ke model.
+
+Run pertama Slice C
+[35048530295](https://github.com/Catzpro01/hermes-rust-version/actions/runs/35048530295)
+**gagal di fmt dan clippy** sementara `test=success picker=success`: clippy
+menolak `aliases.iter().any(|a| *a == token)` (`manual_contains`), dan rustfmt
+meminta `HANDLED_COMMANDS` satu nama per baris plus dua ekspansi kecil.
+Perbaikan `d41be4a` memakai **patch rustfmt yang diekspor job itu sendiri**
+(anotasi `rustfmt patch 1/1`, sha256 `b81a28cf…`, 2468 byte, diterapkan dengan
+`git apply`) — bukan reformating tangan.
+
+### Slice D — picker: tidak ada kode runtime baru, yang kurang adalah bukti
+
+Tinta kolom status (`status_ink`/`status_tag_span`), lifecycle W5 opsi C, dan
+perilaku resize/daftar panjang/clear-filter **sudah ada di kode** dan sudah
+punya gate live: `test_picker_status_ink.py`, `test_picker_status_tags.py`,
+`test_picker_terminal_size.py` (40 kolom menggambar picker; 39 kolom hanya
+`Terminal too small`) dan `test_picker_browse_control.py` dengan lima skenario
+(`picker-resize-too-small`, `picker-resize-redraw`, `picker-long-list`,
+`picker-clear-filter-esc`, `picker-clear-filter-backspace`, dipatok ke
+`docs/hermes-ui-spec/017/evidence/upstream-browse-control/`). Yang membuat
+semuanya tampak "belum selesai" adalah Slice A: gate-nya tidak pernah jalan.
+Setelah job berat hidup, kelimabelas gate itu hijau di run 35046192977 dan
+35047313528. Karena itu slice ini hanya penutupan dokumen: baris ringkasan
+`MILESTONES.md` dipecah per perilaku (status ink ✅, lifecycle W5 ✅,
+resize/long-list/clear-filter ✅, konten `Active`/`ID` tetap ⚠️ adaptasi),
+dan klaim basi "gate sengaja dibiarkan RED" / "BELUM TERVERIFIKASI" di
+`MEMORY.md` dikoreksi di tempat dengan penjelasan penyebabnya.
+
+### Verifikasi yang benar-benar dilakukan
+
+- **Run resmi:** 35046192977 (Slice A) dan 35047313528 (Slice B) →
+  `fmt=success clippy=success test=success picker=success`. 35048530295
+  (Slice C) → `test`/`picker` success, `fmt`/`clippy` failure; 35048885849
+  (`d41be4a`) → `fmt=success clippy=success test=success picker=success`, jadi
+  Slice C tertutup hijau. Jumlah tes cargo pada anotasi `summary`: 600 (run
+  Slice A) → 605 (Slice B) → 616 (Slice C).
+- **Lokal (Python, tanpa toolchain Rust):** `scripts/` = 204 tes / 14 error,
+  keempatbelas error adalah `KeyError: 'HERMES_PICKER_BINARY'` pada tes PTY
+  hidup — identik dengan kondisi sebelum slice ini, jadi nol regresi logika
+  gate. Decoder suite `test_picker_browse_control_checks` +
+  `test_picker_status_tags_checks` = 24 tes, semuanya lolos.
+- **Tidak ada** `cargo fmt`/`clippy`/`test` lokal: toolchain tidak bisa
+  dipasang di sandbox (rustup gagal `SSL_ERROR_SYSCALL`). Semua klaim Rust di
+  atas berasal dari anotasi run resmi.
+
+### Cara baca CI dari sandbox (koreksi metode)
+
+`gh run view --log` dan unduhan artefak **gagal** di sini (blob
+`productionresultssa19.blob.core.windows.net` → EOF). Yang bisa dipakai:
+`gh api repos/<owner>/<repo>/check-runs/<job_id>/annotations` — memuat ringkasan
+`fmt=… clippy=… test=… picker=…`, jumlah tes per suite, pesan clippy/rustfmt,
+**dan** patch rustfmt hasil ekspor job. Status commit daemon VPS bisa tetap
+`pending` tanpa context walau Actions hijau (`0286bff`, `749d6d6`), jadi yang
+otoritatif untuk kode Rust adalah hasil run Actions.
+
+### Belum tertutup
+
+- Tidak ada **paket bukti piksel baru** untuk `picker-status-tags`: klaim slice
+  ini sebatas "gate live hijau di CI resmi", bukan capture berpasangan baru.
+- T12/T13 (bukti wizard/completion nested & full Python CLI) tetap terbuka.
+- Penerimaan Spec017 tetap butuh pengguna; **tidak ada merge** tanpa perintah.
