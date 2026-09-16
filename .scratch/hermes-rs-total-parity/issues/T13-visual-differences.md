@@ -352,3 +352,71 @@ claims, new adaptation, whole-picker acceptance, closure or merge.
     `cargo fmt --all` re-wrapped one `assert_eq!`, which is exactly why the export
     now covers live gates: committing the bound patch would have failed the CI fmt
     gate on that line.
+
+---
+
+## Rekonsiliasi 2026-09-16 — temuan `ui-3b39bd7` dibaca ulang terhadap slice yang sudah terverifikasi
+
+Paket empat area `docs/hermes-ui-spec/017/evidence/ui-3b39bd7/` (sumber
+`3b39bd7`, **bukan** ancestor HEAD; status `REVIEWED_WITH_DIFFERENCES — NOT
+ACCEPTED`) masih satu-satunya paket berpasangan yang direview lengkap. Umur
+paket itu sekarang jadi masalah nyata: sebagian perbedaan yang dicatatnya
+sudah diperbaiki dan diverifikasi CI setelahnya, jadi membaca paket itu apa
+adanya akan melaporkan kode yang tidak ada lagi. Butir per butir:
+
+### V2 — Picker: perbedaan yang dicatat sudah tertutup, dua tetap adaptasi
+
+| Temuan di `ui-3b39bd7` | Status 2026-09-16 | Bukti |
+|---|---|---|
+| Header Python kuning/cyan vs Rust polos | **tertutup** | header normal palette3+bold (GREEN `34837102702`, paket `picker-header-7fef514`); header filter palette6+bold (GREEN `34858865863`, `picker-filter-header-9cc5cb4`); tinta header kolom palette8 (GREEN `34861285022`, `picker-column-layout-b732d22`). Gate `picker_normal_header` / `picker_filter_header` / `picker_column_layout` wajib di CI |
+| Baris terpilih Python hijau vs Rust inverse-white | **tertutup** | palette2+bold tanpa reverse video, 34/34 region piksel (`picker-selection-b4cb408`, GREEN `34866921566`); gate `picker_selection` |
+| Footer dim di baris 30 vs footer kompak tepat setelah hasil | **tertutup** | posisi footer baris 30 (`picker-position-0c0704d`) + warna footer palette8 (`picker-color-ae220ff`); gate `picker_footer_position` / `picker_footer_color` |
+| Prompt konfirmasi hapus Python merah vs Rust polos | **tertutup** | palette1+bold, 28/28 region (`picker-message-style-fd674dc`); gate `picker_message_style` |
+| `d delete` tetap tampil saat filter tanpa hasil | **tertutup** | hint hapus kondisional (`picker-hint-c07f0c5`) |
+| Footer no-match Rust `0/0 sessions (filtered from 2)` vs Python `0/2` | **tertutup** | koreksi counter (`picker-counter-a8d5e8c`) |
+| Pesan no-match Python memakai atribut dim | **tertutup** | `picker-message-style-fd674dc` (dim digambar dan direkam) |
+| Kolom status: kata `done`/`empty` T09 | **tertutup sebagai adaptasi** | `Stat` kini mengikuti classifier lifecycle referensi (ADR 0007); gate `picker_status_tags` hijau di run `35046192977` bersama 13 gate PTY lain |
+| ID 8 karakter (Python 18) dan `Active` relatif | **tetap adaptasi terdokumentasi** | dinyatakan di `docs/PARITY.md`; tidak diklaim identik, tidak diwaive diam-diam |
+| (tidak dicatat paket ini) resize / daftar panjang / clear-filter | **tertutup** | gate `picker_browse_control` (5 skenario, kontrak `upstream-browse-control`) + `picker_terminal_size` |
+
+### V3 — Completion: "tidak ada dropdown Rust" sudah basi; bukti pikselnya yang belum
+
+Paket mencatat Python menampilkan menu alternatif sementara "Rust REPL cycles
+inline; no dropdown parity claim". Sejak itu lane 3 peta Spec017 mengimplementasi
+dropdown rustyline dan memakunya dengan gate live `completion-dropdown`
+(5 skenario × 2 lebar: `/mod`→`/model`, `/s`→`/save ` lalu `/ski`→`/skin`,
+`/skills sea`→`search`, skill seeded `/demo`→`demo-skill`, ghost text), hijau
+pertama di run `34925228949` dan ikut hijau di setiap run sejak itu. Jadi klaim
+"tidak ada dropdown" tidak berlaku lagi — **yang belum ada adalah bukti piksel
+berpasangan di atas kode sekarang**. Batas host Python juga tetap: sisi Python
+paket itu adalah `SlashCommandCompleter` di dalam `PromptSession` nyata, bukan
+TextArea/ThreadedCompleter/CLI chrome penuh, dan rekaman referensi completion
+per W4-Q1 adalah tugas pengguna.
+
+### V1 — Wizard: terbuka, belum disentuh slice mana pun, tidak diwaive
+
+Perbedaan yang dicatat paket (header kuning + seleksi hijau + alternate-screen
+list di Python vs teks pengantar + prompt inline cyan di Rust; label panjang
+dipotong di 80 kolom vs dibungkus; panduan ESC/SPACE dan teks pilihan terminal
+yang tidak ekuivalen; `wizard-tools` Python sampai ke menu konfigurasi tools
+sementara Rust langsung ke checklist; counter Python 17/27 + suffix
+`[no API key]` vs katalog statis 26 entri; jalur OAuth-not-available) **belum
+punya slice perbaikan**. Yang sudah dikerjakan di area wizard adalah gate
+perilaku `wizard-fields` (urutan field, cancel, unavailable-feature; run
+`34916506533` dan diperluas jadi 8 skenario di `34949715611`) — itu membuktikan
+urutan dan keberadaan field, **bukan** parity piksel. Paket itu sendiri menolak
+pembenaran "karena memakai `inquire`", dan penolakan itu masih berdiri.
+
+### Konsekuensi untuk acceptance bertahap (preferensi Q3)
+
+- **Picker** dan **summary**: siap direview per area begitu capture segar di atas
+  HEAD masuk; summary sudah cocok di `3b39bd7` (jumlah baris emulator sama, tanpa
+  perbedaan glyph/atribut selain branding judul) dan perlu dikonfirmasi ulang,
+  bukan diasumsikan.
+- **Completion**: butuh capture segar + pernyataan batas host Python apa adanya.
+- **Wizard**: butuh **keputusan** dulu — perbaiki renderer wizard, atau waive
+  eksplisit per perbedaan oleh pengguna. Itu keputusan acceptance/kontrak, bukan
+  sesuatu yang bisa ditutup oleh capture; bila perlu kontraknya dirumuskan,
+  bentuknya tiket keputusan baru di peta (W6), bukan tiket implementasi.
+- Tidak ada klaim acceptance, closure T11/T10, atau merge dari rekonsiliasi ini.
+
