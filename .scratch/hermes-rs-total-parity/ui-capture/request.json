@@ -1,1 +1,1 @@
-{"phase":"capture","capture":true,"adapter_green_run":34787994035,"reason":"final-host-matched-ui-matrix"}
+{"phase": "capture", "capture": true, "adapter_green_run": 34787994035, "reason": "t12-lane4-fresh-rust-matrix-post-picker-corrections", "requested_on_branch": "arena/01a0a7d4-hermes-rust-version", "enabled_by_commit": "cbce6f7", "supersedes_diagnostic_packets": ["ui-1c3c9dd", "ui-1e3abe7", "ui-3b39bd7"]}
